@@ -1,17 +1,25 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@app/module/app.module';
 import { getLoggerLevels, getPort, getSwaggerPath, loadEnvironmentFiles } from '@config';
+import { AppLoggerService } from '@common/logger';
 import { setupSwagger } from '@/swagger';
 
 async function bootstrap(): Promise<void> {
   loadEnvironmentFiles();
-  const loggerLevels = getLoggerLevels();
-  Logger.overrideLogger(loggerLevels);
+
+  // Bootstrap a temporary logger using the configured levels so that startup
+  // messages respect LOG_LEVEL before the DI container is ready.
+  getLoggerLevels(); // validates LOG_LEVEL env var eagerly
 
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
   });
+
+  // Hand off logging to the DI-managed AppLoggerService which backs all
+  // structured output (console + optional file transport).
+  const logger = app.get(AppLoggerService);
+  app.useLogger(logger);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -19,14 +27,14 @@ async function bootstrap(): Promise<void> {
       whitelist: true,
     }),
   );
-  app.useLogger(new Logger('Bootstrap'));
+
   setupSwagger(app);
 
   const port: number = getPort();
 
   await app.listen(port);
-  Logger.log(`Application started on port ${port}`, 'Bootstrap');
-  Logger.log(
+  logger.log(`Application started on port ${port}`, 'Bootstrap');
+  logger.log(
     `Swagger docs available at http://localhost:${port}/${getSwaggerPath()}`,
     'Bootstrap',
   );

@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthGuard, OwnerOrAdminGuard } from '@common/auth';
 import type { ScheduleSlotRecord } from '@database';
 import {
   CreateScheduleSlotDto,
@@ -14,6 +15,8 @@ export class SchedulingController {
   constructor(private readonly schedulingService: SchedulingService) {}
 
   @Post('availability')
+  @UseGuards(AuthGuard, OwnerOrAdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark a user schedule slot as available' })
   @ApiBody({ type: CreateScheduleSlotDto })
   @ApiResponse({
@@ -22,6 +25,8 @@ export class SchedulingController {
     type: ScheduleSlotResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Invalid time window.' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
+  @ApiResponse({ status: 403, description: 'Only the owner or an admin can create availability.' })
   createAvailability(
     @Body() dto: CreateScheduleSlotDto,
   ): Promise<ScheduleSlotRecord> {
@@ -29,6 +34,8 @@ export class SchedulingController {
   }
 
   @Get('users/:userId/availability')
+  @UseGuards(AuthGuard, OwnerOrAdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'List available schedule slots for a user' })
   @ApiParam({ name: 'userId', description: 'User UUID' })
   @ApiResponse({
@@ -36,6 +43,8 @@ export class SchedulingController {
     description: 'Available slots ordered by start time.',
     type: [ScheduleSlotResponseDto],
   })
+  @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
+  @ApiResponse({ status: 403, description: 'Only the owner or an admin can view availability.' })
   findAvailableByUser(
     @Param() params: UserScheduleParamDto,
   ): Promise<ScheduleSlotRecord[]> {

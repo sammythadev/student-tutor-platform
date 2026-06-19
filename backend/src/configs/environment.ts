@@ -4,6 +4,16 @@ import { resolve } from 'node:path';
 export type AppEnvironment = 'development' | 'production' | 'test';
 export type LoggerLevel = 'error' | 'warn' | 'log' | 'debug' | 'verbose';
 
+const VALID_LOG_LEVELS: LoggerLevel[] = ['error', 'warn', 'log', 'debug', 'verbose'];
+
+const LEVEL_ORDER: Record<LoggerLevel, number> = {
+  error: 0,
+  warn: 1,
+  log: 2,
+  debug: 3,
+  verbose: 4,
+};
+
 const ENVIRONMENT_FILES: Record<AppEnvironment, string[]> = {
   development: ['.env', '.env.development', '.env.local'],
   production: ['.env', '.env.production', '.env.production.local'],
@@ -66,6 +76,14 @@ export function getAppEnvironment(value = process.env.NODE_ENV): AppEnvironment 
 }
 
 export function getLoggerLevels(value = process.env.NODE_ENV): LoggerLevel[] {
+  // Explicit LOG_LEVEL env var takes precedence over NODE_ENV defaults.
+  const explicitLevel = process.env.LOG_LEVEL?.trim() as LoggerLevel | undefined;
+
+  if (explicitLevel && VALID_LOG_LEVELS.includes(explicitLevel)) {
+    // Return all levels up to and including the requested one.
+    return VALID_LOG_LEVELS.filter((l) => LEVEL_ORDER[l] <= LEVEL_ORDER[explicitLevel]);
+  }
+
   const environment = getAppEnvironment(value);
 
   if (environment === 'production') {
@@ -73,6 +91,23 @@ export function getLoggerLevels(value = process.env.NODE_ENV): LoggerLevel[] {
   }
 
   return ['error', 'warn', 'log', 'debug', 'verbose'];
+}
+
+/**
+ * Returns true unless LOG_ENABLED is explicitly set to 'false'.
+ * Provides a master on/off switch for all application logging.
+ */
+export function isLoggingEnabled(): boolean {
+  return process.env.LOG_ENABLED?.trim().toLowerCase() !== 'false';
+}
+
+/**
+ * Returns the file path for log output, or null if LOG_FILE_PATH is not set.
+ * When null, only console transport is used.
+ */
+export function getLogFilePath(): string | null {
+  const filePath = process.env.LOG_FILE_PATH?.trim();
+  return filePath || null;
 }
 
 export function getPort(): number {
@@ -101,4 +136,70 @@ export function getDatabaseUrl(): string {
   }
 
   return databaseUrl;
+}
+
+function normalizeJwtKey(value: string): string {
+  return value.replace(/\\n/g, '\n').trim();
+}
+
+export function getJwtAccessTokenPrivateKey(): string {
+  const accessTokenPrivateKey = process.env.JWT_ACCESS_TOKEN_PRIVATE_KEY;
+
+  if (!accessTokenPrivateKey) {
+    throw new Error('JWT_ACCESS_TOKEN_PRIVATE_KEY is required');
+  }
+
+  return normalizeJwtKey(accessTokenPrivateKey);
+}
+
+export function getJwtAccessTokenPublicKey(): string {
+  const accessTokenPublicKey = process.env.JWT_ACCESS_TOKEN_PUBLIC_KEY;
+
+  if (!accessTokenPublicKey) {
+    throw new Error('JWT_ACCESS_TOKEN_PUBLIC_KEY is required');
+  }
+
+  return normalizeJwtKey(accessTokenPublicKey);
+}
+
+export function getJwtRefreshTokenPrivateKey(): string {
+  const refreshTokenPrivateKey = process.env.JWT_REFRESH_TOKEN_PRIVATE_KEY;
+
+  if (!refreshTokenPrivateKey) {
+    throw new Error('JWT_REFRESH_TOKEN_PRIVATE_KEY is required');
+  }
+
+  return normalizeJwtKey(refreshTokenPrivateKey);
+}
+
+export function getJwtRefreshTokenPublicKey(): string {
+  const refreshTokenPublicKey = process.env.JWT_REFRESH_TOKEN_PUBLIC_KEY;
+
+  if (!refreshTokenPublicKey) {
+    throw new Error('JWT_REFRESH_TOKEN_PUBLIC_KEY is required');
+  }
+
+  return normalizeJwtKey(refreshTokenPublicKey);
+}
+
+export function getJwtAccessTokenTtlSeconds(): number {
+  const parsedTtl = Number(process.env.JWT_ACCESS_TOKEN_TTL_SECONDS ?? 3600);
+
+  return Number.isFinite(parsedTtl) && parsedTtl > 0 ? parsedTtl : 3600;
+}
+
+export function getJwtRefreshTokenTtlSeconds(): number {
+  const parsedTtl = Number(process.env.JWT_REFRESH_TOKEN_TTL_SECONDS ?? 2592000);
+
+  return Number.isFinite(parsedTtl) && parsedTtl > 0 ? parsedTtl : 2592000;
+}
+
+export function getAdminSignupCode(): string {
+  const adminSignupCode = process.env.ADMIN_SIGNUP_CODE;
+
+  if (!adminSignupCode) {
+    throw new Error('ADMIN_SIGNUP_CODE is required');
+  }
+
+  return adminSignupCode;
 }

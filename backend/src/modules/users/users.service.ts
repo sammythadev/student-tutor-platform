@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { hash } from 'bcrypt';
 import { CreateUserDto, UserRole } from './dtos/create-user.dto';
 import { UsersRepository } from './users.repository';
-import type { UserWithProfiles } from './users.types';
+import { toPublicUserWithProfiles, type UserWithProfiles } from './users.types';
 
 @Injectable()
 export class UsersService {
@@ -17,7 +17,9 @@ export class UsersService {
 
     const passwordHash = dto.password ? await hash(dto.password, 12) : null;
 
-    return this.usersRepository.create(dto, passwordHash);
+    const createdUser = await this.usersRepository.create(dto, passwordHash);
+
+    return toPublicUserWithProfiles(createdUser);
   }
 
   async findById(id: string): Promise<UserWithProfiles> {
@@ -27,10 +29,14 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    return user;
+    return toPublicUserWithProfiles(user);
   }
 
   private assertRoleProfile(dto: CreateUserDto): void {
+    if (dto.role === UserRole.ADMIN && (dto.studentProfile || dto.tutorProfile)) {
+      throw new BadRequestException('Admin users cannot include role profile payloads');
+    }
+
     if (dto.role === UserRole.STUDENT && !dto.studentProfile) {
       throw new BadRequestException('studentProfile is required for student users');
     }

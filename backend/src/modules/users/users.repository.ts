@@ -8,13 +8,13 @@ import {
   users,
 } from '@database';
 import { CreateUserDto, UserRole } from './dtos/create-user.dto';
-import type { UserWithProfiles } from './users.types';
+import type { UserWithProfilesRecord } from './users.types';
 
 @Injectable()
 export class UsersRepository {
   constructor(@Inject(DATABASE) private readonly db: AppDatabase) {}
 
-  async create(dto: CreateUserDto, passwordHash: string | null): Promise<UserWithProfiles> {
+  async create(dto: CreateUserDto, passwordHash: string | null): Promise<UserWithProfilesRecord> {
     const createdUserId = await this.db.transaction(async (tx) => {
       const [createdUser] = await tx
         .insert(users)
@@ -80,7 +80,7 @@ export class UsersRepository {
     return created;
   }
 
-  async findById(id: string): Promise<UserWithProfiles | null> {
+  async findById(id: string): Promise<UserWithProfilesRecord | null> {
     const [row] = await this.db
       .select({
         user: users,
@@ -91,6 +91,23 @@ export class UsersRepository {
       .leftJoin(studentProfiles, eq(studentProfiles.userId, users.id))
       .leftJoin(tutorProfiles, eq(tutorProfiles.userId, users.id))
       .where(eq(users.id, id))
+      .limit(1);
+
+    return row ?? null;
+  }
+
+  async findByEmail(email: string): Promise<UserWithProfilesRecord | null> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const [row] = await this.db
+      .select({
+        user: users,
+        studentProfile: studentProfiles,
+        tutorProfile: tutorProfiles,
+      })
+      .from(users)
+      .leftJoin(studentProfiles, eq(studentProfiles.userId, users.id))
+      .leftJoin(tutorProfiles, eq(tutorProfiles.userId, users.id))
+      .where(sql`lower(${users.email}) = ${normalizedEmail}`)
       .limit(1);
 
     return row ?? null;

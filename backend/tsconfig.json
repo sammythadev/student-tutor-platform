@@ -31,9 +31,11 @@
     "strict": true,
     "strictNullChecks": true,
     "noImplicitAny": true,
+    "noImplicitThis": true,
     "forceConsistentCasingInFileNames": true,
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "noUnusedLocals": false
   }
 }
