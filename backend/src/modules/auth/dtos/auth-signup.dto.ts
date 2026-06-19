@@ -1,14 +1,26 @@
-import { OmitType, ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsString, MinLength } from 'class-validator';
-import { CreateUserDto, UserRole } from '@modules/users/dtos/create-user.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsEnum, IsString, MinLength } from 'class-validator';
+import { UserRole } from '@modules/users/dtos/create-user.dto';
 
-export class AuthSignupDto extends OmitType(CreateUserDto, ['password'] as const) {
+export class AuthSignupDto {
+  @ApiProperty({ example: 'student1@example.com' })
+  @IsEmail()
+  email!: string;
+
   @ApiProperty({ example: 'strong-password' })
   @IsString()
   @MinLength(8)
   password!: string;
 
+  @ApiProperty({ example: 'Amina' })
+  @IsString()
+  firstName!: string;
+
+  @ApiProperty({ example: 'Okafor' })
+  @IsString()
+  lastName!: string;
+
   @ApiProperty({ enum: [UserRole.STUDENT, UserRole.TUTOR] })
-  @IsIn([UserRole.STUDENT, UserRole.TUTOR])
-  override role!: UserRole.STUDENT | UserRole.TUTOR;
+  @IsEnum(UserRole)
+  role!: UserRole.STUDENT | UserRole.TUTOR;
 }

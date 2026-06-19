@@ -1,6 +1,8 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { hash } from 'bcrypt';
-import { CreateUserDto, UserRole } from './dtos/create-user.dto';
+import { CreateUserDto } from './dtos/create-user.dto';
+import type { UpdateUserDto, UpdateStudentPreferencesDto, UpdateTutorPreferencesDto } from './dtos/update-user.dto';
+import type { OnboardUserDto } from '../auth/dtos/onboard-users.dto';
 import { UsersRepository } from './users.repository';
 import { toPublicUserWithProfiles, type UserWithProfiles } from './users.types';
 
@@ -9,7 +11,6 @@ export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
   async create(dto: CreateUserDto): Promise<UserWithProfiles> {
-    this.assertRoleProfile(dto);
 
     if (await this.usersRepository.existsByEmail(dto.email)) {
       throw new ConflictException('A user with this email already exists');
@@ -32,17 +33,43 @@ export class UsersService {
     return toPublicUserWithProfiles(user);
   }
 
-  private assertRoleProfile(dto: CreateUserDto): void {
-    if (dto.role === UserRole.ADMIN && (dto.studentProfile || dto.tutorProfile)) {
-      throw new BadRequestException('Admin users cannot include role profile payloads');
+  async onboard(userId: string, dto: OnboardUserDto): Promise<UserWithProfiles> {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
-    if (dto.role === UserRole.STUDENT && !dto.studentProfile) {
-      throw new BadRequestException('studentProfile is required for student users');
+    if (
+      (dto.role === 'student' && user.studentProfile) ||
+      (dto.role === 'tutor' && user.tutorProfile)
+    ) {
+      throw new ConflictException('User is already onboarded for this role');
     }
 
-    if (dto.role === UserRole.TUTOR && !dto.tutorProfile) {
-      throw new BadRequestException('tutorProfile is required for tutor users');
-    }
+    const updatedUser = await this.usersRepository.onboard(userId, dto);
+    return toPublicUserWithProfiles(updatedUser);
+  }
+
+  async updateBaseUser(userId: string, dto: UpdateUserDto): Promise<UserWithProfiles> {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    const updatedUser = await this.usersRepository.updateBaseUser(userId, dto);
+    return toPublicUserWithProfiles(updatedUser);
+  }
+
+  async updateStudentPreferences(userId: string, dto: UpdateStudentPreferencesDto): Promise<UserWithProfiles> {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.studentProfile) throw new BadRequestException('User is not onboarded as a student');
+    const updatedUser = await this.usersRepository.updateStudentPreferences(userId, dto);
+    return toPublicUserWithProfiles(updatedUser);
+  }
+
+  async updateTutorPreferences(userId: string, dto: UpdateTutorPreferencesDto): Promise<UserWithProfiles> {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.tutorProfile) throw new BadRequestException('User is not onboarded as a tutor');
+    const updatedUser = await this.usersRepository.updateTutorPreferences(userId, dto);
+    return toPublicUserWithProfiles(updatedUser);
   }
 }

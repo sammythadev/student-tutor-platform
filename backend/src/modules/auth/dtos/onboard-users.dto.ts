@@ -1,13 +1,86 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
-import { ArrayNotEmpty, IsArray, ValidateNested } from 'class-validator';
-import { CreateUserDto } from '@modules/users/dtos/create-user.dto';
+import { ArrayNotEmpty, IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min, ValidateIf, ValidateNested } from 'class-validator';
+import { UserRole } from '@modules/users/dtos/create-user.dto';
 
-export class OnboardUsersDto {
-  @ApiProperty({ type: [CreateUserDto] })
+export class AvailabilitySlotDto {
+  @ApiProperty({ example: '2026-01-01T09:00:00.000Z' })
+  @IsString()
+  start!: string;
+
+  @ApiProperty({ example: '2026-01-01T11:00:00.000Z' })
+  @IsString()
+  end!: string;
+}
+
+export class OnboardStudentDto {
+  @ApiProperty({ example: 'mathematics' })
+  @IsString()
+  requiredSubject!: string;
+
+  @ApiProperty({ example: 10 })
+  @IsInt()
+  @Min(1)
+  gradeLevel!: number;
+
+  @ApiProperty({ example: 'waec' })
+  @IsString()
+  examType!: string;
+
+  @ApiProperty({ type: [AvailabilitySlotDto] })
   @IsArray()
   @ArrayNotEmpty()
   @ValidateNested({ each: true })
-  @Type(() => CreateUserDto)
-  users!: CreateUserDto[];
+  @Type(() => AvailabilitySlotDto)
+  requestedAvailability!: AvailabilitySlotDto[];
+}
+
+export class OnboardTutorDto {
+  @ApiProperty({ example: ['mathematics', 'physics'] })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  subjectsTaught!: string[];
+
+  @ApiProperty({ example: [9, 10, 11] })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsInt({ each: true })
+  gradeLevelsSupported!: number[];
+
+  @ApiProperty({ example: ['waec', 'neco'] })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  examTypesSupported!: string[];
+
+  @ApiProperty({ type: [AvailabilitySlotDto] })
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => AvailabilitySlotDto)
+  availability!: AvailabilitySlotDto[];
+
+  @ApiProperty({ example: 4000 })
+  @IsNumber()
+  @Min(0)
+  hourlyRate!: number;
+}
+
+export class OnboardUserDto {
+  @ApiProperty({ enum: UserRole })
+  @IsEnum(UserRole)
+  role!: UserRole;
+
+  @ValidateIf((dto: OnboardUserDto) => dto.role === UserRole.STUDENT)
+  @ApiPropertyOptional({ type: OnboardStudentDto })
+  @ValidateNested()
+  @Type(() => OnboardStudentDto)
+  studentProfile?: OnboardStudentDto;
+
+  @ValidateIf((dto: OnboardUserDto) => dto.role === UserRole.TUTOR)
+  @ApiPropertyOptional({ type: OnboardTutorDto })
+  @ValidateNested()
+  @Type(() => OnboardTutorDto)
+  tutorProfile?: OnboardTutorDto;
 }

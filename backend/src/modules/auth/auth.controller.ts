@@ -11,10 +11,10 @@ import { AuthLoginDto } from './dtos/auth-login.dto';
 import {
   AuthSessionResponseDto,
   AuthVerifyResponseDto,
-  OnboardUsersResponseDto,
 } from './dtos/auth-session.dto';
+import { UserWithProfilesResponseDto } from '../users/dtos/create-user.dto';
 import { AuthSignupDto } from './dtos/auth-signup.dto';
-import { OnboardUsersDto } from './dtos/onboard-users.dto';
+import { OnboardUserDto } from './dtos/onboard-users.dto';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
 import { AuthService } from './auth.service';
 
@@ -114,19 +114,22 @@ export class AuthController {
   }
 
   @Post('onboard')
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles('admin')
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Seed detailed users as an admin' })
-  @ApiBody({ type: OnboardUsersDto })
+  @ApiOperation({ summary: 'Complete profile onboarding for the authenticated user' })
+  @ApiBody({ type: OnboardUserDto })
   @ApiResponse({
     status: 201,
-    description: 'Users seeded successfully.',
-    type: OnboardUsersResponseDto,
+    description: 'User profile created successfully.',
+    type: UserWithProfilesResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
-  @ApiResponse({ status: 403, description: 'Admin role required.' })
-  onboard(@Body() dto: OnboardUsersDto): Promise<OnboardUsersResponseDto> {
-    return this.authService.onboard(dto);
+  @ApiResponse({ status: 400, description: 'Invalid onboarding payload or role mismatch.' })
+  @ApiResponse({ status: 409, description: 'User is already onboarded for this role.' })
+  onboard(
+    @Body() dto: OnboardUserDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<UserWithProfilesResponseDto> {
+    return this.authService.onboard(currentUser, dto);
   }
 }

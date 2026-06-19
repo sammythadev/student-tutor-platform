@@ -8,6 +8,8 @@ import {
   users,
 } from '@database';
 import { CreateUserDto, UserRole } from './dtos/create-user.dto';
+import type { UpdateUserDto, UpdateStudentPreferencesDto, UpdateTutorPreferencesDto } from './dtos/update-user.dto';
+import type { OnboardUserDto } from '../auth/dtos/onboard-users.dto';
 import type { UserWithProfilesRecord } from './users.types';
 
 @Injectable()
@@ -78,6 +80,99 @@ export class UsersRepository {
     }
 
     return created;
+  }
+
+  async onboard(userId: string, dto: OnboardUserDto): Promise<UserWithProfilesRecord> {
+    await this.db.transaction(async (tx) => {
+      if (dto.role === UserRole.STUDENT && dto.studentProfile) {
+        await tx.insert(studentProfiles).values({
+          userId,
+          requiredSubject: dto.studentProfile.requiredSubject,
+          gradeLevel: dto.studentProfile.gradeLevel,
+          examType: dto.studentProfile.examType,
+          requestedAvailability: dto.studentProfile.requestedAvailability,
+        });
+      }
+
+      if (dto.role === UserRole.TUTOR && dto.tutorProfile) {
+        await tx.insert(tutorProfiles).values({
+          userId,
+          subjectsTaught: dto.tutorProfile.subjectsTaught,
+          gradeLevelsSupported: dto.tutorProfile.gradeLevelsSupported,
+          examTypesSupported: dto.tutorProfile.examTypesSupported,
+          availability: dto.tutorProfile.availability,
+          hourlyRate: String(dto.tutorProfile.hourlyRate),
+        });
+      }
+    });
+
+    const updated = await this.findById(userId);
+    if (!updated) {
+      throw new Error('Onboarded user could not be loaded');
+    }
+    return updated;
+  }
+
+  async updateBaseUser(userId: string, dto: UpdateUserDto): Promise<UserWithProfilesRecord> {
+    const updatePayload: Record<string, any> = {};
+    if (dto.firstName !== undefined) updatePayload.firstName = dto.firstName;
+    if (dto.lastName !== undefined) updatePayload.lastName = dto.lastName;
+    if (dto.region !== undefined) updatePayload.region = dto.region;
+
+    if (Object.keys(updatePayload).length > 0) {
+      updatePayload.updatedAt = new Date();
+      await this.db.update(users).set(updatePayload).where(eq(users.id, userId));
+    }
+
+    const updated = await this.findById(userId);
+    if (!updated) throw new Error('Failed to load user after update');
+    return updated;
+  }
+
+  async updateStudentPreferences(
+    userId: string,
+    dto: UpdateStudentPreferencesDto,
+  ): Promise<UserWithProfilesRecord> {
+    const updatePayload: Record<string, any> = {};
+    if (dto.budget !== undefined) updatePayload.budget = String(dto.budget);
+    if (dto.deliveryPreference !== undefined) updatePayload.deliveryPreference = dto.deliveryPreference;
+    if (dto.formatPreference !== undefined) updatePayload.formatPreference = dto.formatPreference;
+    if (dto.learningStylePreference !== undefined) updatePayload.learningStylePreference = dto.learningStylePreference;
+    if (dto.languages !== undefined) updatePayload.languages = dto.languages;
+    if (dto.subjectSpecialization !== undefined) updatePayload.subjectSpecialization = dto.subjectSpecialization;
+    if (dto.preferenceWeights !== undefined) updatePayload.preferenceWeights = dto.preferenceWeights;
+
+    if (Object.keys(updatePayload).length > 0) {
+      updatePayload.updatedAt = new Date();
+      await this.db.update(studentProfiles).set(updatePayload).where(eq(studentProfiles.userId, userId));
+    }
+
+    const updated = await this.findById(userId);
+    if (!updated) throw new Error('Failed to load user after update');
+    return updated;
+  }
+
+  async updateTutorPreferences(
+    userId: string,
+    dto: UpdateTutorPreferencesDto,
+  ): Promise<UserWithProfilesRecord> {
+    const updatePayload: Record<string, any> = {};
+    if (dto.specializations !== undefined) updatePayload.specializations = dto.specializations;
+    if (dto.experienceYears !== undefined) updatePayload.experienceYears = dto.experienceYears;
+    if (dto.languages !== undefined) updatePayload.languages = dto.languages;
+    if (dto.teachingStyle !== undefined) updatePayload.teachingStyle = dto.teachingStyle;
+    if (dto.deliveryStyle !== undefined) updatePayload.deliveryStyle = dto.deliveryStyle;
+    if (dto.formatStyle !== undefined) updatePayload.formatStyle = dto.formatStyle;
+    if (dto.capacity !== undefined) updatePayload.capacity = dto.capacity;
+
+    if (Object.keys(updatePayload).length > 0) {
+      updatePayload.updatedAt = new Date();
+      await this.db.update(tutorProfiles).set(updatePayload).where(eq(tutorProfiles.userId, userId));
+    }
+
+    const updated = await this.findById(userId);
+    if (!updated) throw new Error('Failed to load user after update');
+    return updated;
   }
 
   async findById(id: string): Promise<UserWithProfilesRecord | null> {

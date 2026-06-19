@@ -18,3 +18,5 @@ export {
 	getSwaggerPath,
 	loadEnvironmentFiles,
 } from './environment';
+
+export type { AppEnvironment, LoggerLevel, LogDriver } from './environment';

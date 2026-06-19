@@ -6,8 +6,8 @@
 
 Creates a student or tutor account and returns an access token, refresh token, and the public user profile.
 
-- Body: `email`, `password`, `firstName`, `lastName`, optional `region`, `role`, and the matching profile payload for the selected role.
-- Errors: `400` for invalid payloads or a missing role profile, `409` for duplicate email addresses.
+- Body: `email`, `password`, `firstName`, `lastName`, `role`.
+- Errors: `400` for invalid payloads, `409` for duplicate email addresses.
 
 ### `POST /auth/login`
 
@@ -44,11 +44,11 @@ Exchanges a refresh token for a new access/refresh token pair.
 
 ### `POST /auth/onboard`
 
-Seeds detailed users from an admin-authenticated request.
+Completes profile onboarding for the currently authenticated student or tutor.
 
-- Auth: admin bearer access token.
-- Body: `users` array of user creation payloads.
-- Errors: `401` for a missing or invalid bearer token, `403` for non-admin users.
+- Auth: `Authorization: Bearer <accessToken>`.
+- Body: `role`, plus the required profile details. Tutors must supply `subjectsTaught`, `gradeLevelsSupported`, `examTypesSupported`, `availability`, and `hourlyRate`. Students must supply `requiredSubject`, `gradeLevel`, `examType`, and `requestedAvailability`.
+- Errors: `400` for invalid payloads or role mismatch, `401` for a missing or invalid bearer token, `409` if the user is already onboarded.
 
 ## Users
 
@@ -67,6 +67,32 @@ Fetches one user and left-joins the matching role-specific profile in a single r
 
 - Auth: owner or admin bearer access token.
 - Errors: `401` for a missing or invalid bearer token, `403` when the request is not for the owner or an admin, `404` when the user does not exist.
+
+### `PATCH /users/me`
+
+Updates general user profile details.
+
+- Auth: `Authorization: Bearer <accessToken>`.
+- Body: Optional `firstName`, `lastName`, `region`.
+- Errors: `401` for a missing or invalid bearer token.
+
+### `PATCH /users/me/student-preferences`
+
+Updates optional preferences for an onboarded student.
+
+- Auth: `Authorization: Bearer <accessToken>`.
+- Role: `student`.
+- Body: Optional `budget`, `deliveryPreference`, `formatPreference`, `learningStylePreference`, `languages`, `subjectSpecialization`, `preferenceWeights`.
+- Errors: `400` if not onboarded as a student, `401` for a missing or invalid bearer token, `403` for non-student roles.
+
+### `PATCH /users/me/tutor-preferences`
+
+Updates optional preferences for an onboarded tutor.
+
+- Auth: `Authorization: Bearer <accessToken>`.
+- Role: `tutor`.
+- Body: Optional `specializations`, `experienceYears`, `languages`, `teachingStyle`, `deliveryStyle`, `formatStyle`, `capacity`.
+- Errors: `400` if not onboarded as a tutor, `401` for a missing or invalid bearer token, `403` for non-tutor roles.
 
 ## Matchmaking Test
 

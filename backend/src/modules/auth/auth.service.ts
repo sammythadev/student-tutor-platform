@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { compare } from 'bcrypt';
 import { getAdminSignupCode } from '../../configs/environment';
 import { AuthTokenService } from '../../common/auth/auth-token.service';
@@ -12,10 +12,9 @@ import { AuthLoginDto } from './dtos/auth-login.dto';
 import {
   AuthSessionResponseDto,
   AuthVerifyResponseDto,
-  OnboardUsersResponseDto,
 } from './dtos/auth-session.dto';
 import { AuthSignupDto } from './dtos/auth-signup.dto';
-import { OnboardUsersDto } from './dtos/onboard-users.dto';
+import { OnboardUserDto } from './dtos/onboard-users.dto';
 
 @Injectable()
 export class AuthService {
@@ -54,18 +53,16 @@ export class AuthService {
     return this.authenticate(dto, [UserRole.ADMIN]);
   }
 
-  async onboard(dto: OnboardUsersDto): Promise<OnboardUsersResponseDto> {
-    const createdUsers: UserWithProfilesResponseDto[] = [];
-
-    for (const userDto of dto.users) {
-      const createdUser = await this.usersService.create(userDto);
-      createdUsers.push(this.toUserWithProfilesResponse(createdUser));
+  async onboard(
+    currentUser: AuthenticatedUser,
+    dto: OnboardUserDto,
+  ): Promise<UserWithProfilesResponseDto> {
+    if (currentUser.role !== dto.role) {
+      throw new BadRequestException('Role in payload does not match authenticated user role');
     }
 
-    return {
-      createdCount: createdUsers.length,
-      users: createdUsers,
-    };
+    const updatedUser = await this.usersService.onboard(currentUser.id, dto);
+    return this.toUserWithProfilesResponse(updatedUser);
   }
 
   async verify(currentUser: AuthenticatedUser): Promise<AuthVerifyResponseDto> {

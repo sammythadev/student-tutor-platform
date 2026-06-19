@@ -232,14 +232,14 @@ export class CreateUserDto {
   @IsEnum(UserRole)
   role!: UserRole;
 
-  @ValidateIf((dto: CreateUserDto) => dto.role === UserRole.STUDENT)
   @ApiPropertyOptional({ type: CreateStudentProfileDto })
+  @IsOptional()
   @ValidateNested()
   @Type(() => CreateStudentProfileDto)
   studentProfile?: CreateStudentProfileDto;
 
-  @ValidateIf((dto: CreateUserDto) => dto.role === UserRole.TUTOR)
   @ApiPropertyOptional({ type: CreateTutorProfileDto })
+  @IsOptional()
   @ValidateNested()
   @Type(() => CreateTutorProfileDto)
   tutorProfile?: CreateTutorProfileDto;

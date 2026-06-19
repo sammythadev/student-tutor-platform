@@ -67,3 +67,21 @@ Use this file to keep substantial tasks planned, tracked, and closed out.
   - Created agent-docs/exceptions.md (was referenced in AGENTS.md but missing).
   - 5 new lessons added to agent-docs/lessons.md.
 
+---
+
+## Task: Refactor Signup, Onboarding and Profile Updates
+
+- Date: 2026-06-19
+- Request: Refactor the auth signup to be extremely lightweight, move profile creation to a minimal onboard endpoint, and add update endpoints for preferences.
+- Plan:
+  - [x] Separate `AuthSignupDto` (email, password, firstName, lastName, role) from `CreateUserDto`.
+  - [x] Create minimal `OnboardUserDto` (required fields only).
+  - [x] Update `AuthController` to make onboard a single-user endpoint.
+  - [x] Add `/users/me`, `/users/me/student-preferences`, and `/users/me/tutor-preferences` to `UsersController`.
+  - [x] Update `UsersService` and `UsersRepository` to support partial profile updates.
+  - [x] Add new lessons regarding DTO segmentation to `AGENTS.md` docs.
+- Result:
+  - Users can now sign up with bare minimum details and receive a session immediately.
+  - Onboarding requires only the `NOT NULL` database fields depending on the user's role.
+  - All optional profile properties (languages, budget, delivery modes, etc) are strictly driven by `/users/me/*` preference endpoints, keeping initial barriers low and cleanly matching UX flows.
+
