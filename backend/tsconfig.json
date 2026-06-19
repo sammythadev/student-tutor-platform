@@ -20,9 +20,11 @@
       "@common/*": ["src/common/*"],
       "@config": ["src/configs/index.ts"],
       "@configs/*": ["src/configs/*"],
+      "@database": ["src/database/index.ts"],
       "@database/*": ["src/database/*"],
       "@modules/*": ["src/modules/*"],
-      "@types/*": ["src/types/*"]
+      "@types/*": ["src/types/*"],
+      "@core/*": ["src/core/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

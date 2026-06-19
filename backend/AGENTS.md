@@ -42,7 +42,7 @@ Use this file as the default operating guide. This repo is the NestJS backend fo
 
 ## Operating Rules
 
-- Make the smallest safe change that solves the task.
+- Make the smallest safe change that solves the task; surgicality is the default, so avoid broad rewrites, speculative abstractions, and unrelated cleanup.
 - Preserve existing module boundaries: controller -> service -> repository.
 - Use strict typing. Do not introduce `any`.
 - Prefer path aliases over deep relative imports.
@@ -222,12 +222,13 @@ When you learn something durable while searching or implementing, update the app
 When creating or changing any API endpoint, update docs in the same task:
 
 1. Update `docs/api.md` with route, auth mode, request/response, and errors.
-2. Update `docs/implementation-guide.md` if implementation workflow or conventions changed.
-3. Update related docs when applicable:
+2. Add Swagger decorators for every touched controller endpoint so `/api-docs` stays accurate.
+3. Update `docs/implementation-guide.md` if implementation workflow or conventions changed.
+4. Update related docs when applicable:
    - `docs/database.md` for schema/query contract changes
    - `docs/environment.md` for new env requirements
    - `docs/project-structure.md` for module/layout changes
-4. Keep Swagger decorators and DTOs aligned with those docs.
+5. Keep Swagger decorators and DTOs aligned with those docs.
 
 ### Update `agent-docs/findings.md` when
 
@@ -274,7 +275,7 @@ Keep these updates concise. Prefer short entries, checklists, and examples over 
 ## Task Routing
 
 - For endpoint work: read `project-structure.md`, `patterns.md`, `api.md`, `testing.md`.
-- For schema or data access work: read `database.md`, `patterns.md`, `testing.md`.
+- For schema or data access work: read `database.md`, `patterns.md`, `testing.md`; keep Drizzle schema-first, generate migrations from schema, and migrate only after generated SQL has been inspected.
 - For error-handling work: read `exceptions.md` and `testing.md`.
 - For config or startup work: read `environment.md` and `project-structure.md`.
 - For unfamiliar areas: read `findings.md` and search the repo for similar code first.

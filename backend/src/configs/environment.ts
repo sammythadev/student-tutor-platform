@@ -92,3 +92,13 @@ export function getAppVersion(): string {
 export function getSwaggerPath(): string {
   return process.env.SWAGGER_PATH ?? 'api-docs';
 }
+
+export function getDatabaseUrl(): string {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required');
+  }
+
+  return databaseUrl;
+}

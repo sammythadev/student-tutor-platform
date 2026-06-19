@@ -31,6 +31,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed:nigeria": "ts-node -r tsconfig-paths/register src/database/seeds/nigerian-secondary.seed.ts",
     "db:studio": "drizzle-kit studio",
     "commitlint": "commitlint --edit"
   },
@@ -126,9 +127,11 @@
       "^@common/(.*)$": "<rootDir>/../src/common/$1",
       "^@config$": "<rootDir>/../src/configs/index.ts",
       "^@configs/(.*)$": "<rootDir>/../src/configs/$1",
+      "^@database$": "<rootDir>/../src/database/index.ts",
       "^@database/(.*)$": "<rootDir>/../src/database/$1",
       "^@modules/(.*)$": "<rootDir>/../src/modules/$1",
-      "^@types/(.*)$": "<rootDir>/../src/types/$1"
+      "^@types/(.*)$": "<rootDir>/../src/types/$1",
+      "^@core/(.*)$": "<rootDir>/../src/core/$1"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

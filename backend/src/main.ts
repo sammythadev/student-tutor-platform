@@ -1,7 +1,7 @@
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@app/module/app.module';
-import { getLoggerLevels, getPort, loadEnvironmentFiles } from '@config';
+import { getLoggerLevels, getPort, getSwaggerPath, loadEnvironmentFiles } from '@config';
 import { setupSwagger } from '@/swagger';
 
 async function bootstrap(): Promise<void> {
@@ -13,6 +13,12 @@ async function bootstrap(): Promise<void> {
     bufferLogs: true,
   });
 
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+    }),
+  );
   app.useLogger(new Logger('Bootstrap'));
   setupSwagger(app);
 
@@ -20,6 +26,10 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(port);
   Logger.log(`Application started on port ${port}`, 'Bootstrap');
+  Logger.log(
+    `Swagger docs available at http://localhost:${port}/${getSwaggerPath()}`,
+    'Bootstrap',
+  );
 }
 
 void bootstrap();
