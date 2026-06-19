@@ -1,8 +1,8 @@
-import { Injectable, LoggerService } from '@nestjs/common';
+import { ConsoleLogger, Injectable, LoggerService } from '@nestjs/common';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { createLogger, format, Logger, transport as WinstonTransport, transports } from 'winston';
-import { getAppEnvironment, getLogFilePath, getLoggerLevels, isLoggingEnabled } from '@config';
+import { createLogger, format, Logger as WinstonLogger, transport as WinstonTransport, transports } from 'winston';
+import { getAppEnvironment, getLogDriver, getLogFilePath, getLoggerLevels, isLoggingEnabled, LogDriver } from '@config';
 
 /** Maps NestJS log level labels to winston severity names. */
 const NEST_TO_WINSTON: Record<string, string> = {
@@ -14,66 +14,95 @@ const NEST_TO_WINSTON: Record<string, string> = {
 };
 
 /**
- * Winston-backed logger service.
+ * Strategy-based logger service.
  *
- * Behaviour is driven entirely by environment variables so the binary never
- * needs to be changed to alter log output:
- *
+ * Behaviour is driven entirely by environment variables:
+ * - `LOG_DRIVER=winston|pino|nest` — selects the underlying logger engine.
  * - `LOG_ENABLED=false`  — silences all output.
  * - `LOG_LEVEL=warn`     — sets the maximum verbosity level.
- * - `LOG_FILE_PATH=...`  — enables a file transport at the given path.
- *   The directory is created automatically if it does not exist.
+ * - `LOG_FILE_PATH=...`  — enables a file transport (winston only).
  */
 @Injectable()
 export class AppLoggerService implements LoggerService {
-  private readonly logger: Logger;
+  private driver: LogDriver;
   private readonly enabled: boolean;
+  private readonly winstonLogger?: WinstonLogger;
+  private readonly nestLogger?: ConsoleLogger;
+  private readonly pinoLogger?: any;
 
   constructor() {
     this.enabled = isLoggingEnabled();
+    this.driver = getLogDriver();
 
-    const activeTransports: WinstonTransport[] = [];
-    const isDevelopment = getAppEnvironment() === 'development';
-
-    // ── Console transport ─────────────────────────────────────────────────
-    const consoleFormat = isDevelopment
-      ? format.combine(
-          format.colorize(),
-          format.timestamp({ format: 'HH:mm:ss' }),
-          format.printf(({ level, message, context, timestamp, ...rest }) => {
-            const ctx = context ? ` [${String(context)}]` : '';
-            const extra = Object.keys(rest).length
-              ? ` ${JSON.stringify(rest)}`
-              : '';
-            return `${String(timestamp)} ${level}${ctx} ${String(message)}${extra}`;
-          }),
-        )
-      : format.combine(format.timestamp(), format.json());
-
-    activeTransports.push(new transports.Console({ format: consoleFormat }));
-
-    // ── File transport (optional) ─────────────────────────────────────────
-    const filePath = getLogFilePath();
-
-    if (filePath) {
-      // Ensure the log directory exists before winston tries to open the file.
+    if (this.driver === 'nest') {
+      this.nestLogger = new ConsoleLogger('App');
+      this.nestLogger.setLogLevels(getLoggerLevels());
+    } else if (this.driver === 'pino') {
       try {
-        mkdirSync(dirname(filePath), { recursive: true });
-      } catch {
-        // Directory may already exist; ignore the error.
+        // dynamic require so we don't break if pino isn't installed
+        const pino = require('pino');
+        const isDevelopment = getAppEnvironment() === 'development';
+        this.pinoLogger = pino({
+          level: this.getWinstonLevel(),
+          transport: isDevelopment ? { target: 'pino-pretty' } : undefined,
+        });
+      } catch (err) {
+        // Fallback if pino isn't installed natively
+        this.driver = 'nest';
+        this.nestLogger = new ConsoleLogger('App');
+        this.nestLogger.setLogLevels(getLoggerLevels());
+      }
+    } else {
+      // winston (default)
+      const activeTransports: WinstonTransport[] = [];
+      const isDevelopment = getAppEnvironment() === 'development';
+
+      // ── Console transport ─────────────────────────────────────────────────
+      const consoleFormat = isDevelopment
+        ? format.combine(
+            format.colorize(),
+            format.timestamp({ format: 'HH:mm:ss' }),
+            format.printf(({ level, message, context, timestamp, ...rest }) => {
+              const ctx = context ? ` [${String(context)}]` : '';
+              const extra = Object.keys(rest).length
+                ? ` ${JSON.stringify(rest)}`
+                : '';
+              return `${String(timestamp)} ${level}${ctx} ${String(message)}${extra}`;
+            }),
+          )
+        : format.combine(format.timestamp(), format.json());
+
+      activeTransports.push(new transports.Console({ format: consoleFormat }));
+
+      // ── File transport (optional) ─────────────────────────────────────────
+      const filePath = getLogFilePath();
+
+      if (filePath) {
+        try {
+          mkdirSync(dirname(filePath), { recursive: true });
+        } catch {
+          // Directory may already exist; ignore the error.
+        }
+
+        activeTransports.push(
+          new transports.File({
+            filename: filePath,
+            format: format.combine(format.timestamp(), format.json()),
+          }),
+        );
       }
 
-      activeTransports.push(
-        new transports.File({
-          filename: filePath,
-          format: format.combine(format.timestamp(), format.json()),
-        }),
-      );
+      this.winstonLogger = createLogger({
+        level: this.getWinstonLevel(),
+        silent: !this.enabled,
+        transports: activeTransports,
+      });
     }
+  }
 
-    // ── Derive the winston level from the NestJS levels array ─────────────
+  private getWinstonLevel(): string {
     const nestLevels = getLoggerLevels();
-    const winstonLevel = nestLevels.includes('verbose')
+    return nestLevels.includes('verbose')
       ? 'verbose'
       : nestLevels.includes('debug')
         ? 'debug'
@@ -82,37 +111,44 @@ export class AppLoggerService implements LoggerService {
           : nestLevels.includes('warn')
             ? 'warn'
             : 'error';
-
-    this.logger = createLogger({
-      level: winstonLevel,
-      silent: !this.enabled,
-      transports: activeTransports,
-    });
   }
 
   log(message: unknown, context?: string): void {
-    this.write('info', message, context);
+    if (!this.enabled) return;
+    if (this.driver === 'nest') this.nestLogger?.log(message, context);
+    else if (this.driver === 'pino') this.pinoLogger?.info({ context }, message);
+    else this.writeWinston('info', message, context);
   }
 
   error(message: unknown, trace?: string, context?: string): void {
-    // Stack traces are written only to server-side logs, never returned to clients.
-    this.write('error', message, context, trace ? { trace } : undefined);
+    if (!this.enabled) return;
+    if (this.driver === 'nest') this.nestLogger?.error(message, trace, context);
+    else if (this.driver === 'pino') this.pinoLogger?.error({ context, trace }, message);
+    else this.writeWinston('error', message, context, trace ? { trace } : undefined);
   }
 
   warn(message: unknown, context?: string): void {
-    this.write('warn', message, context);
+    if (!this.enabled) return;
+    if (this.driver === 'nest') this.nestLogger?.warn(message, context);
+    else if (this.driver === 'pino') this.pinoLogger?.warn({ context }, message);
+    else this.writeWinston('warn', message, context);
   }
 
   debug(message: unknown, context?: string): void {
-    this.write('debug', message, context);
+    if (!this.enabled) return;
+    if (this.driver === 'nest') this.nestLogger?.debug(message, context);
+    else if (this.driver === 'pino') this.pinoLogger?.debug({ context }, message);
+    else this.writeWinston('debug', message, context);
   }
 
   verbose(message: unknown, context?: string): void {
-    this.write('verbose', message, context);
+    if (!this.enabled) return;
+    if (this.driver === 'nest') this.nestLogger?.verbose(message, context);
+    else if (this.driver === 'pino') this.pinoLogger?.trace({ context }, message);
+    else this.writeWinston('verbose', message, context);
   }
 
-  /** Writes a structured log entry via winston. */
-  private write(
+  private writeWinston(
     level: string,
     message: unknown,
     context?: string,
@@ -120,7 +156,7 @@ export class AppLoggerService implements LoggerService {
   ): void {
     const winstonLevel = NEST_TO_WINSTON[level] ?? level;
 
-    this.logger.log(winstonLevel, String(message), {
+    this.winstonLogger?.log(winstonLevel, String(message), {
       ...(context ? { context } : {}),
       ...(extra ?? {}),
     });

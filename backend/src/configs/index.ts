@@ -10,6 +10,7 @@ export {
 	getJwtRefreshTokenPublicKey,
 	getJwtRefreshTokenTtlSeconds,
 	getDatabaseUrl,
+	getLogDriver,
 	getLogFilePath,
 	getLoggerLevels,
 	isLoggingEnabled,

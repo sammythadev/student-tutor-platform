@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 export type AppEnvironment = 'development' | 'production' | 'test';
 export type LoggerLevel = 'error' | 'warn' | 'log' | 'debug' | 'verbose';
+export type LogDriver = 'winston' | 'pino' | 'nest';
 
 const VALID_LOG_LEVELS: LoggerLevel[] = ['error', 'warn', 'log', 'debug', 'verbose'];
 
@@ -108,6 +109,18 @@ export function isLoggingEnabled(): boolean {
 export function getLogFilePath(): string | null {
   const filePath = process.env.LOG_FILE_PATH?.trim();
   return filePath || null;
+}
+
+/**
+ * Returns the configured log driver. Defaults to 'winston' if not provided
+ * or if an invalid driver is specified.
+ */
+export function getLogDriver(): LogDriver {
+  const driver = process.env.LOG_DRIVER?.trim().toLowerCase();
+  if (driver === 'pino' || driver === 'nest' || driver === 'winston') {
+    return driver as LogDriver;
+  }
+  return 'winston';
 }
 
 export function getPort(): number {
