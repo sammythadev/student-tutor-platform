@@ -81,7 +81,7 @@ export class AuthController {
 
   @Get('verify')
   @UseGuards(AuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Verify the active access token and current user' })
   @ApiResponse({
     status: 200,
@@ -96,6 +96,7 @@ export class AuthController {
 
   @Post('refresh')
   @UseGuards(RefreshAuthGuard)
+  @ApiBearerAuth('refresh-token')
   @ApiOperation({ summary: 'Exchange a refresh token for a new token pair' })
   @ApiBody({ type: RefreshTokenDto })
   @ApiResponse({
@@ -115,7 +116,7 @@ export class AuthController {
 
   @Post('onboard')
   @UseGuards(AuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Complete profile onboarding for the authenticated user' })
   @ApiBody({ type: OnboardUserDto })
   @ApiResponse({

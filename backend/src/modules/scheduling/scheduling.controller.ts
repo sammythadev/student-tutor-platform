@@ -16,7 +16,7 @@ export class SchedulingController {
 
   @Post('availability')
   @UseGuards(AuthGuard, OwnerOrAdminGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Mark a user schedule slot as available' })
   @ApiBody({ type: CreateScheduleSlotDto })
   @ApiResponse({
@@ -35,7 +35,7 @@ export class SchedulingController {
 
   @Get('users/:userId/availability')
   @UseGuards(AuthGuard, OwnerOrAdminGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'List available schedule slots for a user' })
   @ApiParam({ name: 'userId', description: 'User UUID' })
   @ApiResponse({

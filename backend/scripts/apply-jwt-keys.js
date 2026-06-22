@@ -13,7 +13,7 @@ const access = generateKeyPairSync('ec', {
 });
 
 const refresh = generateKeyPairSync('ec', {
-  namedCurve: 'secp521r1',
+  namedCurve: 'prime256v1', // P-256 for ES256
   publicKeyEncoding: { type: 'spki', format: 'pem' },
   privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
 });

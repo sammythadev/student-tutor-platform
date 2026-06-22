@@ -24,7 +24,7 @@ export class UsersController {
   @Post()
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin')
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create an admin, student, or tutor user' })
   @ApiBody({ type: CreateUserDto })
   @ApiResponse({
@@ -42,7 +42,7 @@ export class UsersController {
 
   @Get(':id')
   @UseGuards(AuthGuard, OwnerOrAdminGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get a user with joined role profile' })
   @ApiParam({ name: 'id', description: 'User UUID' })
   @ApiResponse({
@@ -59,7 +59,7 @@ export class UsersController {
 
   @Patch('me')
   @UseGuards(AuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update base user details (firstName, lastName, region)' })
   @ApiBody({ type: UpdateUserDto })
   @ApiResponse({ status: 200, description: 'User updated.', type: UserWithProfilesResponseDto })
@@ -74,7 +74,7 @@ export class UsersController {
   @Patch('me/student-preferences')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('student')
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update student preferences (budget, languages, learning style, etc.)' })
   @ApiBody({ type: UpdateStudentPreferencesDto })
   @ApiResponse({ status: 200, description: 'Student preferences updated.', type: UserWithProfilesResponseDto })
@@ -91,7 +91,7 @@ export class UsersController {
   @Patch('me/tutor-preferences')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('tutor')
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update tutor preferences (specializations, capacity, format style, etc.)' })
   @ApiBody({ type: UpdateTutorPreferencesDto })
   @ApiResponse({ status: 200, description: 'Tutor preferences updated.', type: UserWithProfilesResponseDto })

@@ -65,7 +65,7 @@ export class AuthTokenService {
     };
 
     return sign(payload, privateKey, {
-      algorithm: 'RS256',
+      algorithm: 'ES256',
       expiresIn,
     });
   }
@@ -77,7 +77,7 @@ export class AuthTokenService {
   ): AuthTokenClaims {
     try {
       const payload = verify(token, publicKey, {
-        algorithms: ['RS256'],
+        algorithms: ['ES256'],
       });
 
       if (!this.isAuthTokenClaims(payload) || payload.tokenUse !== expectedTokenUse) {
