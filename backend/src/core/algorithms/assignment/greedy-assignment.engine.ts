@@ -147,15 +147,19 @@ export class GreedyAssignmentEngine {
   ): number {
     const fairnessScore = this.fairnessScorer.score(tutor);
     const loadTieBreak = (1 - tutor.assignedCount / Math.max(tutor.capacity, 1)) * 1e-5;
-    const idTieBreak = this.lexicalTieBreak(`${tutor.id}:${studentId}`) * 1e-6;
+    const hashTieBreak = this.hashTieBreak(`${studentId}:${tutor.id}`) * 1e-6;
 
-    return staticScore + fairnessScore * fairnessWeight + loadTieBreak + idTieBreak;
+    return staticScore + fairnessScore * fairnessWeight + loadTieBreak + hashTieBreak;
   }
 
-  private lexicalTieBreak(value: string): number {
-    return [...value].reduce((total, char, index) => {
-      const weight = 1 / 10 ** (index + 1);
-      return total + (255 - char.charCodeAt(0)) * weight;
-    }, 0);
+  private hashTieBreak(value: string): number {
+    let hash = 2166136261;
+
+    for (const char of value) {
+      hash ^= char.charCodeAt(0);
+      hash = Math.imul(hash, 16777619);
+    }
+
+    return (hash >>> 0) / 4_294_967_295;
   }
 }

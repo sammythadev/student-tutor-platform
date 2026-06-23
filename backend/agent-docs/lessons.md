@@ -14,4 +14,6 @@
 - When registering `AppLoggerService` as the Nest logger via `app.useLogger()`, retrieve it with `app.get(AppLoggerService)` after `NestFactory.create()`. Use `bufferLogs: true` so no logs are lost during DI container initialisation.
 - The `@core/*` path alias resolves to `src/core/*`; use it in preference to `@/core/*` for core domain imports to stay consistent with tsconfig aliases.
 - Segment API payloads to match UX flows rather than matching raw database schemas 1:1. Use a minimal DTO for signup, a DTO containing only `NOT NULL` database fields for onboarding, and separate preference DTOs for optional fields to keep endpoints focused and lightweight.
-
+- Treat active assignments as sessions until product requirements justify a separate sessions table; this keeps lifecycle updates and feedback tied to one persisted record.
+- Core tie-breakers should be deterministic without being lexical, otherwise IDs can encode systematic tutor ordering bias.
+- Do not put non-injectable helper instances in Nest service constructor parameters, even with default values. Nest still treats them as DI dependencies at runtime; use private class fields instead.

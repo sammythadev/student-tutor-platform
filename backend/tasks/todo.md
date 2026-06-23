@@ -26,13 +26,15 @@ Use this file to keep substantial tasks planned, tracked, and closed out.
 
 ## Current Task
 
-- [completed] Add auth module with login, signup, admin auth, onboarding, and strict RBAC/IDOR checks.
-- [completed] Add Swagger docs and API contract updates for auth and protected user reads.
-- [completed] Validate the backend slice with focused tests and a typecheck.
+- [completed] Scrutinize revised matchmaking/feedback plan and keep assignments as sessions for this phase.
+- [completed] Strengthen core schedule, fairness, and tie-breaker algorithms.
+- [completed] Add authenticated matchmaking endpoints for batch, candidates, manual selection, assignments, status updates, and feedback.
+- [completed] Document rating semantics and endpoint contracts.
+- [completed] Validate type safety and targeted core tests.
 
 ## Result
 
-- Added asymmetric JWT access/refresh token flow with verify and refresh endpoints, strict token-state checks, and updated env/doc coverage.
+- Matchmaking is now database-backed and current-user aware; active assignments serve as sessions, and feedback updates tutor quality via EMA.
 
 ---
 
@@ -84,4 +86,3 @@ Use this file to keep substantial tasks planned, tracked, and closed out.
   - Users can now sign up with bare minimum details and receive a session immediately.
   - Onboarding requires only the `NOT NULL` database fields depending on the user's role.
   - All optional profile properties (languages, budget, delivery modes, etc) are strictly driven by `/users/me/*` preference endpoints, keeping initial barriers low and cleanly matching UX flows.
-

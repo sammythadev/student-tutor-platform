@@ -116,3 +116,41 @@ Creates an availability slot for a student or tutor.
 ### `GET /schedules/users/:userId/availability`
 
 Lists a user's available schedule slots ordered by start time.
+
+## Matchmaking
+
+All matchmaking endpoints require `Authorization: Bearer <accessToken>`.
+
+### `POST /matchmaking/batch`
+
+Admin-only endpoint that runs database-backed batch matchmaking for active students without active assignments, persists active assignments, and waitlists unassignable students.
+
+### `GET /matchmaking/candidates?page=1&limit=5`
+
+Student-only endpoint for the current authenticated student. Returns paginated, populated tutor candidates ranked by the core algorithm.
+
+### `POST /matchmaking/select`
+
+Student-only endpoint for manually selecting a tutor candidate.
+
+- Body: `tutorId`.
+- Result: creates an `active` assignment/session immediately when the tutor has capacity.
+
+### `GET /matchmaking/assignments/me?page=1&limit=10`
+
+Returns paginated assignments/sessions for the current user. Students see their assignments, tutors see their assigned sessions, and admins can see all assignments.
+
+### `PATCH /matchmaking/assignments/:id/status`
+
+Updates a session/assignment status.
+
+- Body: `status` as `completed` or `cancelled`.
+- Cancelling an active assignment decrements the tutor's assigned count.
+
+### `POST /matchmaking/assignments/:id/feedback`
+
+Student-only endpoint for submitting feedback after an assignment is completed.
+
+- Body: `rating` from `0` to `5`, optional `comment`.
+- Rating meaning: `0` unusable/failed session, `1` very poor, `2` poor, `3` acceptable, `4` good, `5` excellent.
+- The core feedback loop normalizes rating with `rating / 5` and updates `tutor_profiles.avg_rating` using EMA.

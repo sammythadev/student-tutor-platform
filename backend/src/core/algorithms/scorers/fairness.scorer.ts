@@ -6,6 +6,10 @@ export class FairnessScorer {
       return 0;
     }
 
-    return 1 - tutor.assignedCount / tutor.capacity;
+    const remainingRatio = 1 - tutor.assignedCount / tutor.capacity;
+    const coldStartBoost = tutor.assignedCount === 0 ? 0.05 : 0;
+
+    // Slightly non-linear load balancing keeps fairness first while nudging unused tutors into circulation.
+    return Math.min(1, Math.pow(remainingRatio, 1.15) + coldStartBoost);
   }
 }

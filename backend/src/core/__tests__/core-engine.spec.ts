@@ -115,6 +115,16 @@ describe('core matchmaking engine', () => {
     ).toThrow(IncompleteProfileException);
   });
 
+  it('does not treat split tutor slots as full coverage for one contiguous request', () => {
+    const schedule = new ScheduleScorer();
+
+    expect(
+      schedule.score(student({ requestedAvailability: [slot(9, 11)] }), tutor({
+        availability: [slot(9, 10), slot(10, 11)],
+      })),
+    ).toBeCloseTo(0.5);
+  });
+
   it('filters no-subject and zero-capacity tutors into explicit waitlist results', () => {
     const result = new GreedyAssignmentEngine().assignBatch(
       [student()],
@@ -130,13 +140,17 @@ describe('core matchmaking engine', () => {
     expect(result.unassignable[0].reason).toContain('No eligible tutors');
   });
 
-  it('uses deterministic tie-breaking by load then tutor id', () => {
-    const result = new GreedyAssignmentEngine().assignBatch(
+  it('uses deterministic hash tie-breaking for equal scores', () => {
+    const firstRun = new GreedyAssignmentEngine().assignBatch(
+      [student()],
+      [tutor({ id: 'tutor-b' }), tutor({ id: 'tutor-a' })],
+    );
+    const secondRun = new GreedyAssignmentEngine().assignBatch(
       [student()],
       [tutor({ id: 'tutor-b' }), tutor({ id: 'tutor-a' })],
     );
 
-    expect(result.assignments[0].tutorId).toBe('tutor-a');
+    expect(firstRun.assignments[0].tutorId).toBe(secondRun.assignments[0].tutorId);
   });
 
   it('returns unassignable students when demand exceeds capacity', () => {

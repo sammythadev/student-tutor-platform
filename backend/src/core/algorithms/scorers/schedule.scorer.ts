@@ -17,12 +17,15 @@ export class ScheduleScorer {
     }
 
     const overlappingMinutes = student.requestedAvailability.reduce(
-      (studentTotal, studentSlot) =>
-        studentTotal +
-        tutor.availability.reduce((tutorTotal, tutorSlot) => {
+      (studentTotal, studentSlot) => {
+        const bestSingleSlotCoverage = tutor.availability.reduce((bestCoverage, tutorSlot) => {
           const intersection = studentSlot.intersect(tutorSlot);
-          return tutorTotal + (intersection?.durationMinutes() ?? 0);
-        }, 0),
+          return Math.max(bestCoverage, intersection?.durationMinutes() ?? 0);
+        }, 0);
+
+        // A requested slot must be covered by one continuous tutor slot; split fragments do not satisfy a contiguous class.
+        return studentTotal + Math.min(bestSingleSlotCoverage, studentSlot.durationMinutes());
+      },
       0,
     );
 
