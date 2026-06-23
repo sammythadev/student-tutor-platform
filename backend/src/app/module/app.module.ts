@@ -8,6 +8,9 @@ import { MatchmakingModule } from '@modules/matchmaking';
 import { MatchmakingTestModule } from '@modules/matchmaking-test';
 import { SchedulingModule } from '@modules/scheduling';
 import { UsersModule } from '@modules/users';
+import { SessionsModule } from '@modules/sessions/sessions.module';
+import { FeedModule } from '@modules/feed/feed.module';
+import { DashboardModule } from '@modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import { UsersModule } from '@modules/users';
     UsersModule,
     SchedulingModule,
     MatchmakingTestModule,
+    SessionsModule,
+    FeedModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

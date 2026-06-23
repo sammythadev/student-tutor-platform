@@ -41,6 +41,12 @@ export const scheduleSlotStatusEnum = pgEnum('schedule_slot_status', [
   'booked',
   'cancelled',
 ]);
+export const sessionStatusEnum = pgEnum('session_status', [
+  'upcoming',
+  'starting-soon',
+  'completed',
+  'cancelled',
+]);
 
 export const users = pgTable(
   'users',
@@ -53,6 +59,19 @@ export const users = pgTable(
     region: text('region'),
     role: userRoleEnum('role').notNull(),
     status: userStatusEnum('status').notNull().default('active'),
+    // User settings & display
+    avatarUrl: text('avatar_url'),
+    timezone: text('timezone').default('UTC'),
+    language: text('language').default('English'),
+    theme: text('theme').default('dark'),
+    accentColor: text('accent_color').default('lavender'),
+    notificationPrefs: jsonb('notification_prefs').$type<{
+      sessionReminders?: boolean;
+      newMessages?: boolean;
+      sessionUpdates?: boolean;
+      marketingEmails?: boolean;
+      weeklyReports?: boolean;
+    }>(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -92,7 +111,9 @@ export const studentProfiles = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     subjectId: uuid('subject_id').references(() => subjects.id, { onDelete: 'set null' }),
+    // Keep requiredSubject for matchmaking engine backward compat; subjects[] is the UI-facing list
     requiredSubject: text('required_subject').notNull(),
+    subjects: text('subjects').array().notNull().default(sql`ARRAY[]::text[]`),
     gradeLevel: integer('grade_level').notNull(),
     examType: text('exam_type').notNull(),
     requestedAvailability: jsonb('requested_availability')
@@ -113,6 +134,11 @@ export const studentProfiles = pgTable(
     languages: text('languages').array().notNull().default(sql`ARRAY[]::text[]`),
     subjectSpecialization: text('subject_specialization'),
     region: text('region'),
+    // Profile enrichment
+    bio: text('bio'),
+    learningGoals: text('learning_goals'),
+    totalHoursLearned: numeric('total_hours_learned', { precision: 8, scale: 2 }).default('0'),
+    streakDays: integer('streak_days').notNull().default(0),
     bookingTimestamp: timestamp('booking_timestamp', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -160,6 +186,10 @@ export const tutorProfiles = pgTable(
     hourlyRate: numeric('hourly_rate', { precision: 10, scale: 2 }).notNull(),
     capacity: integer('capacity').notNull().default(0),
     assignedCount: integer('assigned_count').notNull().default(0),
+    // Profile enrichment
+    bio: text('bio'),
+    ratingCount: integer('rating_count').notNull().default(0),
+    studentsCount: integer('students_count').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -288,6 +318,87 @@ export const tutorFeedback = pgTable(
   ],
 );
 
+// ─── Sessions (calendared meetings between a student and tutor) ──────────────
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tutorId: uuid('tutor_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    subject: text('subject').notNull(),
+    startAt: timestamp('start_at', { withTimezone: true }).notNull(),
+    endAt: timestamp('end_at', { withTimezone: true }).notNull(),
+    status: sessionStatusEnum('status').notNull().default('upcoming'),
+    meetingUrl: text('meeting_url'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('sessions_student_status_start_idx').on(table.studentId, table.status, table.startAt),
+    index('sessions_tutor_status_start_idx').on(table.tutorId, table.status, table.startAt),
+    check('sessions_time_order_chk', sql`${table.endAt} > ${table.startAt}`),
+  ],
+);
+
+// ─── Posts (social feed by tutors / students) ────────────────────────────────
+export const posts = pgTable(
+  'posts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    content: text('content').notNull(),
+    attachments: jsonb('attachments')
+      .$type<Array<{ type: 'link' | 'book'; title: string; meta?: string; url?: string }>>()
+      .default(sql`'[]'::jsonb`),
+    tags: text('tags').array().notNull().default(sql`ARRAY[]::text[]`),
+    likesCount: integer('likes_count').notNull().default(0),
+    commentsCount: integer('comments_count').notNull().default(0),
+    isPromo: integer('is_promo').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('posts_author_created_idx').on(table.authorId, table.createdAt),
+    index('posts_tags_gin_idx').using('gin', table.tags),
+  ],
+);
+
+// ─── Post Likes (junction for toggling likes) ────────────────────────────────
+export const postLikes = pgTable(
+  'post_likes',
+  {
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => posts.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.postId, table.userId] }),
+    index('post_likes_user_idx').on(table.userId),
+  ],
+);
+
+// ─── Inferred types ───────────────────────────────────────────────────────────
 export type UserRecord = typeof users.$inferSelect;
 export type NewUserRecord = typeof users.$inferInsert;
 export type StudentProfileRecord = typeof studentProfiles.$inferSelect;
@@ -298,3 +409,8 @@ export type SubjectRecord = typeof subjects.$inferSelect;
 export type NewSubjectRecord = typeof subjects.$inferInsert;
 export type ScheduleSlotRecord = typeof scheduleSlots.$inferSelect;
 export type NewScheduleSlotRecord = typeof scheduleSlots.$inferInsert;
+export type SessionRecord = typeof sessions.$inferSelect;
+export type NewSessionRecord = typeof sessions.$inferInsert;
+export type PostRecord = typeof posts.$inferSelect;
+export type NewPostRecord = typeof posts.$inferInsert;
+export type PostLikeRecord = typeof postLikes.$inferSelect;

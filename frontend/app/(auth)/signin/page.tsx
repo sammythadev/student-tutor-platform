@@ -2,26 +2,21 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { BookOpen, ArrowRight, GraduationCap, CheckCircle2 } from 'lucide-react'
+import { login } from '@/lib/api/auth'
 
 export default function SigninPage() {
-  const [formData, setFormData] = useState({
-    email:      '',
-    password:   '',
-    rememberMe: false,
-  })
+  const router = useRouter()
+  const [formData, setFormData] = useState({ email: '', password: '', rememberMe: false })
   const [errors,  setErrors]  = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
-    // Clear error on type
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
   }
 
@@ -30,17 +25,21 @@ export default function SigninPage() {
     const newErrors: Record<string, string> = {}
     if (!formData.email)    newErrors.email    = 'Email is required'
     if (!formData.password) newErrors.password = 'Password is required'
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
 
     setLoading(true)
-    setTimeout(() => {
+    try {
+      const session = await login({ email: formData.email, password: formData.password })
+      const role = session.user?.role
+      if (role === 'tutor')  router.push('/tutor-dashboard')
+      else if (role === 'admin') router.push('/admin')
+      else router.push('/dashboard')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? 'Invalid credentials. Please try again.'
+      setErrors({ password: Array.isArray(msg) ? msg.join(', ') : msg })
+    } finally {
       setLoading(false)
-      // TODO: redirect to dashboard after API call
-    }, 1200)
+    }
   }
 
   return (

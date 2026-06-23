@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import {
   DeliveryMode,
   FormatPreference,
@@ -8,6 +8,33 @@ import {
   TeachingStyle,
 } from '@core/enums';
 import { AvailabilitySlotDto, PreferenceWeightsDto } from './create-user.dto';
+
+export class NotificationPrefsDto {
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  sessionReminders?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  newMessages?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  sessionUpdates?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  marketingEmails?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  weeklyReports?: boolean;
+}
 
 export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'Amina' })
@@ -24,6 +51,37 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   region?: string;
+
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/avatar.jpg' })
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
+
+  @ApiPropertyOptional({ example: 'Africa/Lagos' })
+  @IsOptional()
+  @IsString()
+  timezone?: string;
+
+  @ApiPropertyOptional({ example: 'English' })
+  @IsOptional()
+  @IsString()
+  language?: string;
+
+  @ApiPropertyOptional({ example: 'dark', enum: ['light', 'dark', 'auto'] })
+  @IsOptional()
+  @IsString()
+  theme?: string;
+
+  @ApiPropertyOptional({ example: 'lavender', enum: ['lavender', 'sky', 'mint', 'sun', 'coral'] })
+  @IsOptional()
+  @IsString()
+  accentColor?: string;
+
+  @ApiPropertyOptional({ type: NotificationPrefsDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => NotificationPrefsDto)
+  notificationPrefs?: NotificationPrefsDto;
 }
 
 export class UpdateStudentPreferencesDto {

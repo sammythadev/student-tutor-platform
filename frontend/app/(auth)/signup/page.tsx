@@ -2,18 +2,17 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { BookOpen, ArrowRight, Users, GraduationCap } from 'lucide-react'
+import { signup } from '@/lib/api/auth'
 
 export default function SignupPage() {
+  const router = useRouter()
   const [formData, setFormData] = useState({
-    fullName:        '',
-    email:           '',
-    password:        '',
-    confirmPassword: '',
-    role:            'student' as 'student' | 'tutor',
-    agreeTerms:      false,
+    fullName: '', email: '', password: '', confirmPassword: '',
+    role: 'student' as 'student' | 'tutor', agreeTerms: false,
   })
   const [errors,  setErrors]  = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -33,10 +32,21 @@ export default function SignupPage() {
     if (formData.password !== formData.confirmPassword)
       newErrors.confirmPassword = 'Passwords do not match'
     if (!formData.agreeTerms) newErrors.agreeTerms = 'You must accept the terms'
-
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
+
     setLoading(true)
-    setTimeout(() => setLoading(false), 1200)
+    try {
+      const parts = formData.fullName.trim().split(' ')
+      const firstName = parts[0] ?? ''
+      const lastName  = parts.slice(1).join(' ') || firstName
+      await signup({ email: formData.email, password: formData.password, firstName, lastName, role: formData.role })
+      router.push('/onboard')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? 'Sign up failed. Please try again.'
+      setErrors({ email: Array.isArray(msg) ? msg.join(', ') : msg })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

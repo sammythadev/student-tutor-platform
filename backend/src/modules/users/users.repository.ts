@@ -85,24 +85,40 @@ export class UsersRepository {
   async onboard(userId: string, dto: OnboardUserDto): Promise<UserWithProfilesRecord> {
     await this.db.transaction(async (tx) => {
       if (dto.role === UserRole.STUDENT && dto.studentProfile) {
+        const sp = dto.studentProfile;
+        // subjects[0] is used as requiredSubject for the matchmaking engine
+        const requiredSubject = sp.subjects[0];
         await tx.insert(studentProfiles).values({
           userId,
-          requiredSubject: dto.studentProfile.requiredSubject,
-          gradeLevel: dto.studentProfile.gradeLevel,
-          examType: dto.studentProfile.examType,
-          requestedAvailability: dto.studentProfile.requestedAvailability,
+          requiredSubject,
+          subjects: sp.subjects,
+          gradeLevel: sp.gradeLevel,
+          examType: sp.examType,
+          requestedAvailability: sp.requestedAvailability,
+          bio: sp.bio,
+          learningGoals: sp.learningGoals,
         });
+        // Persist timezone/language to users table if provided
+        if (sp.timezone) {
+          await tx.update(users).set({ timezone: sp.timezone }).where(eq(users.id, userId));
+        }
       }
 
       if (dto.role === UserRole.TUTOR && dto.tutorProfile) {
+        const tp = dto.tutorProfile;
         await tx.insert(tutorProfiles).values({
           userId,
-          subjectsTaught: dto.tutorProfile.subjectsTaught,
-          gradeLevelsSupported: dto.tutorProfile.gradeLevelsSupported,
-          examTypesSupported: dto.tutorProfile.examTypesSupported,
-          availability: dto.tutorProfile.availability,
-          hourlyRate: String(dto.tutorProfile.hourlyRate),
+          subjectsTaught: tp.subjectsTaught,
+          gradeLevelsSupported: tp.gradeLevelsSupported,
+          examTypesSupported: tp.examTypesSupported,
+          availability: tp.availability,
+          hourlyRate: String(tp.hourlyRate),
+          bio: tp.bio,
         });
+        // Persist timezone to users table if provided
+        if (tp.timezone) {
+          await tx.update(users).set({ timezone: tp.timezone }).where(eq(users.id, userId));
+        }
       }
     });
 
@@ -118,6 +134,12 @@ export class UsersRepository {
     if (dto.firstName !== undefined) updatePayload.firstName = dto.firstName;
     if (dto.lastName !== undefined) updatePayload.lastName = dto.lastName;
     if (dto.region !== undefined) updatePayload.region = dto.region;
+    if (dto.avatarUrl !== undefined) updatePayload.avatarUrl = dto.avatarUrl;
+    if (dto.timezone !== undefined) updatePayload.timezone = dto.timezone;
+    if (dto.language !== undefined) updatePayload.language = dto.language;
+    if (dto.theme !== undefined) updatePayload.theme = dto.theme;
+    if (dto.accentColor !== undefined) updatePayload.accentColor = dto.accentColor;
+    if (dto.notificationPrefs !== undefined) updatePayload.notificationPrefs = dto.notificationPrefs;
 
     if (Object.keys(updatePayload).length > 0) {
       updatePayload.updatedAt = new Date();

@@ -14,9 +14,11 @@ export class AvailabilitySlotDto {
 }
 
 export class OnboardStudentDto {
-  @ApiProperty({ example: 'mathematics' })
-  @IsString()
-  requiredSubject!: string;
+  @ApiProperty({ example: ['mathematics', 'physics'], description: 'Subjects the student needs tutoring in' })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  subjects!: string[];
 
   @ApiProperty({ example: 10 })
   @IsInt()
@@ -33,6 +35,21 @@ export class OnboardStudentDto {
   @ValidateNested({ each: true })
   @Type(() => AvailabilitySlotDto)
   requestedAvailability!: AvailabilitySlotDto[];
+
+  @ApiPropertyOptional({ example: 'I want to improve my calculus for university admission.' })
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @ApiPropertyOptional({ example: 'Score 250+ in JAMB and ace WAEC Mathematics' })
+  @IsOptional()
+  @IsString()
+  learningGoals?: string;
+
+  @ApiPropertyOptional({ example: 'UTC' })
+  @IsOptional()
+  @IsString()
+  timezone?: string;
 }
 
 export class OnboardTutorDto {
@@ -65,6 +82,16 @@ export class OnboardTutorDto {
   @IsNumber()
   @Min(0)
   hourlyRate!: number;
+
+  @ApiPropertyOptional({ example: 'I am a passionate mathematics tutor with 5 years experience.' })
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @ApiPropertyOptional({ example: 'UTC' })
+  @IsOptional()
+  @IsString()
+  timezone?: string;
 }
 
 export class OnboardUserDto {
