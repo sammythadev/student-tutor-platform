@@ -5,6 +5,7 @@ import {
   BookSessionDto,
   SessionParamDto,
   SessionResponseDto,
+  TransferSessionDto,
   UpdateSessionStatusDto,
 } from './dtos/session.dto';
 import { SessionsService } from './sessions.service';
@@ -58,6 +59,21 @@ export class SessionsController {
     @Param() params: SessionParamDto,
   ): Promise<SessionResponseDto> {
     return this.sessionsService.respondToSession(params.id, currentUser.id, false) as any;
+  }
+
+  @Patch(':id/tutor')
+  @ApiOperation({ summary: 'Transfer session to a different tutor. Only for pending or upcoming sessions.' })
+  @ApiParam({ name: 'id', description: 'Session UUID' })
+  @ApiBody({ type: TransferSessionDto })
+  @ApiResponse({ status: 200, description: 'Session tutor changed.', type: SessionResponseDto })
+  @ApiResponse({ status: 400, description: 'New tutor does not teach the subject or has time conflict.' })
+  @ApiResponse({ status: 404, description: 'Session not found.' })
+  transferTutor(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param() params: SessionParamDto,
+    @Body() dto: TransferSessionDto,
+  ): Promise<SessionResponseDto> {
+    return this.sessionsService.transferTutor(params.id, currentUser.id, dto.newTutorId) as any;
   }
 
   @Patch(':id/status')

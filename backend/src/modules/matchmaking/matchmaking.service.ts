@@ -78,8 +78,15 @@ export class MatchmakingService {
         region: row.profile.region ?? row.user.region,
         subjectsTaught: row.profile.subjectsTaught,
         score: candidate.score.total,
+        rankPercentage: Math.round(candidate.score.total * 100),
         isEligible: candidate.eligibility.isEligible,
         reason: candidate.eligibility.reason,
+        experienceYears: row.profile.experienceYears,
+        avgRating: row.profile.avgRating,
+        ratingCount: row.profile.ratingCount,
+        hourlyRate: row.profile.hourlyRate,
+        bio: row.profile.bio,
+        isVerified: row.profile.isVerified === 1,
       };
     });
 
@@ -222,7 +229,7 @@ export class MatchmakingService {
     const limit = query.limit ?? 10;
     const result = await this.matchmakingRepository.findAssignmentsForUser(
       currentUser.id,
-      currentUser.role,
+      currentUser.role as 'student' | 'tutor' | 'admin',
       page,
       limit,
     );
@@ -405,7 +412,7 @@ export class MatchmakingService {
     };
   }
 
-  private assertRole(currentUser: AuthenticatedUser, role: 'student'): void {
+  private assertRole(currentUser: AuthenticatedUser, role: 'student' | 'tutor' | 'admin'): void {
     if (currentUser.role !== role) {
       throw new ForbiddenException(`Only ${role} users can use this endpoint`);
     }

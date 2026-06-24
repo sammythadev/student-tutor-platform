@@ -34,6 +34,7 @@ const slot = (startHour: number, endHour: number): AvailabilitySlot =>
 
 const student = (overrides: Partial<Student> = {}): Student => ({
   id: 'student-a',
+  subjects: ['mathematics'],
   requiredSubject: 'mathematics',
   gradeLevel: 10,
   examType: 'waec',

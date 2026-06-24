@@ -68,6 +68,9 @@ export class CandidateTutorDto {
   @ApiProperty({ example: 0.87 })
   score!: number;
 
+  @ApiProperty({ example: 87 })
+  rankPercentage!: number;
+
   @ApiProperty({ example: true })
   @IsOptional()
   isEligible?: boolean;
@@ -75,6 +78,24 @@ export class CandidateTutorDto {
   @ApiPropertyOptional({ example: 'Tutor is at capacity' })
   @IsOptional()
   reason?: string;
+
+  @ApiProperty({ example: 5 })
+  experienceYears!: number;
+
+  @ApiPropertyOptional({ example: '0.95', nullable: true })
+  avgRating!: string | null;
+
+  @ApiProperty({ example: 42 })
+  ratingCount!: number;
+
+  @ApiProperty({ example: '25.00' })
+  hourlyRate!: string;
+
+  @ApiPropertyOptional({ example: 'Expert in calculus and linear algebra', nullable: true })
+  bio!: string | null;
+
+  @ApiProperty({ example: true })
+  isVerified!: boolean;
 }
 
 export class CandidatePageDto {

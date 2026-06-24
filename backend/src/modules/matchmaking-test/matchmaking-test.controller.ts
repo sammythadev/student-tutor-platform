@@ -121,6 +121,7 @@ export class MatchmakingTestController {
   private createStudent(): Student {
     return {
       id: 'fixture-student',
+      subjects: ['mathematics'],
       requiredSubject: 'mathematics',
       gradeLevel: 10,
       examType: 'waec',
@@ -172,6 +173,7 @@ export class MatchmakingTestController {
   ): Student {
     return {
       id,
+      subjects: profile.subjects?.length ? profile.subjects : [profile.requiredSubject],
       requiredSubject: profile.requiredSubject,
       gradeLevel: profile.gradeLevel,
       examType: profile.examType,

@@ -21,9 +21,9 @@ export class EligibilityFilter {
   }
 
   public hasSubject(student: Student, tutor: Tutor): boolean {
-    // Check intersection: student can match if ANY of their subjects is taught by the tutor
     const studentSubjects = student.subjects?.length ? student.subjects : [student.requiredSubject];
-    return studentSubjects.some((s) => tutor.subjectsTaught.includes(s));
+    const tutorSubjects = tutor.subjectsTaught.map((s) => s.toLowerCase());
+    return studentSubjects.some((s) => tutorSubjects.includes(s.toLowerCase()));
   }
 
   public hasCapacity(tutor: Tutor): boolean {

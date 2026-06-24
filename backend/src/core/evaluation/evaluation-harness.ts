@@ -37,6 +37,7 @@ export function generateStudents(count: number, loadFactorWeight: number): Stude
 
     return {
       id: `student-${index}`,
+      subjects: [subject],
       requiredSubject: subject,
       gradeLevel: 7 + (index % 6),
       examType: index % 2 === 0 ? 'waec' : 'jamb',

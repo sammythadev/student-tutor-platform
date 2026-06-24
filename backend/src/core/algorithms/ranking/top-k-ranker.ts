@@ -20,7 +20,6 @@ export class TopKRanker {
     }
 
     return tutors
-      .filter((tutor) => this.eligibilityFilter.hasSubject(student, tutor))
       .map((tutor) => ({ 
         tutor, 
         score: this.compositeScorer.score(student, tutor),
@@ -53,7 +52,6 @@ export class TopKRanker {
     }
 
     return students
-      .filter((student) => this.eligibilityFilter.hasSubject(student, tutor))
       .map((student) => ({ 
         student, 
         score: this.compositeScorer.score(student, tutor),

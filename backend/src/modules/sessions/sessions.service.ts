@@ -17,8 +17,33 @@ export class SessionsService {
     initiatorRole: string,
     dto: BookSessionDto,
   ): Promise<SessionWithParticipants> {
-    if (new Date(dto.startAt) >= new Date(dto.endAt)) {
+    const startAt = new Date(dto.startAt);
+    const endAt = new Date(dto.endAt);
+
+    if (startAt >= endAt) {
       throw new BadRequestException('endAt must be after startAt');
+    }
+
+    if (startAt <= new Date()) {
+      throw new BadRequestException('Session start time must be in the future');
+    }
+
+    // Validate the requested subject is taught by the tutor
+    const tutorSubjects = await this.sessionsRepository.findTutorSubjects(dto.tutorId);
+    if (!tutorSubjects.includes(dto.subject)) {
+      throw new BadRequestException(
+        `Tutor does not teach "${dto.subject}". Available subjects: ${tutorSubjects.join(', ')}`,
+      );
+    }
+
+    // Check for overlapping sessions at the requested time
+    const overlapCount = await this.sessionsRepository.findOverlappingSessionCount(
+      dto.tutorId,
+      startAt,
+      endAt,
+    );
+    if (overlapCount > 0) {
+      throw new BadRequestException('The tutor already has a session scheduled during this time');
     }
 
     // Resolve who is the student
@@ -65,6 +90,48 @@ export class SessionsService {
 
     const newStatus = accept ? SessionStatus.UPCOMING : SessionStatus.CANCELLED;
     return this.sessionsRepository.updateStatus(id, userId, { status: newStatus });
+  }
+
+  async transferTutor(
+    id: string,
+    userId: string,
+    newTutorId: string,
+  ): Promise<SessionWithParticipants> {
+    const session = await this.sessionsRepository.findById(id);
+    if (!session) throw new NotFoundException('Session not found');
+
+    // Only the student or the current tutor can transfer
+    if (session.studentId !== userId && session.tutorId !== userId) {
+      throw new ForbiddenException('Only session participants can transfer the tutor');
+    }
+
+    if (session.status !== 'pending' && session.status !== 'upcoming') {
+      throw new BadRequestException('Only pending or upcoming sessions can be transferred');
+    }
+
+    if (session.tutorId === newTutorId) {
+      throw new BadRequestException('Session is already assigned to this tutor');
+    }
+
+    // Validate the new tutor teaches the session's subject
+    const newTutorSubjects = await this.sessionsRepository.findTutorSubjects(newTutorId);
+    if (!newTutorSubjects.includes(session.subject)) {
+      throw new BadRequestException(
+        `New tutor does not teach "${session.subject}". Available subjects: ${newTutorSubjects.join(', ')}`,
+      );
+    }
+
+    // Check for overlapping sessions with the new tutor
+    const overlapCount = await this.sessionsRepository.findOverlappingSessionCount(
+      newTutorId,
+      session.startAt,
+      session.endAt,
+    );
+    if (overlapCount > 0) {
+      throw new BadRequestException('The new tutor already has a session scheduled during this time');
+    }
+
+    return this.sessionsRepository.updateTutor(id, newTutorId);
   }
 
   async updateStatus(

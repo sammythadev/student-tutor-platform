@@ -54,6 +54,12 @@ export class UpdateSessionStatusDto {
   status!: SessionStatus;
 }
 
+export class TransferSessionDto {
+  @ApiProperty({ format: 'uuid', description: 'The new tutor to assign the session to' })
+  @IsUUID()
+  newTutorId!: string;
+}
+
 export class SessionParamDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
