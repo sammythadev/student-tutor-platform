@@ -8,6 +8,7 @@ import {
 } from 'class-validator';
 
 export enum SessionStatus {
+  PENDING = 'pending',
   UPCOMING = 'upcoming',
   STARTING_SOON = 'starting-soon',
   COMPLETED = 'completed',
@@ -18,6 +19,11 @@ export class BookSessionDto {
   @ApiProperty({ format: 'uuid', description: 'The tutor to book with' })
   @IsUUID()
   tutorId!: string;
+
+  @ApiPropertyOptional({ format: 'uuid', description: 'The student (tutors use this to book for a specific student)' })
+  @IsOptional()
+  @IsUUID()
+  studentId?: string;
 
   @ApiProperty({ example: 'Mathematics' })
   @IsString()
@@ -64,6 +70,9 @@ export class SessionResponseDto {
   @ApiProperty({ format: 'uuid' })
   tutorId!: string;
 
+  @ApiPropertyOptional({ format: 'uuid' })
+  initiatorId?: string | null;
+
   @ApiProperty({ example: 'Mathematics' })
   subject!: string;
 
@@ -91,6 +100,9 @@ export class SessionResponseDto {
 
   @ApiPropertyOptional()
   tutorAvatarUrl?: string | null;
+
+  @ApiPropertyOptional()
+  tutorIsVerified?: boolean;
 
   // Joined student info
   @ApiPropertyOptional()

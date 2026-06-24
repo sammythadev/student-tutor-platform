@@ -11,6 +11,7 @@ import { UsersModule } from '@modules/users';
 import { SessionsModule } from '@modules/sessions/sessions.module';
 import { FeedModule } from '@modules/feed/feed.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
+import { MessagesModule } from '@modules/messages/messages.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { DashboardModule } from '@modules/dashboard/dashboard.module';
     SessionsModule,
     FeedModule,
     DashboardModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

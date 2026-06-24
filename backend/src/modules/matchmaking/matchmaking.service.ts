@@ -78,6 +78,57 @@ export class MatchmakingService {
         region: row.profile.region ?? row.user.region,
         subjectsTaught: row.profile.subjectsTaught,
         score: candidate.score.total,
+        isEligible: candidate.eligibility.isEligible,
+        reason: candidate.eligibility.reason,
+      };
+    });
+
+    return {
+      page,
+      limit,
+      total: ranked.length,
+      data,
+    };
+  }
+
+  async candidateStudents(
+    currentUser: AuthenticatedUser,
+    query: PaginationQueryDto,
+  ): Promise<any> {
+    this.assertRole(currentUser, 'tutor');
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 5;
+    const tutorRow = await this.loadTutor(currentUser.id);
+    const studentRows = await this.matchmakingRepository.findStudents();
+    const schedules = await this.loadSchedules([
+      tutorRow.user.id,
+      ...studentRows.map((row) => row.user.id),
+    ]);
+    const tutor = this.toTutor(tutorRow, schedules.get(tutorRow.user.id));
+    const students = studentRows.map((row) => this.toStudent(row, schedules.get(row.user.id)));
+    
+    // We only rank students up to the requested page * limit
+    const ranked = this.topKRanker.rankStudents(tutor, students, page * limit);
+    const data = ranked.slice((page - 1) * limit, page * limit).map((candidate) => {
+      const row = studentRows.find((studentRow) => studentRow.user.id === candidate.student.id);
+
+      if (!row) {
+        throw new Error('Ranked student row could not be loaded');
+      }
+
+      return {
+        studentId: row.user.id,
+        firstName: row.user.firstName,
+        lastName: row.user.lastName,
+        region: row.profile.region ?? row.user.region,
+        requiredSubject: row.profile.requiredSubject,
+        subjects: row.profile.subjects?.length ? row.profile.subjects : [row.profile.requiredSubject],
+        gradeLevel: row.profile.gradeLevel,
+        budget: row.profile.budget,
+        score: candidate.score.total,
+        rankPercentage: Math.round(candidate.score.total * 100),
+        isEligible: candidate.eligibility.isEligible,
+        reason: candidate.eligibility.reason,
       };
     });
 
@@ -95,8 +146,8 @@ export class MatchmakingService {
   ): Promise<AssignmentResponseDto> {
     this.assertRole(currentUser, 'student');
 
-    if (await this.matchmakingRepository.hasActiveAssignment(currentUser.id)) {
-      throw new BadRequestException('Student already has an active or waitlisted assignment');
+    if (await this.matchmakingRepository.hasActiveAssignmentWithTutor(currentUser.id, tutorId)) {
+      throw new BadRequestException('Student already has an active or waitlisted assignment with this tutor');
     }
 
     const [studentRow, tutorRow] = await Promise.all([
@@ -290,9 +341,13 @@ export class MatchmakingService {
   }
 
   private toStudent(row: StudentRow, slots: AvailabilitySlot[] | undefined): Student {
+    const subjects = row.profile.subjects?.length
+      ? row.profile.subjects
+      : [row.profile.requiredSubject];
     return {
       id: row.user.id,
-      requiredSubject: row.profile.requiredSubject,
+      subjects,
+      requiredSubject: subjects[0], // backward compat for greedy engine
       gradeLevel: row.profile.gradeLevel,
       examType: row.profile.examType,
       requestedAvailability:

@@ -45,6 +45,19 @@ export async function getTutorCandidates(params?: { page?: number; limit?: numbe
   } as TutorCandidatePage
 }
 
+export async function getStudentCandidates(params?: { page?: number; limit?: number }) {
+  const { data } = await api.get('/matchmaking/candidates/students', { params })
+  const rawCandidates = data.data ?? []
+  return {
+    candidates: rawCandidates.map((candidate: any) => ({
+      ...candidate,
+    })),
+    total: data.total ?? rawCandidates.length,
+    page: data.page ?? params?.page ?? 1,
+    limit: data.limit ?? params?.limit ?? 5,
+  }
+}
+
 export async function selectTutor(tutorId: string) {
   const { data } = await api.post('/matchmaking/select', { tutorId })
   return data
@@ -82,6 +95,8 @@ export interface TutorCandidate {
   lastName: string
   avatarUrl: string | null
   region: string | null
+  isEligible?: boolean
+  reason?: string
 }
 
 export interface TutorCandidatePage {

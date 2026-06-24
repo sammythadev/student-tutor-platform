@@ -2,7 +2,7 @@ import api from '@/lib/axios'
 import { useAuthStore } from '@/lib/store/authStore'
 
 export interface LoginPayload { email: string; password: string }
-export interface SignupPayload { email: string; password: string; firstName: string; lastName: string; role: 'student' | 'tutor' }
+export interface SignupPayload { email: string; password: string; firstName: string; lastName: string; role: 'student' | 'tutor' | 'unassigned' }
 
 function mapSession(data: any) {
   return {
@@ -30,10 +30,9 @@ export async function signup(payload: SignupPayload) {
 
 export async function onboard(role: 'student' | 'tutor', profilePayload: any) {
   const { data } = await api.post('/auth/onboard', { role, [`${role}Profile`]: profilePayload })
-  useAuthStore.getState().updateUser(data.user)
-  useAuthStore.getState().updateStudentProfile(data.studentProfile)
-  useAuthStore.getState().updateTutorProfile(data.tutorProfile)
-  return data
+  const session = mapSession(data)
+  useAuthStore.getState().setSession(session)
+  return session
 }
 
 export async function verifyToken() {
@@ -41,7 +40,12 @@ export async function verifyToken() {
   return data
 }
 
-export function logout() {
+export async function logout() {
+  try {
+    await api.post('/auth/logout')
+  } catch (error) {
+    // Ignore error, we want to clear the session locally regardless
+  }
   useAuthStore.getState().clearSession()
   if (typeof window !== 'undefined') window.location.href = '/signin'
 }

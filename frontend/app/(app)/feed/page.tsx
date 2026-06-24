@@ -19,6 +19,7 @@ function timeAgo(value: string) {
 
 export default function FeedPage() {
   const user = useAuthStore(s => s.user)
+  const isTutor = user?.role === 'tutor'
   const [feed, setFeed] = useState<FeedResponse | null>(null)
   const [filter, setFilter] = useState<'all' | 'tutors' | 'resources'>('all')
   const [draft, setDraft] = useState('')
@@ -208,7 +209,10 @@ export default function FeedPage() {
           <div className="rounded-2xl bg-primary p-5 text-white shadow-sm">
             <div className="mb-3 flex items-center gap-2"><Zap className="h-4 w-4" /><h3 className="font-heading text-sm font-bold">Quick Actions</h3></div>
             <div className="space-y-2">
-              {['Find a Tutor', 'Book Session', 'Browse Resources'].map(label => (
+              {(isTutor
+                ? ['View My Students', 'Manage Availability', 'Browse Resources']
+                : ['Find a Tutor', 'Book Session', 'Browse Resources']
+              ).map(label => (
                 <button key={label} className="w-full rounded-xl bg-white/15 px-3 py-2.5 text-left text-sm font-semibold">{label} →</button>
               ))}
             </div>

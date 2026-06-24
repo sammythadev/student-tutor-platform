@@ -25,6 +25,7 @@ export enum UserRole {
   ADMIN = 'admin',
   STUDENT = 'student',
   TUTOR = 'tutor',
+  UNASSIGNED = 'unassigned',
 }
 
 export class AvailabilitySlotDto {

@@ -6,7 +6,7 @@ export interface UserProfile {
   email: string
   firstName: string
   lastName: string
-  role: 'student' | 'tutor' | 'admin'
+  role: 'student' | 'tutor' | 'admin' | 'unassigned'
   status: string
   region: string | null
   avatarUrl: string | null

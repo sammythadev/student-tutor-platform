@@ -5,6 +5,7 @@ import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { bookSession, getMySessions, updateSessionStatus, type SessionItem } from '@/lib/api/sessions'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
+import { useAuthStore } from '@/lib/store/authStore'
 import { AlertCircle, BookOpen, Calculator, CheckCircle2, ChevronLeft, ChevronRight, Clock, FlaskConical, Globe2, GripVertical, Plus, X } from 'lucide-react'
 
 type AccentKey = 'lavender' | 'sky' | 'mint' | 'sun' | 'coral' | 'tangerine'
@@ -54,7 +55,97 @@ function slotToWindow(weekStart: Date, dayIdx: number, slotIdx: number) {
   return { startAt: start.toISOString(), endAt: end.toISOString() }
 }
 
+/** Shared calendar grid used by both tutor and student views */
+function WeekCalendar({
+  weekStart,
+  sessions,
+  onDrop,
+  dropTarget,
+  setDropTarget,
+  onCancel,
+  isTutor,
+}: {
+  weekStart: Date
+  sessions: SessionItem[]
+  onDrop?: (event: React.DragEvent, dayIdx: number, slotIdx: number) => void
+  dropTarget: { dayIdx: number; slotIdx: number } | null
+  setDropTarget: (v: { dayIdx: number; slotIdx: number } | null) => void
+  onCancel: (id: string) => void
+  isTutor: boolean
+}) {
+  const weekSessions = useMemo(() => {
+    const start = weekStart.getTime()
+    const end = addDays(weekStart, 7).getTime()
+    return sessions.filter(session => {
+      const time = new Date(session.startAt).getTime()
+      return time >= start && time < end
+    })
+  }, [sessions, weekStart])
+
+  return (
+    <div className="overflow-auto">
+      <div className="min-w-[860px]">
+        <div className="grid" style={{ gridTemplateColumns: '64px repeat(7, minmax(110px, 1fr))' }}>
+          <div className="bg-surface-2" />
+          {DAYS.map((day, index) => {
+            const date = addDays(weekStart, index)
+            return (
+              <div key={day} className="border-l border-b p-3 text-center" style={{ borderColor: 'var(--border)' }}>
+                <p className="text-xs font-bold uppercase tracking-widest text-text-muted">{day}</p>
+                <p className="font-heading text-lg font-bold text-text-primary">{date.getDate()}</p>
+              </div>
+            )
+          })}
+
+          {HOURS.map((hour, slotIdx) => (
+            <React.Fragment key={hour}>
+              <div className="border-b border-r bg-surface-2 p-2 text-right text-xs font-bold text-text-secondary" style={{ height: 82, borderColor: 'var(--border)' }}>{hour}</div>
+              {DAYS.map((_, dayIdx) => {
+                const isTarget = dropTarget?.dayIdx === dayIdx && dropTarget.slotIdx === slotIdx
+                const inCell = weekSessions.filter(session => {
+                  const pos = toSlot(session.startAt, weekStart)
+                  return pos.dayIdx === dayIdx && pos.slotIdx === slotIdx
+                })
+                return (
+                  <div
+                    key={`${dayIdx}-${slotIdx}`}
+                    onDragOver={!isTutor ? (event => { event.preventDefault(); setDropTarget({ dayIdx, slotIdx }) }) : undefined}
+                    onDragLeave={!isTutor ? (() => setDropTarget(null)) : undefined}
+                    onDrop={!isTutor && onDrop ? (event => onDrop(event, dayIdx, slotIdx)) : undefined}
+                    className="relative border-b border-l p-1"
+                    style={{ height: 82, borderColor: 'var(--border)', background: isTarget ? 'var(--primary-subtle)' : undefined }}
+                  >
+                    {isTarget && <div className="absolute inset-2 flex items-center justify-center rounded-lg border border-dashed border-primary text-primary"><Plus className="h-4 w-4" /></div>}
+                    {inCell.map(session => {
+                      const color = colorForSubject(session.subject)
+                      const ac = AC[color]
+                      return (
+                        <div key={session.id} className="relative z-10 rounded-lg border-l-4 p-2 shadow-sm" style={{ background: ac.bg, borderLeftColor: ac.border }}>
+                          <button onClick={() => onCancel(session.id)} className="absolute right-1 top-1 text-text-muted"><X className="h-3 w-3" /></button>
+                          <p className="truncate pr-4 text-xs font-bold" style={{ color: ac.fg }}>{session.subject}</p>
+                          <p className="truncate text-[11px]" style={{ color: ac.fg, opacity: 0.75 }}>
+                            {isTutor ? (session.studentName ?? 'Student') : (session.tutorName ?? 'Tutor')}
+                          </p>
+                          <span className="mt-1 flex items-center gap-1 text-[10px] font-bold uppercase" style={{ color: ac.fg }}>
+                            {session.status === 'cancelled' ? <AlertCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
+                            {session.status}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SchedulesPage() {
+  const isTutor = useAuthStore(s => s.user?.role === 'tutor')
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()))
   const [sessions, setSessions] = useState<SessionItem[]>([])
   const [tutors, setTutors] = useState<TutorCandidate[]>([])
@@ -66,12 +157,17 @@ export default function SchedulesPage() {
     setLoading(true)
     setError(null)
     try {
-      const [sessionData, candidateData] = await Promise.all([
-        getMySessions(),
-        getTutorCandidates({ page: 1, limit: 10 }).catch(() => ({ candidates: [] as TutorCandidate[] })),
-      ])
-      setSessions(sessionData)
-      setTutors(candidateData.candidates)
+      if (isTutor) {
+        const sessionData = await getMySessions()
+        setSessions(sessionData)
+      } else {
+        const [sessionData, candidateData] = await Promise.all([
+          getMySessions(),
+          getTutorCandidates({ page: 1, limit: 10 }).catch(() => ({ candidates: [] as TutorCandidate[] })),
+        ])
+        setSessions(sessionData)
+        setTutors(candidateData.candidates)
+      }
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'Could not load sessions.')
     } finally {
@@ -79,7 +175,7 @@ export default function SchedulesPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [isTutor])
 
   const weekSessions = useMemo(() => {
     const start = weekStart.getTime()
@@ -128,26 +224,35 @@ export default function SchedulesPage() {
     <div className="space-y-5 py-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-text-primary">Schedule</h1>
-          <p className="mt-1 text-sm text-text-secondary">Drag a subject onto the calendar to book through `POST /sessions`.</p>
+          <h1 className="font-heading text-3xl font-bold text-text-primary">
+            {isTutor ? 'Availability & Sessions' : 'Schedule'}
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            {isTutor
+              ? 'Manage your teaching schedule and upcoming sessions.'
+              : 'Drag a subject onto the calendar to book a session.'}
+          </p>
         </div>
         <Button variant="secondary" onClick={load} loading={loading}>Refresh</Button>
       </div>
 
       {error && <div className="surface-card p-4 text-sm text-accent-coral-fg">{error}</div>}
 
-      <div className="surface-card flex flex-wrap items-center gap-2 p-4">
-        <span className="mr-1 text-xs font-bold uppercase tracking-widest text-text-muted">Drag to schedule</span>
-        {CHIPS.map(chip => {
-          const Icon = chip.icon
-          const ac = AC[chip.color]
-          return (
-            <div key={chip.label} draggable onDragStart={event => onChipDragStart(event, chip.label)} className="inline-flex cursor-grab items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold" style={{ background: ac.bg, color: ac.fg, borderColor: `${ac.border}55` }}>
-              <GripVertical className="h-3 w-3 opacity-50" /><Icon className="h-3.5 w-3.5" />{chip.label}
-            </div>
-          )
-        })}
-      </div>
+      {/* Drag chips — students only */}
+      {!isTutor && (
+        <div className="surface-card flex flex-wrap items-center gap-2 p-4">
+          <span className="mr-1 text-xs font-bold uppercase tracking-widest text-text-muted">Drag to schedule</span>
+          {CHIPS.map(chip => {
+            const Icon = chip.icon
+            const ac = AC[chip.color]
+            return (
+              <div key={chip.label} draggable onDragStart={event => onChipDragStart(event, chip.label)} className="inline-flex cursor-grab items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold" style={{ background: ac.bg, color: ac.fg, borderColor: `${ac.border}55` }}>
+                <GripVertical className="h-3 w-3 opacity-50" /><Icon className="h-3.5 w-3.5" />{chip.label}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className="surface-card overflow-hidden">
         <div className="flex items-center justify-between border-b px-5 py-3" style={{ borderColor: 'var(--border)' }}>
@@ -159,66 +264,21 @@ export default function SchedulesPage() {
           <Button size="sm" variant="secondary" onClick={() => setWeekStart(getMonday(new Date()))}>Today</Button>
         </div>
 
-        <div className="overflow-auto">
-          <div className="min-w-[860px]">
-            <div className="grid" style={{ gridTemplateColumns: '64px repeat(7, minmax(110px, 1fr))' }}>
-              <div className="bg-surface-2" />
-              {DAYS.map((day, index) => {
-                const date = addDays(weekStart, index)
-                return (
-                  <div key={day} className="border-l border-b p-3 text-center" style={{ borderColor: 'var(--border)' }}>
-                    <p className="text-xs font-bold uppercase tracking-widest text-text-muted">{day}</p>
-                    <p className="font-heading text-lg font-bold text-text-primary">{date.getDate()}</p>
-                  </div>
-                )
-              })}
-
-              {HOURS.map((hour, slotIdx) => (
-                <React.Fragment key={hour}>
-                  <div className="border-b border-r bg-surface-2 p-2 text-right text-xs font-bold text-text-secondary" style={{ height: 82, borderColor: 'var(--border)' }}>{hour}</div>
-                  {DAYS.map((_, dayIdx) => {
-                    const isTarget = dropTarget?.dayIdx === dayIdx && dropTarget.slotIdx === slotIdx
-                    const inCell = weekSessions.filter(session => {
-                      const pos = toSlot(session.startAt, weekStart)
-                      return pos.dayIdx === dayIdx && pos.slotIdx === slotIdx
-                    })
-                    return (
-                      <div
-                        key={`${dayIdx}-${slotIdx}`}
-                        onDragOver={event => { event.preventDefault(); setDropTarget({ dayIdx, slotIdx }) }}
-                        onDragLeave={() => setDropTarget(null)}
-                        onDrop={event => onDrop(event, dayIdx, slotIdx)}
-                        className="relative border-b border-l p-1"
-                        style={{ height: 82, borderColor: 'var(--border)', background: isTarget ? 'var(--primary-subtle)' : undefined }}
-                      >
-                        {isTarget && <div className="absolute inset-2 flex items-center justify-center rounded-lg border border-dashed border-primary text-primary"><Plus className="h-4 w-4" /></div>}
-                        {inCell.map(session => {
-                          const color = colorForSubject(session.subject)
-                          const ac = AC[color]
-                          return (
-                            <div key={session.id} className="relative z-10 rounded-lg border-l-4 p-2 shadow-sm" style={{ background: ac.bg, borderLeftColor: ac.border }}>
-                              <button onClick={() => cancelSession(session.id)} className="absolute right-1 top-1 text-text-muted"><X className="h-3 w-3" /></button>
-                              <p className="truncate pr-4 text-xs font-bold" style={{ color: ac.fg }}>{session.subject}</p>
-                              <p className="truncate text-[11px]" style={{ color: ac.fg, opacity: 0.75 }}>{session.tutorName ?? session.studentName ?? 'Booked session'}</p>
-                              <span className="mt-1 flex items-center gap-1 text-[10px] font-bold uppercase" style={{ color: ac.fg }}>
-                                {session.status === 'cancelled' ? <AlertCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
-                                {session.status}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )
-                  })}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-        </div>
+        <WeekCalendar
+          weekStart={weekStart}
+          sessions={sessions}
+          onDrop={!isTutor ? onDrop : undefined}
+          dropTarget={dropTarget}
+          setDropTarget={setDropTarget}
+          onCancel={cancelSession}
+          isTutor={isTutor}
+        />
       </div>
 
       <div>
-        <h2 className="mb-3 font-heading text-lg font-bold text-text-primary">This Week&apos;s Sessions <span className="text-sm font-normal text-text-muted">({weekSessions.length})</span></h2>
+        <h2 className="mb-3 font-heading text-lg font-bold text-text-primary">
+          This Week&apos;s Sessions <span className="text-sm font-normal text-text-muted">({weekSessions.length})</span>
+        </h2>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {weekSessions.map(session => {
             const color = colorForSubject(session.subject)
@@ -228,13 +288,16 @@ export default function SchedulesPage() {
                 <Clock className="mt-0.5 h-4 w-4" style={{ color: ac.fg }} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-text-primary">{session.subject}</p>
-                  <p className="truncate text-xs text-text-secondary">{session.tutorName ?? session.studentName ?? 'Booked session'}</p>
+                  <p className="truncate text-xs text-text-secondary">
+                    {isTutor ? (session.studentName ?? 'Student') : (session.tutorName ?? 'Tutor')}
+                  </p>
                   <p className="mt-1 text-xs text-text-muted">{new Date(session.startAt).toLocaleString()}</p>
                 </div>
                 <Badge color={color} size="sm">{session.status}</Badge>
               </div>
             )
           })}
+          {weekSessions.length === 0 && <p className="text-sm text-text-secondary">No sessions this week.</p>}
         </div>
       </div>
     </div>

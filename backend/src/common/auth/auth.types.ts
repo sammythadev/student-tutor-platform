@@ -1,4 +1,4 @@
-export type AccountRole = 'admin' | 'student' | 'tutor';
+export type AccountRole = 'admin' | 'student' | 'tutor' | 'unassigned';
 export type TokenUse = 'access' | 'refresh';
 
 export interface AuthenticatedUser {

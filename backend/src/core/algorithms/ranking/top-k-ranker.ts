@@ -1,10 +1,11 @@
 import type { MatchScore, Student, Tutor } from '@core/entities';
-import { EligibilityFilter } from '../filters/eligibility.filter';
+import { EligibilityFilter, type EligibilityResult } from '../filters/eligibility.filter';
 import { CompositeScorer } from '../scorers/composite.scorer';
 
 export interface RankedTutor {
   tutor: Tutor;
   score: MatchScore;
+  eligibility: EligibilityResult;
 }
 
 export class TopKRanker {
@@ -19,9 +20,16 @@ export class TopKRanker {
     }
 
     return tutors
-      .filter((tutor) => this.eligibilityFilter.isEligible(student, tutor))
-      .map((tutor) => ({ tutor, score: this.compositeScorer.score(student, tutor) }))
+      .filter((tutor) => this.eligibilityFilter.hasSubject(student, tutor))
+      .map((tutor) => ({ 
+        tutor, 
+        score: this.compositeScorer.score(student, tutor),
+        eligibility: this.eligibilityFilter.checkEligibility(student, tutor)
+      }))
       .sort((left, right) => {
+        if (left.eligibility.isEligible && !right.eligibility.isEligible) return -1;
+        if (!left.eligibility.isEligible && right.eligibility.isEligible) return 1;
+
         const scoreGap = right.score.total - left.score.total;
 
         if (scoreGap !== 0) {
@@ -35,6 +43,33 @@ export class TopKRanker {
         }
 
         return left.tutor.id.localeCompare(right.tutor.id);
+      })
+      .slice(0, k);
+  }
+
+  public rankStudents(tutor: Tutor, students: Student[], k: number): { student: Student; score: MatchScore; eligibility: EligibilityResult }[] {
+    if (k <= 0) {
+      return [];
+    }
+
+    return students
+      .filter((student) => this.eligibilityFilter.hasSubject(student, tutor))
+      .map((student) => ({ 
+        student, 
+        score: this.compositeScorer.score(student, tutor),
+        eligibility: this.eligibilityFilter.checkEligibility(student, tutor)
+      }))
+      .sort((left, right) => {
+        if (left.eligibility.isEligible && !right.eligibility.isEligible) return -1;
+        if (!left.eligibility.isEligible && right.eligibility.isEligible) return 1;
+
+        const scoreGap = right.score.total - left.score.total;
+
+        if (scoreGap !== 0) {
+          return scoreGap;
+        }
+
+        return left.student.id.localeCompare(right.student.id);
       })
       .slice(0, k);
   }

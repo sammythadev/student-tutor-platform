@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, or, sql } from 'drizzle-orm';
+import { and, desc, eq, or } from 'drizzle-orm';
 import {
   DATABASE,
   type AppDatabase,
   sessions,
   users,
+  tutorProfiles,
 } from '@database';
 import type { BookSessionDto, UpdateSessionStatusDto } from './dtos/session.dto';
 import type { SessionWithParticipants } from './sessions.types';
@@ -13,18 +14,23 @@ import type { SessionWithParticipants } from './sessions.types';
 export class SessionsRepository {
   constructor(@Inject(DATABASE) private readonly db: AppDatabase) {}
 
-  async create(studentId: string, dto: BookSessionDto): Promise<SessionWithParticipants> {
+  async create(
+    initiatorId: string,
+    dto: BookSessionDto & { resolvedStudentId: string },
+  ): Promise<SessionWithParticipants> {
     const [created] = await this.db
       .insert(sessions)
       .values({
-        studentId,
+        studentId: dto.resolvedStudentId,
         tutorId: dto.tutorId,
+        initiatorId,
         subject: dto.subject,
         startAt: new Date(dto.startAt),
         endAt: new Date(dto.endAt),
+        status: 'pending',
         meetingUrl: dto.meetingUrl,
         notes: dto.notes,
-      })
+      } as any)
       .returning({ id: sessions.id });
 
     const session = await this.findById(created.id);
@@ -33,11 +39,6 @@ export class SessionsRepository {
   }
 
   async findById(id: string): Promise<SessionWithParticipants | null> {
-    const studentUser = sql`${users}`.as('student_user');
-    const tutorUser = sql`${users}`.as('tutor_user');
-
-    // Drizzle doesn't support multiple joins to same table by alias elegantly;
-    // use raw query approach via two separate lookups after main query
     const [row] = await this.db
       .select()
       .from(sessions)
@@ -45,7 +46,6 @@ export class SessionsRepository {
       .limit(1);
 
     if (!row) return null;
-
     return this.enrichSession(row);
   }
 
@@ -80,13 +80,19 @@ export class SessionsRepository {
   }
 
   private async enrichSession(row: typeof sessions.$inferSelect): Promise<SessionWithParticipants> {
-    const [tutor] = await this.db
-      .select({ firstName: users.firstName, lastName: users.lastName, avatarUrl: users.avatarUrl })
+    const [tutorUser] = await this.db
+      .select({
+        firstName: users.firstName,
+        lastName: users.lastName,
+        avatarUrl: users.avatarUrl,
+        isVerified: tutorProfiles.isVerified,
+      })
       .from(users)
+      .leftJoin(tutorProfiles, eq(tutorProfiles.userId, users.id))
       .where(eq(users.id, row.tutorId))
       .limit(1);
 
-    const [student] = await this.db
+    const [studentUser] = await this.db
       .select({ firstName: users.firstName, lastName: users.lastName, avatarUrl: users.avatarUrl })
       .from(users)
       .where(eq(users.id, row.studentId))
@@ -94,10 +100,11 @@ export class SessionsRepository {
 
     return {
       ...row,
-      tutorName: tutor ? `${tutor.firstName} ${tutor.lastName}` : undefined,
-      tutorAvatarUrl: tutor?.avatarUrl ?? null,
-      studentName: student ? `${student.firstName} ${student.lastName}` : undefined,
-      studentAvatarUrl: student?.avatarUrl ?? null,
+      tutorName: tutorUser ? `${tutorUser.firstName} ${tutorUser.lastName}` : undefined,
+      tutorAvatarUrl: tutorUser?.avatarUrl ?? null,
+      tutorIsVerified: tutorUser?.isVerified === 1,
+      studentName: studentUser ? `${studentUser.firstName} ${studentUser.lastName}` : undefined,
+      studentAvatarUrl: studentUser?.avatarUrl ?? null,
     };
   }
 }

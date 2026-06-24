@@ -21,6 +21,8 @@ export default function OnboardingPage() {
   const [studentForm, setStudentForm] = useState({
     gradeLevel: '',
     subjects: [] as string[],
+    customSubject: '',
+    budget: '',
     examTypes: '',
     learningStyle: '',
     timezone: '',
@@ -98,10 +100,16 @@ export default function OnboardingPage() {
 
     setLoading(true)
     try {
+      const allSubjects = [...studentForm.subjects]
+      if (studentForm.customSubject.trim()) {
+        allSubjects.push(studentForm.customSubject.trim())
+      }
+
       await onboard('student', {
-        subjects: studentForm.subjects,
+        subjects: allSubjects,
         gradeLevel: Number(studentForm.gradeLevel),
         examType: studentForm.examTypes || 'waec',
+        budget: studentForm.budget ? Number(studentForm.budget) : undefined,
         requestedAvailability: [
           { start: '2026-01-01T15:00:00.000Z', end: '2026-01-01T18:00:00.000Z' },
         ],
@@ -310,8 +318,29 @@ export default function OnboardingPage() {
                   </button>
                 ))}
               </div>
+              
+              <div className="pt-2">
+                <Input
+                  label="Other Subject"
+                  name="customSubject"
+                  type="text"
+                  placeholder="E.g., Further Mathematics"
+                  value={studentForm.customSubject}
+                  onChange={handleStudentChange}
+                />
+              </div>
+
               {errors.subjects && <p className="text-xs text-accent-coral-fg font-medium">{errors.subjects}</p>}
             </div>
+
+            <Input
+              label="Monthly Budget ($)"
+              name="budget"
+              type="number"
+              placeholder="150"
+              value={studentForm.budget}
+              onChange={handleStudentChange}
+            />
 
             <Select
               label="How do you learn best?"

@@ -9,11 +9,13 @@ import {
   Home, BookMarked, Users, Calendar, User, Settings, LogOut,
   Bell, Mail, Search, Moon, Sun, ChevronLeft, ChevronRight, LayoutDashboard,
 } from 'lucide-react'
+import { useAuthStore } from '@/lib/store/authStore'
+import { logout } from '@/lib/api/auth'
 
 interface AppShellProps {
   children: ReactNode
   currentPage: string
-  userRole?: 'student' | 'tutor' | 'admin'
+  userRole?: 'student' | 'tutor' | 'admin' | 'unassigned'
 }
 
 const NAV_ITEMS = {
@@ -25,10 +27,10 @@ const NAV_ITEMS = {
     { id: 'profile',   label: 'Profile',     icon: User,       href: '/profile' },
   ],
   tutor: [
-    { id: 'tutor-dashboard', label: 'Dashboard',    icon: LayoutDashboard, href: '/tutor-dashboard' },
+    { id: 'dashboard',       label: 'Dashboard',     icon: LayoutDashboard, href: '/dashboard' },
     { id: 'feed',            label: 'Feed',          icon: BookMarked,      href: '/feed'            },
     { id: 'schedules',       label: 'Availability',  icon: Calendar,        href: '/schedules'       },
-    { id: 'students',        label: 'Students',      icon: Users,           href: '/students'        },
+    { id: 'tutors',          label: 'Students',      icon: Users,           href: '/tutors'        },
     { id: 'profile',         label: 'Profile',       icon: User,            href: '/profile'         },
   ],
   admin: [
@@ -51,6 +53,8 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
   const [sidebarOpen,      setSidebarOpen]      = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isDark,           setIsDark]           = useState(true)
+
+  const { user, initials, fullName } = useAuthStore()
 
   useEffect(() => {
     const saved = localStorage.getItem('tutorly-theme')
@@ -197,22 +201,12 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
                 style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}
               >
-                JD
+                {initials()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-text-primary truncate">John Doe</p>
-                <p className="text-xs text-text-muted capitalize">{userRole}</p>
+                <p className="text-xs font-semibold text-text-primary truncate">{fullName() || 'Guest User'}</p>
+                <p className="text-xs text-text-muted capitalize">{user?.role || userRole}</p>
               </div>
-              <button
-                onClick={toggleTheme}
-                aria-label="Toggle theme"
-                className="w-6 h-6 flex items-center justify-center rounded-lg cursor-pointer hover:bg-primary-subtle transition-colors flex-shrink-0"
-              >
-                {isDark
-                  ? <Sun  className="w-3.5 h-3.5 text-text-secondary" />
-                  : <Moon className="w-3.5 h-3.5 text-text-secondary" />
-                }
-              </button>
             </div>
           ) : (
             <div className="flex justify-center">
@@ -220,13 +214,14 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
                 className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
                 style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}
               >
-                JD
+                {initials()}
               </div>
             </div>
           )}
 
           {/* Sign out */}
           <button
+            onClick={() => logout()}
             className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150 text-sm font-medium ${sidebarCollapsed ? 'justify-center' : ''}`}
             style={{ color: 'var(--text-muted)' }}
             onMouseEnter={(e) => {

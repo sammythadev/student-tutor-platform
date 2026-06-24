@@ -14,7 +14,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-export const userRoleEnum = pgEnum('user_role', ['admin', 'student', 'tutor']);
+export const userRoleEnum = pgEnum('user_role', ['admin', 'student', 'tutor', 'unassigned']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'disabled']);
 export const assignmentStatusEnum = pgEnum('assignment_status', [
   'active',
@@ -42,6 +42,7 @@ export const scheduleSlotStatusEnum = pgEnum('schedule_slot_status', [
   'cancelled',
 ]);
 export const sessionStatusEnum = pgEnum('session_status', [
+  'pending',
   'upcoming',
   'starting-soon',
   'completed',
@@ -190,6 +191,7 @@ export const tutorProfiles = pgTable(
     bio: text('bio'),
     ratingCount: integer('rating_count').notNull().default(0),
     studentsCount: integer('students_count').notNull().default(0),
+    isVerified: integer('is_verified').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -329,10 +331,11 @@ export const sessions = pgTable(
     tutorId: uuid('tutor_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    initiatorId: uuid('initiator_id').references(() => users.id, { onDelete: 'set null' }),
     subject: text('subject').notNull(),
     startAt: timestamp('start_at', { withTimezone: true }).notNull(),
     endAt: timestamp('end_at', { withTimezone: true }).notNull(),
-    status: sessionStatusEnum('status').notNull().default('upcoming'),
+    status: sessionStatusEnum('status').notNull().default('pending'),
     meetingUrl: text('meeting_url'),
     notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true })
@@ -398,6 +401,29 @@ export const postLikes = pgTable(
   ],
 );
 
+// ─── Messages (direct messages between users) ─────────────────────────────────
+export const messages = pgTable(
+  'messages',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    senderId: uuid('sender_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    receiverId: uuid('receiver_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    content: text('content').notNull(),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('messages_sender_receiver_idx').on(table.senderId, table.receiverId),
+    index('messages_receiver_read_idx').on(table.receiverId, table.readAt),
+  ],
+);
+
 // ─── Inferred types ───────────────────────────────────────────────────────────
 export type UserRecord = typeof users.$inferSelect;
 export type NewUserRecord = typeof users.$inferInsert;
@@ -414,3 +440,5 @@ export type NewSessionRecord = typeof sessions.$inferInsert;
 export type PostRecord = typeof posts.$inferSelect;
 export type NewPostRecord = typeof posts.$inferInsert;
 export type PostLikeRecord = typeof postLikes.$inferSelect;
+export type MessageRecord = typeof messages.$inferSelect;
+export type NewMessageRecord = typeof messages.$inferInsert;

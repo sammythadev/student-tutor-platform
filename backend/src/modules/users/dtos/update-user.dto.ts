@@ -121,6 +121,22 @@ export class UpdateStudentPreferencesDto {
   @ValidateNested()
   @Type(() => PreferenceWeightsDto)
   preferenceWeights?: PreferenceWeightsDto;
+
+  @ApiPropertyOptional({ example: 'Bio' })
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @ApiPropertyOptional({ example: 'Learn quickly' })
+  @IsOptional()
+  @IsString()
+  learningGoals?: string;
+
+  @ApiPropertyOptional({ example: ['math'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  subjects?: string[];
 }
 
 export class UpdateTutorPreferencesDto {
@@ -162,4 +178,15 @@ export class UpdateTutorPreferencesDto {
   @IsInt()
   @Min(0)
   capacity?: number;
+
+  @ApiPropertyOptional({ example: 'Bio' })
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @ApiPropertyOptional({ example: ['math'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  subjectsTaught?: string[];
 }

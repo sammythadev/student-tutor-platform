@@ -67,6 +67,14 @@ export class CandidateTutorDto {
 
   @ApiProperty({ example: 0.87 })
   score!: number;
+
+  @ApiProperty({ example: true })
+  @IsOptional()
+  isEligible?: boolean;
+
+  @ApiPropertyOptional({ example: 'Tutor is at capacity' })
+  @IsOptional()
+  reason?: string;
 }
 
 export class CandidatePageDto {
@@ -81,6 +89,48 @@ export class CandidatePageDto {
 
   @ApiProperty({ type: [CandidateTutorDto] })
   data!: CandidateTutorDto[];
+}
+
+export class CandidateStudentDto {
+  @ApiProperty({ format: 'uuid' })
+  studentId!: string;
+
+  @ApiProperty({ example: 'Student' })
+  firstName!: string;
+
+  @ApiProperty({ example: 'Okafor' })
+  lastName!: string;
+
+  @ApiPropertyOptional({ example: 'Lagos', nullable: true })
+  region!: string | null;
+
+  @ApiProperty({ example: 'mathematics' })
+  requiredSubject!: string;
+
+  @ApiProperty({ example: 0.87 })
+  score!: number;
+
+  @ApiProperty({ example: true })
+  @IsOptional()
+  isEligible?: boolean;
+
+  @ApiPropertyOptional({ example: 'No common availability' })
+  @IsOptional()
+  reason?: string;
+}
+
+export class CandidateStudentPageDto {
+  @ApiProperty({ example: 1 })
+  page!: number;
+
+  @ApiProperty({ example: 5 })
+  limit!: number;
+
+  @ApiProperty({ example: 50 })
+  total!: number;
+
+  @ApiProperty({ type: [CandidateStudentDto] })
+  data!: CandidateStudentDto[];
 }
 
 export class AssignmentResponseDto {

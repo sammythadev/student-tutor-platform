@@ -31,7 +31,7 @@ export class AuthService {
   }
 
   async login(dto: AuthLoginDto): Promise<AuthSessionResponseDto> {
-    return this.authenticate(dto, [UserRole.STUDENT, UserRole.TUTOR]);
+    return this.authenticate(dto, [UserRole.STUDENT, UserRole.TUTOR, UserRole.UNASSIGNED]);
   }
 
   async adminSignup(dto: AdminSignupDto): Promise<AuthSessionResponseDto> {
@@ -56,13 +56,13 @@ export class AuthService {
   async onboard(
     currentUser: AuthenticatedUser,
     dto: OnboardUserDto,
-  ): Promise<UserWithProfilesResponseDto> {
-    if (currentUser.role !== dto.role) {
+  ): Promise<AuthSessionResponseDto> {
+    if (currentUser.role !== dto.role && currentUser.role !== UserRole.UNASSIGNED) {
       throw new BadRequestException('Role in payload does not match authenticated user role');
     }
 
     const updatedUser = await this.usersService.onboard(currentUser.id, dto);
-    return this.toUserWithProfilesResponse(updatedUser);
+    return this.buildSession(updatedUser);
   }
 
   async verify(currentUser: AuthenticatedUser): Promise<AuthVerifyResponseDto> {

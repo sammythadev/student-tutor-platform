@@ -122,7 +122,7 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: 'User profile created successfully.',
-    type: UserWithProfilesResponseDto,
+    type: AuthSessionResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
   @ApiResponse({ status: 400, description: 'Invalid onboarding payload or role mismatch.' })
@@ -130,7 +130,14 @@ export class AuthController {
   onboard(
     @Body() dto: OnboardUserDto,
     @CurrentUser() currentUser: AuthenticatedUser,
-  ): Promise<UserWithProfilesResponseDto> {
+  ): Promise<AuthSessionResponseDto> {
     return this.authService.onboard(currentUser, dto);
+  }
+
+  @Post('logout')
+  @ApiOperation({ summary: 'Log out the current user' })
+  @ApiResponse({ status: 201, description: 'User successfully logged out.' })
+  logout() {
+    return { success: true };
   }
 }

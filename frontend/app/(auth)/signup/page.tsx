@@ -12,7 +12,7 @@ export default function SignupPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
     fullName: '', email: '', password: '', confirmPassword: '',
-    role: 'student' as 'student' | 'tutor', agreeTerms: false,
+    role: 'unassigned' as 'student' | 'tutor' | 'unassigned', agreeTerms: false,
   })
   const [errors,  setErrors]  = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -74,28 +74,6 @@ export default function SignupPage() {
           <p className="text-text-secondary mt-2 text-sm">Start your learning journey today — it&apos;s free</p>
         </div>
 
-        {/* Role selector */}
-        <div className="grid grid-cols-2 gap-3">
-          {([
-            { value: 'student', label: 'I&apos;m a Student', Icon: GraduationCap },
-            { value: 'tutor',   label: 'I&apos;m a Tutor',   Icon: Users },
-          ] as const).map(({ value, label, Icon }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setFormData(p => ({ ...p, role: value }))}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all duration-150"
-              style={{
-                background:   formData.role === value ? 'var(--primary-subtle)' : 'var(--surface)',
-                borderColor:  formData.role === value ? 'var(--primary)'        : 'var(--border)',
-                color:        formData.role === value ? 'var(--primary)'        : 'var(--text-secondary)',
-              }}
-            >
-              <Icon className="w-5 h-5" strokeWidth={2} />
-              <span className="text-sm font-semibold" dangerouslySetInnerHTML={{ __html: label }} />
-            </button>
-          ))}
-        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="surface-card p-7 space-y-4" noValidate>

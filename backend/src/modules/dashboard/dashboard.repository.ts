@@ -117,34 +117,34 @@ export class DashboardRepository {
 
   /** Count distinct students who have had sessions with this tutor */
   async countDistinctStudents(tutorId: string): Promise<number> {
-    const [result] = await this.db.execute<{ count: number }>(sql`
+    const result = await this.db.execute<{ count: number }>(sql`
       SELECT COUNT(DISTINCT student_id)::int AS count
       FROM sessions
       WHERE tutor_id = ${tutorId}
     `);
-    return result?.count ?? 0;
+    return result.rows[0]?.count ?? 0;
   }
 
   /** Admin: total user counts */
   async getAdminMetrics() {
-    const [totalUsers] = await this.db.execute<{ count: number }>(
+    const totalUsersResult = await this.db.execute<{ count: number }>(
       sql`SELECT COUNT(*)::int AS count FROM users WHERE status = 'active'`,
     );
-    const [activeSessions] = await this.db.execute<{ count: number }>(
+    const activeSessionsResult = await this.db.execute<{ count: number }>(
       sql`SELECT COUNT(*)::int AS count FROM sessions WHERE status IN ('upcoming', 'starting-soon')`,
     );
-    const [openIssues] = await this.db.execute<{ count: number }>(
+    const openIssuesResult = await this.db.execute<{ count: number }>(
       sql`SELECT 0::int AS count`, // placeholder until support tickets table exists
     );
-    const [avgRatingRow] = await this.db.execute<{ avg: string | null }>(
+    const avgRatingRowResult = await this.db.execute<{ avg: string | null }>(
       sql`SELECT ROUND(AVG(avg_rating)::numeric, 1)::text AS avg FROM tutor_profiles WHERE avg_rating IS NOT NULL`,
     );
 
     return {
-      totalUsers: totalUsers?.count ?? 0,
-      activeSessions: activeSessions?.count ?? 0,
-      openIssues: openIssues?.count ?? 0,
-      avgRating: avgRatingRow?.avg ?? null,
+      totalUsers: totalUsersResult.rows[0]?.count ?? 0,
+      activeSessions: activeSessionsResult.rows[0]?.count ?? 0,
+      openIssues: openIssuesResult.rows[0]?.count ?? 0,
+      avgRating: avgRatingRowResult.rows[0]?.avg ?? null,
     };
   }
 }

@@ -31,7 +31,9 @@ export class AcademicScorer {
   }
 
   public subjectDepth(student: Student, tutor: Tutor): number {
-    const hasSubject = tutor.subjectsTaught.includes(student.requiredSubject);
+    // Find best matching subject across all of student's subjects
+    const studentSubjects = student.subjects?.length ? student.subjects : [student.requiredSubject];
+    const hasSubject = studentSubjects.some((s) => tutor.subjectsTaught.includes(s));
 
     if (!hasSubject) {
       return 0;

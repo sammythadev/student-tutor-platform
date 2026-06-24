@@ -84,6 +84,8 @@ export class UsersRepository {
 
   async onboard(userId: string, dto: OnboardUserDto): Promise<UserWithProfilesRecord> {
     await this.db.transaction(async (tx) => {
+      await tx.update(users).set({ role: dto.role }).where(eq(users.id, userId));
+
       if (dto.role === UserRole.STUDENT && dto.studentProfile) {
         const sp = dto.studentProfile;
         // subjects[0] is used as requiredSubject for the matchmaking engine
@@ -163,6 +165,9 @@ export class UsersRepository {
     if (dto.languages !== undefined) updatePayload.languages = dto.languages;
     if (dto.subjectSpecialization !== undefined) updatePayload.subjectSpecialization = dto.subjectSpecialization;
     if (dto.preferenceWeights !== undefined) updatePayload.preferenceWeights = dto.preferenceWeights;
+    if (dto.bio !== undefined) updatePayload.bio = dto.bio;
+    if (dto.learningGoals !== undefined) updatePayload.learningGoals = dto.learningGoals;
+    if (dto.subjects !== undefined) updatePayload.subjects = dto.subjects;
 
     if (Object.keys(updatePayload).length > 0) {
       updatePayload.updatedAt = new Date();
@@ -186,6 +191,8 @@ export class UsersRepository {
     if (dto.deliveryStyle !== undefined) updatePayload.deliveryStyle = dto.deliveryStyle;
     if (dto.formatStyle !== undefined) updatePayload.formatStyle = dto.formatStyle;
     if (dto.capacity !== undefined) updatePayload.capacity = dto.capacity;
+    if (dto.bio !== undefined) updatePayload.bio = dto.bio;
+    if (dto.subjectsTaught !== undefined) updatePayload.subjectsTaught = dto.subjectsTaught;
 
     if (Object.keys(updatePayload).length > 0) {
       updatePayload.updatedAt = new Date();

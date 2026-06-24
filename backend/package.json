@@ -31,7 +31,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed:nigeria": "ts-node -r tsconfig-paths/register src/database/seeds/nigerian-secondary.seed.ts",
+    "db:seed": "ts-node -r tsconfig-paths/register src/database/seeds/nigerian-secondary.seed.ts",
     "db:studio": "drizzle-kit studio",
     "commitlint": "commitlint --edit",
     "jwt:generate": "node scripts/generate-jwt-keys.js",

@@ -20,7 +20,7 @@ export class AuthSignupDto {
   @IsString()
   lastName!: string;
 
-  @ApiProperty({ enum: [UserRole.STUDENT, UserRole.TUTOR] })
+  @ApiProperty({ enum: [UserRole.STUDENT, UserRole.TUTOR, UserRole.UNASSIGNED] })
   @IsEnum(UserRole)
-  role!: UserRole.STUDENT | UserRole.TUTOR;
+  role!: UserRole.STUDENT | UserRole.TUTOR | UserRole.UNASSIGNED;
 }

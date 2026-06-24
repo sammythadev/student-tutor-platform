@@ -111,6 +111,7 @@ async function seed(): Promise<void> {
           userId,
           subjectId: subjectRow?.id,
           requiredSubject: subject[1].toLowerCase(),
+          subjects: [subject[1].toLowerCase()],
           gradeLevel: 7 + (index % 6),
           examType: index % 2 === 0 ? 'waec' : 'neco',
           requestedAvailability: [slot((index % 20) + 1, 9 + (index % 5))],
@@ -120,6 +121,8 @@ async function seed(): Promise<void> {
           learningStylePreference: index % 2 === 0 ? 'auditory' : 'visual',
           languages: ['english'],
           region,
+          bio: `I am looking to improve my skills in ${subject[1].toLowerCase()}.`,
+          learningGoals: 'My main goal is to excel in my exams.',
         })
         .onConflictDoNothing();
     }
@@ -174,6 +177,7 @@ async function seed(): Promise<void> {
           avgRating: String(0.5 + (index % 5) / 10),
           hourlyRate: String(2500 + (index % 10) * 500),
           capacity: 2 + (index % 3),
+          bio: `I am an experienced tutor specializing in ${primarySubject[1].toLowerCase()}.`,
         })
         .onConflictDoNothing();
 

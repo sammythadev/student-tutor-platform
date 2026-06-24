@@ -55,6 +55,20 @@ export class MatchmakingController {
     return this.matchmakingService.candidates(currentUser, query);
   }
 
+  @Get('candidates/students')
+  @Roles('tutor')
+  @ApiOperation({ summary: 'Get paginated student candidates for the current tutor' })
+  @ApiResponse({
+    status: 200,
+    description: 'Ranked student candidates for the authenticated tutor.',
+  })
+  candidateStudents(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Query() query: PaginationQueryDto,
+  ): Promise<any> {
+    return this.matchmakingService.candidateStudents(currentUser, query);
+  }
+
   @Post('select')
   @Roles('student')
   @ApiOperation({ summary: 'Manually select a tutor from the current student candidates' })

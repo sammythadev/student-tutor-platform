@@ -57,6 +57,14 @@ export class MatchmakingRepository {
       .where(eq(users.status, 'active'));
   }
 
+  async findStudents(): Promise<StudentRow[]> {
+    return this.db
+      .select({ user: users, profile: studentProfiles })
+      .from(studentProfiles)
+      .innerJoin(users, eq(users.id, studentProfiles.userId))
+      .where(eq(users.status, 'active'));
+  }
+
   async findBatchStudents(): Promise<StudentRow[]> {
     const activeStudentRows = await this.db
       .select({ studentId: assignments.studentId })
@@ -265,13 +273,14 @@ export class MatchmakingRepository {
     });
   }
 
-  async hasActiveAssignment(studentId: string): Promise<boolean> {
+  async hasActiveAssignmentWithTutor(studentId: string, tutorId: string): Promise<boolean> {
     const [assignment] = await this.db
       .select({ id: assignments.id })
       .from(assignments)
       .where(
         and(
           eq(assignments.studentId, studentId),
+          eq(assignments.tutorId, tutorId),
           or(eq(assignments.status, 'active'), eq(assignments.status, 'waitlisted')),
         ),
       )

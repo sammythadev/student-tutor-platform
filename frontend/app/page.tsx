@@ -336,9 +336,9 @@ export default function LandingPage() {
 
                 <div className="space-y-3">
                   {[
-                    { name: 'Prof. Julian S.', sub: 'Mathematics • MIT Alumni', rate: '$85/hr', available: true },
-                    { name: 'Sarah Jenkins', sub: 'Linguistics • Oxford', rate: '$60/hr', available: false },
-                    { name: 'Dr. Priya Nair', sub: 'Computer Science • Stanford', rate: '$95/hr', available: true },
+                    { name: 'Prof. Julian S.', sub: 'Mathematics • MIT Alumni', rate: '₦8,500/hr', available: true },
+                    { name: 'Sarah Jenkins', sub: 'Linguistics • Oxford', rate: '₦6,000/hr', available: false },
+                    { name: 'Dr. Priya Nair', sub: 'Computer Science • Stanford', rate: '₦9,500/hr', available: true },
                   ].map((tutor) => (
                     <div
                       key={tutor.name}
@@ -377,7 +377,7 @@ export default function LandingPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-5 rounded-xl text-white" style={{ background: 'linear-gradient(135deg, var(--primary), #4338CA)' }}>
                     <p className="label-caps text-white/60 mb-2">Daily Revenue</p>
-                    <p className="font-heading text-3xl font-bold">$420</p>
+                    <p className="font-heading text-3xl font-bold">₦42,000</p>
                     <p className="flex items-center gap-1 text-xs text-white/70 mt-1">
                       <TrendingUp className="w-3 h-3" />
                       +12% vs yesterday
