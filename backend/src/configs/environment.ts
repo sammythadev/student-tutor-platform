@@ -141,6 +141,11 @@ export function getSwaggerPath(): string {
   return process.env.SWAGGER_PATH ?? 'api-docs';
 }
 
+export function getCorsOrigin(): string[] {
+  const origin = process.env.CORS_ORIGIN?.trim();
+  return origin ? origin.split(',').map((o) => o.trim()) : ['http://localhost:3000'];
+}
+
 export function getDatabaseUrl(): string {
   const databaseUrl = process.env.DATABASE_URL;
 

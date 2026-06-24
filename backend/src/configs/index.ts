@@ -3,6 +3,7 @@ export {
 	getAppName,
 	getAppVersion,
 	getAdminSignupCode,
+	getCorsOrigin,
 	getJwtAccessTokenPrivateKey,
 	getJwtAccessTokenPublicKey,
 	getJwtAccessTokenTtlSeconds,
