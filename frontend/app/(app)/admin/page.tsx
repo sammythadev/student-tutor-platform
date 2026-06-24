@@ -1,42 +1,51 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Card } from '@/components/Badge'
-import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
-import { Users, Zap, AlertCircle, TrendingUp, MoreHorizontal, CheckCircle2 } from 'lucide-react'
+import { Button } from '@/components/Button'
+import { getAdminMetrics, type AdminMetrics } from '@/lib/api/dashboard'
+import { AlertCircle, CheckCircle2, ChevronRight, MoreHorizontal, TrendingUp, Users, Zap } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
 export default function AdminPage() {
+  const [metrics, setMetrics] = useState<AdminMetrics | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getAdminMetrics()
+      .then(setMetrics)
+      .catch((err: any) => setError(err?.response?.data?.message ?? 'Could not load admin metrics.'))
+  }, [])
+
+  const cards = [
+    { label: 'Total Users', value: metrics?.totalUsers?.toLocaleString() ?? '-', icon: Users, color: 'lavender', trend: 'Live', isUp: true },
+    { label: 'Active Sessions', value: metrics?.activeSessions?.toLocaleString() ?? '-', icon: Zap, color: 'mint', trend: 'Live', isUp: true },
+    { label: 'Avg Rating', value: metrics?.avgRating ? `${metrics.avgRating}/5` : 'N/A', icon: TrendingUp, color: 'sky', trend: 'Live', isUp: true },
+    { label: 'Open Issues', value: metrics?.openIssues?.toLocaleString() ?? '0', icon: AlertCircle, color: 'coral', trend: 'Live', isUp: false },
+  ]
+
   return (
     <div className="space-y-8 py-3">
-
-      {/* Page Header */}
       <div>
-        <h1 className="font-heading text-3xl font-bold text-text-primary tracking-tight">Admin Dashboard</h1>
-        <p className="text-text-secondary mt-1 text-sm">Platform overview and management tools</p>
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-text-primary">Admin Dashboard</h1>
+        <p className="mt-1 text-sm text-text-secondary">Platform overview and management tools</p>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        {[
-          { label: 'Total Users',     value: '2,345', icon: Users,       color: 'lavender', trend: '+12%', isUp: true  },
-          { label: 'Active Sessions', value: '156',   icon: Zap,         color: 'mint',     trend: '+8%',  isUp: true  },
-          { label: 'Avg Rating',      value: '4.8/5', icon: TrendingUp,  color: 'sky',      trend: '+0.2', isUp: true  },
-          { label: 'Open Issues',     value: '3',     icon: AlertCircle, color: 'coral',    trend: '-2',   isUp: false },
-        ].map((metric, i) => {
+      {error && <div className="surface-card p-4 text-sm text-accent-coral-fg">{error}</div>}
+
+      <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+        {cards.map(metric => {
           const Icon = metric.icon
           return (
-            <Card key={i} hover className="p-5">
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
-                style={{ background: `var(--accent-${metric.color}-bg)`, color: `var(--accent-${metric.color}-fg)` }}
-              >
-                <Icon className="w-5 h-5" strokeWidth={2} />
+            <Card key={metric.label} hover className="p-5">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: `var(--accent-${metric.color}-bg)`, color: `var(--accent-${metric.color}-fg)` }}>
+                <Icon className="h-5 w-5" />
               </div>
               <p className="font-heading text-3xl font-bold text-text-primary">{metric.value}</p>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>{metric.label}</p>
+              <div className="mt-2 flex items-center justify-between">
+                <p className="text-sm font-semibold text-text-secondary">{metric.label}</p>
                 <p className="text-xs font-bold" style={{ color: metric.isUp ? 'var(--accent-mint-fg)' : 'var(--text-muted)' }}>{metric.trend}</p>
               </div>
             </Card>
@@ -44,57 +53,30 @@ export default function AdminPage() {
         })}
       </div>
 
-      {/* Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-6">
-
-        {/* Recent Users */}
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-xl font-bold text-text-primary">Recent Users</h2>
             <Button variant="secondary" size="sm">View All</Button>
           </div>
-          
-          <Card className="p-0 overflow-hidden">
+          <Card className="overflow-hidden p-0">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
+              <table className="w-full text-left text-sm">
+                <thead className="bg-surface-2" style={{ borderBottom: '1px solid var(--border)' }}>
                   <tr>
-                    <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Name</th>
-                    <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Role</th>
-                    <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Status</th>
-                    <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Joined</th>
-                    <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}></th>
+                    {['Name', 'Role', 'Status', 'Joined', ''].map(header => <th key={header} className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-text-muted">{header}</th>)}
                   </tr>
                 </thead>
-                <tbody className="divide-y" style={{ divideColor: 'var(--border)' }}>
+                <tbody>
                   {[
-                    { name: 'John Doe',           role: 'Student', status: 'active',   joined: 'Dec 15' },
-                    { name: 'Dr. Sarah Chen',     role: 'Tutor',   status: 'active',   joined: 'Dec 14' },
-                    { name: 'Prof. James Wilson', role: 'Tutor',   status: 'active',   joined: 'Dec 13' },
-                    { name: 'Emily Brown',        role: 'Student', status: 'active',   joined: 'Dec 12' },
-                    { name: 'Alex Johnson',       role: 'Tutor',   status: 'inactive', joined: 'Dec 10' },
-                  ].map((user, i) => (
-                    <tr key={i} className="group transition-colors hover:bg-surface-2" style={{ background: 'transparent' }}>
-                      <td className="px-5 py-3.5">
-                        <p className="font-semibold text-text-primary">{user.name}</p>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <Badge color={user.role === 'Tutor' ? 'mint' : 'lavender'} size="sm">{user.role}</Badge>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className="font-semibold flex items-center gap-1.5" style={{ color: user.status === 'active' ? 'var(--accent-mint-fg)' : 'var(--text-muted)' }}>
-                          {user.status === 'active' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                          <span className="capitalize">{user.status}</span>
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span style={{ color: 'var(--text-secondary)' }}>{user.joined}</span>
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <button className="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer transition-colors" style={{ color: 'var(--text-muted)' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-                      </td>
+                    { name: 'Live user list endpoint pending', role: 'Admin', status: 'active', joined: 'N/A' },
+                  ].map(user => (
+                    <tr key={user.name} className="border-b hover:bg-surface-2" style={{ borderColor: 'var(--border)' }}>
+                      <td className="px-5 py-3.5"><p className="font-semibold text-text-primary">{user.name}</p></td>
+                      <td className="px-5 py-3.5"><Badge color="lavender" size="sm">{user.role}</Badge></td>
+                      <td className="px-5 py-3.5"><span className="flex items-center gap-1.5 font-semibold text-accent-mint-fg"><CheckCircle2 className="h-3.5 w-3.5" />{user.status}</span></td>
+                      <td className="px-5 py-3.5 text-text-secondary">{user.joined}</td>
+                      <td className="px-5 py-3.5 text-right"><MoreHorizontal className="inline h-4 w-4 text-text-muted" /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -103,49 +85,21 @@ export default function AdminPage() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
         <div className="space-y-4">
           <h2 className="font-heading text-xl font-bold text-text-primary">Quick Actions</h2>
-          <div className="space-y-3">
-            {[
-              { label: 'View Reports',    color: 'lavender' },
-              { label: 'Manage Tutors',   color: 'sky' },
-              { label: 'View Analytics',  color: 'mint' },
-              { label: 'System Settings', color: 'sun' },
-            ].map((action, i) => (
-              <Card key={i} hover className="p-4 flex items-center justify-between cursor-pointer group">
+          {['View Reports', 'Manage Tutors', 'View Analytics', 'System Settings'].map((label, index) => {
+            const color = ['lavender', 'sky', 'mint', 'sun'][index]
+            return (
+              <Card key={label} hover className="flex cursor-pointer items-center justify-between p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: `var(--accent-${action.color}-bg)`, color: `var(--accent-${action.color}-fg)` }}>
-                    <Zap className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm font-semibold text-text-primary">{action.label}</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}><Zap className="h-4 w-4" /></div>
+                  <span className="text-sm font-semibold text-text-primary">{label}</span>
                 </div>
-                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" style={{ color: 'var(--text-muted)' }} />
+                <ChevronRight className="h-4 w-4 text-text-muted" />
               </Card>
-            ))}
-          </div>
-
-          <Card className="p-5 mt-6 border-2 border-accent-coral-bg/50">
-            <h3 className="font-heading text-base font-bold text-text-primary mb-3 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" style={{ color: 'var(--accent-coral-fg)' }} /> System Alerts
-            </h3>
-            <div className="space-y-3">
-              {[
-                { msg: 'Server performance above 95%',  isGood: true },
-                { msg: '2 support tickets pending',     isGood: false },
-                { msg: 'Weekly backup completed',       isGood: true },
-              ].map((alert, i) => (
-                <div key={i} className="flex flex-col gap-1 py-1">
-                  <span className="text-xs font-semibold" style={{ color: alert.isGood ? 'var(--accent-mint-fg)' : 'var(--accent-sun-fg)' }}>
-                    {alert.isGood ? '✓ SUCCESS' : '! WARNING'}
-                  </span>
-                  <span className="text-sm text-text-primary">{alert.msg}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
+            )
+          })}
         </div>
-
       </div>
     </div>
   )

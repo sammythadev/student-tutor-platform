@@ -1,72 +1,81 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import { Card } from '@/components/Badge'
-import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
-import { Star, MessageCircle, Edit2, Calendar, MapPin, Target, BookOpen } from 'lucide-react'
+import { Button } from '@/components/Button'
+import { getMySessions, type SessionItem } from '@/lib/api/sessions'
+import { getMe } from '@/lib/api/users'
+import { useAuthStore } from '@/lib/store/authStore'
+import { BookOpen, Calendar, Edit2, MapPin, MessageCircle, Star, Target } from 'lucide-react'
 
 export default function ProfilePage() {
+  const storeUser = useAuthStore(s => s.user)
+  const storeStudent = useAuthStore(s => s.studentProfile)
+  const storeTutor = useAuthStore(s => s.tutorProfile)
+  const [profile, setProfile] = useState<any>(null)
+  const [sessions, setSessions] = useState<SessionItem[]>([])
+
+  useEffect(() => {
+    getMe().then(setProfile).catch(() => undefined)
+    getMySessions().then(setSessions).catch(() => undefined)
+  }, [])
+
+  const user = profile?.user ?? storeUser
+  const student = profile?.studentProfile ?? storeStudent
+  const tutor = profile?.tutorProfile ?? storeTutor
+  const role = user?.role ?? 'student'
+  const subjects = role === 'tutor'
+    ? tutor?.subjectsTaught ?? []
+    : student?.subjects?.length ? student.subjects : [student?.requiredSubject].filter(Boolean)
+  const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase() || 'U'
+  const completed = sessions.filter(session => session.status === 'completed')
+  const upcoming = sessions.filter(session => session.status !== 'completed' && session.status !== 'cancelled')
+  const currentPeople = useMemo(() => {
+    const names = new Map<string, { name: string; subject: string }>()
+    sessions.forEach(session => {
+      if (role === 'tutor') names.set(session.studentId, { name: session.studentName ?? 'Student', subject: session.subject })
+      else names.set(session.tutorId, { name: session.tutorName ?? 'Tutor', subject: session.subject })
+    })
+    return Array.from(names.values()).slice(0, 5)
+  }, [sessions, role])
+
   return (
     <div className="space-y-8 py-3">
-
-      {/* Profile Header */}
-      <Card className="p-8 relative overflow-hidden">
-        {/* Ambient background blob */}
-        <div
-          className="absolute top-0 right-0 w-96 h-96 bg-primary opacity-[0.03] rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"
-        />
-
-        <div className="flex flex-col md:flex-row gap-6 md:items-start relative z-10">
-          {/* Avatar */}
-          <div
-            className="w-24 h-24 rounded-full flex-shrink-0 flex items-center justify-center font-heading font-bold text-3xl"
-            style={{
-              background: 'linear-gradient(135deg, var(--accent-lavender-bg) 0%, var(--accent-sky-bg) 100%)',
-              color: 'var(--accent-lavender-fg)',
-              border: '4px solid var(--surface)',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-          >
-            JD
+      <Card className="relative overflow-hidden p-8">
+        <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-start">
+          <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-full border-4 border-surface bg-accent-lavender-bg font-heading text-3xl font-bold text-accent-lavender-fg">
+            {initials}
           </div>
-
-          {/* Info */}
           <div className="flex-1">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="font-heading text-3xl font-bold text-text-primary tracking-tight">John Doe</h1>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge color="lavender" size="sm">Student</Badge>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Grade 11</span>
+                <h1 className="font-heading text-3xl font-bold tracking-tight text-text-primary">{user?.firstName} {user?.lastName}</h1>
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge color={role === 'tutor' ? 'mint' : 'lavender'} size="sm">{role}</Badge>
+                  {student?.gradeLevel && <span className="text-sm font-semibold text-text-secondary">Grade {student.gradeLevel}</span>}
+                  {tutor?.avgRating && <span className="text-sm font-semibold text-text-secondary">{(Number(tutor.avgRating) * 5).toFixed(1)}/5</span>}
                 </div>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                <Button variant="secondary" size="sm">
-                  <Edit2 className="w-3.5 h-3.5" strokeWidth={2} />
-                  Edit Profile
-                </Button>
-                <Button size="sm">
-                  <MessageCircle className="w-3.5 h-3.5" strokeWidth={2} />
-                  Message
-                </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" size="sm"><Edit2 className="h-3.5 w-3.5" /> Edit Profile</Button>
+                <Button size="sm"><MessageCircle className="h-3.5 w-3.5" /> Message</Button>
               </div>
             </div>
 
-            <p className="text-sm text-text-secondary mb-6 leading-relaxed max-w-2xl">
-              Passionate learner focused on mathematics and physics. Working towards college entrance exams. 
-              Always eager to explore new problem-solving techniques.
+            <p className="mb-6 max-w-2xl text-sm leading-relaxed text-text-secondary">
+              {student?.bio ?? tutor?.bio ?? 'No profile bio has been added yet.'}
             </p>
 
-            {/* Quick Stats */}
-            <div className="flex items-center gap-8">
+            <div className="flex flex-wrap items-center gap-8">
               {[
-                { label: 'Sessions', value: '12' },
-                { label: 'Active Tutors', value: '3' },
-                { label: 'Hours Learned', value: '24' },
+                { label: 'Sessions', value: String(sessions.length) },
+                { label: role === 'tutor' ? 'Students' : 'Upcoming', value: String(role === 'tutor' ? currentPeople.length : upcoming.length) },
+                { label: role === 'tutor' ? 'Completed' : 'Hours Learned', value: role === 'tutor' ? String(completed.length) : String(student?.totalHoursLearned ?? 0) },
               ].map(stat => (
                 <div key={stat.label}>
                   <p className="font-heading text-2xl font-bold text-text-primary">{stat.value}</p>
-                  <p className="text-xs font-semibold uppercase tracking-wider mt-0.5" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
+                  <p className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-text-muted">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -74,172 +83,81 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      {/* Main Content */}
-      <div className="grid lg:grid-cols-3 gap-6">
-
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6">
-
-          {/* About */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
           <Card className="p-6">
-            <h2 className="font-heading text-xl font-bold text-text-primary mb-5">About</h2>
+            <h2 className="mb-5 font-heading text-xl font-bold text-text-primary">About</h2>
             <div className="space-y-5">
               <div className="flex items-start gap-3">
-                <Target className="w-4 h-4 mt-0.5" style={{ color: 'var(--accent)' }} strokeWidth={2} />
+                <Target className="mt-0.5 h-4 w-4 text-primary" />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Goal</p>
-                  <p className="text-sm font-medium text-text-primary">Improve grades in Mathematics and Physics for college entrance</p>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-text-muted">Goal</p>
+                  <p className="text-sm font-medium text-text-primary">{student?.learningGoals ?? 'No learning goal set.'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <BookOpen className="w-4 h-4 mt-0.5" style={{ color: 'var(--accent-mint-fg)' }} strokeWidth={2} />
+                <BookOpen className="mt-0.5 h-4 w-4 text-accent-mint-fg" />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Learning Style</p>
-                  <p className="text-sm font-medium text-text-primary">Visual learner with hands-on approach preference</p>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-text-muted">{role === 'tutor' ? 'Subjects Taught' : 'Subjects'}</p>
+                  <div className="flex flex-wrap gap-2">{subjects.map((subject: string) => <Badge key={subject} color="lavender" size="sm">{subject}</Badge>)}</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 mt-0.5" style={{ color: 'var(--accent-coral-fg)' }} strokeWidth={2} />
+                <MapPin className="mt-0.5 h-4 w-4 text-accent-coral-fg" />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Location</p>
-                  <p className="text-sm font-medium text-text-primary">New York, USA • EST Timezone</p>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-text-muted">Location</p>
+                  <p className="text-sm font-medium text-text-primary">{user?.region ?? 'No region set'} · {user?.timezone ?? 'UTC'}</p>
                 </div>
               </div>
             </div>
           </Card>
 
-          {/* Subjects & Expertise */}
           <Card className="p-6">
-            <h2 className="font-heading text-xl font-bold text-text-primary mb-5">Studying With</h2>
+            <h2 className="mb-5 font-heading text-xl font-bold text-text-primary">Recent Sessions</h2>
             <div className="space-y-3">
-              {[
-                { name: 'Mathematics', tutors: 2, color: 'lavender' },
-                { name: 'Physics',     tutors: 1, color: 'sky' },
-                { name: 'Chemistry',   tutors: 0, color: 'coral' },
-              ].map((subject, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3.5 rounded-xl transition-colors cursor-pointer"
-                  style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--primary-subtle)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-                >
+              {sessions.slice(0, 5).map(session => (
+                <div key={session.id} className="flex flex-col justify-between gap-3 rounded-xl border p-4 sm:flex-row sm:items-center" style={{ borderColor: 'var(--border)' }}>
                   <div className="flex items-center gap-3">
-                    <Badge color={subject.color as any} size="sm">{subject.name}</Badge>
-                  </div>
-                  <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                    {subject.tutors > 0 ? `${subject.tutors} tutor${subject.tutors !== 1 ? 's' : ''}` : 'Not started'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Recent Sessions */}
-          <Card className="p-6">
-            <h2 className="font-heading text-xl font-bold text-text-primary mb-5">Recent Sessions</h2>
-            <div className="space-y-3">
-              {[
-                { tutor: 'Dr. Sarah Chen',     subject: 'Mathematics', date: 'Dec 15, 2024', rating: 5, color: 'lavender' },
-                { tutor: 'Prof. James Wilson', subject: 'Physics',     date: 'Dec 14, 2024', rating: 4, color: 'sky'      },
-                { tutor: 'Dr. Sarah Chen',     subject: 'Mathematics', date: 'Dec 12, 2024', rating: 5, color: 'lavender' },
-              ].map((session, i) => (
-                <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl gap-3" style={{ border: '1px solid var(--border)' }}>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs"
-                      style={{ background: `var(--accent-${session.color}-bg)`, color: `var(--accent-${session.color}-fg)` }}
-                    >
-                      {session.tutor.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-sky-bg text-xs font-bold text-accent-sky-fg">
+                      {(role === 'tutor' ? session.studentName : session.tutorName)?.split(' ').map(part => part[0]).join('').slice(0, 2) ?? 'S'}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-text-primary">{session.tutor}</p>
-                      <p className="text-xs text-text-secondary mt-0.5">{session.subject} • {session.date}</p>
+                      <p className="text-sm font-semibold text-text-primary">{role === 'tutor' ? session.studentName : session.tutorName}</p>
+                      <p className="mt-0.5 text-xs text-text-secondary">{session.subject} · {new Date(session.startAt).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <div className="flex gap-1 ml-13 sm:ml-0">
-                    {[...Array(5)].map((_, j) => (
-                      <Star
-                        key={j}
-                        className="w-3.5 h-3.5"
-                        style={{ color: j < session.rating ? 'var(--accent-sun-fg)' : 'var(--border)' }}
-                        fill={j < session.rating ? 'currentColor' : 'none'}
-                        strokeWidth={j < session.rating ? 0 : 2}
-                      />
-                    ))}
-                  </div>
+                  <Badge color={session.status === 'completed' ? 'mint' : 'sky'} size="sm">{session.status}</Badge>
                 </div>
               ))}
+              {sessions.length === 0 && <p className="text-sm text-text-secondary">No sessions yet.</p>}
             </div>
           </Card>
         </div>
 
-        {/* Right Column */}
         <div className="space-y-6">
-
-          {/* Current Tutors */}
           <Card className="p-6">
-            <h2 className="font-heading text-lg font-bold text-text-primary mb-5">Current Tutors</h2>
+            <h2 className="mb-5 font-heading text-lg font-bold text-text-primary">{role === 'tutor' ? 'Students' : 'Current Tutors'}</h2>
             <div className="space-y-4">
-              {[
-                { name: 'Dr. Sarah Chen',     subject: 'Mathematics', color: 'lavender' },
-                { name: 'Prof. James Wilson', subject: 'Physics',     color: 'sky' },
-              ].map((tutor, i) => (
-                <div key={i} className="flex items-center gap-3 cursor-pointer group">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs transition-transform group-hover:scale-105"
-                    style={{ background: `var(--accent-${tutor.color}-bg)`, color: `var(--accent-${tutor.color}-fg)` }}
-                  >
-                    {tutor.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-text-primary truncate transition-colors group-hover:text-primary">
-                      {tutor.name}
-                    </p>
-                    <p className="text-xs text-text-secondary">{tutor.subject}</p>
+              {currentPeople.map(person => (
+                <div key={`${person.name}-${person.subject}`} className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-mint-bg text-xs font-bold text-accent-mint-fg">{person.name.split(' ').map(part => part[0]).join('').slice(0, 2)}</div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-text-primary">{person.name}</p>
+                    <p className="text-xs text-text-secondary">{person.subject}</p>
                   </div>
                 </div>
               ))}
+              {currentPeople.length === 0 && <p className="text-sm text-text-secondary">No active matches yet.</p>}
             </div>
           </Card>
 
-          {/* Achievements */}
           <Card className="p-6">
-            <h2 className="font-heading text-lg font-bold text-text-primary mb-5">Achievements</h2>
-            <div className="space-y-4">
-              {[
-                { icon: '🎯', title: 'Consistent Learner', desc: '10+ sessions' },
-                { icon: '⭐', title: 'Top Rated',          desc: '4.9/5 avg rating' },
-                { icon: '🚀', title: 'Quick Learner',      desc: '30% progress' },
-              ].map((achieve, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-lg bg-surface-2 border">
-                    {achieve.icon}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary">{achieve.title}</p>
-                    <p className="text-xs text-text-secondary mt-0.5">{achieve.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Availability */}
-          <Card className="p-6">
-            <h2 className="font-heading text-lg font-bold text-text-primary mb-4">Preferred Time</h2>
+            <h2 className="mb-5 font-heading text-lg font-bold text-text-primary">Activity</h2>
             <div className="space-y-3">
-              <div className="flex items-center gap-2.5 p-3 rounded-xl" style={{ background: 'var(--surface-2)' }}>
-                <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent-lavender-fg)' }} strokeWidth={2} />
-                <span className="text-xs font-semibold text-text-primary">After school (3 PM - 8 PM)</span>
-              </div>
-              <div className="flex items-center gap-2.5 p-3 rounded-xl" style={{ background: 'var(--surface-2)' }}>
-                <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent-sky-fg)' }} strokeWidth={2} />
-                <span className="text-xs font-semibold text-text-primary">Weekends anytime</span>
-              </div>
+              <div className="flex items-center gap-2.5 rounded-xl bg-surface-2 p-3"><Calendar className="h-4 w-4 text-accent-lavender-fg" /><span className="text-xs font-semibold text-text-primary">{upcoming.length} upcoming sessions</span></div>
+              <div className="flex items-center gap-2.5 rounded-xl bg-surface-2 p-3"><Star className="h-4 w-4 text-accent-sun-fg" /><span className="text-xs font-semibold text-text-primary">{completed.length} completed sessions</span></div>
             </div>
           </Card>
-
         </div>
       </div>
     </div>

@@ -2,14 +2,17 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/Button'
 import { Input, Select, Textarea } from '@/components/Input'
 import { Badge } from '@/components/Badge'
 import { BookOpen, ArrowRight } from 'lucide-react'
+import { onboard } from '@/lib/api/auth'
 
 type OnboardingStep = 'role' | 'student' | 'tutor'
 
 export default function OnboardingPage() {
+  const router = useRouter()
   const [step, setStep] = useState<OnboardingStep>('role')
   const [role, setRole] = useState<'student' | 'tutor' | null>(null)
   const [loading, setLoading] = useState(false)
@@ -21,6 +24,7 @@ export default function OnboardingPage() {
     examTypes: '',
     learningStyle: '',
     timezone: '',
+    bio: '',
   })
 
   // Tutor form state
@@ -31,6 +35,7 @@ export default function OnboardingPage() {
     hourlyRate: '',
     availability: '',
     bio: '',
+    timezone: '',
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -92,11 +97,25 @@ export default function OnboardingPage() {
     }
 
     setLoading(true)
-    // TODO: API call
-    setTimeout(() => {
+    try {
+      await onboard('student', {
+        subjects: studentForm.subjects,
+        gradeLevel: Number(studentForm.gradeLevel),
+        examType: studentForm.examTypes || 'waec',
+        requestedAvailability: [
+          { start: '2026-01-01T15:00:00.000Z', end: '2026-01-01T18:00:00.000Z' },
+        ],
+        learningStylePreference: studentForm.learningStyle,
+        timezone: studentForm.timezone || 'Africa/Lagos',
+        bio: studentForm.bio || undefined,
+      })
+      router.push('/dashboard')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? 'Onboarding failed. Please try again.'
+      setErrors({ subjects: Array.isArray(msg) ? msg.join(', ') : msg })
+    } finally {
       setLoading(false)
-      // Redirect to dashboard
-    }, 1000)
+    }
   }
 
   const handleTutorSubmit = async (e: React.FormEvent) => {
@@ -113,11 +132,25 @@ export default function OnboardingPage() {
     }
 
     setLoading(true)
-    // TODO: API call
-    setTimeout(() => {
+    try {
+      await onboard('tutor', {
+        subjectsTaught: tutorForm.expertise,
+        gradeLevelsSupported: [9, 10, 11, 12],
+        examTypesSupported: ['waec', 'neco', 'jamb'],
+        availability: [
+          { start: '2026-01-01T15:00:00.000Z', end: '2026-01-01T18:00:00.000Z' },
+        ],
+        hourlyRate: Number(tutorForm.hourlyRate),
+        bio: tutorForm.bio || undefined,
+        timezone: tutorForm.timezone || 'Africa/Lagos',
+      })
+      router.push('/tutor-dashboard')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? 'Onboarding failed. Please try again.'
+      setErrors({ expertise: Array.isArray(msg) ? msg.join(', ') : msg })
+    } finally {
       setLoading(false)
-      // Redirect to dashboard
-    }, 1000)
+    }
   }
 
   if (step === 'role') {
@@ -220,6 +253,28 @@ export default function OnboardingPage() {
           {/* Form */}
           <form onSubmit={handleStudentSubmit} className="glass-card p-8 space-y-6">
             <Select
+              label="Exam Type"
+              name="examTypes"
+              value={studentForm.examTypes}
+              onChange={handleStudentChange}
+              options={[
+                { value: 'waec', label: 'WAEC' },
+                { value: 'neco', label: 'NECO' },
+                { value: 'jamb', label: 'JAMB' },
+              ]}
+              placeholder="Select exam"
+            />
+
+            <Textarea
+              label="Short Bio"
+              name="bio"
+              rows={3}
+              placeholder="What are you working toward?"
+              value={studentForm.bio}
+              onChange={handleStudentChange}
+            />
+
+            <Select
               label="Current Grade Level"
               name="gradeLevel"
               value={studentForm.gradeLevel}
@@ -279,11 +334,11 @@ export default function OnboardingPage() {
               value={studentForm.timezone}
               onChange={handleStudentChange}
               options={[
-                { value: 'utc', label: 'UTC' },
-                { value: 'est', label: 'EST' },
-                { value: 'cst', label: 'CST' },
-                { value: 'mst', label: 'MST' },
-                { value: 'pst', label: 'PST' },
+                { value: 'Africa/Lagos', label: 'Africa/Lagos' },
+                { value: 'UTC', label: 'UTC' },
+                { value: 'America/New_York', label: 'America/New_York' },
+                { value: 'America/Chicago', label: 'America/Chicago' },
+                { value: 'America/Los_Angeles', label: 'America/Los_Angeles' },
               ]}
               placeholder="Select timezone"
             />
@@ -396,6 +451,21 @@ export default function OnboardingPage() {
               placeholder="Tell students about your teaching style and experience..."
               value={tutorForm.bio}
               onChange={handleTutorChange}
+            />
+
+            <Select
+              label="Preferred Timezone"
+              name="timezone"
+              value={tutorForm.timezone}
+              onChange={handleTutorChange}
+              options={[
+                { value: 'Africa/Lagos', label: 'Africa/Lagos' },
+                { value: 'UTC', label: 'UTC' },
+                { value: 'America/New_York', label: 'America/New_York' },
+                { value: 'America/Chicago', label: 'America/Chicago' },
+                { value: 'America/Los_Angeles', label: 'America/Los_Angeles' },
+              ]}
+              placeholder="Select timezone"
             />
 
             <div className="flex gap-3 pt-4">

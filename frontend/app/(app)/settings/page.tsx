@@ -1,246 +1,191 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { Input, Select } from '@/components/Input'
-import { Bell, Lock, User, Palette, LogOut, ChevronRight } from 'lucide-react'
+import { logout } from '@/lib/api/auth'
+import { getMe, updateMe, type UpdateMePayload } from '@/lib/api/users'
+import { useAuthStore } from '@/lib/store/authStore'
+import { Bell, Lock, LogOut, Palette, User } from 'lucide-react'
+
+const notificationRows: Array<{ key: keyof NonNullable<UpdateMePayload['notificationPrefs']>; label: string; desc: string }> = [
+  { key: 'sessionReminders', label: 'Session Reminders', desc: 'Get notified before sessions' },
+  { key: 'newMessages', label: 'New Messages', desc: 'Notify me when tutors or students send messages' },
+  { key: 'sessionUpdates', label: 'Session Updates', desc: 'Updates on session status changes' },
+  { key: 'marketingEmails', label: 'Marketing Emails', desc: 'Promotional offers and news' },
+  { key: 'weeklyReports', label: 'Weekly Reports', desc: 'Summary of your learning progress' },
+]
 
 export default function SettingsPage() {
+  const authUser = useAuthStore(s => s.user)
   const [activeTab, setActiveTab] = useState('profile')
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    fullName: 'John Doe',
-    email: 'john@example.com',
-    timezone: 'EST',
-    language: 'English',
+    firstName: authUser?.firstName ?? '',
+    lastName: authUser?.lastName ?? '',
+    email: authUser?.email ?? '',
+    region: authUser?.region ?? '',
+    timezone: authUser?.timezone ?? 'Africa/Lagos',
+    language: authUser?.language ?? 'English',
+    theme: authUser?.theme ?? 'dark',
+    accentColor: authUser?.accentColor ?? 'lavender',
+    notificationPrefs: authUser?.notificationPrefs ?? {
+      sessionReminders: true,
+      newMessages: true,
+      sessionUpdates: true,
+      marketingEmails: false,
+      weeklyReports: true,
+    },
   })
 
+  useEffect(() => {
+    getMe().then(data => {
+      const user = data.user
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.firstName ?? '',
+        lastName: user.lastName ?? '',
+        email: user.email ?? '',
+        region: user.region ?? '',
+        timezone: user.timezone ?? 'Africa/Lagos',
+        language: user.language ?? 'English',
+        theme: user.theme ?? 'dark',
+        accentColor: user.accentColor ?? 'lavender',
+        notificationPrefs: user.notificationPrefs ?? prev.notificationPrefs,
+      }))
+    }).catch(() => undefined)
+  }, [])
+
   const tabs = [
-    { id: 'profile',       label: 'Profile',            icon: User },
-    { id: 'notifications', label: 'Notifications',      icon: Bell },
-    { id: 'privacy',       label: 'Privacy & Security', icon: Lock },
-    { id: 'appearance',    label: 'Appearance',         icon: Palette },
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'privacy', label: 'Privacy & Security', icon: Lock },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
   ]
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+  async function save() {
+    setSaving(true)
+    setMessage(null)
+    try {
+      await updateMe({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        region: formData.region,
+        timezone: formData.timezone,
+        language: formData.language,
+        theme: formData.theme,
+        accentColor: formData.accentColor,
+        notificationPrefs: formData.notificationPrefs,
+      })
+      setMessage('Settings saved.')
+    } catch (err: any) {
+      setMessage(err?.response?.data?.message ?? 'Could not save settings.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div className="space-y-8 py-3">
-
-      {/* Page Header */}
       <div>
-        <h1 className="font-heading text-3xl font-bold text-text-primary tracking-tight">Settings</h1>
-        <p className="text-text-secondary mt-1 text-sm">Manage your account and preferences</p>
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-text-primary">Settings</h1>
+        <p className="mt-1 text-sm text-text-secondary">Manage your account and preferences</p>
       </div>
 
-      {/* Layout */}
-      <div className="flex flex-col md:flex-row gap-6">
+      {message && <div className="surface-card p-4 text-sm text-text-secondary">{message}</div>}
 
-        {/* Sidebar Navigation */}
-        <div className="md:w-56 flex-shrink-0">
-          <nav className="space-y-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              const isActive = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer text-left"
-                  style={isActive
-                    ? { background: 'var(--primary-subtle)', color: 'var(--primary)' }
-                    : { background: 'transparent', color: 'var(--text-secondary)' }
-                  }
-                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'var(--surface-2)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
-                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' } }}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-                  <span className={`text-sm ${isActive ? 'font-bold' : 'font-semibold'}`}>{tab.label}</span>
-                </button>
-              )
-            })}
-          </nav>
-        </div>
+      <div className="flex flex-col gap-6 md:flex-row">
+        <nav className="md:w-56 flex-shrink-0 space-y-1">
+          {tabs.map(tab => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold" style={isActive ? { background: 'var(--primary-subtle)', color: 'var(--primary)' } : { color: 'var(--text-secondary)' }}>
+                <Icon className="h-5 w-5" /> {tab.label}
+              </button>
+            )
+          })}
+        </nav>
 
-        {/* Tab Content */}
-        <div className="flex-1 min-w-0">
-
-          {/* Profile Tab */}
+        <div className="min-w-0 flex-1">
           {activeTab === 'profile' && (
-            <div className="space-y-6">
-              <Card className="p-6 md:p-8">
-                <h2 className="font-heading text-xl font-bold text-text-primary mb-6">Profile Information</h2>
-                <div className="space-y-5 max-w-xl">
-                  <Input  label="Full Name"     name="fullName" value={formData.fullName} onChange={handleChange} />
-                  <Input  label="Email Address" name="email"    value={formData.email}    onChange={handleChange} type="email" />
-                  <Select label="Timezone"      name="timezone" value={formData.timezone} onChange={handleChange}
-                    options={[
-                      { value: 'UTC', label: 'UTC' },
-                      { value: 'EST', label: 'EST' },
-                      { value: 'CST', label: 'CST' },
-                      { value: 'MST', label: 'MST' },
-                      { value: 'PST', label: 'PST' },
-                    ]}
-                  />
-                  <Select label="Language"      name="language" value={formData.language} onChange={handleChange}
-                    options={[
-                      { value: 'English', label: 'English' },
-                      { value: 'Spanish', label: 'Spanish' },
-                      { value: 'French',  label: 'French'  },
-                      { value: 'German',  label: 'German'  },
-                    ]}
-                  />
-                  <div className="flex gap-3 pt-4">
-                    <Button>Save Changes</Button>
-                    <Button variant="secondary">Cancel</Button>
-                  </div>
+            <Card className="p-6 md:p-8">
+              <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Profile Information</h2>
+              <div className="max-w-xl space-y-5">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Input label="First Name" name="firstName" value={formData.firstName} onChange={event => setFormData(prev => ({ ...prev, firstName: event.target.value }))} />
+                  <Input label="Last Name" name="lastName" value={formData.lastName} onChange={event => setFormData(prev => ({ ...prev, lastName: event.target.value }))} />
                 </div>
-              </Card>
-            </div>
+                <Input label="Email Address" name="email" value={formData.email} type="email" disabled />
+                <Input label="Region" name="region" value={formData.region} onChange={event => setFormData(prev => ({ ...prev, region: event.target.value }))} />
+                <Select label="Timezone" name="timezone" value={formData.timezone} onChange={event => setFormData(prev => ({ ...prev, timezone: event.target.value }))} options={[
+                  { value: 'Africa/Lagos', label: 'Africa/Lagos' },
+                  { value: 'UTC', label: 'UTC' },
+                  { value: 'America/New_York', label: 'America/New_York' },
+                  { value: 'America/Chicago', label: 'America/Chicago' },
+                ]} />
+                <Select label="Language" name="language" value={formData.language} onChange={event => setFormData(prev => ({ ...prev, language: event.target.value }))} options={[
+                  { value: 'English', label: 'English' },
+                  { value: 'Spanish', label: 'Spanish' },
+                  { value: 'French', label: 'French' },
+                ]} />
+                <Button onClick={save} loading={saving}>Save Changes</Button>
+              </div>
+            </Card>
           )}
 
-          {/* Notifications Tab */}
           {activeTab === 'notifications' && (
-            <div className="space-y-6">
-              <Card className="p-6 md:p-8">
-                <h2 className="font-heading text-xl font-bold text-text-primary mb-6">Notification Preferences</h2>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Session Reminders', desc: 'Get notified 24 hours before sessions', enabled: true  },
-                    { label: 'New Messages',      desc: 'Notify me when tutors send messages',   enabled: true  },
-                    { label: 'Session Updates',   desc: 'Updates on session status changes',     enabled: true  },
-                    { label: 'Marketing Emails',  desc: 'Promotional offers and news',           enabled: false },
-                    { label: 'Weekly Reports',    desc: 'Summary of your learning progress',     enabled: true  },
-                  ].map((item, i) => (
-                    <label key={i} className="flex items-center justify-between p-4 rounded-xl cursor-pointer transition-colors group" style={{ background: 'var(--surface-2)' }}>
-                      <div>
-                        <p className="text-sm font-semibold text-text-primary">{item.label}</p>
-                        <p className="text-xs text-text-secondary mt-1">{item.desc}</p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={item.enabled}
-                        readOnly
-                        className="w-5 h-5 rounded cursor-pointer transition-transform group-hover:scale-110"
-                        style={{ accentColor: 'var(--primary)' }}
-                      />
-                    </label>
-                  ))}
-                </div>
-              </Card>
-            </div>
+            <Card className="p-6 md:p-8">
+              <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Notification Preferences</h2>
+              <div className="space-y-3">
+                {notificationRows.map(item => (
+                  <label key={item.key} className="flex cursor-pointer items-center justify-between rounded-xl bg-surface-2 p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">{item.label}</p>
+                      <p className="mt-1 text-xs text-text-secondary">{item.desc}</p>
+                    </div>
+                    <input type="checkbox" checked={!!formData.notificationPrefs?.[item.key]} onChange={event => setFormData(prev => ({ ...prev, notificationPrefs: { ...prev.notificationPrefs, [item.key]: event.target.checked } }))} className="h-5 w-5" style={{ accentColor: 'var(--primary)' }} />
+                  </label>
+                ))}
+                <Button onClick={save} loading={saving}>Save Notifications</Button>
+              </div>
+            </Card>
           )}
 
-          {/* Privacy & Security Tab */}
           {activeTab === 'privacy' && (
-            <div className="space-y-6">
-              <Card className="p-6 md:p-8">
-                <h2 className="font-heading text-xl font-bold text-text-primary mb-6">Privacy & Security</h2>
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl cursor-pointer transition-colors group hover:bg-surface-2" style={{ border: '1px solid var(--border)' }}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors">Change Password</p>
-                        <p className="text-xs text-text-secondary mt-1">Update your password regularly for security</p>
-                      </div>
-                      <ChevronRight className="w-5 h-5" style={{ color: 'var(--text-muted)' }} strokeWidth={2} />
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-xl" style={{ border: '1px solid var(--border)' }}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-text-primary">Two-Factor Authentication</p>
-                        <p className="text-xs text-text-secondary mt-1">Add extra security to your account</p>
-                      </div>
-                      <label className="cursor-pointer">
-                        <input type="checkbox" checked={false} readOnly className="w-5 h-5 rounded cursor-pointer hover:scale-110 transition-transform" style={{ accentColor: 'var(--primary)' }} />
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-xl" style={{ border: '1px solid var(--border)' }}>
-                    <p className="text-sm font-semibold text-text-primary mb-1">Blocked Users</p>
-                    <p className="text-xs text-text-secondary">You have blocked 0 users</p>
-                  </div>
-
-                  <div className="p-4 rounded-xl" style={{ background: 'var(--accent-coral-bg)', border: '1px solid var(--accent-coral-fg)30' }}>
-                    <p className="text-sm font-semibold" style={{ color: 'var(--accent-coral-fg)' }}>Delete Account</p>
-                    <p className="text-xs mt-1 mb-4" style={{ color: 'var(--accent-coral-fg)', opacity: 0.8 }}>Permanently delete your account and all data</p>
-                    <Button variant="destructive" size="sm">Delete Account</Button>
-                  </div>
-                </div>
-              </Card>
-            </div>
+            <Card className="p-6 md:p-8">
+              <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Privacy & Security</h2>
+              <p className="text-sm text-text-secondary">Password and two-factor authentication endpoints are not implemented yet.</p>
+            </Card>
           )}
 
-          {/* Appearance Tab */}
           {activeTab === 'appearance' && (
-            <div className="space-y-6">
-              <Card className="p-6 md:p-8">
-                <h2 className="font-heading text-xl font-bold text-text-primary mb-6">Appearance</h2>
-                <div className="space-y-6">
-
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary mb-3">Theme</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      {['Light', 'Dark', 'Auto'].map((theme, i) => (
-                        <button
-                          key={theme}
-                          className="p-4 rounded-xl border-2 text-center transition-all cursor-pointer"
-                          style={{
-                            background: 'var(--surface-2)',
-                            borderColor: i === 1 ? 'var(--primary)' : 'var(--border)',
-                          }}
-                          onMouseEnter={e => { if (i !== 1) e.currentTarget.style.borderColor = 'var(--primary-subtle)' }}
-                          onMouseLeave={e => { if (i !== 1) e.currentTarget.style.borderColor = 'var(--border)' }}
-                        >
-                          <p className="text-sm font-semibold" style={{ color: i === 1 ? 'var(--primary)' : 'var(--text-primary)' }}>{theme}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary mb-3">Accent Color</p>
-                    <div className="flex flex-wrap gap-4">
-                      {[
-                        { color: 'var(--accent-lavender-fg)', name: 'Lavender' },
-                        { color: 'var(--accent-sky-fg)',      name: 'Sky' },
-                        { color: 'var(--accent-mint-fg)',     name: 'Mint' },
-                        { color: 'var(--accent-sun-fg)',      name: 'Sun' },
-                        { color: 'var(--accent-coral-fg)',    name: 'Coral' },
-                      ].map((item, i) => (
-                        <button
-                          key={i}
-                          className="w-12 h-12 rounded-full cursor-pointer transition-transform hover:scale-110"
-                          style={{
-                            background: item.color,
-                            boxShadow: i === 0 ? `0 0 0 4px var(--canvas), 0 0 0 6px ${item.color}` : 'none'
-                          }}
-                          title={item.name}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                </div>
-              </Card>
-            </div>
+            <Card className="p-6 md:p-8">
+              <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Appearance</h2>
+              <div className="space-y-6">
+                <Select label="Theme" name="theme" value={formData.theme} onChange={event => setFormData(prev => ({ ...prev, theme: event.target.value }))} options={[
+                  { value: 'light', label: 'Light' },
+                  { value: 'dark', label: 'Dark' },
+                  { value: 'auto', label: 'Auto' },
+                ]} />
+                <Select label="Accent Color" name="accentColor" value={formData.accentColor} onChange={event => setFormData(prev => ({ ...prev, accentColor: event.target.value }))} options={[
+                  { value: 'lavender', label: 'Lavender' },
+                  { value: 'sky', label: 'Sky' },
+                  { value: 'mint', label: 'Mint' },
+                  { value: 'sun', label: 'Sun' },
+                  { value: 'coral', label: 'Coral' },
+                ]} />
+                <Button onClick={save} loading={saving}>Save Appearance</Button>
+              </div>
+            </Card>
           )}
-
         </div>
       </div>
 
-      {/* Sign Out */}
-      <div className="pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
-        <Button variant="secondary" className="hover:!bg-accent-coral-bg hover:!text-accent-coral-fg hover:!border-accent-coral-fg">
-          <LogOut className="w-4 h-4" strokeWidth={2} />
-          Sign Out
-        </Button>
+      <div className="border-t pt-6" style={{ borderColor: 'var(--border)' }}>
+        <Button variant="secondary" onClick={logout}><LogOut className="h-4 w-4" /> Sign Out</Button>
       </div>
     </div>
   )

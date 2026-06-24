@@ -30,7 +30,7 @@ export async function signup(payload: SignupPayload) {
 
 export async function onboard(role: 'student' | 'tutor', profilePayload: any) {
   const { data } = await api.post('/auth/onboard', { role, [`${role}Profile`]: profilePayload })
-  // Update profiles in store
+  useAuthStore.getState().updateUser(data.user)
   useAuthStore.getState().updateStudentProfile(data.studentProfile)
   useAuthStore.getState().updateTutorProfile(data.tutorProfile)
   return data

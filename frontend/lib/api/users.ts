@@ -26,9 +26,23 @@ export async function updateTutorPreferences(payload: Record<string, any>) {
   return data
 }
 
-export async function getTutorCandidates(params?: { page?: number; limit?: number }) {
+export async function getTutorCandidates(params?: { page?: number; limit?: number; search?: string; subject?: string }) {
   const { data } = await api.get('/matchmaking/candidates', { params })
-  return data as TutorCandidatePage
+  const rawCandidates = data.candidates ?? data.data ?? []
+  return {
+    candidates: rawCandidates.map((candidate: any) => ({
+      ...candidate,
+      userId: candidate.userId ?? candidate.tutorId,
+      tutorId: candidate.tutorId ?? candidate.userId,
+      ratingCount: candidate.ratingCount ?? 0,
+      hourlyRate: candidate.hourlyRate ?? '0',
+      bio: candidate.bio ?? null,
+      avatarUrl: candidate.avatarUrl ?? null,
+    })),
+    total: data.total ?? rawCandidates.length,
+    page: data.page ?? params?.page ?? 1,
+    limit: data.limit ?? params?.limit ?? 5,
+  } as TutorCandidatePage
 }
 
 export async function selectTutor(tutorId: string) {
@@ -56,6 +70,7 @@ export interface UpdateMePayload {
 
 export interface TutorCandidate {
   userId: string
+  tutorId?: string
   score: number
   subjectsTaught: string[]
   experienceYears: number

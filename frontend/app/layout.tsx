@@ -1,20 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { DM_Sans, Space_Grotesk } from 'next/font/google'
 import { Providers } from '@/components/Providers'
 import './globals.css'
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  axes: ['opsz'],
-  display: 'swap',
-})
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-heading',
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: 'Tutorly — Premium Student & Tutor Platform',
@@ -44,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${spaceGrotesk.variable}`}
+      className="font-sans"
       suppressHydrationWarning
     >
       <body className="font-sans antialiased bg-canvas text-text-primary transition-colors duration-200">
