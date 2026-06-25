@@ -85,6 +85,7 @@ export interface TutorCandidate {
   userId: string
   tutorId?: string
   score: number
+  rankPercentage?: number
   subjectsTaught: string[]
   experienceYears: number
   avgRating: string | null
@@ -97,6 +98,7 @@ export interface TutorCandidate {
   region: string | null
   isEligible?: boolean
   reason?: string
+  isVerified?: boolean
 }
 
 export interface TutorCandidatePage {

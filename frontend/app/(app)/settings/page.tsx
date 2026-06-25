@@ -195,7 +195,7 @@ export default function SettingsPage() {
                 <Input label="Subjects (comma separated)" name="subjects" value={studentFormData.subjects} onChange={event => setStudentFormData(prev => ({ ...prev, subjects: event.target.value }))} />
                 <Input label="Bio" name="bio" value={studentFormData.bio} onChange={event => setStudentFormData(prev => ({ ...prev, bio: event.target.value }))} />
                 <Input label="Learning Goals" name="learningGoals" value={studentFormData.learningGoals} onChange={event => setStudentFormData(prev => ({ ...prev, learningGoals: event.target.value }))} />
-                <Input label="Budget ($)" type="number" name="budget" value={studentFormData.budget} onChange={event => setStudentFormData(prev => ({ ...prev, budget: event.target.value }))} />
+                <Input label="Budget (₦)" type="number" name="budget" value={studentFormData.budget} onChange={event => setStudentFormData(prev => ({ ...prev, budget: event.target.value }))} />
                 <Button onClick={save} loading={saving}>Save Student Preferences</Button>
               </div>
             </Card>
@@ -207,7 +207,7 @@ export default function SettingsPage() {
               <div className="max-w-xl space-y-5">
                 <Input label="Subjects Taught (comma separated)" name="subjectsTaught" value={tutorFormData.subjectsTaught} onChange={event => setTutorFormData(prev => ({ ...prev, subjectsTaught: event.target.value }))} />
                 <Input label="Bio" name="bio" value={tutorFormData.bio} onChange={event => setTutorFormData(prev => ({ ...prev, bio: event.target.value }))} />
-                <Input label="Hourly Rate ($) - Updating not supported via this form yet" name="hourlyRate" value={tutorFormData.hourlyRate} disabled />
+                <Input label="Hourly Rate (₦) - Updating not supported via this form yet" name="hourlyRate" value={tutorFormData.hourlyRate} disabled />
                 <Button onClick={save} loading={saving}>Save Tutor Preferences</Button>
               </div>
             </Card>

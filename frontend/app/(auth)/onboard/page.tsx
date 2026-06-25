@@ -334,7 +334,7 @@ export default function OnboardingPage() {
             </div>
 
             <Input
-              label="Monthly Budget ($)"
+              label="Monthly Budget (₦)"
               name="budget"
               type="number"
               placeholder="150"
@@ -464,7 +464,7 @@ export default function OnboardingPage() {
             />
 
             <Input
-              label="Hourly Rate ($)"
+              label="Hourly Rate (₦)"
               name="hourlyRate"
               type="number"
               placeholder="25"

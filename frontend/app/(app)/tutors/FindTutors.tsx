@@ -4,20 +4,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { Card } from '@/components/Badge'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
-import { bookSession } from '@/lib/api/sessions'
-import { getTutorCandidates, selectTutor, type TutorCandidate } from '@/lib/api/users'
-import { CheckCircle2, Heart, Search, SlidersHorizontal, Star, AlertCircle } from 'lucide-react'
+import { BookSessionModal } from '@/components/BookSessionModal'
+import { MessageModal } from '@/components/MessageModal'
+import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
+import { CheckCircle2, Heart, Search, SlidersHorizontal, Star, AlertCircle, MessageSquare } from 'lucide-react'
+import { useToast } from '@/lib/toast-context'
 
 const ACCENTS = ['lavender', 'sky', 'mint', 'sun', 'coral', 'tangerine'] as const
-
-function nextSessionWindow() {
-  const start = new Date()
-  start.setDate(start.getDate() + 1)
-  start.setHours(15, 0, 0, 0)
-  const end = new Date(start)
-  end.setHours(start.getHours() + 1)
-  return { startAt: start.toISOString(), endAt: end.toISOString() }
-}
 
 export function FindTutors() {
   const [candidates, setCandidates] = useState<TutorCandidate[]>([])
@@ -26,6 +19,9 @@ export function FindTutors() {
   const [subject, setSubject] = useState('All Subjects')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [bookTarget, setBookTarget] = useState<TutorCandidate | null>(null)
+  const [messageTarget, setMessageTarget] = useState<TutorCandidate | null>(null)
+  const { addToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -60,20 +56,6 @@ export function FindTutors() {
     const matchesSubject = subject === 'All Subjects' || cSubjects.includes(subject)
     return matchesSearch && matchesSubject
   })
-
-  async function handleBook(tutor: TutorCandidate) {
-    setError(null)
-    try {
-      await selectTutor(tutor.userId)
-      await bookSession({
-        tutorId: tutor.userId,
-        subject: tutor.subjectsTaught?.[0] ?? 'General Tutoring',
-        ...nextSessionWindow(),
-      })
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Could not book this tutor.')
-    }
-  }
 
   return (
     <div className="space-y-8 py-3">
@@ -135,7 +117,10 @@ export function FindTutors() {
                       {`${person.firstName?.[0] ?? ''}${person.lastName?.[0] ?? ''}`}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-text-primary">{person.firstName} {person.lastName}</p>
+                      <p className="truncate text-sm font-semibold text-text-primary">
+                        {person.firstName} {person.lastName}
+                        {person.isVerified && <CheckCircle2 className="ml-1 inline h-3.5 w-3.5 text-accent-mint-fg" />}
+                      </p>
                       <div className="mt-1 flex items-center gap-1.5">
                         <Star className="h-3.5 w-3.5 fill-current text-accent-sun-fg" />
                         <span className="text-xs font-semibold text-text-primary">{person.avgRating ?? 'New'}</span>
@@ -170,7 +155,7 @@ export function FindTutors() {
                 </div>
 
                 <div className="mb-4 flex items-center justify-between border-y py-3" style={{ borderColor: 'var(--border)' }}>
-                  <span className="flex items-center gap-1.5 text-xs text-accent-mint-fg"><CheckCircle2 className="h-3.5 w-3.5" /> Ranked match {Math.round((person.score ?? 0) * 100)}%</span>
+                  <span className="flex items-center gap-1.5 text-xs text-accent-mint-fg"><CheckCircle2 className="h-3.5 w-3.5" /> Ranked match {person.rankPercentage ?? Math.round((person.score ?? 0) * 100)}%</span>
                   <span className="font-bold text-text-primary">
                     {`₦${Number(person.hourlyRate ?? 0).toLocaleString()}`}
                     <span className="text-xs font-normal text-text-muted">/hr</span>
@@ -178,13 +163,40 @@ export function FindTutors() {
                 </div>
 
                 <div className="mt-auto flex gap-2">
-                  <Button variant="secondary" size="md" className="flex-1">View Profile</Button>
-                  <Button size="md" className="flex-1" onClick={() => handleBook(person)} disabled={!isEligible}>Book Session</Button>
+                  <Button variant="secondary" size="md" className="flex-1" onClick={() => setMessageTarget(person)}>
+                    <MessageSquare className="w-3.5 h-3.5" /> Message
+                  </Button>
+                  <Button size="md" className="flex-1" onClick={() => setBookTarget(person)} disabled={!isEligible}>Book Session</Button>
                 </div>
               </Card>
             )
           })}
         </div>
+      )}
+
+      {bookTarget && (
+        <BookSessionModal
+          isOpen={!!bookTarget}
+          onClose={() => setBookTarget(null)}
+          onSuccess={(session) => {
+            addToast(`Session request sent to ${bookTarget.firstName}!`, 'success')
+            setBookTarget(null)
+          }}
+          onError={(msg) => addToast(msg, 'error')}
+          tutorId={bookTarget.userId}
+          tutorName={`${bookTarget.firstName} ${bookTarget.lastName}`}
+          subjects={bookTarget.subjectsTaught}
+        />
+      )}
+
+      {messageTarget && (
+        <MessageModal
+          isOpen={!!messageTarget}
+          onClose={() => setMessageTarget(null)}
+          otherUserId={messageTarget.userId}
+          otherUserName={`${messageTarget.firstName} ${messageTarget.lastName}`}
+          otherUserVerified={messageTarget.isVerified}
+        />
       )}
     </div>
   )

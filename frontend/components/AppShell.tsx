@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/store/authStore'
 import { logout } from '@/lib/api/auth'
+import { NotificationsPanel } from '@/components/NotificationsPanel'
 
 interface AppShellProps {
   children: ReactNode
@@ -50,9 +51,10 @@ const ACCENT_COLORS = [
 ]
 
 export function AppShell({ children, currentPage, userRole = 'student' }: AppShellProps) {
-  const [sidebarOpen,      setSidebarOpen]      = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [isDark,           setIsDark]           = useState(true)
+  const [sidebarOpen,            setSidebarOpen]      = useState(false)
+  const [sidebarCollapsed,       setSidebarCollapsed] = useState(false)
+  const [isDark,                 setIsDark]           = useState(true)
+  const [notificationsOpen,      setNotificationsOpen] = useState(false)
 
   const { user, initials, fullName } = useAuthStore()
 
@@ -275,13 +277,14 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
             {/* Right — action icons */}
             <div className="flex items-center gap-1">
               {[
-                { icon: Search, label: 'Search' },
-                { icon: Bell,   label: 'Notifications' },
+                { icon: Search, label: 'Search', onClick: undefined },
+                { icon: Bell,   label: 'Notifications', onClick: () => setNotificationsOpen(true) },
                 { icon: Mail,   label: 'Messages' },
-              ].map(({ icon: Icon, label }) => (
+              ].map(({ icon: Icon, label, onClick }) => (
                 <button
                   key={label}
                   aria-label={label}
+                  onClick={onClick}
                   className="w-9 h-9 flex items-center justify-center rounded-xl cursor-pointer transition-all duration-150"
                   style={{ color: 'var(--text-secondary)' }}
                   onMouseEnter={(e) => {
@@ -334,6 +337,8 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
+      <NotificationsPanel isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
     </div>
   )
 }

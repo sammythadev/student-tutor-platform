@@ -4,18 +4,26 @@ import { useEffect, useMemo, useState } from 'react'
 import { Card } from '@/components/Badge'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
+import { BookSessionModal } from '@/components/BookSessionModal'
+import { MessageModal } from '@/components/MessageModal'
 import { getStudentCandidates } from '@/lib/api/users'
-import { Heart, Search, SlidersHorizontal, Calendar } from 'lucide-react'
+import { useAuthStore } from '@/lib/store/authStore'
+import { Heart, Search, SlidersHorizontal, Calendar, MessageSquare, AlertCircle } from 'lucide-react'
+import { useToast } from '@/lib/toast-context'
 
 const ACCENTS = ['lavender', 'sky', 'mint', 'sun', 'coral', 'tangerine'] as const
 
 export function StudentList() {
+  const user = useAuthStore(s => s.user)
   const [candidates, setCandidates] = useState<any[]>([])
   const [liked, setLiked] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
   const [subject, setSubject] = useState('All Subjects')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [bookTarget, setBookTarget] = useState<any | null>(null)
+  const [messageTarget, setMessageTarget] = useState<any | null>(null)
+  const { addToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -99,8 +107,9 @@ export function StudentList() {
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((person, index) => {
             const color = ACCENTS[index % ACCENTS.length]
-            const id = person.userId
+            const id = person.studentId ?? person.userId
             const isLiked = liked.has(id)
+            const isEligible = person.isEligible !== false
             const personSubjects = [...(person.subjects ?? []), person.requiredSubject].filter(Boolean)
             
             return (
@@ -130,6 +139,13 @@ export function StudentList() {
                   </button>
                 </div>
 
+                {!isEligible && (
+                  <div className="mb-4 p-2 rounded-md bg-accent-coral-bg text-accent-coral-fg text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Ineligible: {person.reason}</span>
+                  </div>
+                )}
+
                 <p className="mb-4 line-clamp-3 text-xs leading-relaxed text-text-secondary">{person.bio ?? 'No bio provided.'}</p>
 
                 <div className="mb-4 flex flex-wrap gap-1.5">
@@ -137,7 +153,9 @@ export function StudentList() {
                 </div>
 
                 <div className="mb-4 flex items-center justify-between border-y py-3" style={{ borderColor: 'var(--border)' }}>
-                  <span className="flex items-center gap-1.5 text-xs text-text-secondary"><Calendar className="h-3.5 w-3.5" /> Joined recently</span>
+                  <span className="flex items-center gap-1.5 text-xs text-accent-mint-fg">
+                    <Calendar className="h-3.5 w-3.5" /> Ranked match {person.rankPercentage ?? Math.round((person.score ?? 0) * 100)}%
+                  </span>
                   <span className="font-bold text-text-primary">
                     {person.budget ? `₦${Number(person.budget).toLocaleString()}` : 'Budget N/A'}
                     <span className="text-xs font-normal text-text-muted">/mo</span>
@@ -145,13 +163,43 @@ export function StudentList() {
                 </div>
 
                 <div className="mt-auto flex gap-2">
-                  <Button variant="secondary" size="md" className="flex-1">View Profile</Button>
-                  <Button size="md" className="flex-1">Message</Button>
+                  <Button variant="secondary" size="md" className="flex-1" onClick={() => setMessageTarget(person)}>
+                    <MessageSquare className="w-3.5 h-3.5" /> Message
+                  </Button>
+                  <Button size="md" className="flex-1" onClick={() => setBookTarget(person)} disabled={!isEligible}>
+                    <Calendar className="w-3.5 h-3.5" /> Book
+                  </Button>
                 </div>
               </Card>
             )
           })}
         </div>
+      )}
+
+      {bookTarget && (
+        <BookSessionModal
+          isOpen={!!bookTarget}
+          onClose={() => setBookTarget(null)}
+          onSuccess={(session) => {
+            addToast(`Session request sent to ${bookTarget.firstName}!`, 'success')
+            setBookTarget(null)
+          }}
+          onError={(msg) => addToast(msg, 'error')}
+          tutorId={user?.id ?? ''}
+          tutorName={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`}
+          subjects={bookTarget.subjects}
+          tutorSubjects={user?.subjectsTaught}
+          studentId={bookTarget.studentId ?? bookTarget.userId}
+        />
+      )}
+
+      {messageTarget && (
+        <MessageModal
+          isOpen={!!messageTarget}
+          onClose={() => setMessageTarget(null)}
+          otherUserId={messageTarget.studentId ?? messageTarget.userId}
+          otherUserName={`${messageTarget.firstName} ${messageTarget.lastName}`}
+        />
       )}
     </div>
   )

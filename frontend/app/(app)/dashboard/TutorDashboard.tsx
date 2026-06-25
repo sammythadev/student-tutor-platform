@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
+import { MessageModal } from '@/components/MessageModal'
 import { getTutorDashboardMetrics, type TutorDashboardMetrics } from '@/lib/api/dashboard'
 import { getMySessions, type SessionItem } from '@/lib/api/sessions'
 import { useAuthStore } from '@/lib/store/authStore'
@@ -24,6 +25,7 @@ export function TutorDashboard() {
   const [sessions, setSessions] = useState<SessionItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [messageTarget, setMessageTarget] = useState<{id: string; name: string} | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -203,11 +205,19 @@ export function TutorDashboard() {
                   <p className="text-xs text-text-muted">{session.subject} · {formatTime(session.startAt)}</p>
                 </div>
                 <Badge color={color} size="sm">{session.status}</Badge>
-                <Button size="sm"><MessageSquare className="h-3.5 w-3.5" /> Message</Button>
+                <Button size="sm" onClick={() => setMessageTarget({ id: session.studentId, name: session.studentName ?? 'Student' })}><MessageSquare className="h-3.5 w-3.5" /> Message</Button>
               </div>
             )
           })}
         </div>
+      )}
+      {messageTarget && (
+        <MessageModal
+          isOpen={!!messageTarget}
+          onClose={() => setMessageTarget(null)}
+          otherUserId={messageTarget.id}
+          otherUserName={messageTarget.name}
+        />
       )}
     </div>
   )

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 
 export interface ModalProps {
   isOpen: boolean
-  title: string
+  title: React.ReactNode
   children: React.ReactNode
   onClose: () => void
   actions?: React.ReactNode

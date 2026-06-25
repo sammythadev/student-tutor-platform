@@ -6,18 +6,29 @@ import { Button } from '@/components/Button'
 import { bookSession, getMySessions, updateSessionStatus, type SessionItem } from '@/lib/api/sessions'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
 import { useAuthStore } from '@/lib/store/authStore'
-import { AlertCircle, BookOpen, Calculator, CheckCircle2, ChevronLeft, ChevronRight, Clock, FlaskConical, Globe2, GripVertical, Plus, X } from 'lucide-react'
+import { AlertCircle, BookOpen, Calculator, CheckCircle2, ChevronLeft, ChevronRight, Clock, FlaskConical, Globe2, GripVertical, Monitor, Music, BookMarked, Code, Paintbrush, Plus, X } from 'lucide-react'
 
 type AccentKey = 'lavender' | 'sky' | 'mint' | 'sun' | 'coral' | 'tangerine'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const HOURS = ['8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM', '7 PM']
-const CHIPS: { label: string; color: AccentKey; icon: React.ElementType }[] = [
-  { label: 'Mathematics', color: 'lavender', icon: Calculator },
-  { label: 'Physics', color: 'sky', icon: FlaskConical },
-  { label: 'Literature', color: 'sun', icon: BookOpen },
-  { label: 'Languages', color: 'mint', icon: Globe2 },
-]
+
+const CHIP_ICONS: Record<string, React.ElementType> = {
+  mathematics: Calculator,
+  physics: FlaskConical,
+  chemistry: FlaskConical,
+  biology: BookOpen,
+  english: BookOpen,
+  literature: BookOpen,
+  history: BookOpen,
+  'computer science': Monitor,
+  programming: Code,
+  music: Music,
+  art: Paintbrush,
+  economics: BookMarked,
+  languages: Globe2,
+}
+const CHIP_COLORS: AccentKey[] = ['lavender', 'sky', 'mint', 'sun', 'coral', 'tangerine']
 const AC: Record<AccentKey, { bg: string; fg: string; border: string }> = {
   lavender: { bg: 'var(--accent-lavender-bg)', fg: 'var(--accent-lavender-fg)', border: '#6366F1' },
   sky: { bg: 'var(--accent-sky-bg)', fg: 'var(--accent-sky-fg)', border: '#0EA5E9' },
@@ -38,7 +49,14 @@ const addDays = (date: Date, days: number) => {
   next.setDate(next.getDate() + days)
   return next
 }
-const colorForSubject = (subject: string): AccentKey => CHIPS.find(chip => chip.label === subject)?.color ?? 'lavender'
+
+function chipColor(label: string): AccentKey {
+  let hash = 0
+  for (let i = 0; i < label.length; i++) hash = label.charCodeAt(i) + ((hash << 5) - hash)
+  return CHIP_COLORS[Math.abs(hash) % CHIP_COLORS.length]
+}
+
+const colorForSubject = (subject: string): AccentKey => chipColor(subject)
 
 function toSlot(dateValue: string, weekStart: Date) {
   const date = new Date(dateValue)
@@ -146,6 +164,12 @@ function WeekCalendar({
 
 export default function SchedulesPage() {
   const isTutor = useAuthStore(s => s.user?.role === 'tutor')
+  const studentSubjects = useAuthStore(s => s.studentProfile?.subjects)
+  const tutorSubjects = useAuthStore(s => s.tutorProfile?.subjectsTaught)
+  const chips = useMemo(() => {
+    const subjects = isTutor ? (tutorSubjects ?? []) : (studentSubjects ?? [])
+    return subjects.length > 0 ? subjects : ['Mathematics', 'Physics', 'Literature', 'Languages']
+  }, [isTutor, studentSubjects, tutorSubjects])
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()))
   const [sessions, setSessions] = useState<SessionItem[]>([])
   const [tutors, setTutors] = useState<TutorCandidate[]>([])
@@ -242,12 +266,13 @@ export default function SchedulesPage() {
       {!isTutor && (
         <div className="surface-card flex flex-wrap items-center gap-2 p-4">
           <span className="mr-1 text-xs font-bold uppercase tracking-widest text-text-muted">Drag to schedule</span>
-          {CHIPS.map(chip => {
-            const Icon = chip.icon
-            const ac = AC[chip.color]
+          {chips.map(label => {
+            const color = chipColor(label)
+            const Icon = CHIP_ICONS[label.toLowerCase()] ?? Calculator
+            const ac = AC[color]
             return (
-              <div key={chip.label} draggable onDragStart={event => onChipDragStart(event, chip.label)} className="inline-flex cursor-grab items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold" style={{ background: ac.bg, color: ac.fg, borderColor: `${ac.border}55` }}>
-                <GripVertical className="h-3 w-3 opacity-50" /><Icon className="h-3.5 w-3.5" />{chip.label}
+              <div key={label} draggable onDragStart={event => onChipDragStart(event, label)} className="inline-flex cursor-grab items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold" style={{ background: ac.bg, color: ac.fg, borderColor: `${ac.border}55` }}>
+                <GripVertical className="h-3 w-3 opacity-50" /><Icon className="h-3.5 w-3.5" />{label}
               </div>
             )
           })}
