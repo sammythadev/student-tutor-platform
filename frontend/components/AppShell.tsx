@@ -82,6 +82,7 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
 
       {/* ─── SIDEBAR ─── */}
       <aside
+        suppressHydrationWarning
         className={`
           fixed md:relative z-40 inset-y-0 left-0
           ${sidebarCollapsed ? 'w-[72px]' : 'w-64'}
@@ -90,12 +91,8 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
           flex flex-col
           md:m-3 md:h-[calc(100vh-1.5rem)] h-dvh
           rounded-none md:rounded-2xl
+          sidebar-surface
         `}
-        style={{
-          background: 'var(--sidebar)',
-          border: '1px solid var(--border)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
       >
         {/* Logo area */}
         <div className="p-4 flex items-center justify-between h-16 flex-shrink-0">
@@ -199,19 +196,21 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
               style={{ background: 'var(--primary-subtle)', border: '1px solid rgba(99,102,241,0.15)' }}
             >
               <div
+                suppressHydrationWarning
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
                 style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}
               >
                 {initials()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-text-primary truncate">{fullName() || 'Guest User'}</p>
+                <p suppressHydrationWarning className="text-xs font-semibold text-text-primary truncate">{fullName() || 'Guest User'}</p>
                 <p className="text-xs text-text-muted capitalize">{user?.role || userRole}</p>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
               <div
+                suppressHydrationWarning
                 className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
                 style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}
               >

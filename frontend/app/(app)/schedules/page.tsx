@@ -6,6 +6,7 @@ import { Button } from '@/components/Button'
 import { bookSession, getMySessions, updateSessionStatus, type SessionItem } from '@/lib/api/sessions'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
 import { useAuthStore } from '@/lib/store/authStore'
+import { useToast } from '@/lib/toast-context'
 import { AlertCircle, BookOpen, Calculator, CheckCircle2, ChevronLeft, ChevronRight, Clock, FlaskConical, Globe2, GripVertical, Monitor, Music, BookMarked, Code, Paintbrush, Plus, X } from 'lucide-react'
 
 type AccentKey = 'lavender' | 'sky' | 'mint' | 'sun' | 'coral' | 'tangerine'
