@@ -83,19 +83,18 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
       {/* ─── SIDEBAR ─── */}
       <aside
         className={`
-          fixed md:relative z-40
+          fixed md:relative z-40 inset-y-0 left-0
           ${sidebarCollapsed ? 'w-[72px]' : 'w-64'}
-          h-full
           md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           transition-all duration-300 ease-in-out
           flex flex-col
-          m-3 rounded-2xl
+          md:m-3 md:h-[calc(100vh-1.5rem)] h-dvh
+          rounded-none md:rounded-2xl
         `}
         style={{
           background: 'var(--sidebar)',
           border: '1px solid var(--border)',
           boxShadow: 'var(--shadow-sm)',
-          height: 'calc(100vh - 1.5rem)',
         }}
       >
         {/* Logo area */}
