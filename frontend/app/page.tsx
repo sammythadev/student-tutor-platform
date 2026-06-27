@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Sun, Moon } from 'lucide-react'
+import ThreeParticles from '@/components/ThreeParticles'
 
 function ThemeToggle() {
   const [isDark, setIsDark] = useState(true)
@@ -45,16 +46,12 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-canvas relative overflow-x-hidden">
 
-      {/* ─── Ambient background blobs ─── */}
-      <div aria-hidden className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="ambient-blob blob-primary w-[600px] h-[600px] -top-60 -left-40 opacity-80" />
-        <div className="ambient-blob blob-accent  w-[500px] h-[500px] top-1/2 -right-60 opacity-60" />
-        <div className="ambient-blob blob-primary w-[400px] h-[400px] bottom-0 left-1/3 opacity-40" />
-      </div>
+      {/* ─── Aether Dynamics particle background ─── */}
+      <ThreeParticles />
 
-      {/* ─── Navigation ─── */}
+      {/* ─── Glassmorphic Navigation ─── */}
       <header className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 pt-4">
-        <nav className="max-w-7xl mx-auto flex justify-between items-center glass-card-strong px-6 py-3 rounded-pill">
+        <nav className="max-w-7xl mx-auto flex justify-between items-center px-4 md:px-6 py-2.5 rounded-pill" style={{ background: 'rgba(9,9,11,0.85)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 cursor-pointer">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--primary)' }}>
@@ -87,7 +84,7 @@ export default function LandingPage() {
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-        </nav>
+          </nav>
       </header>
 
       <main className="relative z-10">

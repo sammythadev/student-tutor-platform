@@ -102,11 +102,11 @@ export function StudentList() {
       </div>
 
       {loading ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 md:gap-5 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => <div key={i} className="surface-card h-64 animate-pulse" />)}
         </div>
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 md:gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((person, index) => {
             const color = ACCENTS[index % ACCENTS.length]
             const id = person.studentId ?? person.userId
@@ -115,16 +115,16 @@ export function StudentList() {
             const personSubjects = [...new Set([...(person.subjects ?? []), person.requiredSubject].filter(Boolean))] as string[]
             
             return (
-              <Card key={id} className="flex flex-col p-5">
-                <div className="mb-4 flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold" style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}>
+              <Card key={id} className="flex flex-col p-3 md:p-5">
+                <div className="mb-3 md:mb-4 flex items-start justify-between gap-2 md:gap-3">
+                  <div className="flex min-w-0 items-start gap-2 md:gap-3">
+                    <div className="flex h-9 w-9 md:h-12 md:w-12 flex-shrink-0 items-center justify-center rounded-lg md:rounded-xl text-xs md:text-sm font-bold" style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}>
                       {`${person.firstName?.[0] ?? ''}${person.lastName?.[0] ?? ''}`}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-text-primary">{person.firstName} {person.lastName}</p>
+                      <p className="truncate text-xs md:text-sm font-semibold text-text-primary">{person.firstName} {person.lastName}</p>
                       <div className="mt-1 flex items-center gap-1.5">
-                        <span className="text-xs font-semibold text-text-primary capitalize">{person.gradeLevel ? `Grade ${person.gradeLevel}` : 'Student'}</span>
+                        <span className="text-[10px] md:text-xs font-semibold text-text-primary capitalize">{person.gradeLevel ? `G${person.gradeLevel}` : 'Student'}</span>
                       </div>
                     </div>
                   </div>
@@ -134,35 +134,35 @@ export function StudentList() {
                       next.has(id) ? next.delete(id) : next.add(id)
                       return next
                     })}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg"
+                    className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg flex-shrink-0"
                     style={{ color: isLiked ? 'var(--accent-coral-fg)' : 'var(--text-muted)', background: isLiked ? 'var(--accent-coral-bg)' : 'transparent' }}
                   >
-                    <Heart className="h-4 w-4" fill={isLiked ? 'currentColor' : 'none'} />
+                    <Heart className="h-3 w-3 md:h-4 md:w-4" fill={isLiked ? 'currentColor' : 'none'} />
                   </button>
                 </div>
 
-                <p className="mb-4 line-clamp-3 text-xs leading-relaxed text-text-secondary">{person.bio ?? 'No bio provided.'}</p>
+                <p className="mb-3 md:mb-4 line-clamp-2 md:line-clamp-3 text-[11px] md:text-xs leading-relaxed text-text-secondary">{person.bio ?? 'No bio provided.'}</p>
 
-                <div className="mb-4 flex flex-wrap gap-1.5">
-                  {personSubjects.slice(0, 3).map((item, idx) => <Badge key={`${item}-${idx}`} color={color as any} size="sm">{item}</Badge>)}
+                <div className="mb-3 md:mb-4 flex flex-wrap gap-1">
+                  {personSubjects.slice(0, 2).map((item, idx) => <Badge key={`${item}-${idx}`} color={color as any} size="sm">{item}</Badge>)}
                 </div>
 
-                <div className="mb-4 flex items-center justify-between border-y py-3" style={{ borderColor: 'var(--border)' }}>
-                  <span className="flex items-center gap-1.5 text-xs text-accent-mint-fg">
-                    <Calendar className="h-3.5 w-3.5" /> Ranked match {person.rankPercentage ?? Math.round((person.score ?? 0) * 100)}%
+                <div className="mb-3 md:mb-4 flex items-center justify-between border-y py-2 md:py-3" style={{ borderColor: 'var(--border)' }}>
+                  <span className="flex items-center gap-1 md:gap-1.5 text-[10px] md:text-xs text-accent-mint-fg">
+                    <Calendar className="h-3 w-3 md:h-3.5 md:w-3.5" /> {Math.round((person.score ?? 0) * 100)}% match
                   </span>
-                  <span className="font-bold text-text-primary">
-                    {person.budget ? `₦${Number(person.budget).toLocaleString()}` : 'Budget N/A'}
-                    <span className="text-xs font-normal text-text-muted">/mo</span>
+                  <span className="font-bold text-xs md:text-sm text-text-primary">
+                    {person.budget ? `₦${Number(person.budget).toLocaleString()}` : 'N/A'}
+                    <span className="text-[10px] md:text-xs font-normal text-text-muted">/mo</span>
                   </span>
                 </div>
 
-                <div className="mt-auto flex gap-2">
-                  <Button variant="secondary" size="md" className="flex-1" onClick={() => setMessageTarget(person)}>
-                    <MessageSquare className="w-3.5 h-3.5" /> Message
+                <div className="mt-auto flex gap-1.5 md:gap-2">
+                  <Button variant="secondary" size="sm" className="flex-1 !text-[11px] md:!text-xs" onClick={() => setMessageTarget(person)}>
+                    <MessageSquare className="w-3 h-3 md:w-3.5 md:h-3.5" />
                   </Button>
-                  <Button size="md" className="flex-1" onClick={() => setBookTarget(person)} disabled={!isEligible}>
-                    <Calendar className="w-3.5 h-3.5" /> Book
+                  <Button size="sm" className="flex-1 !text-[11px] md:!text-xs" onClick={() => setBookTarget(person)} disabled={!isEligible}>
+                    <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5" />
                   </Button>
                 </div>
               </Card>

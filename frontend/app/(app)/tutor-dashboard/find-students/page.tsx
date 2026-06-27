@@ -90,26 +90,26 @@ export default function FindStudentsPage() {
       </div>
 
       {loading ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 md:gap-5 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => <div key={i} className="surface-card h-64 animate-pulse" />)}
         </div>
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 md:gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((student, index) => {
             const color = ACCENTS[index % ACCENTS.length]
             const isLiked = liked.has(student.studentId)
             const isEligible = student.isEligible !== false;
             return (
-              <Card key={student.studentId} className="flex flex-col p-5">
-                <div className="mb-4 flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold" style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}>
+              <Card key={student.studentId} className="flex flex-col p-3 md:p-5">
+                <div className="mb-3 md:mb-4 flex items-start justify-between gap-2 md:gap-3">
+                  <div className="flex min-w-0 items-start gap-2 md:gap-3">
+                    <div className="flex h-9 w-9 md:h-12 md:w-12 flex-shrink-0 items-center justify-center rounded-lg md:rounded-xl text-xs md:text-sm font-bold" style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}>
                       {`${student.firstName?.[0] ?? ''}${student.lastName?.[0] ?? ''}`}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-text-primary">{student.firstName} {student.lastName}</p>
-                      <div className="mt-1 flex items-center gap-1.5">
-                         <span className="text-xs text-text-muted">{student.region ?? 'Remote'}</span>
+                      <p className="truncate text-xs md:text-sm font-semibold text-text-primary">{student.firstName} {student.lastName}</p>
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                         <span className="text-[10px] md:text-xs text-text-muted">{student.region ?? 'Remote'}</span>
                       </div>
                     </div>
                   </div>
@@ -119,33 +119,33 @@ export default function FindStudentsPage() {
                       next.has(student.studentId) ? next.delete(student.studentId) : next.add(student.studentId)
                       return next
                     })}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg"
+                    className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg flex-shrink-0"
                     style={{ color: isLiked ? 'var(--accent-coral-fg)' : 'var(--text-muted)', background: isLiked ? 'var(--accent-coral-bg)' : 'transparent' }}
                   >
-                    <Heart className="h-4 w-4" fill={isLiked ? 'currentColor' : 'none'} />
+                    <Heart className="h-3 w-3 md:h-4 md:w-4" fill={isLiked ? 'currentColor' : 'none'} />
                   </button>
                 </div>
 
                 {!isEligible && (
-                  <div className="mb-4 p-2 rounded-md bg-accent-coral-bg text-accent-coral-fg text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Ineligible: {student.reason}</span>
+                  <div className="mb-3 md:mb-4 p-1.5 md:p-2 rounded-md bg-accent-coral-bg text-accent-coral-fg text-[10px] md:text-xs flex items-center gap-1.5 leading-tight">
+                    <AlertCircle className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
+                    <span>{student.reason}</span>
                   </div>
                 )}
 
-                <p className="mb-4 line-clamp-3 text-xs leading-relaxed text-text-secondary">{student.bio ?? 'Student is looking for help in subjects.'}</p>
+                <p className="mb-3 md:mb-4 line-clamp-2 md:line-clamp-3 text-[11px] md:text-xs leading-relaxed text-text-secondary">{student.bio ?? 'Looking for help.'}</p>
 
-                <div className="mb-4 flex flex-wrap gap-1.5">
+                <div className="mb-3 md:mb-4 flex flex-wrap gap-1">
                   <Badge color={color as any} size="sm">{student.requiredSubject}</Badge>
                 </div>
 
-                <div className="mb-4 flex items-center justify-between border-y py-3" style={{ borderColor: 'var(--border)' }}>
-                  <span className="flex items-center gap-1.5 text-xs text-accent-mint-fg"><CheckCircle2 className="h-3.5 w-3.5" /> Ranked match {Math.round((student.score ?? 0) * 100)}%</span>
+                <div className="mb-3 md:mb-4 flex items-center justify-between border-y py-2 md:py-3" style={{ borderColor: 'var(--border)' }}>
+                  <span className="flex items-center gap-1 md:gap-1.5 text-[10px] md:text-xs text-accent-mint-fg"><CheckCircle2 className="h-3 w-3 md:h-3.5 md:w-3.5" /> {Math.round((student.score ?? 0) * 100)}% match</span>
                 </div>
 
-                <div className="mt-auto flex gap-2">
-                  <Button variant="secondary" size="md" className="flex-1">View Profile</Button>
-                  <Button size="md" className="flex-1" disabled={!isEligible}>Reach Out</Button>
+                <div className="mt-auto flex gap-1.5 md:gap-2">
+                  <Button variant="secondary" size="sm" className="flex-1 !text-[11px] md:!text-xs">Profile</Button>
+                  <Button size="sm" className="flex-1 !text-[11px] md:!text-xs" disabled={!isEligible}>Reach Out</Button>
                 </div>
               </Card>
             )
