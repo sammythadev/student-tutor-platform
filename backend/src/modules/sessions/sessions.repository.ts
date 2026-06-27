@@ -8,7 +8,7 @@ import {
   tutorProfiles,
   studentProfiles,
 } from '@database';
-import type { BookSessionDto, UpdateSessionStatusDto } from './dtos/session.dto';
+import type { BookSessionDto, ProposeSessionDto, UpdateSessionStatusDto } from './dtos/session.dto';
 import type { SessionWithParticipants } from './sessions.types';
 
 @Injectable()
@@ -108,6 +108,44 @@ export class SessionsRepository {
 
     const updated = await this.findById(id);
     if (!updated) throw new Error('Session not found after tutor update');
+    return updated;
+  }
+
+  async updateProposedTime(id: string, dto: ProposeSessionDto): Promise<SessionWithParticipants> {
+    await this.db
+      .update(sessions)
+      .set({
+        proposedStartAt: new Date(dto.startAt),
+        proposedEndAt: new Date(dto.endAt),
+        updatedAt: new Date(),
+      })
+      .where(eq(sessions.id, id));
+
+    const updated = await this.findById(id);
+    if (!updated) throw new Error('Session not found after propose');
+    return updated;
+  }
+
+  async acceptProposedTime(id: string): Promise<SessionWithParticipants> {
+    const session = await this.findById(id);
+    if (!session) throw new Error('Session not found');
+    if (!session.proposedStartAt || !session.proposedEndAt) {
+      throw new Error('No proposal to accept');
+    }
+
+    await this.db
+      .update(sessions)
+      .set({
+        startAt: session.proposedStartAt,
+        endAt: session.proposedEndAt,
+        proposedStartAt: null,
+        proposedEndAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(sessions.id, id));
+
+    const updated = await this.findById(id);
+    if (!updated) throw new Error('Session not found after accepting proposal');
     return updated;
   }
 

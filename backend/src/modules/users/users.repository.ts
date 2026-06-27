@@ -4,6 +4,7 @@ import {
   DATABASE,
   type AppDatabase,
   studentProfiles,
+  subjects,
   tutorProfiles,
   users,
 } from '@database';
@@ -90,6 +91,16 @@ export class UsersRepository {
         const sp = dto.studentProfile;
         // subjects[0] is used as requiredSubject for the matchmaking engine
         const requiredSubject = sp.subjects[0];
+
+        // Dynamically upsert any subjects not yet in the subjects table
+        for (const subjectName of sp.subjects) {
+          const code = subjectName.toLowerCase().replace(/\s+/g, '-');
+          await tx
+            .insert(subjects)
+            .values({ code, name: subjectName, category: 'secondary' })
+            .onConflictDoNothing();
+        }
+
         await tx.insert(studentProfiles).values({
           userId,
           requiredSubject,
@@ -99,8 +110,16 @@ export class UsersRepository {
           requestedAvailability: sp.requestedAvailability,
           bio: sp.bio,
           learningGoals: sp.learningGoals,
+          // preference fields
+          languages: sp.languages ?? [],
+          budget: sp.budget !== undefined ? String(sp.budget) : undefined,
+          deliveryPreference: sp.deliveryPreference as any,
+          formatPreference: sp.formatPreference as any,
+          learningStylePreference: sp.learningStylePreference as any,
+          subjectSpecialization: sp.subjectSpecialization,
+          region: sp.region,
         });
-        // Persist timezone/language to users table if provided
+        // Persist timezone to users table if provided
         if (sp.timezone) {
           await tx.update(users).set({ timezone: sp.timezone }).where(eq(users.id, userId));
         }
@@ -108,14 +127,32 @@ export class UsersRepository {
 
       if (dto.role === UserRole.TUTOR && dto.tutorProfile) {
         const tp = dto.tutorProfile;
+
+        // Dynamically upsert any subjects not yet in the subjects table
+        for (const subjectName of tp.subjectsTaught) {
+          const code = subjectName.toLowerCase().replace(/\s+/g, '-');
+          await tx
+            .insert(subjects)
+            .values({ code, name: subjectName, category: 'secondary' })
+            .onConflictDoNothing();
+        }
+
         await tx.insert(tutorProfiles).values({
           userId,
           subjectsTaught: tp.subjectsTaught,
-          gradeLevelsSupported: tp.gradeLevelsSupported,
-          examTypesSupported: tp.examTypesSupported,
+          gradeLevelsSupported: tp.gradeLevelsSupported ?? [9, 10, 11, 12],
+          examTypesSupported: tp.examTypesSupported ?? ['waec', 'neco', 'jamb'],
           availability: tp.availability,
           hourlyRate: String(tp.hourlyRate),
           bio: tp.bio,
+          // enrichment fields — all write through now
+          experienceYears: tp.experienceYears ?? 0,
+          languages: tp.languages ?? [],
+          teachingStyle: tp.teachingStyle as any,
+          deliveryStyle: tp.deliveryStyle as any,
+          formatStyle: tp.formatStyle as any,
+          // IMPORTANT: default capacity to 5 so new tutors are always eligible in matchmaking
+          capacity: tp.capacity ?? 5,
         });
         // Persist timezone to users table if provided
         if (tp.timezone) {
@@ -130,6 +167,7 @@ export class UsersRepository {
     }
     return updated;
   }
+
 
   async updateBaseUser(userId: string, dto: UpdateUserDto): Promise<UserWithProfilesRecord> {
     const updatePayload: Record<string, any> = {};

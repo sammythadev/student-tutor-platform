@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } 
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '@common/auth';
 import {
   BookSessionDto,
+  ProposeSessionDto,
   SessionParamDto,
   SessionResponseDto,
   TransferSessionDto,
@@ -35,6 +36,32 @@ export class SessionsController {
   @ApiResponse({ status: 200, description: 'Sessions list.', type: [SessionResponseDto] })
   getMySessions(@CurrentUser() currentUser: AuthenticatedUser): Promise<SessionResponseDto[]> {
     return this.sessionsService.getMySessions(currentUser.id) as any;
+  }
+
+  @Patch(':id/propose')
+  @ApiOperation({ summary: 'Propose a different date/time for a pending session' })
+  @ApiParam({ name: 'id', description: 'Session UUID' })
+  @ApiBody({ type: ProposeSessionDto })
+  @ApiResponse({ status: 200, description: 'New time proposed, awaiting student response.', type: SessionResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid time window.' })
+  proposeNewTime(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param() params: SessionParamDto,
+    @Body() dto: ProposeSessionDto,
+  ): Promise<SessionResponseDto> {
+    return this.sessionsService.proposeNewTime(params.id, currentUser.id, dto) as any;
+  }
+
+  @Patch(':id/accept-proposal')
+  @ApiOperation({ summary: 'Student accepts the proposed new time for a session' })
+  @ApiParam({ name: 'id', description: 'Session UUID' })
+  @ApiResponse({ status: 200, description: 'Proposed time accepted, session updated.', type: SessionResponseDto })
+  @ApiResponse({ status: 400, description: 'No proposal to accept.' })
+  acceptProposal(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param() params: SessionParamDto,
+  ): Promise<SessionResponseDto> {
+    return this.sessionsService.acceptProposal(params.id, currentUser.id) as any;
   }
 
   @Patch(':id/accept')

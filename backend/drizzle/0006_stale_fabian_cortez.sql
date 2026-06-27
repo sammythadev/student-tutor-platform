@@ -1,0 +1,1 @@
+ALTER TYPE "public"."learning_style" ADD VALUE 'mixed';

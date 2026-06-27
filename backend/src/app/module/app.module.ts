@@ -12,6 +12,7 @@ import { SessionsModule } from '@modules/sessions/sessions.module';
 import { FeedModule } from '@modules/feed/feed.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { MessagesModule } from '@modules/messages/messages.module';
+import { NotificationsModule } from '@modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MessagesModule } from '@modules/messages/messages.module';
     FeedModule,
     DashboardModule,
     MessagesModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

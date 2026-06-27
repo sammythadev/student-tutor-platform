@@ -36,6 +36,27 @@
       "when": 1782329843461,
       "tag": "0004_cuddly_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782574254661,
+      "tag": "0005_flippant_firebird",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782578887584,
+      "tag": "0006_stale_fabian_cortez",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782580611432,
+      "tag": "0007_kind_lightspeed",
+      "breakpoints": true
     }
   ]
 }

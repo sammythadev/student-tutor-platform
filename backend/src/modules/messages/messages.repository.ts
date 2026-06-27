@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNull, or, sql } from 'drizzle-orm';
 import { DATABASE, type AppDatabase, messages, users, tutorProfiles } from '@database';
 import type { SendMessageDto } from './dtos/message.dto';
 
@@ -38,21 +38,15 @@ export class MessagesRepository {
   }
 
   async getConversationList(userId: string) {
-    // Return list of distinct users this person has messaged or received from
-    const sent = await this.db
-      .select({ otherId: messages.receiverId })
+    const partnerIds = await this.db
+      .select({ otherId: sql<string>`DISTINCT CASE WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} ELSE ${messages.senderId} END` })
       .from(messages)
-      .where(eq(messages.senderId, userId));
+      .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)));
 
-    const received = await this.db
-      .select({ otherId: messages.senderId })
-      .from(messages)
-      .where(eq(messages.receiverId, userId));
-
-    const uniqueIds = [...new Set([...sent.map((r) => r.otherId), ...received.map((r) => r.otherId)])];
+    if (partnerIds.length === 0) return [];
 
     return Promise.all(
-      uniqueIds.map(async (otherId) => {
+      partnerIds.map(async ({ otherId }) => {
         const [user] = await this.db
           .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, avatarUrl: users.avatarUrl, isVerified: tutorProfiles.isVerified })
           .from(users)
@@ -60,11 +54,43 @@ export class MessagesRepository {
           .where(eq(users.id, otherId))
           .limit(1);
 
-        return user
-          ? { userId: user.id, name: `${user.firstName} ${user.lastName}`, avatarUrl: user.avatarUrl, isVerified: user.isVerified === 1 }
-          : null;
+        if (!user) return null;
+
+        // Get the last message between the two users
+        const [lastMsg] = await this.db
+          .select({ content: messages.content, createdAt: messages.createdAt })
+          .from(messages)
+          .where(
+            or(
+              and(eq(messages.senderId, userId), eq(messages.receiverId, otherId)),
+              and(eq(messages.senderId, otherId), eq(messages.receiverId, userId)),
+            ),
+          )
+          .orderBy(desc(messages.createdAt))
+          .limit(1);
+
+        // Count unread messages (sent by the other user, not yet read)
+        const [unreadResult] = await this.db
+          .select({ count: count() })
+          .from(messages)
+          .where(
+            and(
+              eq(messages.senderId, otherId),
+              eq(messages.receiverId, userId),
+              isNull(messages.readAt),
+            ),
+          );
+
+        return {
+          userId: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          lastMessage: lastMsg?.content ?? '',
+          lastMessageAt: (lastMsg?.createdAt ?? new Date()).toISOString(),
+          unreadCount: unreadResult?.count ?? 0,
+        };
       }),
-    ).then((list) => list.filter(Boolean));
+    ).then((list) => list.filter(Boolean) as NonNullable<typeof list[number]>[]);
   }
 
   async markRead(senderId: string, receiverId: string) {

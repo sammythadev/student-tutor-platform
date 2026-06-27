@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthGuard, OwnerOrAdminGuard } from '@common/auth';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthGuard, CurrentUser, OwnerOrAdminGuard, type AuthenticatedUser } from '@common/auth';
 import type { ScheduleSlotRecord } from '@database';
 import {
   CreateScheduleSlotDto,
@@ -49,5 +49,31 @@ export class SchedulingController {
     @Param() params: UserScheduleParamDto,
   ): Promise<ScheduleSlotRecord[]> {
     return this.schedulingService.findAvailableByUser(params.userId);
+  }
+
+  @Get('tutors/:tutorId/slots')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Get a tutor\'s real-time available + booked slots. Students see their own session details, others are opaque.',
+  })
+  @ApiParam({ name: 'tutorId', description: 'Tutor user UUID' })
+  @ApiQuery({ name: 'from', required: false, description: 'ISO date string for range start' })
+  @ApiQuery({ name: 'to', required: false, description: 'ISO date string for range end' })
+  @ApiResponse({ status: 200, description: 'Availability breakdown with free and booked slots.' })
+  getTutorSlots(
+    @Param('tutorId') tutorId: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const viewerRole = currentUser.role === 'tutor' ? 'tutor' : 'student';
+    return this.schedulingService.getTutorAvailableSlots(
+      tutorId,
+      currentUser.id,
+      viewerRole,
+      from ? new Date(from) : undefined,
+      to ? new Date(to) : undefined,
+    );
   }
 }

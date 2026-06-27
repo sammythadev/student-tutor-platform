@@ -1,12 +1,16 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { SessionsRepository } from './sessions.repository';
-import type { BookSessionDto, UpdateSessionStatusDto } from './dtos/session.dto';
+import type { BookSessionDto, ProposeSessionDto, UpdateSessionStatusDto } from './dtos/session.dto';
 import { SessionStatus } from './dtos/session.dto';
 import type { SessionWithParticipants } from './sessions.types';
+import { NotificationsService } from '@modules/notifications/notifications.service';
 
 @Injectable()
 export class SessionsService {
-  constructor(private readonly sessionsRepository: SessionsRepository) {}
+  constructor(
+    private readonly sessionsRepository: SessionsRepository,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Book a session. Students set tutorId, tutors must supply studentId.
@@ -30,7 +34,7 @@ export class SessionsService {
 
     // Validate the requested subject is taught by the tutor
     const tutorSubjects = await this.sessionsRepository.findTutorSubjects(dto.tutorId);
-    if (!tutorSubjects.includes(dto.subject)) {
+    if (!tutorSubjects.map((s) => s.toLowerCase()).includes(dto.subject.toLowerCase())) {
       throw new BadRequestException(
         `Tutor does not teach "${dto.subject}". Available subjects: ${tutorSubjects.join(', ')}`,
       );
@@ -59,7 +63,23 @@ export class SessionsService {
       throw new ForbiddenException('Only students and tutors can book sessions');
     }
 
-    return this.sessionsRepository.create(initiatorId, { ...dto, resolvedStudentId });
+    const session = await this.sessionsRepository.create(initiatorId, { ...dto, resolvedStudentId });
+
+    // Notify the non-initiator of the new session request
+    this.notificationsService
+      .onSessionEvent(
+        'created',
+        session.id,
+        session.tutorName ?? 'Tutor',
+        session.studentName ?? 'Student',
+        session.subject,
+        session.tutorId,
+        session.studentId,
+        initiatorId,
+      )
+      .catch(() => {/* non-blocking */});
+
+    return session;
   }
 
   async getMySessions(userId: string): Promise<SessionWithParticipants[]> {
@@ -89,7 +109,89 @@ export class SessionsService {
     }
 
     const newStatus = accept ? SessionStatus.UPCOMING : SessionStatus.CANCELLED;
-    return this.sessionsRepository.updateStatus(id, userId, { status: newStatus });
+    const updated = await this.sessionsRepository.updateStatus(id, userId, { status: newStatus });
+
+    // Emit notification for accept/decline
+    const event = accept ? 'accepted' : 'declined';
+    this.notificationsService
+      .onSessionEvent(
+        event,
+        session.id,
+        session.tutorName ?? 'Tutor',
+        session.studentName ?? 'Student',
+        session.subject,
+        session.tutorId,
+        session.studentId,
+        session.initiatorId ?? '',
+      )
+      .catch(() => {/* non-blocking */});
+
+    return updated;
+  }
+
+  async proposeNewTime(
+    id: string,
+    userId: string,
+    dto: ProposeSessionDto,
+  ): Promise<SessionWithParticipants> {
+    const session = await this.sessionsRepository.findById(id);
+    if (!session) throw new NotFoundException('Session not found');
+
+    if (session.status !== 'pending') {
+      throw new BadRequestException('Only pending sessions can be rescheduled');
+    }
+
+    if (session.initiatorId === userId) {
+      throw new ForbiddenException('Only the counterparty can propose a new time');
+    }
+
+    if (session.studentId !== userId && session.tutorId !== userId) {
+      throw new ForbiddenException('You are not a participant of this session');
+    }
+
+    const startAt = new Date(dto.startAt);
+    const endAt = new Date(dto.endAt);
+
+    if (startAt >= endAt) {
+      throw new BadRequestException('endAt must be after startAt');
+    }
+
+    if (startAt <= new Date()) {
+      throw new BadRequestException('Proposed time must be in the future');
+    }
+
+    const updated = await this.sessionsRepository.updateProposedTime(id, dto);
+
+    this.notificationsService
+      .onSessionEvent(
+        'proposed',
+        session.id,
+        session.tutorName ?? 'Tutor',
+        session.studentName ?? 'Student',
+        session.subject,
+        session.tutorId,
+        session.studentId,
+        session.initiatorId ?? '',
+      )
+      .catch(() => {});
+
+    return updated;
+  }
+
+  async acceptProposal(id: string, userId: string): Promise<SessionWithParticipants> {
+    const session = await this.sessionsRepository.findById(id);
+    if (!session) throw new NotFoundException('Session not found');
+
+    if (!session.proposedStartAt || !session.proposedEndAt) {
+      throw new BadRequestException('No proposal to accept');
+    }
+
+    // Only the initiator (student) can accept the proposal
+    if (session.initiatorId !== userId) {
+      throw new ForbiddenException('Only the session initiator can accept the proposal');
+    }
+
+    return this.sessionsRepository.acceptProposedTime(id);
   }
 
   async transferTutor(
@@ -115,7 +217,7 @@ export class SessionsService {
 
     // Validate the new tutor teaches the session's subject
     const newTutorSubjects = await this.sessionsRepository.findTutorSubjects(newTutorId);
-    if (!newTutorSubjects.includes(session.subject)) {
+    if (!newTutorSubjects.map((s) => s.toLowerCase()).includes(session.subject.toLowerCase())) {
       throw new BadRequestException(
         `New tutor does not teach "${session.subject}". Available subjects: ${newTutorSubjects.join(', ')}`,
       );
@@ -141,6 +243,25 @@ export class SessionsService {
   ): Promise<SessionWithParticipants> {
     const session = await this.sessionsRepository.findById(id);
     if (!session) throw new NotFoundException('Session not found');
-    return this.sessionsRepository.updateStatus(id, userId, dto);
+    const updated = await this.sessionsRepository.updateStatus(id, userId, dto);
+
+    // Emit notification for completed/cancelled
+    if (dto.status === 'completed' || dto.status === 'cancelled') {
+      this.notificationsService
+        .onSessionEvent(
+          dto.status,
+          session.id,
+          session.tutorName ?? 'Tutor',
+          session.studentName ?? 'Student',
+          session.subject,
+          session.tutorId,
+          session.studentId,
+          session.initiatorId ?? '',
+        )
+        .catch(() => {/* non-blocking */});
+    }
+
+    return updated;
   }
 }
+

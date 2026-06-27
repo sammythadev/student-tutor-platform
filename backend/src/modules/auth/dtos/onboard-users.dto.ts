@@ -50,6 +50,43 @@ export class OnboardStudentDto {
   @IsOptional()
   @IsString()
   timezone?: string;
+
+  // ── Preference fields ──────────────────────────────────────────────────────
+  @ApiPropertyOptional({ example: ['English', 'Yoruba'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  languages?: string[];
+
+  @ApiPropertyOptional({ example: 50000 })
+  @IsOptional()
+  @IsNumber()
+  budget?: number;
+
+  @ApiPropertyOptional({ example: 'online', enum: ['online', 'in-person'] })
+  @IsOptional()
+  @IsString()
+  deliveryPreference?: string;
+
+  @ApiPropertyOptional({ example: 'one-on-one', enum: ['one-on-one', 'group'] })
+  @IsOptional()
+  @IsString()
+  formatPreference?: string;
+
+  @ApiPropertyOptional({ example: 'visual', enum: ['visual', 'auditory', 'kinesthetic', 'mixed'] })
+  @IsOptional()
+  @IsString()
+  learningStylePreference?: string;
+
+  @ApiPropertyOptional({ example: 'algebra' })
+  @IsOptional()
+  @IsString()
+  subjectSpecialization?: string;
+
+  @ApiPropertyOptional({ example: 'Lagos' })
+  @IsOptional()
+  @IsString()
+  region?: string;
 }
 
 export class OnboardTutorDto {
@@ -59,17 +96,17 @@ export class OnboardTutorDto {
   @IsString({ each: true })
   subjectsTaught!: string[];
 
-  @ApiProperty({ example: [9, 10, 11] })
+  @ApiPropertyOptional({ example: [9, 10, 11] })
+  @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
   @IsInt({ each: true })
-  gradeLevelsSupported!: number[];
+  gradeLevelsSupported?: number[];
 
-  @ApiProperty({ example: ['waec', 'neco'] })
+  @ApiPropertyOptional({ example: ['waec', 'neco'] })
+  @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
   @IsString({ each: true })
-  examTypesSupported!: string[];
+  examTypesSupported?: string[];
 
   @ApiProperty({ type: [AvailabilitySlotDto] })
   @IsArray()
@@ -92,6 +129,44 @@ export class OnboardTutorDto {
   @IsOptional()
   @IsString()
   timezone?: string;
+
+  // ── Profile enrichment fields ──────────────────────────────────────────────
+  @ApiPropertyOptional({ example: 3, description: 'Years of teaching experience' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  experienceYears?: number;
+
+  @ApiPropertyOptional({ example: ['English', 'Hausa'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  languages?: string[];
+
+  @ApiPropertyOptional({ example: 'interactive', enum: ['interactive', 'lecture'] })
+  @IsOptional()
+  @IsString()
+  teachingStyle?: string;
+
+  @ApiPropertyOptional({ example: 'online', enum: ['online', 'in-person'] })
+  @IsOptional()
+  @IsString()
+  deliveryStyle?: string;
+
+  @ApiPropertyOptional({ example: 'one-on-one', enum: ['one-on-one', 'group'] })
+  @IsOptional()
+  @IsString()
+  formatStyle?: string;
+
+  /**
+   * Maximum number of simultaneous students. Defaults to 5 to ensure new
+   * tutors are eligible in the matchmaking engine (capacity must be > 0).
+   */
+  @ApiPropertyOptional({ example: 5, description: 'Max simultaneous students (default 5)' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  capacity?: number;
 }
 
 export class OnboardUserDto {

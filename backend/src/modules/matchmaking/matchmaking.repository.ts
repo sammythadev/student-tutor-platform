@@ -268,10 +268,17 @@ export class MatchmakingRepository {
       });
       await tx
         .update(tutorProfiles)
-        .set({ avgRating: updatedQuality.toFixed(2), updatedAt: new Date() })
+        .set({
+          // updatedQuality is a 0-1 EMA value; store as-is (displayed as ×5 in UI)
+          avgRating: updatedQuality.toFixed(4),
+          // Increment ratingCount so the count is always accurate
+          ratingCount: sql`${tutorProfiles.ratingCount} + 1`,
+          updatedAt: new Date(),
+        })
         .where(eq(tutorProfiles.userId, tutorId));
     });
   }
+
 
   async hasActiveAssignmentWithTutor(studentId: string, tutorId: string): Promise<boolean> {
     const [assignment] = await this.db

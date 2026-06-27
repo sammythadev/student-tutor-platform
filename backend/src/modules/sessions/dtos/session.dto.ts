@@ -54,6 +54,16 @@ export class UpdateSessionStatusDto {
   status!: SessionStatus;
 }
 
+export class ProposeSessionDto {
+  @ApiProperty({ example: '2026-07-10T14:00:00.000Z' })
+  @IsISO8601()
+  startAt!: string;
+
+  @ApiProperty({ example: '2026-07-10T15:00:00.000Z' })
+  @IsISO8601()
+  endAt!: string;
+}
+
 export class TransferSessionDto {
   @ApiProperty({ format: 'uuid', description: 'The new tutor to assign the session to' })
   @IsUUID()

@@ -31,6 +31,7 @@ export const learningStyleEnum = pgEnum('learning_style', [
   'visual',
   'auditory',
   'kinesthetic',
+  'mixed',
 ]);
 export const teachingStyleEnum = pgEnum('teaching_style', [
   'interactive',
@@ -338,6 +339,8 @@ export const sessions = pgTable(
     status: sessionStatusEnum('status').notNull().default('pending'),
     meetingUrl: text('meeting_url'),
     notes: text('notes'),
+    proposedStartAt: timestamp('proposed_start_at', { withTimezone: true }),
+    proposedEndAt: timestamp('proposed_end_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -424,6 +427,39 @@ export const messages = pgTable(
   ],
 );
 
+// ─── Notifications (time-based alerts for users) ─────────────────────────────
+export const notificationTypeEnum = pgEnum('notification_type', [
+  'session_request',
+  'session_upcoming',
+  'session_passed',
+  'session_cancelled',
+  'session_accepted',
+  'session_proposed',
+  'general',
+]);
+
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: notificationTypeEnum('type').notNull().default('general'),
+    title: text('title').notNull(),
+    message: text('message').notNull(),
+    isRead: integer('is_read').notNull().default(0),
+    relatedId: text('related_id'), // session/assignment id for deep linking
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('notifications_user_read_idx').on(table.userId, table.isRead),
+    index('notifications_user_created_idx').on(table.userId, table.createdAt),
+  ],
+);
+
 // ─── Inferred types ───────────────────────────────────────────────────────────
 export type UserRecord = typeof users.$inferSelect;
 export type NewUserRecord = typeof users.$inferInsert;
@@ -442,3 +478,5 @@ export type NewPostRecord = typeof posts.$inferInsert;
 export type PostLikeRecord = typeof postLikes.$inferSelect;
 export type MessageRecord = typeof messages.$inferSelect;
 export type NewMessageRecord = typeof messages.$inferInsert;
+export type NotificationRecord = typeof notifications.$inferSelect;
+export type NewNotificationRecord = typeof notifications.$inferInsert;

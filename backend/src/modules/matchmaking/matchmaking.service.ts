@@ -82,12 +82,18 @@ export class MatchmakingService {
         isEligible: candidate.eligibility.isEligible,
         reason: candidate.eligibility.reason,
         experienceYears: row.profile.experienceYears,
-        avgRating: row.profile.avgRating,
+        // avgRating stored as 0-1 EMA; display as 1-5 star scale
+        avgRating: row.profile.avgRating !== null
+          ? (Number(row.profile.avgRating) * 5).toFixed(1)
+          : null,
         ratingCount: row.profile.ratingCount,
         hourlyRate: row.profile.hourlyRate,
         bio: row.profile.bio,
         isVerified: row.profile.isVerified === 1,
+        capacity: row.profile.capacity,
+        assignedCount: row.profile.assignedCount,
       };
+
     });
 
     return {
