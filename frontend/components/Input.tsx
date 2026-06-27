@@ -2,6 +2,7 @@
 
 import { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes, ReactNode } from 'react'
 import { AlertCircle } from 'lucide-react'
+import { Dropdown } from './Dropdown'
 
 /* ─────────────────────────────────────────
    Shared input styles (via inline CSS vars
@@ -95,52 +96,34 @@ export function Input({ label, error, icon, helper, className = '', style, ...pr
   )
 }
 
-/* ─── Select ─── */
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+/* ─── Select (uses custom Dropdown) ─── */
+interface SelectProps {
   label?:       string
   error?:       string
+  name?:        string
+  value?:       string
+  onChange?:    (e: React.ChangeEvent<HTMLSelectElement>) => void
   options:      { value: string; label: string }[]
   placeholder?: string
 }
 
-export function Select({ label, error, options, placeholder, className = '', ...props }: SelectProps) {
+export function Select({ label, error, name, value, onChange, options, placeholder }: SelectProps) {
   return (
-    <div className="w-full">
-      {label && (
-        <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
-          {label}
-        </label>
-      )}
-
-      <select
-        className={className}
-        style={{
-          ...inputStyle,
-          cursor: 'pointer',
-          ...(error ? inputErrorStyle : {}),
-        }}
-        onFocus={(e) => { Object.assign(e.currentTarget.style, inputFocusStyle) }}
-        onBlur={(e) => {
-          Object.assign(e.currentTarget.style, {
-            borderColor: error ? 'var(--accent-coral-fg)' : 'var(--border)',
-            boxShadow: 'none',
-          })
-        }}
-        {...props}
-      >
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
-
-      {error && (
-        <p className="mt-1.5 text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--accent-coral-fg)' }}>
-          <AlertCircle className="w-3 h-3 flex-shrink-0" strokeWidth={2} />
-          {error}
-        </p>
-      )}
-    </div>
+    <Dropdown
+      label={label}
+      value={value ?? ''}
+      onChange={(newVal) => {
+        // Create a synthetic event for backward compat with onChange handlers
+        const syntheticEvent = {
+          target: { name: name ?? '', value: newVal },
+          currentTarget: { name: name ?? '', value: newVal },
+        } as React.ChangeEvent<HTMLSelectElement>
+        onChange?.(syntheticEvent)
+      }}
+      options={options}
+      placeholder={placeholder}
+      error={error}
+    />
   )
 }
 

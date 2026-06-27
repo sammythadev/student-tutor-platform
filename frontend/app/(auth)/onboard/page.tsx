@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/Button'
 import { Input, Select, Textarea } from '@/components/Input'
 import { Badge } from '@/components/Badge'
-import { BookOpen, ArrowRight } from 'lucide-react'
+import { BookOpen, ArrowRight, Check } from 'lucide-react'
 import { onboard } from '@/lib/api/auth'
 
 type OnboardingStep = 'role' | 'student' | 'tutor'
@@ -24,7 +24,11 @@ export default function OnboardingPage() {
     customSubject: '',
     budget: '',
     examTypes: '',
-    learningStyle: '',
+    learningStylePreference: '',
+    deliveryPreference: '',
+    formatPreference: '',
+    languages: [] as string[],
+    region: '',
     timezone: '',
     bio: '',
   })
@@ -33,9 +37,12 @@ export default function OnboardingPage() {
   const [tutorForm, setTutorForm] = useState({
     expertise: [] as string[],
     yearsExperience: '',
-    qualifications: '',
     hourlyRate: '',
-    availability: '',
+    teachingStyle: '',
+    deliveryStyle: '',
+    formatStyle: '',
+    languages: [] as string[],
+    capacity: '5',
     bio: '',
     timezone: '',
   })
@@ -54,6 +61,8 @@ export default function OnboardingPage() {
     'Art',
     'Sports',
   ]
+
+  const languages = ['English', 'Yoruba', 'Hausa', 'Igbo', 'French', 'Arabic']
 
   const handleSelectRole = (selectedRole: 'student' | 'tutor') => {
     setRole(selectedRole)
@@ -85,13 +94,49 @@ export default function OnboardingPage() {
     }))
   }
 
+  const toggleLanguage = (form: 'student' | 'tutor', lang: string) => {
+    if (form === 'student') {
+      setStudentForm(prev => ({
+        ...prev,
+        languages: prev.languages.includes(lang)
+          ? prev.languages.filter(l => l !== lang)
+          : [...prev.languages, lang],
+      }))
+    } else {
+      setTutorForm(prev => ({
+        ...prev,
+        languages: prev.languages.includes(lang)
+          ? prev.languages.filter(l => l !== lang)
+          : [...prev.languages, lang],
+      }))
+    }
+  }
+
+  function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all"
+        style={{
+          border: selected ? '2px solid var(--primary)' : '1px solid var(--border)',
+          background: selected ? 'var(--primary-subtle)' : 'var(--surface-glass)',
+          color: selected ? 'var(--primary)' : 'var(--text-secondary)',
+        }}
+      >
+        {selected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+        {label}
+      </button>
+    )
+  }
+
   const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors: Record<string, string> = {}
 
     if (!studentForm.gradeLevel) newErrors.gradeLevel = 'Grade level is required'
     if (studentForm.subjects.length === 0) newErrors.subjects = 'Select at least one subject'
-    if (!studentForm.learningStyle) newErrors.learningStyle = 'Learning style is required'
+    if (!studentForm.learningStylePreference) newErrors.learningStylePreference = 'Learning style is required'
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
@@ -105,15 +150,24 @@ export default function OnboardingPage() {
         allSubjects.push(studentForm.customSubject.trim())
       }
 
+      const defaultAvailability = [
+        {
+          start: new Date(new Date().setHours(24, 0, 0, 0)).toISOString(),
+          end: new Date(new Date().setHours(24 + (7 * 24), 0, 0, 0)).toISOString(),
+        }
+      ]
+
       await onboard('student', {
         subjects: allSubjects,
         gradeLevel: Number(studentForm.gradeLevel),
         examType: studentForm.examTypes || 'waec',
         budget: studentForm.budget ? Number(studentForm.budget) : undefined,
-        requestedAvailability: [
-          { start: '2026-01-01T15:00:00.000Z', end: '2026-01-01T18:00:00.000Z' },
-        ],
-        learningStylePreference: studentForm.learningStyle,
+        requestedAvailability: defaultAvailability,
+        learningStylePreference: studentForm.learningStylePreference,
+        deliveryPreference: studentForm.deliveryPreference || undefined,
+        formatPreference: studentForm.formatPreference || undefined,
+        languages: studentForm.languages.length > 0 ? studentForm.languages : ['English'],
+        region: studentForm.region || undefined,
         timezone: studentForm.timezone || 'Africa/Lagos',
         bio: studentForm.bio || undefined,
       })
@@ -141,16 +195,27 @@ export default function OnboardingPage() {
 
     setLoading(true)
     try {
+      const defaultAvailability = [
+        {
+          start: new Date(new Date().setHours(24, 0, 0, 0)).toISOString(),
+          end: new Date(new Date().setHours(24 + (30 * 24), 0, 0, 0)).toISOString(),
+        }
+      ]
+
       await onboard('tutor', {
         subjectsTaught: tutorForm.expertise,
         gradeLevelsSupported: [9, 10, 11, 12],
         examTypesSupported: ['waec', 'neco', 'jamb'],
-        availability: [
-          { start: '2026-01-01T15:00:00.000Z', end: '2026-01-01T18:00:00.000Z' },
-        ],
+        availability: defaultAvailability,
         hourlyRate: Number(tutorForm.hourlyRate),
         bio: tutorForm.bio || undefined,
         timezone: tutorForm.timezone || 'Africa/Lagos',
+        experienceYears: Number(tutorForm.yearsExperience.split('-')[0]) || 1,
+        languages: tutorForm.languages.length > 0 ? tutorForm.languages : ['English'],
+        capacity: Number(tutorForm.capacity) || 5,
+        teachingStyle: (tutorForm.teachingStyle as any) || 'interactive',
+        deliveryStyle: (tutorForm.deliveryStyle as any) || 'online',
+        formatStyle: (tutorForm.formatStyle as any) || 'one-on-one',
       })
       router.push('/tutor-dashboard')
     } catch (err: any) {
@@ -299,23 +364,17 @@ export default function OnboardingPage() {
             />
 
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-ink-600">
+              <label className="block text-sm font-semibold text-ink-600">
                 What subjects do you need help with?
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {subjects.map(subject => (
-                  <button
+                  <Chip
                     key={subject}
-                    type="button"
+                    label={subject}
+                    selected={studentForm.subjects.includes(subject)}
                     onClick={() => toggleSubject(subject)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      studentForm.subjects.includes(subject)
-                        ? 'bg-accent-lavender-fg text-white'
-                        : 'glass-card text-ink-900 hover:bg-white/40'
-                    }`}
-                  >
-                    {subject}
-                  </button>
+                  />
                 ))}
               </div>
               
@@ -342,12 +401,28 @@ export default function OnboardingPage() {
               onChange={handleStudentChange}
             />
 
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-ink-600">
+                What languages do you prefer?
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {languages.map(lang => (
+                  <Chip
+                    key={lang}
+                    label={lang}
+                    selected={studentForm.languages.includes(lang)}
+                    onClick={() => toggleLanguage('student', lang)}
+                  />
+                ))}
+              </div>
+            </div>
+
             <Select
               label="How do you learn best?"
-              name="learningStyle"
-              value={studentForm.learningStyle}
+              name="learningStylePreference"
+              value={studentForm.learningStylePreference}
               onChange={handleStudentChange}
-              error={errors.learningStyle}
+              error={errors.learningStylePreference}
               options={[
                 { value: 'visual', label: 'Visual (diagrams, videos)' },
                 { value: 'auditory', label: 'Auditory (discussions, lectures)' },
@@ -355,6 +430,30 @@ export default function OnboardingPage() {
                 { value: 'mixed', label: 'Mixed approach' },
               ]}
               placeholder="Select your style"
+            />
+
+            <Select
+              label="Delivery Preference"
+              name="deliveryPreference"
+              value={studentForm.deliveryPreference}
+              onChange={handleStudentChange}
+              options={[
+                { value: 'online', label: 'Online' },
+                { value: 'in-person', label: 'In Person' },
+              ]}
+              placeholder="How should sessions happen?"
+            />
+
+            <Select
+              label="Format Preference"
+              name="formatPreference"
+              value={studentForm.formatPreference}
+              onChange={handleStudentChange}
+              options={[
+                { value: 'one-on-one', label: 'One-on-One' },
+                { value: 'group', label: 'Group' },
+              ]}
+              placeholder="Preferred session format"
             />
 
             <Select
@@ -370,6 +469,15 @@ export default function OnboardingPage() {
                 { value: 'America/Los_Angeles', label: 'America/Los_Angeles' },
               ]}
               placeholder="Select timezone"
+            />
+
+            <Input
+              label="Region"
+              name="region"
+              type="text"
+              placeholder="E.g., Lagos, Abuja"
+              value={studentForm.region}
+              onChange={handleStudentChange}
             />
 
             <div className="flex gap-3 pt-4">
@@ -419,14 +527,15 @@ export default function OnboardingPage() {
           {/* Form */}
           <form onSubmit={handleTutorSubmit} className="glass-card p-8 space-y-6">
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-ink-600">
+              <label className="block text-sm font-semibold text-ink-600">
                 What subjects do you teach?
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {subjects.map(subject => (
-                  <button
+                  <Chip
                     key={subject}
-                    type="button"
+                    label={subject}
+                    selected={tutorForm.expertise.includes(subject)}
                     onClick={() => {
                       setTutorForm(prev => ({
                         ...prev,
@@ -435,17 +544,26 @@ export default function OnboardingPage() {
                           : [...prev.expertise, subject],
                       }))
                     }}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      tutorForm.expertise.includes(subject)
-                        ? 'bg-accent-mint-fg text-white'
-                        : 'glass-card text-ink-900 hover:bg-white/40'
-                    }`}
-                  >
-                    {subject}
-                  </button>
+                  />
                 ))}
               </div>
               {errors.expertise && <p className="text-xs text-accent-coral-fg font-medium">{errors.expertise}</p>}
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-ink-600">
+                What languages do you teach in?
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {languages.map(lang => (
+                  <Chip
+                    key={lang}
+                    label={lang}
+                    selected={tutorForm.languages.includes(lang)}
+                    onClick={() => toggleLanguage('tutor', lang)}
+                  />
+                ))}
+              </div>
             </div>
 
             <Select
@@ -471,6 +589,53 @@ export default function OnboardingPage() {
               value={tutorForm.hourlyRate}
               onChange={handleTutorChange}
               error={errors.hourlyRate}
+            />
+
+            <Input
+              label="Student Capacity"
+              name="capacity"
+              type="number"
+              min={1}
+              placeholder="5"
+              value={tutorForm.capacity}
+              onChange={handleTutorChange}
+              helper="Maximum number of students you can take at once"
+            />
+
+            <Select
+              label="Teaching Style"
+              name="teachingStyle"
+              value={tutorForm.teachingStyle}
+              onChange={handleTutorChange}
+              options={[
+                { value: 'interactive', label: 'Interactive (discussion-based)' },
+                { value: 'lecture', label: 'Lecture (structured delivery)' },
+              ]}
+              placeholder="Select teaching style"
+            />
+
+            <Select
+              label="Delivery Style"
+              name="deliveryStyle"
+              value={tutorForm.deliveryStyle}
+              onChange={handleTutorChange}
+              options={[
+                { value: 'online', label: 'Online' },
+                { value: 'in-person', label: 'In Person' },
+              ]}
+              placeholder="How do you teach?"
+            />
+
+            <Select
+              label="Format Style"
+              name="formatStyle"
+              value={tutorForm.formatStyle}
+              onChange={handleTutorChange}
+              options={[
+                { value: 'one-on-one', label: 'One-on-One' },
+                { value: 'group', label: 'Group' },
+              ]}
+              placeholder="Preferred session format"
             />
 
             <Textarea

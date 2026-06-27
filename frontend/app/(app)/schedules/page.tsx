@@ -125,16 +125,26 @@ function WeekCalendar({
                   const pos = toSlot(session.startAt, weekStart)
                   return pos.dayIdx === dayIdx && pos.slotIdx === slotIdx
                 })
+                const slotStart = new Date(weekStart)
+                slotStart.setDate(slotStart.getDate() + dayIdx)
+                slotStart.setHours(8 + slotIdx, 0, 0, 0)
+                const isPast = slotStart < new Date()
+
                 return (
                   <div
                     key={`${dayIdx}-${slotIdx}`}
-                    onDragOver={!isTutor ? (event => { event.preventDefault(); setDropTarget({ dayIdx, slotIdx }) }) : undefined}
-                    onDragLeave={!isTutor ? (() => setDropTarget(null)) : undefined}
-                    onDrop={!isTutor && onDrop ? (event => onDrop(event, dayIdx, slotIdx)) : undefined}
-                    className="relative border-b border-l p-1"
-                    style={{ height: 82, borderColor: 'var(--border)', background: isTarget ? 'var(--primary-subtle)' : undefined }}
+                    onDragOver={(!isTutor && !isPast) ? (event => { event.preventDefault(); setDropTarget({ dayIdx, slotIdx }) }) : undefined}
+                    onDragLeave={(!isTutor && !isPast) ? (() => setDropTarget(null)) : undefined}
+                    onDrop={(!isTutor && !isPast && onDrop) ? (event => onDrop(event, dayIdx, slotIdx)) : undefined}
+                    className="relative border-b border-l p-1 transition-colors"
+                    style={{ 
+                      height: 82, 
+                      borderColor: 'var(--border)', 
+                      background: isTarget ? 'var(--primary-subtle)' : isPast ? 'var(--surface-2)' : undefined,
+                      opacity: isPast ? 0.6 : 1
+                    }}
                   >
-                    {isTarget && <div className="absolute inset-2 flex items-center justify-center rounded-lg border border-dashed border-primary text-primary"><Plus className="h-4 w-4" /></div>}
+                    {isTarget && <div className="absolute inset-2 flex items-center justify-center rounded-lg border border-dashed border-primary text-primary bg-primary-subtle bg-opacity-50"><Plus className="h-4 w-4" /></div>}
                     {inCell.map(session => {
                       const color = colorForSubject(session.subject)
                       const ac = AC[color]
@@ -171,6 +181,7 @@ export default function SchedulesPage() {
     const subjects = isTutor ? (tutorSubjects ?? []) : (studentSubjects ?? [])
     return subjects.length > 0 ? subjects : ['Mathematics', 'Physics', 'Literature', 'Languages']
   }, [isTutor, studentSubjects, tutorSubjects])
+  const { addToast } = useToast()
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()))
   const [sessions, setSessions] = useState<SessionItem[]>([])
   const [tutors, setTutors] = useState<TutorCandidate[]>([])
@@ -260,8 +271,6 @@ export default function SchedulesPage() {
         </div>
         <Button variant="secondary" onClick={load} loading={loading}>Refresh</Button>
       </div>
-
-      {error && <div className="surface-card p-4 text-sm text-accent-coral-fg">{error}</div>}
 
       {/* Drag chips — students only */}
       {!isTutor && (

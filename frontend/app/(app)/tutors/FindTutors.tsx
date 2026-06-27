@@ -7,7 +7,7 @@ import { Button } from '@/components/Button'
 import { BookSessionModal } from '@/components/BookSessionModal'
 import { MessageModal } from '@/components/MessageModal'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
-import { CheckCircle2, Heart, Search, SlidersHorizontal, Star, AlertCircle, MessageSquare } from 'lucide-react'
+import { CheckCircle2, Heart, Search, SlidersHorizontal, Star, AlertCircle, MessageSquare, Users } from 'lucide-react'
 import { useToast } from '@/lib/toast-context'
 
 const ACCENTS = ['lavender', 'sky', 'mint', 'sun', 'coral', 'tangerine'] as const
@@ -109,7 +109,7 @@ export function FindTutors() {
             const id = person.userId
             const isLiked = liked.has(id)
             const isEligible = person.isEligible !== false;
-            const personSubjects = person.subjectsTaught ?? []
+            const personSubjects = [...new Set(person.subjectsTaught ?? [])] as string[]
             
             return (
               <Card key={id} className="flex flex-col p-5">
@@ -123,10 +123,18 @@ export function FindTutors() {
                         {person.firstName} {person.lastName}
                         {person.isVerified && <CheckCircle2 className="ml-1 inline h-3.5 w-3.5 text-accent-mint-fg" />}
                       </p>
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <Star className="h-3.5 w-3.5 fill-current text-accent-sun-fg" />
-                        <span className="text-xs font-semibold text-text-primary">{person.avgRating ?? 'New'}</span>
-                        <span className="text-xs text-text-muted">({person.ratingCount ?? 0})</span>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3.5 w-3.5 fill-current text-accent-sun-fg" />
+                          <span className="text-xs font-semibold text-text-primary">{person.avgRating ?? 'New'}</span>
+                          <span className="text-xs text-text-muted">({person.ratingCount ?? 0})</span>
+                        </div>
+                        {person.capacity != null && (
+                          <div className="flex items-center gap-1 text-xs font-medium text-text-secondary">
+                            <Users className="w-3.5 h-3.5" />
+                            <span>{person.assignedCount ?? 0}/{person.capacity} slots</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -143,17 +151,11 @@ export function FindTutors() {
                   </button>
                 </div>
 
-                {!isEligible && (
-                  <div className="mb-4 p-2 rounded-md bg-accent-coral-bg text-accent-coral-fg text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Ineligible: {person.reason}</span>
-                  </div>
-                )}
 
                 <p className="mb-4 line-clamp-3 text-xs leading-relaxed text-text-secondary">{person.bio ?? 'No bio yet.'}</p>
 
                 <div className="mb-4 flex flex-wrap gap-1.5">
-                  {personSubjects.slice(0, 3).map((item: string) => <Badge key={item} color={color as any} size="sm">{item}</Badge>)}
+                  {personSubjects.slice(0, 3).map((item, idx) => <Badge key={`${item}-${idx}`} color={color as any} size="sm">{item}</Badge>)}
                 </div>
 
                 <div className="mb-4 flex items-center justify-between border-y py-3" style={{ borderColor: 'var(--border)' }}>
@@ -164,11 +166,18 @@ export function FindTutors() {
                   </span>
                 </div>
 
-                <div className="mt-auto flex gap-2">
+                <div className="mt-auto flex gap-2 relative group">
                   <Button variant="secondary" size="md" className="flex-1" onClick={() => setMessageTarget(person)}>
                     <MessageSquare className="w-3.5 h-3.5" /> Message
                   </Button>
-                  <Button size="md" className="flex-1" onClick={() => setBookTarget(person)} disabled={!isEligible}>Book Session</Button>
+                  <Button size="md" className="flex-1" onClick={() => setBookTarget(person)} disabled={!isEligible}>
+                    Book Session
+                  </Button>
+                  {!isEligible && (
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-ink-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      {person.reason || 'Tutor is currently full'}
+                    </div>
+                  )}
                 </div>
               </Card>
             )

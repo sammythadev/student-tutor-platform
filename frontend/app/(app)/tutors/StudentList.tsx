@@ -112,7 +112,7 @@ export function StudentList() {
             const id = person.studentId ?? person.userId
             const isLiked = liked.has(id)
             const isEligible = person.isEligible !== false
-            const personSubjects = [...(person.subjects ?? []), person.requiredSubject].filter(Boolean)
+            const personSubjects = [...new Set([...(person.subjects ?? []), person.requiredSubject].filter(Boolean))] as string[]
             
             return (
               <Card key={id} className="flex flex-col p-5">
@@ -141,17 +141,10 @@ export function StudentList() {
                   </button>
                 </div>
 
-                {!isEligible && (
-                  <div className="mb-4 p-2 rounded-md bg-accent-coral-bg text-accent-coral-fg text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Ineligible: {person.reason}</span>
-                  </div>
-                )}
-
                 <p className="mb-4 line-clamp-3 text-xs leading-relaxed text-text-secondary">{person.bio ?? 'No bio provided.'}</p>
 
                 <div className="mb-4 flex flex-wrap gap-1.5">
-                  {personSubjects.slice(0, 3).map((item: string) => <Badge key={item} color={color as any} size="sm">{item}</Badge>)}
+                  {personSubjects.slice(0, 3).map((item, idx) => <Badge key={`${item}-${idx}`} color={color as any} size="sm">{item}</Badge>)}
                 </div>
 
                 <div className="mb-4 flex items-center justify-between border-y py-3" style={{ borderColor: 'var(--border)' }}>

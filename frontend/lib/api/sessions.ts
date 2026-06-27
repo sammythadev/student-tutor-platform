@@ -30,6 +30,16 @@ export async function declineSession(id: string) {
   return data as SessionItem
 }
 
+export async function acceptProposal(id: string) {
+  const { data } = await api.patch(`/sessions/${id}/accept-proposal`)
+  return data as SessionItem
+}
+
+export async function proposeSession(id: string, startAt: string, endAt: string) {
+  const { data } = await api.patch(`/sessions/${id}/propose`, { startAt, endAt })
+  return data as SessionItem
+}
+
 export async function updateSessionStatus(id: string, status: 'completed' | 'cancelled' | 'upcoming' | 'starting-soon') {
   const { data } = await api.patch(`/sessions/${id}/status`, { status })
   return data as SessionItem

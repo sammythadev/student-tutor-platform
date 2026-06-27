@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
+import { DashboardHero } from '@/components/DashboardHero'
 import { getDashboardMetrics, type DashboardMetrics } from '@/lib/api/dashboard'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
 import { useAuthStore } from '@/lib/store/authStore'
@@ -55,18 +56,13 @@ export function StudentDashboard() {
 
   return (
     <div className="space-y-7 py-3">
-      <div className="rounded-2xl p-7 bg-primary text-white shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-widest opacity-75">Dashboard</p>
-        <div className="mt-2 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="font-heading text-3xl font-bold">Welcome back, {user?.firstName ?? 'User'}</h1>
-            <p className="mt-1 text-sm text-white/75">
-              {metrics ? `${metrics.streakDays} day streak, ${totalHours.toFixed(1)}h logged this week` : 'Loading your snapshot...'}
-            </p>
-          </div>
-          <Link href="/schedules"><Button variant="secondary">Schedule Session</Button></Link>
-        </div>
-      </div>
+      <DashboardHero
+        title={`Welcome back, ${user?.firstName ?? 'User'}`}
+        subtitle={metrics ? `${metrics.streakDays} day streak · ${totalHours.toFixed(1)}h logged this week` : 'Loading your snapshot...'}
+        actionLabel="Schedule Session"
+        actionHref="/schedules"
+        accent="primary"
+      />
 
       {error && <div className="surface-card p-4 text-sm text-accent-coral-fg">{error}</div>}
 

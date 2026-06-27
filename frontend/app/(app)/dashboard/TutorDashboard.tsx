@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
+import { DashboardHero } from '@/components/DashboardHero'
 import { MessageModal } from '@/components/MessageModal'
 import { getTutorDashboardMetrics, type TutorDashboardMetrics } from '@/lib/api/dashboard'
 import { getMySessions, type SessionItem } from '@/lib/api/sessions'
@@ -70,18 +71,13 @@ export function TutorDashboard() {
 
   return (
     <div className="space-y-7 py-3">
-      <div className="rounded-2xl bg-primary p-7 text-white shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-widest text-white/60">Tutor Dashboard</p>
-        <div className="mt-2 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="font-heading text-3xl font-bold">Good day, {user?.firstName ?? 'Tutor'}</h1>
-            <p className="mt-1 text-sm text-white/70">
-              {metrics ? `${todaySessions.length} sessions today · ${metrics.studentsCount} active students · ${totalHours.toFixed(1)}h this week` : 'Loading your snapshot...'}
-            </p>
-          </div>
-          <Link href="/schedules"><Button variant="secondary"><Plus className="h-4 w-4" /> New Session</Button></Link>
-        </div>
-      </div>
+      <DashboardHero
+        title={`Good day, ${user?.firstName ?? 'Tutor'}`}
+        subtitle={metrics ? `${todaySessions.length} sessions today · ${metrics.studentsCount} active students · ${totalHours.toFixed(1)}h this week` : 'Loading your snapshot...'}
+        actionLabel="New Session"
+        actionHref="/schedules"
+        accent="accent"
+      />
 
       {error && <div className="surface-card p-4 text-sm text-accent-coral-fg">{error}</div>}
 
