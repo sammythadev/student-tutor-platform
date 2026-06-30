@@ -51,6 +51,28 @@
   --colors-accent-sun-fg:         var(--accent-sun-fg);
   --colors-accent-coral-bg:       var(--accent-coral-bg);
   --colors-accent-coral-fg:       var(--accent-coral-fg);
+
+  /* Shadcn-standard Tailwind v4 mappings */
+  --color-background:       var(--background);
+  --color-foreground:       var(--foreground);
+  --color-card:             var(--card);
+  --color-card-foreground:  var(--card-foreground);
+  --color-popover:          var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary:          var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary:        var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:            var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent:           var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive:      var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border:           var(--border);
+  --color-ring:             var(--ring);
+  --color-input:            var(--border);
+  --radius:                 var(--radius);
 }
 
 
@@ -127,6 +149,31 @@
   /* Ambient blob tints (dark) */
   --blob-primary: rgba(99, 102, 241, 0.12);
   --blob-accent:  rgba(16, 185, 129, 0.08);
+
+  /* Navbar */
+  --nav-bg: rgba(9, 9, 11, 0.85);
+
+  /* Aurora */
+  --aurora-blend:  screen;
+  --aurora-opacity: 0.8;
+
+  /* Shadcn-standard compat aliases */
+  --background:           var(--canvas);
+  --foreground:           var(--text-primary);
+  --card:                 var(--surface);
+  --card-foreground:      var(--text-primary);
+  --popover:              var(--surface);
+  --popover-foreground:   var(--text-primary);
+  --primary-foreground:   var(--primary-fg);
+  --secondary:            #4338CA;
+  --secondary-foreground: var(--text-primary);
+  --muted:                var(--surface-2);
+  --muted-foreground:     var(--text-secondary);
+  --accent-foreground:    var(--accent-fg);
+  --destructive:          #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --ring:                 var(--primary);
+  --radius:               0.5rem;
 }
 
 
@@ -205,6 +252,31 @@
   /* Ambient blob tints */
   --blob-primary: rgba(99, 102, 241, 0.08);
   --blob-accent:  rgba(16, 185, 129, 0.06);
+
+  /* Navbar */
+  --nav-bg: rgba(255, 255, 255, 0.85);
+
+  /* Aurora — multiply blends color into light bg instead of washing out */
+  --aurora-blend:  multiply;
+  --aurora-opacity: 0.25;
+
+  /* Shadcn-standard compat aliases */
+  --background:           var(--canvas);
+  --foreground:           var(--text-primary);
+  --card:                 var(--surface);
+  --card-foreground:      var(--text-primary);
+  --popover:              var(--surface);
+  --popover-foreground:   var(--text-primary);
+  --primary-foreground:   var(--primary-fg);
+  --secondary:            #6366F1;
+  --secondary-foreground: var(--text-primary);
+  --muted:                var(--surface-2);
+  --muted-foreground:     var(--text-secondary);
+  --accent-foreground:    var(--accent-fg);
+  --destructive:          #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --ring:                 var(--primary);
+  --radius:               0.5rem;
 }
 
 
@@ -498,6 +570,14 @@
 /* ─────────────────────────────────────────
    KEYFRAME ANIMATIONS
    ───────────────────────────────────────── */
+
+/* Easing curves (from design engineering skill) */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 @keyframes pulse-breathe {
   0%, 100% { opacity: 0.5; transform: scaleY(0.75); }
   50%       { opacity: 1;   transform: scaleY(1); }
@@ -513,13 +593,110 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fade-up-sm {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
 
-.animate-float    { animation: float 4s ease-in-out infinite; }
-.animate-fade-up  { animation: fade-up 0.5s ease forwards; }
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes blob-morph {
+  0%   { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: translate(0, 0) scale(1); }
+  25%  { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; transform: translate(30px, -20px) scale(1.05); }
+  50%  { border-radius: 50% 50% 50% 50% / 40% 50% 50% 60%; transform: translate(-20px, 30px) scale(0.95); }
+  75%  { border-radius: 40% 30% 60% 50% / 60% 40% 60% 40%; transform: translate(20px, 20px) scale(1.02); }
+  100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: translate(0, 0) scale(1); }
+}
+
+@keyframes blob-morph-slow {
+  0%   { border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; transform: scale(1); }
+  33%  { border-radius: 40% 60% 60% 40% / 60% 40% 60% 40%; transform: scale(1.1) rotate(5deg); }
+  66%  { border-radius: 60% 40% 40% 60% / 40% 60% 40% 60%; transform: scale(0.9) rotate(-3deg); }
+  100% { border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; transform: scale(1); }
+}
+
+@keyframes scale-in {
+  0%   { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes tilt-enter {
+  0%   { opacity: 0; transform: rotateX(20deg) rotateY(-20deg) rotateZ(5deg) translateZ(-100px); }
+  100% { opacity: 1; transform: rotateX(12deg) rotateY(-12deg) rotateZ(3deg) translateZ(0); }
+}
+
+/* Utility classes */
+.animate-float       { animation: float 4s ease-in-out infinite; }
+.animate-fade-up     { animation: fade-up 0.5s var(--ease-out) forwards; }
+.animate-fade-up-sm  { animation: fade-up-sm 0.4s var(--ease-out) forwards; }
+.animate-fade-in     { animation: fade-in 0.3s var(--ease-out) forwards; }
+.animate-shimmer     { animation: shimmer 3s linear infinite; background-size: 200% 100%; }
+.animate-gradient    { background-size: 200% 200%; animation: gradient-shift 6s ease infinite; }
+.animate-blob-morph  { animation: blob-morph 8s ease-in-out infinite; }
+.animate-blob-morph-slow { animation: blob-morph-slow 12s ease-in-out infinite; }
+.animate-scale-in    { animation: scale-in 0.4s var(--ease-out) forwards; }
+.animate-tilt-enter  { animation: tilt-enter 0.8s var(--ease-out) forwards; }
+
+/* ─── Stagger delays ─── */
+.delay-1 { animation-delay: 100ms; }
+.delay-2 { animation-delay: 200ms; }
+.delay-3 { animation-delay: 300ms; }
+.delay-4 { animation-delay: 400ms; }
+.delay-5 { animation-delay: 500ms; }
+
+/* ─── Card interactive feedback ─── */
+.card-interactive {
+  transition: transform 160ms var(--ease-out), box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.card-interactive:active {
+  transform: scale(0.97);
+}
+
+.card-interactive-sm:active {
+  transform: scale(0.97);
+}
+
+/* ─── Pressable element base ─── */
+.pressable {
+  transition: transform 160ms var(--ease-out);
+}
+
+.pressable:active {
+  transform: scale(0.97);
+}
+
+/* ─── Gradient text animation ─── */
+.gradient-text-animate {
+  background-size: 200% 200%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 4s ease infinite;
+}
+
+/* ─── Hover card lift ─── */
+.hover-lift {
+  transition: transform 300ms var(--ease-out), box-shadow 300ms ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+}
 
 
 /* ─────────────────────────────────────────

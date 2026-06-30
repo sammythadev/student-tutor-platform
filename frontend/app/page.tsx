@@ -1,15 +1,22 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight, Star, CheckCircle2, Search, SlidersHorizontal,
   BookOpen, CalendarCheck, GraduationCap, TrendingUp, Users,
-  Globe, MessageCircle, ChevronRight, Sparkles,
+  ChevronRight, Sparkles,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Sun, Moon } from 'lucide-react'
-import ThreeParticles from '@/components/ThreeParticles'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+gsap.registerPlugin(ScrollTrigger)
+import Aurora from '@/components/Aurora'
+import TextType from '@/components/TextType'
+import ScrollReveal from '@/components/ScrollReveal'
+import { CinematicFooter } from '@/components/ui/motion-footer'
+import ShinyText from '@/components/ShinyText'
 
 function ThemeToggle() {
   const [isDark, setIsDark] = useState(true)
@@ -35,56 +42,110 @@ function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label="Toggle theme"
-      className="w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-primary-subtle transition-all duration-200 cursor-pointer"
+      className="pressable w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-primary-subtle transition-colors duration-200 cursor-pointer"
     >
       {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
     </button>
   )
 }
 
+function SectionReveal({ children, className = '', stagger = false }: { children: React.ReactNode; className?: string; stagger?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    if (stagger) {
+      const childEls = el.children
+      if (childEls.length > 0) {
+        gsap.fromTo(
+          childEls,
+          { opacity: 0, y: 32 },
+          {
+            opacity: 1,
+            y: 0,
+            stagger: 0.1,
+            duration: 0.7,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: el,
+              start: 'top bottom-=15%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+        return () => { ScrollTrigger.getAll().forEach(t => t.kill()) }
+      }
+    }
+
+    gsap.fromTo(
+      el,
+      { opacity: 0, y: 24 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: el,
+          start: 'top bottom-=15%',
+          toggleActions: 'play none none none',
+        },
+      }
+    )
+
+    return () => { ScrollTrigger.getAll().forEach(t => t.kill()) }
+  }, [stagger])
+
+  return <div ref={ref} className={className}>{children}</div>
+}
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-canvas relative overflow-x-hidden">
 
-      {/* ─── Aether Dynamics particle background ─── */}
-      <ThreeParticles />
+      <div className="absolute inset-0 -z-10" style={{ width: '100vw', height: '100vh', position: 'fixed', mixBlendMode: 'var(--aurora-blend)' as any, opacity: 'var(--aurora-opacity)' }}>
+        <Aurora
+          colorStops={['#6366F1', '#10B981', '#6366F1']}
+          amplitude={1}
+          blend={0.5}
+        />
+      </div>
 
       {/* ─── Glassmorphic Navigation ─── */}
       <header className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 pt-4">
-        <nav className="max-w-7xl mx-auto flex justify-between items-center px-4 md:px-6 py-2.5 rounded-pill" style={{ background: 'rgba(9,9,11,0.85)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 cursor-pointer">
+        <nav className="max-w-7xl mx-auto flex justify-between items-center px-4 md:px-6 py-2.5 rounded-pill" style={{ background: 'var(--nav-bg)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
+          <Link href="/" className="pressable flex items-center gap-2.5 cursor-pointer">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--primary)' }}>
               <BookOpen className="w-4 h-4 text-white" strokeWidth={2.5} />
             </div>
             <span className="text-lg font-bold tracking-tight font-heading text-text-primary">Tutorly</span>
           </Link>
 
-          {/* Nav links */}
           <div className="hidden md:flex items-center gap-8">
             {['How it works', 'Tutors', 'Pricing', 'Resources'].map((link) => (
               <a
                 key={link}
                 href="#"
-                className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors duration-150 cursor-pointer"
+                className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors duration-150 cursor-pointer relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:rounded-full after:bg-primary after:transition-all after:duration-200 hover:after:w-full"
               >
                 {link}
               </a>
             ))}
           </div>
 
-          {/* Actions */}
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Link href="/signin" className="hidden sm:block text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors cursor-pointer">
+            <Link href="/signin" className="hidden sm:block pressable text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors cursor-pointer">
               Sign in
             </Link>
-            <Link href="/signup" className="btn-primary text-sm px-5 py-2.5">
+            <Link href="/signup" className="btn-primary text-sm px-5 py-2.5 pressable">
               Get started
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          </nav>
+        </nav>
       </header>
 
       <main className="relative z-10">
@@ -93,41 +154,68 @@ export default function LandingPage() {
         <section className="pt-40 pb-24 px-4 md:px-8">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
 
-            {/* Hero copy */}
-            <div className="space-y-7 animate-fade-up">
-              <div className="stat-badge w-fit">
-                <Sparkles className="w-3 h-3" />
-                Trusted by 15,000+ students worldwide
+            <div className="space-y-7">
+              <div className="animate-fade-up-sm delay-1" style={{ animationFillMode: 'both' }}>
+                <div className="stat-badge w-fit pressable">
+                  <Sparkles className="w-3 h-3" />
+                  Trusted by 15,000+ students worldwide
+                </div>
               </div>
 
-              <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.08] tracking-tighter text-text-primary">
-                Education,{' '}
+              <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.08] tracking-tighter text-text-primary animate-fade-up-sm delay-2" style={{ animationFillMode: 'both' }}>
+                The right tutor{' '}
                 <span
-                  className="relative inline-block"
+                  className="gradient-text-animate"
                   style={{
-                    background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    backgroundImage: 'linear-gradient(135deg, var(--primary), var(--accent), var(--primary))',
                   }}
                 >
-                  Elevated.
+                  changes everything.
                 </span>
               </h1>
 
-              <p className="text-lg md:text-xl text-text-secondary max-w-lg leading-relaxed">
-                Connect with elite educators through our premium learning infrastructure. No clutter — just world-class knowledge transfer.
+              <p className="text-lg md:text-xl leading-relaxed animate-fade-up-sm delay-3" style={{ animationFillMode: 'both' }}>
+                <ShinyText
+                  text="Powered by a fairness-first matching algorithm that connects you with tutors based on learning style, goals, and real compatibility — not just availability."
+                  color="var(--text-secondary)"
+                  shineColor="var(--text-primary)"
+                  speed={1.5}
+                  spread={200}
+                  yoyo={true}
+                  direction="left"
+                />
               </p>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2">
-                <Link href="/signup" className="btn-primary text-base px-8 py-4 group cursor-pointer">
+              <div className="text-lg md:text-xl text-text-primary font-medium animate-fade-up-sm delay-3 flex items-center gap-2 flex-wrap" style={{ animationFillMode: 'both' }}>
+                <span>Find someone who</span>
+                <TextType
+                  text={["gets your learning style", "matches your schedule", "pushes your growth", "makes it click"]}
+                  typingSpeed={50}
+                  deletingSpeed={25}
+                  pauseDuration={2000}
+                  showCursor={true}
+                  cursorCharacter="|"
+                  variableSpeed={{min: 30, max: 70}}
+                  className="gradient-text-animate inline-block"
+                  style={{
+                    backgroundImage: 'linear-gradient(135deg, var(--primary), var(--accent), var(--primary))',
+                    backgroundSize: '200% 200%',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2 animate-fade-up-sm delay-4" style={{ animationFillMode: 'both' }}>
+                <Link href="/signup" className="btn-primary text-base px-8 py-4 group pressable cursor-pointer">
                   Book a trial session
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <div className="flex items-center gap-3">
                   <div className="flex -space-x-2">
                     {['bg-accent-lavender-bg', 'bg-accent-sky-bg', 'bg-accent-mint-bg', 'bg-accent-sun-bg'].map((c, i) => (
-                      <div key={i} className={`w-8 h-8 rounded-full border-2 border-canvas ${c} flex items-center justify-center`}>
+                      <div key={i} className={`w-8 h-8 rounded-full border-2 border-canvas ${c} flex items-center justify-center hover:z-10 hover:scale-110 transition-transform duration-200`}>
                         <span className="text-[10px] font-bold" style={{ color: 'var(--text-secondary)' }}>
                           {String.fromCharCode(65 + i)}
                         </span>
@@ -141,11 +229,9 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Hero visual — schedule card */}
+            {/* Hero visual — calendar card with 3D tilt entrance */}
             <div className="perspective-container relative h-[520px] hidden lg:block">
-              <div className="tilted-card absolute inset-0 surface-card overflow-hidden" style={{ padding: 0 }}>
-
-                {/* Card header */}
+              <div className="tilted-card absolute inset-0 surface-card overflow-hidden animate-tilt-enter" style={{ padding: 0, animationFillMode: 'both' }}>
                 <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
                   <div className="flex items-center gap-2.5">
                     <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--primary)' }}>
@@ -155,16 +241,14 @@ export default function LandingPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     {(['‹', '›'] as const).map((ch, i) => (
-                      <button key={i} className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer text-sm font-bold" style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                      <button key={i} className="pressable w-7 h-7 rounded-full flex items-center justify-center cursor-pointer text-sm font-bold" style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
                         {ch}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Calendar grid — data-driven Apple Calendar style */}
                 <div style={{ display: 'grid', gridTemplateColumns: '44px repeat(5, 1fr)', overflow: 'hidden' }}>
-                  {/* Day headers */}
                   <div style={{ height: 52, background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }} />
                   {[{d:'Mon',n:23,t:true},{d:'Tue',n:24,t:false},{d:'Wed',n:25,t:false},{d:'Thu',n:26,t:false},{d:'Fri',n:27,t:false}].map(({d,n,t}) => (
                     <div key={d} style={{ height:52, background:'var(--surface-2)', borderBottom:'1px solid var(--border)', borderLeft:'1px solid var(--border)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3 }}>
@@ -172,7 +256,6 @@ export default function LandingPage() {
                       <div style={{ width:24,height:24,borderRadius:'50%',background: t ? 'var(--primary)' : 'transparent',color: t ? '#fff' : 'var(--text-primary)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,boxShadow: t ? '0 2px 8px rgba(99,102,241,0.35)' : 'none' }}>{n}</div>
                     </div>
                   ))}
-                  {/* Time slot rows */}
                   {[
                     {h:'9 AM', evs:[{c:0,s:'Calculus IV',tu:'Dr. Aris',bc:'#818CF8',bg:'var(--accent-lavender-bg)',fg:'var(--accent-lavender-fg)'},{c:2,s:'Macroeconomics',tu:'Prof. Han',bc:'#38BDF8',bg:'var(--accent-sky-bg)',fg:'var(--accent-sky-fg)'}]},
                     {h:'11 AM',evs:[{c:1,s:'Art History',tu:'Ms. Blake',bc:'#FCD34D',bg:'var(--accent-sun-bg)',fg:'var(--accent-sun-fg)'},{c:3,s:'Bio Ethics',tu:'Dr. Osei',bc:'#34D399',bg:'var(--accent-mint-bg)',fg:'var(--accent-mint-fg)'}]},
@@ -188,7 +271,7 @@ export default function LandingPage() {
                         const ev = row.evs.find((e: any) => e.c === col)
                         return (
                           <div key={col} style={{height:56,borderBottom:'1px solid var(--border)',borderLeft:'1px solid var(--border)',background:col%2===0?'var(--surface)':'var(--canvas)',position:'relative'}}>
-                            {ev && <div style={{position:'absolute',inset:3,background:ev.bg,borderLeft:`3px solid ${ev.bc}`,borderRadius:8,overflow:'hidden',padding:'4px 6px'}}>
+                            {ev && <div className="hover-lift" style={{position:'absolute',inset:3,background:ev.bg,borderLeft:`3px solid ${ev.bc}`,borderRadius:8,overflow:'hidden',padding:'4px 6px'}}>
                               <div style={{color:ev.fg,fontSize:10,fontWeight:700,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}}>{ev.s}</div>
                               <div style={{color:ev.fg,fontSize:9,opacity:0.7,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis',marginTop:1}}>{ev.tu}</div>
                             </div>}
@@ -199,13 +282,12 @@ export default function LandingPage() {
                   ))}
                 </div>
 
-                {/* Status bar */}
                 <div style={{padding:'10px 20px',borderTop:'1px solid var(--border)',background:'var(--surface)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                   <div style={{display:'flex',alignItems:'center',gap:8}}>
-                    <div style={{width:8,height:8,borderRadius:'50%',background:'var(--accent)',boxShadow:'0 0 6px var(--accent)'}} />
+                    <div style={{width:8,height:8,borderRadius:'50%',background:'var(--accent)',boxShadow:'0 0 6px var(--accent)',animation:'pulse-breathe 2s ease-in-out infinite'}} />
                     <span style={{fontSize:12,color:'var(--text-secondary)'}}>3 sessions today</span>
                   </div>
-                  <span style={{fontSize:12,fontWeight:600,color:'var(--primary)'}}>View full week →</span>
+                  <span className="pressable" style={{fontSize:12,fontWeight:600,color:'var(--primary)',cursor:'pointer'}}>View full week →</span>
                 </div>
               </div>
             </div>
@@ -213,11 +295,11 @@ export default function LandingPage() {
         </section>
 
         {/* ─── STATS BAND ─── */}
-        <section className="py-12 px-4 md:px-8 relative">
+        <SectionReveal className="py-12 px-4 md:px-8 relative">
           <div className="max-w-7xl mx-auto">
             <div
-              className="rounded-2xl py-10 px-8 md:px-16 grid grid-cols-2 md:grid-cols-4 gap-8"
-              style={{ background: 'linear-gradient(135deg, var(--primary), #4338CA)', boxShadow: '0 0 60px rgba(99,102,241,0.25)' }}
+              className="rounded-2xl py-10 px-8 md:px-16 grid grid-cols-2 md:grid-cols-4 gap-8 animate-gradient"
+              style={{ background: 'linear-gradient(135deg, var(--primary), #4338CA, #6366F1, #4338CA)' }}
             >
               {[
                 { value: '98%', label: 'Success Rate' },
@@ -232,16 +314,16 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-        </section>
+        </SectionReveal>
 
         {/* ─── HOW IT WORKS ─── */}
-        <section className="py-28 px-4 md:px-8">
+        <SectionReveal stagger className="py-28 px-4 md:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-20">
-              <div className="stat-badge w-fit mx-auto mb-4">The Process</div>
-              <h2 className="font-heading text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
+              <div className="stat-badge w-fit mx-auto mb-4 pressable">The Process</div>
+              <ScrollReveal as="h2" className="font-heading text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
                 Three steps to mastery
-              </h2>
+              </ScrollReveal>
               <p className="text-text-secondary mt-4 max-w-lg mx-auto leading-relaxed">
                 From searching for the right tutor to achieving your goals — we make it seamless.
               </p>
@@ -274,7 +356,7 @@ export default function LandingPage() {
                   iconColor: 'var(--accent-sun-fg)',
                 },
               ].map(({ icon: Icon, step, title, desc, color, iconColor }) => (
-                <div key={step} className="surface-card p-8 space-y-5 group hover:-translate-y-1 transition-transform duration-200 cursor-default">
+                <div key={step} className="surface-card p-8 space-y-5 card-interactive cursor-default">
                   <div className="flex items-center justify-between">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: color }}>
                       <Icon className="w-6 h-6" style={{ color: iconColor }} strokeWidth={2} />
@@ -287,17 +369,17 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-        </section>
+        </SectionReveal>
 
         {/* ─── FOR STUDENTS ─── */}
         <section className="py-24 px-4 md:px-8" style={{ background: 'var(--surface)' }}>
           <div className="max-w-7xl mx-auto">
             <div className="grid md:grid-cols-2 gap-16 items-center">
-              <div className="space-y-7">
-                <div className="stat-badge w-fit">For Students</div>
-                <h2 className="font-heading text-4xl md:text-5xl font-bold text-text-primary leading-tight tracking-tight">
+              <SectionReveal className="space-y-7">
+                <div className="stat-badge w-fit pressable">For Students</div>
+                <ScrollReveal as="h2" className="font-heading text-4xl md:text-5xl font-bold text-text-primary leading-tight tracking-tight">
                   Master any subject with personalized paths.
-                </h2>
+                </ScrollReveal>
                 <ul className="space-y-5">
                   {[
                     'Custom curriculum design tailored to your goals',
@@ -310,14 +392,13 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/tutors" className="btn-primary w-fit text-sm cursor-pointer">
+                <Link href="/tutors" className="btn-primary w-fit text-sm pressable cursor-pointer">
                   Browse tutors
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-              </div>
+              </SectionReveal>
 
-              {/* Tutor search card */}
-              <div className="surface-card p-6 space-y-4">
+              <SectionReveal stagger className="surface-card p-6 space-y-4 card-interactive">
                 <div className="flex items-center gap-3">
                   <div
                     className="flex-1 h-11 rounded-xl flex items-center px-4 gap-3"
@@ -326,7 +407,7 @@ export default function LandingPage() {
                     <Search className="w-4 h-4 text-text-muted flex-shrink-0" strokeWidth={2} />
                     <span className="text-sm text-text-muted">Search Calculus tutors...</span>
                   </div>
-                  <button className="w-11 h-11 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity" style={{ background: 'var(--primary)' }}>
+                  <button className="pressable w-11 h-11 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity" style={{ background: 'var(--primary)' }}>
                     <SlidersHorizontal className="w-4 h-4 text-white" strokeWidth={2} />
                   </button>
                 </div>
@@ -339,7 +420,7 @@ export default function LandingPage() {
                   ].map((tutor) => (
                     <div
                       key={tutor.name}
-                      className={`p-4 rounded-xl flex gap-4 items-center cursor-pointer transition-all duration-150 hover:border-primary ${!tutor.available ? 'opacity-55' : ''}`}
+                      className={`p-4 rounded-xl flex gap-4 items-center cursor-pointer card-interactive-sm ${!tutor.available ? 'opacity-55' : ''}`}
                       style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
                     >
                       <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ background: 'var(--accent-lavender-bg)' }}>
@@ -351,7 +432,7 @@ export default function LandingPage() {
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="font-bold text-sm text-text-primary">{tutor.rate}</p>
-                        <p className={`text-[10px] font-semibold uppercase tracking-wide mt-0.5 ${tutor.available ? '' : ''}`}
+                        <p className={`text-[10px] font-semibold uppercase tracking-wide mt-0.5`}
                           style={{ color: tutor.available ? 'var(--accent)' : 'var(--text-muted)' }}
                         >
                           {tutor.available ? 'Available Now' : 'Busy'}
@@ -360,7 +441,7 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </SectionReveal>
             </div>
           </div>
         </section>
@@ -369,10 +450,9 @@ export default function LandingPage() {
         <section className="py-24 px-4 md:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="grid md:grid-cols-2 gap-16 items-center">
-              {/* Analytics card */}
-              <div className="surface-card p-6 space-y-5 order-2 md:order-1">
+              <SectionReveal className="surface-card p-6 space-y-5 order-2 md:order-1 card-interactive">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-5 rounded-xl text-white" style={{ background: 'linear-gradient(135deg, var(--primary), #4338CA)' }}>
+                  <div className="p-5 rounded-xl text-white animate-gradient" style={{ background: 'linear-gradient(135deg, var(--primary), #4338CA, var(--primary))' }}>
                     <p className="label-caps text-white/60 mb-2">Daily Revenue</p>
                     <p className="font-heading text-3xl font-bold">₦42,000</p>
                     <p className="flex items-center gap-1 text-xs text-white/70 mt-1">
@@ -387,28 +467,28 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                {/* Bar chart */}
                 <div
                   className="h-40 w-full rounded-xl flex items-end gap-2 px-5 pb-4"
                   style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
                 >
                   {[40, 60, 50, 80, 70, 90, 100].map((h, i) => (
-                    <div key={i} className="flex-1 rounded-t-md transition-all duration-300" style={{
+                    <div key={i} className="flex-1 rounded-t-md transition-all duration-500 hover:opacity-80" style={{
                       height: `${h}%`,
                       background: i === 5
                         ? 'var(--primary)'
                         : 'var(--primary-subtle)',
+                      transition: 'height 1s var(--ease-out), opacity 200ms ease',
                     }} />
                   ))}
                 </div>
                 <p className="text-center label-caps text-text-muted">Weekly Earnings Analytics</p>
-              </div>
+              </SectionReveal>
 
-              <div className="space-y-7 order-1 md:order-2">
-                <div className="stat-badge w-fit">For Tutors</div>
-                <h2 className="font-heading text-4xl md:text-5xl font-bold text-text-primary leading-tight tracking-tight">
+              <SectionReveal className="space-y-7 order-1 md:order-2">
+                <div className="stat-badge w-fit pressable">For Tutors</div>
+                <ScrollReveal as="h2" className="font-heading text-4xl md:text-5xl font-bold text-text-primary leading-tight tracking-tight">
                   Focus on teaching. We handle the rest.
-                </h2>
+                </ScrollReveal>
                 <ul className="space-y-5">
                   {[
                     'Automated billing, invoicing, and scheduling',
@@ -421,11 +501,11 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/signup" className="btn-secondary w-fit text-sm cursor-pointer">
+                <Link href="/signup" className="btn-secondary w-fit text-sm pressable cursor-pointer">
                   Become a tutor
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-              </div>
+              </SectionReveal>
             </div>
           </div>
         </section>
@@ -433,12 +513,12 @@ export default function LandingPage() {
         {/* ─── TESTIMONIALS ─── */}
         <section className="py-24 px-4 md:px-8" style={{ background: 'var(--surface)' }}>
           <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <div className="stat-badge w-fit mx-auto mb-4">Student Stories</div>
-              <h2 className="font-heading text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
+            <SectionReveal className="text-center mb-16">
+              <div className="stat-badge w-fit mx-auto mb-4 pressable">Student Stories</div>
+              <ScrollReveal as="h2" className="font-heading text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
                 Real results, real students
-              </h2>
-            </div>
+              </ScrollReveal>
+            </SectionReveal>
 
             <div className="grid md:grid-cols-3 gap-6">
               {[
@@ -464,7 +544,7 @@ export default function LandingPage() {
                   color: 'var(--accent-mint-bg)',
                 },
               ].map((t, i) => (
-                <div key={i} className="surface-card p-6 space-y-5 hover:-translate-y-1 transition-transform duration-200">
+                <div key={i} className="surface-card p-6 space-y-5 card-interactive">
                   <div className="flex gap-1">
                     {Array.from({ length: t.rating }).map((_, j) => (
                       <Star key={j} className="w-4 h-4 fill-current" style={{ color: 'var(--accent-sun-fg)' }} />
@@ -486,89 +566,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── FINAL CTA ─── */}
-        <section className="py-32 px-4 md:px-8 text-center relative overflow-hidden">
-          <div className="max-w-3xl mx-auto relative z-10">
-            <div className="stat-badge w-fit mx-auto mb-6">Start today — free</div>
-            <h2 className="font-heading text-5xl md:text-7xl font-bold text-text-primary mb-6 tracking-tighter">
-              Ready to start?
-            </h2>
-            <p className="text-xl text-text-secondary mb-10 leading-relaxed">
-              Join thousands of students and tutors and experience the future of education.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/signup" className="btn-primary text-base px-10 py-4 cursor-pointer">
-                Get Started Free
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link href="/tutors" className="btn-secondary text-base px-10 py-4 cursor-pointer">
-                View All Tutors
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* ─── FOOTER ─── */}
-        <footer className="py-16 px-4 md:px-8 border-t" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12">
-            <div className="space-y-5">
-              <Link href="/" className="flex items-center gap-2.5 cursor-pointer">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--primary)' }}>
-                  <BookOpen className="w-4 h-4 text-white" strokeWidth={2.5} />
-                </div>
-                <span className="text-lg font-bold font-heading text-text-primary">Tutorly</span>
-              </Link>
-              <p className="text-text-secondary text-sm leading-relaxed max-w-xs">
-                Premium educational platform connecting world-class tutors with ambitious students.
-              </p>
-            </div>
-
-            {[
-              { heading: 'Platform', links: ['Tutor Search', 'Learning Path', 'Pricing', 'Live Sessions'] },
-              { heading: 'Company',  links: ['About Us', 'Careers', 'Blog', 'Privacy Policy'] },
-            ].map(({ heading, links }) => (
-              <div key={heading}>
-                <h4 className="label-caps text-text-muted mb-5">{heading}</h4>
-                <ul className="space-y-3">
-                  {links.map((l) => (
-                    <li key={l}>
-                      <a href="#" className="text-sm text-text-secondary hover:text-text-primary transition-colors cursor-pointer">{l}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-
-            <div>
-              <h4 className="label-caps text-text-muted mb-5">Connect</h4>
-              <div className="flex gap-3">
-                {[
-                  { icon: Globe, label: 'Website' },
-                  { icon: MessageCircle, label: 'Contact' },
-                ].map(({ icon: Icon, label }) => (
-                  <button
-                    key={label}
-                    aria-label={label}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-150 hover:bg-primary-subtle hover:border-primary"
-                    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
-                  >
-                    <Icon className="w-4 h-4 text-text-secondary" strokeWidth={2} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="max-w-7xl mx-auto mt-12 pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-3" style={{ borderColor: 'var(--border)' }}>
-            <p className="text-xs text-text-muted label-caps">© 2025 Tutorly Education Group. All Rights Reserved.</p>
-            <div className="flex items-center gap-6">
-              {['Terms', 'Privacy', 'Cookies'].map((l) => (
-                <a key={l} href="#" className="text-xs text-text-muted hover:text-text-secondary transition-colors cursor-pointer">{l}</a>
-              ))}
-            </div>
-          </div>
-        </footer>
       </main>
+
+      <CinematicFooter />
     </div>
   )
 }
