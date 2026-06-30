@@ -55,9 +55,9 @@ export function Toast({ id, message, type, duration = 4000, onClose }: ToastProp
   return (
     <div
       className={`
-        flex items-center gap-3 px-4 py-3 rounded-full glass-card pointer-events-auto
-        transition-all duration-200
-        ${isExiting ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}
+        flex items-center gap-3 px-6 py-3.5 rounded-2xl shadow-lg pointer-events-auto
+        transition-all duration-300 min-w-[300px] max-w-[420px]
+        ${isExiting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
         ${getColors()}
       `}
     >

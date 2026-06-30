@@ -63,6 +63,11 @@ export async function selectTutor(tutorId: string) {
   return data
 }
 
+export async function submitFeedback(assignmentId: string, payload: { rating: number; comment?: string }) {
+  const { data } = await api.post(`/matchmaking/assignments/${assignmentId}/feedback`, payload)
+  return data as { assignmentId: string; tutorId: string; rating: number; updatedTutorQuality: number }
+}
+
 export interface UpdateMePayload {
   firstName?: string
   lastName?: string
