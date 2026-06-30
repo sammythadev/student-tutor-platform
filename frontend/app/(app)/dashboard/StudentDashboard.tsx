@@ -9,13 +9,15 @@ import { getDashboardMetrics, type DashboardMetrics } from '@/lib/api/dashboard'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
 import { useAuthStore } from '@/lib/store/authStore'
 import {
-  Calendar, Flame, TrendingUp, Users, BookOpen,
+  Calendar, Clock, Flame, TrendingUp, Users, BookOpen,
   ChevronRight, Target, Award, Zap, ArrowRight, Sparkles,
-  Filter, Download, RefreshCw, Clock,
+  Filter, Download, Video,
 } from 'lucide-react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { StarRating } from '@/components/StarRating'
+import { SessionJoinModal } from '@/components/SessionJoinModal'
+import { updateSessionStatus, type SessionItem } from '@/lib/api/sessions'
 gsap.registerPlugin(ScrollTrigger)
 
 const ACCENT = ['lavender', 'sky', 'mint', 'sun', 'coral'] as const
@@ -41,6 +43,7 @@ export function StudentDashboard() {
   const [tutors, setTutors] = useState<TutorCandidate[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [joinTarget, setJoinTarget] = useState<any | null>(null)
   const chartRef = useRef<HTMLDivElement>(null)
   const cardsRef = useRef<HTMLDivElement>(null)
 
@@ -81,6 +84,20 @@ export function StudentDashboard() {
     return () => ctx.revert()
   }, [loading, metrics])
 
+  useEffect(() => {
+    if (!metrics?.upcomingSessions?.length) return
+    const interval = setInterval(() => {
+      const now = new Date()
+      const ongoing = metrics.upcomingSessions.find(s => {
+        const start = new Date(s.startAt)
+        const end = s.endAt ? new Date(s.endAt) : new Date(start.getTime() + 3600000)
+        return s.status === 'confirmed' && start <= now && now <= end
+      })
+      if (ongoing) setJoinTarget(prev => prev ?? ongoing)
+    }, 15000)
+    return () => clearInterval(interval)
+  }, [metrics])
+
   const totalHours = useMemo(
     () => metrics?.weeklyBars?.reduce((sum, item) => sum + item.hours, 0) ?? 0,
     [metrics],
@@ -91,10 +108,15 @@ export function StudentDashboard() {
     <div className="space-y-6 py-3">
       <DashboardHero
         title={`Welcome back, ${user?.firstName ?? 'User'}`}
-        subtitle={metrics ? `${metrics.streakDays} day streak · ${totalHours.toFixed(1)}h logged this week` : 'Loading your snapshot...'}
-        actionLabel="Schedule Session"
-        actionHref="/schedules"
         accent="primary"
+        stats={metrics ? [
+          { icon: Calendar, label: 'Upcoming', value: `${metrics.upcomingSessions.length}` },
+          { icon: Clock, label: 'Hours This Week', value: `${totalHours.toFixed(1)}h` },
+        ] : undefined}
+        actions={[
+          { label: 'Schedule Session', href: '/schedules' },
+          { label: 'Find Tutors', href: '/tutors', variant: 'primary' },
+        ]}
       />
 
       {error && (
@@ -109,19 +131,18 @@ export function StudentDashboard() {
       {/* Controls bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-surface-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
-            <Filter className="h-3.5 w-3.5" /> Filter
+          <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <Filter className="h-3.5 w-3.5" /> Overview
           </div>
-          <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-surface-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
-            <Clock className="h-3.5 w-3.5" /> This Week
+          <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+            <Calendar className="h-3.5 w-3.5" /> {new Date().toLocaleDateString('en', { month: 'short', day: 'numeric' })}
           </div>
+        </div>
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-surface-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
             <Download className="h-3.5 w-3.5" /> Export
           </div>
         </div>
-        <button onClick={() => window.location.reload()} className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold hover:bg-surface-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
-          <RefreshCw className="h-3.5 w-3.5" /> Refresh
-        </button>
       </div>
 
       <div ref={cardsRef} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -132,13 +153,18 @@ export function StudentDashboard() {
           return (
             <div
               key={kpi.label}
-              className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+              className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl"
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                backdropFilter: 'blur(12px)',
+              }}
             >
-              <div className="p-5">
+              <div className="absolute inset-0 opacity-[0.03] bg-gradient-to-br from-white to-transparent pointer-events-none" />
+              <div className="relative p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <div
-                    className="flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3"
                     style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
                   >
                     <Icon className="h-5 w-5" />
@@ -160,6 +186,7 @@ export function StudentDashboard() {
                   {kpi.label}
                 </p>
               </div>
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-40" style={{ background: `linear-gradient(90deg, transparent, var(--accent-${color}-fg), transparent)` }} />
             </div>
           )
         })}
@@ -311,6 +338,11 @@ export function StudentDashboard() {
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusColor }} />
                         {session.status}
                       </span>
+                      {session.status === 'confirmed' && (
+                        <Button size="sm" variant="primary" className="cursor-pointer" onClick={() => setJoinTarget(session)}>
+                          <Video className="h-3 w-3" /> Join
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )
@@ -385,6 +417,17 @@ export function StudentDashboard() {
           </div>
         </div>
       </div>
+
+      {joinTarget && (
+        <SessionJoinModal
+          isOpen={!!joinTarget}
+          onClose={() => setJoinTarget(null)}
+          session={joinTarget as any}
+          onAttended={(updated) => {
+            setJoinTarget(null)
+          }}
+        />
+      )}
 
       <div
         className="group relative overflow-hidden rounded-2xl p-6 transition-all duration-300"

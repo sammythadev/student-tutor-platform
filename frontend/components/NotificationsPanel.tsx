@@ -262,16 +262,24 @@ export function NotificationsPanel({ isOpen, onClose, onRead }: NotificationsPan
 
   useEffect(() => {
     if (!isOpen) return
+    const controller = new AbortController()
     setLoading(true)
     setError(null)
     getNotifications()
       .then((data) => {
+        if (controller.signal.aborted) return
         setNotifications(data)
         markAllNotificationsRead().catch(() => {})
         onRead?.()
       })
-      .catch((err) => setError(err?.response?.data?.message ?? 'Could not load notifications'))
-      .finally(() => setLoading(false))
+      .catch((err) => {
+        if (controller.signal.aborted) return
+        setError(err?.response?.data?.message ?? 'Could not load notifications')
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false)
+      })
+    return () => { controller.abort() }
   }, [isOpen])
 
   function refreshNotifications() {

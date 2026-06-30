@@ -99,10 +99,11 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
           md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           transition-all duration-300 ease-in-out
           flex flex-col
-          md:m-3 md:h-[calc(100vh-1.5rem)] h-dvh
+          md:m-3 md:h-[calc(100vh-1.5rem)] h-full
           rounded-none md:rounded-2xl
           sidebar-surface
         `}
+        style={{ maxHeight: '100dvh' }}
       >
         {/* Logo area + mobile close button */}
         <div className="p-4 flex items-center justify-between h-16 flex-shrink-0">
@@ -276,7 +277,7 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* ─── TOP NAVBAR — glassmorphic squircle ─── */}
-        <header className="flex-shrink-0 px-4 pt-6 pb-4 relative z-30">
+        <header className="flex-shrink-0 px-2 md:px-4 pt-3 md:pt-4 pb-2 md:pb-4 relative z-30" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0.75rem))' }}>
           {/* Top gradient glow */}
           <div
             className="absolute top-4 left-1/2 -translate-x-1/2 w-3/4 h-12 pointer-events-none"

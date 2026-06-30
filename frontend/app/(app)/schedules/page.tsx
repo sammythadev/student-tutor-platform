@@ -1,15 +1,16 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, Fragment } from 'react'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
-import { bookSession, getMySessions, updateSessionStatus, type SessionItem } from '@/lib/api/sessions'
+import { bookSession, getMySessions, proposeSession, updateSessionStatus, type SessionItem } from '@/lib/api/sessions'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
 import { useAuthStore } from '@/lib/store/authStore'
 import { useToast } from '@/lib/toast-context'
+import { Dropdown, type DropdownOption } from '@/components/Dropdown'
 import {
   AlertCircle, BookOpen, Calculator, CheckCircle2, ChevronLeft, ChevronRight, Clock, FlaskConical,
-  Globe2, Monitor, Music, BookMarked, Code, Paintbrush, Plus, X, CalendarDays,
+  Globe2, Monitor, Music, BookMarked, Code, Paintbrush, Plus, X, CalendarDays, SlidersHorizontal, ArrowRight,
 } from 'lucide-react'
 
 type AccentKey = 'lavender' | 'sky' | 'mint' | 'sun' | 'coral' | 'tangerine'
@@ -66,6 +67,11 @@ export default function SchedulesPage() {
   const [sessions, setSessions] = useState<SessionItem[]>([])
   const [tutors, setTutors] = useState<TutorCandidate[]>([])
   const [dropTarget, setDropTarget] = useState<{ dayIdx: number; slotIdx: number } | null>(null)
+  const [filterPerson, setFilterPerson] = useState('all')
+  const [rescheduleTarget, setRescheduleTarget] = useState<SessionItem | null>(null)
+  const [rescheduleDate, setRescheduleDate] = useState('')
+  const [rescheduleTime, setRescheduleTime] = useState('15:00')
+  const [rescheduling, setRescheduling] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -83,10 +89,40 @@ export default function SchedulesPage() {
   }
   useEffect(() => { load() }, [isTutor])
 
+  const personNames = useMemo(() => {
+    const names = new Set<string>()
+    sessions.forEach(s => { const n = isTutor ? s.studentName : s.tutorName; if (n) names.add(n) })
+    return Array.from(names).sort()
+  }, [sessions, isTutor])
+
+  const personOptions: DropdownOption[] = useMemo(() => [
+    { value: 'all', label: isTutor ? 'All Students' : 'All Tutors' },
+    ...personNames.map(n => ({ value: n, label: n })),
+  ], [personNames, isTutor])
+
   const weekSessions = useMemo(() => {
     const start = weekStart.getTime(), end = addDays(weekStart, 7).getTime()
-    return sessions.filter(s => { const t = new Date(s.startAt).getTime(); return t >= start && t < end })
-  }, [sessions, weekStart])
+    return sessions.filter(s => {
+      const t = new Date(s.startAt).getTime()
+      const matchPerson = filterPerson === 'all' || (isTutor ? s.studentName === filterPerson : s.tutorName === filterPerson)
+      return t >= start && t < end && matchPerson
+    })
+  }, [sessions, weekStart, filterPerson, isTutor])
+
+  async function handleReschedule() {
+    if (!rescheduleTarget || !rescheduleDate || !rescheduleTime) return
+    setRescheduling(true)
+    try {
+      const [h, m] = rescheduleTime.split(':')
+      const startAt = new Date(`${rescheduleDate}T${h.padStart(2, '0')}:${m.padStart(2, '0')}:00`)
+      const endAt = new Date(startAt.getTime() + 60 * 60 * 1000)
+      const updated = await proposeSession(rescheduleTarget.id, startAt.toISOString(), endAt.toISOString())
+      setSessions(prev => prev.map(s => s.id === updated.id ? updated : s))
+      setRescheduleTarget(null)
+      addToast('Reschedule proposed!', 'success')
+    } catch { addToast('Could not reschedule', 'error')
+    } finally { setRescheduling(false) }
+  }
 
   const onChipDragStart = useCallback((e: React.DragEvent, label: string) => {
     e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('subject', label)
@@ -136,6 +172,18 @@ export default function SchedulesPage() {
           <button onClick={() => setError(null)} className="ml-auto text-xs font-bold">Dismiss</button>
         </div>
       )}
+
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-center gap-2 md:gap-3 rounded-2xl p-3 md:p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <SlidersHorizontal className="h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
+        <Dropdown
+          value={filterPerson}
+          onChange={setFilterPerson}
+          options={personOptions}
+          searchable
+          className="flex-1 md:flex-none"
+        />
+      </div>
 
       {/* Drag chips */}
       {!isTutor && (
@@ -194,7 +242,7 @@ export default function SchedulesPage() {
 
               {/* Time slots */}
               {HOURS.map((hour, slotIdx) => (
-                <>
+                <Fragment key={hour}>
                   <div className="border-b px-1 py-1 text-right" style={{ borderColor: 'var(--border)', height: 64, background: 'var(--surface-2)' }}>
                     <span className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>{hour}:00</span>
                   </div>
@@ -252,12 +300,41 @@ export default function SchedulesPage() {
                       </div>
                     )
                   })}
-                </>
+                </Fragment>
               ))}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Reschedule Modal */}
+      {rescheduleTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setRescheduleTarget(null)}>
+          <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
+            <h3 className="font-heading font-bold text-base" style={{ color: 'var(--text-primary)' }}>Reschedule Session</h3>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{rescheduleTarget.subject} with {isTutor ? rescheduleTarget.studentName : rescheduleTarget.tutorName}</p>
+            <div className="space-y-3">
+              <input type="date" value={rescheduleDate} onChange={e => setRescheduleDate(e.target.value)}
+                min={new Date().toISOString().slice(0, 10)}
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
+                style={{ background: 'var(--surface-2)', color: 'var(--text-primary)', borderColor: 'var(--border)' }} />
+              <input type="time" value={rescheduleTime} onChange={e => setRescheduleTime(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
+                style={{ background: 'var(--surface-2)', color: 'var(--text-primary)', borderColor: 'var(--border)' }} />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setRescheduleTarget(null)}
+                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer"
+                style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)' }}>Cancel</button>
+              <button onClick={handleReschedule} disabled={rescheduling || !rescheduleDate || !rescheduleTime}
+                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity cursor-pointer disabled:opacity-50"
+                style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}>
+                {rescheduling ? 'Proposing...' : 'Propose'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Agenda */}
       <div>
@@ -291,6 +368,15 @@ export default function SchedulesPage() {
                         <span className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>
                           {formatDate(session.startAt)} · {formatTime(session.startAt)}
                         </span>
+                        {session.status !== 'cancelled' && session.status !== 'completed' && (
+                          <button
+                            onClick={() => { setRescheduleTarget(session); setRescheduleDate(session.startAt.slice(0, 10)); setRescheduleTime(session.startAt.slice(11, 16)) }}
+                            className="ml-auto text-[10px] font-bold uppercase cursor-pointer transition-colors hover:opacity-80"
+                            style={{ color: 'var(--primary)' }}
+                          >
+                            Reschedule
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

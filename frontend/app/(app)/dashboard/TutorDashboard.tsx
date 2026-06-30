@@ -6,13 +6,14 @@ import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { DashboardHero } from '@/components/DashboardHero'
 import { MessageModal } from '@/components/MessageModal'
+import { SessionJoinModal } from '@/components/SessionJoinModal'
 import { getTutorDashboardMetrics, type TutorDashboardMetrics } from '@/lib/api/dashboard'
-import { getMySessions, type SessionItem } from '@/lib/api/sessions'
+import { getMySessions, updateSessionStatus, type SessionItem } from '@/lib/api/sessions'
 import { useAuthStore } from '@/lib/store/authStore'
 import {
   BarChart3, Calendar, Clock, MessageSquare, Search,
   Star, TrendingUp, Users, Video, BookOpen, Award, Target,
-  ChevronRight, Activity, Filter, Download, RefreshCw,
+  ChevronRight, Activity, Filter, Download,
 } from 'lucide-react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -45,6 +46,7 @@ export function TutorDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [messageTarget, setMessageTarget] = useState<{ id: string; name: string } | null>(null)
+  const [joinTarget, setJoinTarget] = useState<SessionItem | null>(null)
   const chartRef = useRef<HTMLDivElement>(null)
   const cardsRef = useRef<HTMLDivElement>(null)
 
@@ -82,6 +84,20 @@ export function TutorDashboard() {
     return () => ctx.revert()
   }, [loading, metrics])
 
+  useEffect(() => {
+    if (!sessions.length) return
+    const interval = setInterval(() => {
+      const now = new Date()
+      const ongoing = sessions.find(s => {
+        const start = new Date(s.startAt)
+        const end = s.endAt ? new Date(s.endAt) : new Date(start.getTime() + 3600000)
+        return s.status === 'confirmed' && start <= now && now <= end
+      })
+      if (ongoing) setJoinTarget(prev => prev ?? ongoing)
+    }, 15000)
+    return () => clearInterval(interval)
+  }, [sessions])
+
   const students = useMemo(() => {
     const map = new Map<string, { name: string; sessions: number; subjects: Set<string>; lastAt: string }>()
     sessions.forEach(session => {
@@ -107,10 +123,15 @@ export function TutorDashboard() {
     <div className="space-y-6 py-3">
       <DashboardHero
         title={`Good day, ${user?.firstName ?? 'Tutor'}`}
-        subtitle={metrics ? `${todaySessions.length} sessions today · ${metrics.studentsCount} active students · ${totalHours.toFixed(1)}h this week` : 'Loading your snapshot...'}
-        actionLabel="New Session"
-        actionHref="/schedules"
         accent="accent"
+        stats={metrics ? [
+          { icon: Calendar, label: 'Sessions Today', value: `${todaySessions.length}` },
+          { icon: Star, label: 'Rating', value: metrics.avgRating ?? '—' },
+        ] : undefined}
+        actions={[
+          { label: 'New Session', href: '/schedules' },
+          { label: 'Students', href: '/tutors', variant: 'primary' },
+        ]}
       />
 
       {error && (
@@ -125,19 +146,18 @@ export function TutorDashboard() {
       {/* Controls bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-surface-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
-            <Filter className="h-3.5 w-3.5" /> Filter
+          <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <BarChart3 className="h-3.5 w-3.5" /> Overview
           </div>
-          <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-surface-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
-            <Clock className="h-3.5 w-3.5" /> This Week
+          <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+            <Calendar className="h-3.5 w-3.5" /> {new Date().toLocaleDateString('en', { month: 'short', day: 'numeric' })}
           </div>
+        </div>
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-surface-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
             <Download className="h-3.5 w-3.5" /> Export
           </div>
         </div>
-        <button onClick={() => window.location.reload()} className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold hover:bg-surface-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
-          <RefreshCw className="h-3.5 w-3.5" /> Refresh
-        </button>
       </div>
 
       <div ref={cardsRef} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -148,13 +168,18 @@ export function TutorDashboard() {
           return (
             <div
               key={kpi.label}
-              className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+              className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl"
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                backdropFilter: 'blur(12px)',
+              }}
             >
-              <div className="p-5">
+              <div className="absolute inset-0 opacity-[0.03] bg-gradient-to-br from-white to-transparent pointer-events-none" />
+              <div className="relative p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <div
-                    className="flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3"
                     style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
                   >
                     <Icon className="h-5 w-5" />
@@ -176,6 +201,7 @@ export function TutorDashboard() {
                   {kpi.label}
                 </p>
               </div>
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-40" style={{ background: `linear-gradient(90deg, transparent, var(--accent-${color}-fg), transparent)` }} />
             </div>
           )
         })}
@@ -280,7 +306,7 @@ export function TutorDashboard() {
                           <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                             {formatTime(session.startAt)}
                           </span>
-                          <Button size="sm" variant="primary" className="flex-shrink-0">
+                          <Button size="sm" variant="primary" className="flex-shrink-0 cursor-pointer" onClick={() => setJoinTarget(session)}>
                             <Video className="h-3.5 w-3.5" />
                             Join
                           </Button>
@@ -494,6 +520,18 @@ export function TutorDashboard() {
           onClose={() => setMessageTarget(null)}
           otherUserId={messageTarget.id}
           otherUserName={messageTarget.name}
+        />
+      )}
+
+      {joinTarget && (
+        <SessionJoinModal
+          isOpen={!!joinTarget}
+          onClose={() => setJoinTarget(null)}
+          session={joinTarget}
+          onAttended={(updated) => {
+            setSessions(prev => prev.map(s => s.id === updated.id ? updated : s))
+            setJoinTarget(null)
+          }}
         />
       )}
     </div>

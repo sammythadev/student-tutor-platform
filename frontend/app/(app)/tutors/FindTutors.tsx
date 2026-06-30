@@ -22,6 +22,10 @@ export function FindTutors() {
   const [liked, setLiked] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
   const [subject, setSubject] = useState('All Subjects')
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [minRating, setMinRating] = useState(0)
+  const [maxRate, setMaxRate] = useState(0)
+  const [sortBy, setSortBy] = useState<'score' | 'rating' | 'price_asc' | 'price_desc'>('score')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [bookTarget, setBookTarget] = useState<TutorCandidate | null>(null)
@@ -65,9 +69,18 @@ export function FindTutors() {
       const cSubjects = c.subjectsTaught ?? []
       const matchesSearch = !q || `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) || cSubjects.some((item: string) => item.toLowerCase().includes(q))
       const matchesSubject = subject === 'All Subjects' || cSubjects.includes(subject)
-      return matchesSearch && matchesSubject
+      const matchesRating = !minRating || (c.avgRating ?? 0) >= minRating
+      const matchesRate = !maxRate || (c.hourlyRate ?? 0) <= maxRate
+      return matchesSearch && matchesSubject && matchesRating && matchesRate
+    }).sort((a, b) => {
+      switch (sortBy) {
+        case 'rating': return (b.avgRating ?? 0) - (a.avgRating ?? 0)
+        case 'price_asc': return (a.hourlyRate ?? 0) - (b.hourlyRate ?? 0)
+        case 'price_desc': return (b.hourlyRate ?? 0) - (a.hourlyRate ?? 0)
+        default: return (b.score ?? 0) - (a.score ?? 0)
+      }
     })
-  }, [candidates, search, subject])
+  }, [candidates, search, subject, minRating, maxRate, sortBy])
 
   const suggested = useMemo(() => {
     return [...filtered].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 3)
@@ -77,7 +90,7 @@ export function FindTutors() {
   const safePage = Math.min(page, totalFilteredPages)
   const paginated = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
 
-  useEffect(() => { setPage(1) }, [search, subject])
+  useEffect(() => { setPage(1) }, [search, subject, minRating, maxRate, sortBy])
 
   return (
     <div className="space-y-8 py-3">
@@ -114,11 +127,93 @@ export function FindTutors() {
               {option}
             </button>
           ))}
-          <button className="shrink-0 flex items-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-semibold" style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}>
+          <button
+            onClick={() => setFilterOpen(!filterOpen)}
+            className="shrink-0 flex items-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-semibold cursor-pointer transition-colors"
+            style={{
+              background: filterOpen ? 'var(--primary)' : 'var(--surface-2)',
+              color: filterOpen ? 'var(--primary-fg)' : 'var(--text-secondary)',
+              borderColor: filterOpen ? 'var(--primary)' : 'var(--border)',
+            }}
+          >
             <SlidersHorizontal className="h-3.5 w-3.5" /> Filters
           </button>
         </div>
       </div>
+
+      {/* Filter panel */}
+      {filterOpen && (
+        <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Min Rating</label>
+              <div className="flex items-center gap-2">
+                {[0, 3, 4, 4.5].map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setMinRating(r === minRating ? 0 : r)}
+                    className="rounded-lg border px-3 py-1.5 text-xs font-semibold cursor-pointer transition-colors"
+                    style={{
+                      background: minRating === r ? 'var(--primary)' : 'var(--surface-2)',
+                      color: minRating === r ? 'var(--primary-fg)' : 'var(--text-secondary)',
+                      borderColor: minRating === r ? 'var(--primary)' : 'var(--border)',
+                    }}
+                  >
+                    {r === 0 ? 'Any' : `${r}+`}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Max Rate (₦/hr)</label>
+              <div className="flex items-center gap-2">
+                {[0, 5000, 10000, 20000].map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setMaxRate(r === maxRate ? 0 : r)}
+                    className="rounded-lg border px-3 py-1.5 text-xs font-semibold cursor-pointer transition-colors"
+                    style={{
+                      background: maxRate === r ? 'var(--primary)' : 'var(--surface-2)',
+                      color: maxRate === r ? 'var(--primary-fg)' : 'var(--text-secondary)',
+                      borderColor: maxRate === r ? 'var(--primary)' : 'var(--border)',
+                    }}
+                  >
+                    {r === 0 ? 'Any' : `₦${r.toLocaleString()}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Sort By</label>
+              <div className="flex flex-wrap gap-1.5">
+                {([['score', 'Best Match'], ['rating', 'Top Rated'], ['price_asc', 'Price: Low'], ['price_desc', 'Price: High']] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSortBy(key)}
+                    className="rounded-lg border px-3 py-1.5 text-xs font-semibold cursor-pointer transition-colors"
+                    style={{
+                      background: sortBy === key ? 'var(--primary)' : 'var(--surface-2)',
+                      color: sortBy === key ? 'var(--primary-fg)' : 'var(--text-secondary)',
+                      borderColor: sortBy === key ? 'var(--primary)' : 'var(--border)',
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {(minRating > 0 || maxRate > 0 || sortBy !== 'score') && (
+            <button
+              onClick={() => { setMinRating(0); setMaxRate(0); setSortBy('score') }}
+              className="text-xs font-semibold cursor-pointer transition-colors hover:opacity-80"
+              style={{ color: 'var(--accent-coral-fg)' }}
+            >
+              Clear all filters
+            </button>
+          )}
+        </div>
+      )}
 
       {suggested.length > 1 && search === '' && subject === 'All Subjects' && (
         <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>

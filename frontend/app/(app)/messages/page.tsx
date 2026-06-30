@@ -117,22 +117,22 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-80px)] overflow-hidden rounded-2xl border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+    <div className="flex overflow-hidden rounded-2xl border md:h-[calc(100vh-80px)]" style={{ borderColor: 'var(--border)', background: 'var(--surface)', maxHeight: 'calc(100dvh - 100px)' }}>
       {/* Sidebar — Conversations */}
       <div
         className={`${selectedConvo ? 'hidden md:flex' : 'flex'} w-full md:w-80 lg:w-96 flex-col border-r`}
         style={{ borderColor: 'var(--border)', background: 'var(--canvas)' }}
       >
-        <div className="border-b px-5 py-4" style={{ borderColor: 'var(--border)' }}>
-          <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Messages</h2>
+        <div className="border-b px-4 md:px-5 py-3 md:py-4" style={{ borderColor: 'var(--border)' }}>
+          <h2 className="text-lg md:text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Messages</h2>
           <p className="mt-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>{conversations.length} conversations</p>
         </div>
         
         <div className="flex-1 overflow-y-auto">
           {loading && conversations.length === 0 ? (
             Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex gap-3 border-b p-4" style={{ borderColor: 'var(--border)' }}>
-                <div className="h-12 w-12 animate-pulse rounded-full" style={{ background: 'var(--surface-2)' }} />
+              <div key={i} className="flex gap-3 border-b p-3 md:p-4" style={{ borderColor: 'var(--border)' }}>
+                <div className="h-10 w-10 md:h-12 md:w-12 animate-pulse rounded-full" style={{ background: 'var(--surface-2)' }} />
                 <div className="flex-1 space-y-2 py-1">
                   <div className="h-4 w-1/2 animate-pulse rounded" style={{ background: 'var(--surface-2)' }} />
                   <div className="h-3 w-3/4 animate-pulse rounded" style={{ background: 'var(--surface-2)' }} />
@@ -140,9 +140,9 @@ export default function MessagesPage() {
               </div>
             ))
           ) : conversations.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center" style={{ color: 'var(--text-muted)' }}>
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: 'var(--surface-2)' }}>
-                <MessageSquare className="h-7 w-7 opacity-50" />
+            <div className="flex h-full flex-col items-center justify-center gap-4 p-6 md:p-8 text-center" style={{ color: 'var(--text-muted)' }}>
+              <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl" style={{ background: 'var(--surface-2)' }}>
+                <MessageSquare className="h-6 w-6 md:h-7 md:w-7 opacity-50" />
               </div>
               <div>
                 <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>No conversations</p>
@@ -156,7 +156,7 @@ export default function MessagesPage() {
                 <button
                   key={convo.userId}
                   onClick={() => setSelectedConvo(convo)}
-                  className="group w-full border-b p-4 text-left transition-all duration-200"
+                  className="group w-full border-b p-3 md:p-4 text-left transition-all duration-200 active:scale-[0.98]"
                   style={{
                     borderColor: 'var(--border)',
                     background: isSelected ? 'var(--primary-subtle)' : 'transparent',
@@ -197,7 +197,7 @@ export default function MessagesPage() {
       </div>
 
       {/* Main — Chat Interface */}
-      <div className={`${!selectedConvo ? 'hidden md:flex' : 'flex'} flex-1 flex-col`}>
+      <div className={`${!selectedConvo ? 'hidden md:flex' : 'flex'} flex-1 flex-col`} style={{ maxHeight: 'calc(100dvh - 100px)' }}>
         {selectedConvo ? (
           <>
             {/* Chat Header */}
