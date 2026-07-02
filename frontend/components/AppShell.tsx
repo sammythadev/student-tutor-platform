@@ -89,7 +89,7 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
   const navItems = NAV_ITEMS[userRole]
 
   return (
-    <div className="flex h-screen bg-canvas overflow-hidden">
+    <div className="flex min-h-[100dvh] bg-canvas overflow-hidden">
 
       {/* ─── SIDEBAR ─── */}
       <aside

@@ -39,11 +39,12 @@ export function StarRating({ rating, count, size = 'sm', showCount = true, inter
     onRate?.(i)
   }
 
-  const gold = '#F59E0B'
+  const starColor = 'var(--accent-sun-fg)'
+  const starDim = 'color-mix(in srgb, var(--accent-sun-fg), transparent 60%)'
 
   return (
     <div className="inline-flex items-center gap-1.5">
-      <div className="flex items-center gap-0.5" style={{ color: gold }}>
+      <div className="flex items-center gap-0.5" style={{ color: starColor }}>
         {Array.from({ length: starCount }).map((_, i) => {
           const fill = getFill(i)
           const isActive = fill === 'full' || fill === 'half'
@@ -56,11 +57,11 @@ export function StarRating({ rating, count, size = 'sm', showCount = true, inter
               onMouseLeave={() => setHovered(0)}
               className="cursor-pointer transition-transform hover:scale-110"
             >
-              <Star size={px} fill={isActive ? gold : 'none'} stroke={isActive ? gold : `${gold}55`} strokeWidth={1.5} />
+              <Star size={px} fill={isActive ? starColor : 'none'} stroke={isActive ? starColor : starDim} strokeWidth={1.5} />
             </button>
           ) : (
             <span key={i} className="relative inline-flex">
-              <Star size={px} fill={isActive ? gold : 'none'} stroke={isActive ? gold : `${gold}55`} strokeWidth={1.5} />
+              <Star size={px} fill={isActive ? starColor : 'none'} stroke={isActive ? starColor : starDim} strokeWidth={1.5} />
             </span>
           )
         })}

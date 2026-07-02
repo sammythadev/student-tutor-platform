@@ -71,7 +71,7 @@ export default function SignupPage() {
         {/* Heading */}
         <div className="text-center">
           <h1 className="font-heading text-3xl font-bold text-text-primary tracking-tight">Create your account</h1>
-          <p className="text-text-secondary mt-2 text-sm">Start your learning journey today — it&apos;s free</p>
+          <p className="text-text-secondary mt-2 text-sm">Start your learning journey today, it&apos;s free</p>
         </div>
 
 

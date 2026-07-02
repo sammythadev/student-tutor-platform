@@ -66,14 +66,17 @@ const TextType = ({
 
   useEffect(() => {
     if (showCursor && cursorRef.current) {
-      gsap.set(cursorRef.current, { opacity: 1 });
-      gsap.to(cursorRef.current, {
-        opacity: 0,
-        duration: cursorBlinkDuration,
-        repeat: -1,
-        yoyo: true,
-        ease: 'power2.inOut'
-      });
+      const ctx = gsap.context(() => {
+        gsap.set(cursorRef.current, { opacity: 1 });
+        gsap.to(cursorRef.current, {
+          opacity: 0,
+          duration: cursorBlinkDuration,
+          repeat: -1,
+          yoyo: true,
+          ease: 'cubic-bezier(0.16, 1, 0.3, 1)'
+        });
+      }, cursorRef.current);
+      return () => ctx.revert();
     }
   }, [showCursor, cursorBlinkDuration]);
 

@@ -81,8 +81,8 @@ export function DashboardHero({
         className="relative overflow-hidden rounded-2xl p-5 md:p-7 shadow-sm"
         style={{
           background: isPrimary
-            ? 'linear-gradient(135deg, #6366F1 0%, #4F46E5 50%, #4338CA 100%)'
-            : 'linear-gradient(135deg, #10B981 0%, #059669 50%, #047857 100%)',
+            ? 'linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary), black 20%) 50%, color-mix(in srgb, var(--primary), black 35%) 100%)'
+            : 'linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent), black 20%) 50%, color-mix(in srgb, var(--accent), black 35%) 100%)',
         }}
       >
         {shapes.map((s) => (

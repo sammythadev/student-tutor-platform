@@ -39,37 +39,37 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
     const el = containerRef.current
     if (!el) return
 
-    const wordElements = el.querySelectorAll<HTMLElement>('.word')
+    const ctx = gsap.context(() => {
+      const wordElements = el.querySelectorAll<HTMLElement>('.word')
 
-    if (wordElements.length === 0) return
+      if (wordElements.length === 0) return
 
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: el,
-        start,
-        end,
-        scrub,
-      },
-    })
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: el,
+          start,
+          end,
+          scrub,
+        },
+      })
 
-    tl.fromTo(
-      wordElements,
-      { opacity: baseOpacity },
-      { opacity: 1, stagger, ease: 'none' }
-    )
-
-    if (enableBlur) {
       tl.fromTo(
         wordElements,
-        { filter: `blur(${blurStrength}px)` },
-        { filter: 'blur(0px)', stagger, ease: 'none' },
-        0
+        { opacity: baseOpacity },
+        { opacity: 1, stagger, ease: 'none' }
       )
-    }
 
-    return () => {
-      ScrollTrigger.getAll().forEach(t => t.kill())
-    }
+      if (enableBlur) {
+        tl.fromTo(
+          wordElements,
+          { filter: `blur(${blurStrength}px)` },
+          { filter: 'blur(0px)', stagger, ease: 'none' },
+          0
+        )
+      }
+    }, el)
+
+    return () => ctx.revert()
   }, [enableBlur, baseOpacity, blurStrength, stagger, start, end, scrub])
 
   return (

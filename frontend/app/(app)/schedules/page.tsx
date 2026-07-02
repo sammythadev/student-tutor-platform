@@ -149,7 +149,7 @@ export default function SchedulesPage() {
     } catch (err: any) { setError(err?.response?.data?.message ?? 'Could not cancel session.') }
   }
 
-  const weekLabel = `${addDays(weekStart, 0).toLocaleDateString('en', { month: 'short', day: 'numeric' })} – ${addDays(weekStart, 6).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}`
+  const weekLabel = `${addDays(weekStart, 0).toLocaleDateString('en', { month: 'short', day: 'numeric' })} - ${addDays(weekStart, 6).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}`
   const today = new Date().toDateString()
 
   return (

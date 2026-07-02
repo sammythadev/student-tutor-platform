@@ -144,7 +144,7 @@ const MagneticButton = React.forwardRef<HTMLElement, MagneticButtonProps>(
             rotationX: -y * 0.15,
             rotationY: x * 0.15,
             scale: 1.05,
-            ease: "power2.out",
+            ease: "cubic-bezier(0.16, 1, 0.3, 1)",
             duration: 0.4,
           });
         };
@@ -235,7 +235,7 @@ export function CinematicFooter() {
           y: 0,
           opacity: 1,
           stagger: 0.15,
-          ease: "power3.out",
+          ease: "cubic-bezier(0.16, 1, 0.3, 1)",
           scrollTrigger: {
             trigger: wrapperRef.current,
             start: "top 40%",
@@ -259,10 +259,10 @@ export function CinematicFooter() {
 
       <div
         ref={wrapperRef}
-        className="relative h-screen w-full"
+        className="relative h-[100dvh] w-full"
         style={{ clipPath: "polygon(0% 0, 100% 0%, 100% 100%, 0 100%)" }}
       >
-        <footer className="fixed bottom-0 left-0 flex h-screen w-full flex-col justify-between overflow-hidden bg-background text-foreground cinematic-footer-wrapper">
+        <footer className="fixed bottom-0 left-0 flex h-[100dvh] w-full flex-col justify-between overflow-hidden bg-background text-foreground cinematic-footer-wrapper">
 
           <div className="footer-aurora absolute left-1/2 top-1/2 h-[60vh] w-[80vw] -translate-x-1/2 -translate-y-1/2 animate-footer-breathe rounded-[50%] blur-[80px] pointer-events-none z-0" />
           <div className="footer-bg-grid absolute inset-0 z-0 pointer-events-none" />

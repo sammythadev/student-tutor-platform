@@ -74,11 +74,11 @@ export function StudentDashboard() {
     if (loading || !metrics) return
     const ctx = gsap.context(() => {
       if (cardsRef.current) {
-        gsap.fromTo(cardsRef.current.children, { opacity: 0, y: 20 }, { opacity: 1, y: 0, stagger: 0.08, duration: 0.5, ease: 'power2.out' })
+        gsap.fromTo(cardsRef.current.children, { opacity: 0, y: 20 }, { opacity: 1, y: 0, stagger: 0.08, duration: 0.5, ease: 'cubic-bezier(0.16, 1, 0.3, 1)' })
       }
       if (chartRef.current) {
         const bars = chartRef.current.querySelectorAll('.bar-fill')
-        gsap.fromTo(bars, { scaleY: 0, transformOrigin: 'bottom center' }, { scaleY: 1, stagger: 0.04, duration: 0.6, ease: 'back.out(1.7)' })
+        gsap.fromTo(bars, { scaleY: 0, transformOrigin: 'bottom center' }, { scaleY: 1, stagger: 0.04, duration: 0.6, ease: 'back.out(1.2)' })
       }
     })
     return () => ctx.revert()

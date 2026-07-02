@@ -56,18 +56,36 @@ function SectionReveal({ children, className = '', stagger = false }: { children
     const el = ref.current
     if (!el) return
 
-    if (stagger) {
-      const childEls = el.children
-      if (childEls.length > 0) {
+    const ctx = gsap.context(() => {
+      if (stagger) {
+        const childEls = el.children
+        if (childEls.length > 0) {
+          gsap.fromTo(
+            childEls,
+            { opacity: 0, y: 32 },
+            {
+              opacity: 1,
+              y: 0,
+              stagger: 0.1,
+              duration: 0.7,
+              ease: 'cubic-bezier(0.16, 1, 0.3, 1)',
+              scrollTrigger: {
+                trigger: el,
+                start: 'top bottom-=15%',
+                toggleActions: 'play none none none',
+              },
+            }
+          )
+        }
+      } else {
         gsap.fromTo(
-          childEls,
-          { opacity: 0, y: 32 },
+          el,
+          { opacity: 0, y: 24 },
           {
             opacity: 1,
             y: 0,
-            stagger: 0.1,
             duration: 0.7,
-            ease: 'power2.out',
+            ease: 'cubic-bezier(0.16, 1, 0.3, 1)',
             scrollTrigger: {
               trigger: el,
               start: 'top bottom-=15%',
@@ -75,27 +93,10 @@ function SectionReveal({ children, className = '', stagger = false }: { children
             },
           }
         )
-        return () => { ScrollTrigger.getAll().forEach(t => t.kill()) }
       }
-    }
+    }, el)
 
-    gsap.fromTo(
-      el,
-      { opacity: 0, y: 24 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.7,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: el,
-          start: 'top bottom-=15%',
-          toggleActions: 'play none none none',
-        },
-      }
-    )
-
-    return () => { ScrollTrigger.getAll().forEach(t => t.kill()) }
+    return () => ctx.revert()
   }, [stagger])
 
   return <div ref={ref} className={className}>{children}</div>
@@ -176,7 +177,7 @@ export default function LandingPage() {
 
               <p className="text-lg md:text-xl leading-relaxed animate-fade-up-sm delay-3" style={{ animationFillMode: 'both' }}>
                 <ShinyText
-                  text="Powered by a fairness-first matching algorithm that connects you with tutors based on learning style, goals, and real compatibility — not just availability."
+                  text="                  Powered by a fairness-first matching algorithm that connects you with tutors based on learning style, goals, and real compatibility, not just availability."
                   color="var(--text-secondary)"
                   shineColor="var(--text-primary)"
                   speed={1.5}
@@ -209,7 +210,7 @@ export default function LandingPage() {
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2 animate-fade-up-sm delay-4" style={{ animationFillMode: 'both' }}>
                 <Link href="/signup" className="btn-primary text-base px-8 py-4 group pressable cursor-pointer">
-                  Book a trial session
+                  Get started
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <div className="flex items-center gap-3">
@@ -325,7 +326,7 @@ export default function LandingPage() {
                 Three steps to mastery
               </ScrollReveal>
               <p className="text-text-secondary mt-4 max-w-lg mx-auto leading-relaxed">
-                From searching for the right tutor to achieving your goals — we make it seamless.
+                From searching for the right tutor to achieving your goals, we make it seamless.
               </p>
             </div>
 
@@ -447,65 +448,53 @@ export default function LandingPage() {
         </section>
 
         {/* ─── FOR TUTORS ─── */}
-        <section className="py-24 px-4 md:px-8">
+        <section className="py-24 px-4 md:px-8" style={{ background: 'var(--surface)' }}>
           <div className="max-w-7xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-16 items-center">
-              <SectionReveal className="surface-card p-6 space-y-5 order-2 md:order-1 card-interactive">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-5 rounded-xl text-white animate-gradient" style={{ background: 'linear-gradient(135deg, var(--primary), #4338CA, var(--primary))' }}>
-                    <p className="label-caps text-white/60 mb-2">Daily Revenue</p>
-                    <p className="font-heading text-3xl font-bold">₦42,000</p>
-                    <p className="flex items-center gap-1 text-xs text-white/70 mt-1">
-                      <TrendingUp className="w-3 h-3" />
-                      +12% vs yesterday
-                    </p>
-                  </div>
-                  <div className="p-5 rounded-xl" style={{ background: 'var(--accent-mint-bg)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                    <p className="label-caps mb-2" style={{ color: 'var(--accent-mint-fg)', opacity: 0.7 }}>Student Growth</p>
-                    <p className="font-heading text-3xl font-bold" style={{ color: 'var(--accent-mint-fg)' }}>+12%</p>
-                    <p className="text-xs mt-1" style={{ color: 'var(--accent-mint-fg)', opacity: 0.7 }}>This month</p>
-                  </div>
-                </div>
+            <SectionReveal className="text-center mb-16">
+              <div className="stat-badge w-fit mx-auto mb-4 pressable">For Tutors</div>
+              <ScrollReveal as="h2" className="font-heading text-4xl md:text-5xl font-bold text-text-primary tracking-tight leading-tight">
+                Focus on teaching. We handle the rest.
+              </ScrollReveal>
+              <p className="text-text-secondary mt-4 max-w-lg mx-auto leading-relaxed">
+                Automated billing, a global student marketplace, and professional profiles with branding tools.
+              </p>
+            </SectionReveal>
 
-                <div
-                  className="h-40 w-full rounded-xl flex items-end gap-2 px-5 pb-4"
-                  style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
-                >
-                  {[40, 60, 50, 80, 70, 90, 100].map((h, i) => (
-                    <div key={i} className="flex-1 rounded-t-md transition-all duration-500 hover:opacity-80" style={{
-                      height: `${h}%`,
-                      background: i === 5
-                        ? 'var(--primary)'
-                        : 'var(--primary-subtle)',
-                      transition: 'height 1s var(--ease-out), opacity 200ms ease',
-                    }} />
-                  ))}
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              <div className="surface-card p-7 space-y-4 card-interactive cursor-default">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent-sky-bg)' }}>
+                  <TrendingUp className="w-6 h-6" style={{ color: 'var(--accent-sky-fg)' }} strokeWidth={2} />
                 </div>
-                <p className="text-center label-caps text-text-muted">Weekly Earnings Analytics</p>
-              </SectionReveal>
+                <p className="text-3xl font-bold font-heading tracking-tight" style={{ color: 'var(--text-primary)' }}>₦42,000</p>
+                <p className="label-caps" style={{ color: 'var(--text-muted)' }}>Daily Revenue</p>
+                <p className="flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--accent-mint-fg)' }}>
+                  <TrendingUp className="w-3 h-3" />
+                  +12% vs yesterday
+                </p>
+              </div>
+              <div className="surface-card p-7 space-y-4 card-interactive cursor-default">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent-mint-bg)' }}>
+                  <GraduationCap className="w-6 h-6" style={{ color: 'var(--accent-mint-fg)' }} strokeWidth={2} />
+                </div>
+                <p className="text-3xl font-bold font-heading tracking-tight" style={{ color: 'var(--text-primary)' }}>+12%</p>
+                <p className="label-caps" style={{ color: 'var(--text-muted)' }}>Student Growth</p>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Month over month</p>
+              </div>
+              <div className="surface-card p-7 space-y-4 card-interactive cursor-default">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent-sun-bg)' }}>
+                  <Star className="w-6 h-6" style={{ color: 'var(--accent-sun-fg)' }} strokeWidth={2} />
+                </div>
+                <p className="text-3xl font-bold font-heading tracking-tight" style={{ color: 'var(--text-primary)' }}>4.9/5</p>
+                <p className="label-caps" style={{ color: 'var(--text-muted)' }}>Avg. Tutor Rating</p>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>From 2,500+ reviews</p>
+              </div>
+            </div>
 
-              <SectionReveal className="space-y-7 order-1 md:order-2">
-                <div className="stat-badge w-fit pressable">For Tutors</div>
-                <ScrollReveal as="h2" className="font-heading text-4xl md:text-5xl font-bold text-text-primary leading-tight tracking-tight">
-                  Focus on teaching. We handle the rest.
-                </ScrollReveal>
-                <ul className="space-y-5">
-                  {[
-                    'Automated billing, invoicing, and scheduling',
-                    'Access to a global student marketplace',
-                    'Professional profile with branding tools',
-                  ].map((item) => (
-                    <li key={item} className="flex gap-4 items-start">
-                      <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--primary)' }} strokeWidth={2} />
-                      <p className="text-text-primary font-medium leading-snug">{item}</p>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/signup" className="btn-secondary w-fit text-sm pressable cursor-pointer">
-                  Become a tutor
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </SectionReveal>
+            <div className="text-center">
+              <Link href="/signup" className="btn-primary text-sm px-8 py-3 pressable cursor-pointer inline-flex items-center gap-2">
+                Become a tutor
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         </section>
