@@ -8,7 +8,7 @@ import {
   BookOpen, X,
   Home, BookMarked, Users, Calendar, User, Settings, LogOut,
   Bell, Mail, Search, Moon, Sun, Monitor, ChevronLeft, ChevronRight,
-  LayoutDashboard, MessageSquare, MoreHorizontal, Menu,
+  LayoutDashboard, MessageSquare, Menu,
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/store/authStore'
 import { logout } from '@/lib/api/auth'
@@ -24,7 +24,7 @@ interface AppShellProps {
 }
 
 /* ─── Nav definitions ─────────────────────────────────────── */
-// First 4 = bottom bar core items, last items overflow to "More" drawer
+// First 4 = bottom bar core items, rest go in sidebar (mobile accessible via hamburger)
 const NAV_ITEMS = {
   student: [
     { id: 'dashboard', label: 'Home',     icon: Home,           href: '/dashboard' },
@@ -72,7 +72,6 @@ function applyTheme(mode: ThemeMode) {
 /* ─── Spring configs ──────────────────────────────────────── */
 const SPRING_NAV  = { type: 'spring', stiffness: 480, damping: 36, mass: 0.8 }
 const SPRING_PAGE = { type: 'spring', stiffness: 340, damping: 32, mass: 1 }
-const SPRING_DRAWER = { type: 'spring', stiffness: 380, damping: 34, mass: 0.9 }
 
 /* ═══════════════════════════════════════════════════════════
    PAGE TRANSITION WRAPPER — wraps children per-route
@@ -104,7 +103,6 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
   const [sidebarCollapsed,  setSidebarCollapsed]  = useState(false)
   const [themeMode,         setThemeMode]         = useState<ThemeMode>('system')
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [moreOpen,          setMoreOpen]          = useState(false)   // mobile "More" drawer
   const [unreadCount,       setUnreadCount]       = useState(0)
 
   const { user, initials, fullName } = useAuthStore()
@@ -137,7 +135,6 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
   /* Close mobile overlays on route change */
   useEffect(() => {
     setSidebarOpen(false)
-    setMoreOpen(false)
   }, [pathname])
 
   const cycleTheme = () => {
@@ -151,9 +148,8 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
   const themeLabel = themeMode === 'dark' ? 'Dark mode' : themeMode === 'light' ? 'Light mode' : 'System theme'
 
   const allNavItems = (NAV_ITEMS as any)[userRole] ?? NAV_ITEMS.student
-  // Core items (bottom bar) = first 4. Overflow = rest.
+  // Core items (bottom bar) = first 4; rest in sidebar via hamburger
   const coreItems     = allNavItems.slice(0, 4)
-  const overflowItems = allNavItems.slice(4)
   const sidebarWidth  = sidebarCollapsed ? 72 : 256
 
   return (
@@ -367,16 +363,51 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
           style={{
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch',
-            /* extra bottom padding on mobile so content clears the glass nav bar */
-            paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)',
           } as any}
         >
-          <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-28 md:pb-6">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
             <PageTransition pageKey={currentPage}>
               {children}
             </PageTransition>
           </div>
         </main>
+
+        {/* ── MOBILE BOTTOM NAV — inline, not floating ── */}
+        <nav className="md:hidden flex-shrink-0 border-t" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+          <div className="flex items-center" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            {coreItems.map((item: any) => {
+              const isActive = currentPage === item.id
+              const Icon = item.icon
+              const hasNotif = item.id === 'messages' && unreadCount > 0
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 cursor-pointer"
+                >
+                  <div className="relative">
+                    <Icon
+                      className="w-5 h-5"
+                      strokeWidth={isActive ? 2.5 : 1.8}
+                      style={{ color: isActive ? 'var(--primary)' : 'var(--text-secondary)' }}
+                    />
+                    {hasNotif && (
+                      <span
+                        className="absolute -top-1 -right-1 flex items-center justify-center min-w-[14px] h-[14px] rounded-full text-[8px] font-bold text-white"
+                        style={{ background: 'var(--accent-coral-fg)' }}
+                      >
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-semibold leading-none" style={{ color: isActive ? 'var(--primary)' : 'var(--text-muted)' }}>
+                    {item.label}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+        </nav>
       </div>
 
       {/* Desktop: overlay backdrop when sidebar open */}
@@ -389,259 +420,6 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
             transition={{ duration: 0.2 }}
             onClick={() => setSidebarOpen(false)}
           />
-        )}
-      </AnimatePresence>
-
-      {/* ═══════════════════════════════════════════════════
-          MOBILE GLASS BOTTOM NAV BAR
-      ═══════════════════════════════════════════════════ */}
-      <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-40"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-      >
-        {/* Gradient edge fade above the bar */}
-        <div
-          className="absolute -top-8 inset-x-0 h-8 pointer-events-none"
-          style={{ background: 'linear-gradient(to top, var(--canvas), transparent)' }}
-        />
-
-        {/* The glass bar */}
-        <div
-          className="mx-3 mb-3 rounded-2xl overflow-hidden"
-          style={{
-            background: 'rgba(var(--surface-glass-rgb, 15,15,30), 0.72)',
-            backdropFilter: 'blur(28px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.2) inset',
-          }}
-        >
-          <div className="flex items-center">
-            {/* Core nav items */}
-            {coreItems.map((item: any, idx: number) => {
-              const isActive = currentPage === item.id
-              const Icon = item.icon
-              const hasNotif = item.id === 'messages' && unreadCount > 0
-
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className="relative flex flex-1 flex-col items-center justify-center gap-0.5 py-3 cursor-pointer group"
-                  style={{ minWidth: 0 }}
-                >
-                  {/* Active pill background — spring animated */}
-                  {isActive && (
-                    <motion.div
-                      layoutId="mobile-nav-active"
-                      className="absolute inset-x-2 inset-y-1.5 rounded-xl"
-                      style={{ background: 'rgba(99,102,241,0.22)', border: '1px solid rgba(99,102,241,0.28)' }}
-                      transition={SPRING_NAV}
-                    />
-                  )}
-
-                  {/* Icon */}
-                  <div className="relative">
-                    <motion.div
-                      animate={isActive
-                        ? { scale: 1.1, y: -1 }
-                        : { scale: 1,   y: 0 }
-                      }
-                      transition={SPRING_NAV}
-                    >
-                      <Icon
-                        className="w-5 h-5 relative z-10"
-                        strokeWidth={isActive ? 2.5 : 1.8}
-                        style={{ color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.45)' }}
-                      />
-                    </motion.div>
-
-                    {/* Notification badge */}
-                    {hasNotif && (
-                      <span
-                        className="absolute -top-1 -right-1 flex items-center justify-center min-w-[14px] h-[14px] rounded-full text-[8px] font-bold text-white z-20"
-                        style={{ background: 'var(--accent-coral-fg)' }}
-                      >
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Label */}
-                  <motion.span
-                    className="text-[10px] font-semibold relative z-10 leading-none"
-                    animate={{ color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.4)' }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {item.label}
-                  </motion.span>
-                </Link>
-              )
-            })}
-
-            {/* More button — only if there are overflow items */}
-            {overflowItems.length > 0 && (
-              <button
-                onClick={() => setMoreOpen(true)}
-                className="relative flex flex-1 flex-col items-center justify-center gap-0.5 py-3 cursor-pointer"
-              >
-                <MoreHorizontal
-                  className="w-5 h-5"
-                  strokeWidth={1.8}
-                  style={{ color: moreOpen ? 'var(--primary)' : 'rgba(255,255,255,0.45)' }}
-                />
-                <span className="text-[10px] font-semibold leading-none" style={{ color: moreOpen ? 'var(--primary)' : 'rgba(255,255,255,0.4)' }}>
-                  More
-                </span>
-              </button>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* ═══════════════════════════════════════════════════
-          MOBILE "MORE" SLIDE-UP GLASS DRAWER
-      ═══════════════════════════════════════════════════ */}
-      <AnimatePresence>
-        {moreOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              className="md:hidden fixed inset-0 z-50"
-              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.22 }}
-              onClick={() => setMoreOpen(false)}
-            />
-
-            {/* Drawer panel */}
-            <motion.div
-              className="md:hidden fixed bottom-0 inset-x-0 z-50 rounded-t-3xl overflow-hidden"
-              style={{
-                background: 'rgba(10,10,20,0.82)',
-                backdropFilter: 'blur(32px) saturate(200%)',
-                WebkitBackdropFilter: 'blur(32px) saturate(200%)',
-                border: '1px solid rgba(255,255,255,0.10)',
-                borderBottom: 'none',
-                boxShadow: '0 -8px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-              }}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={SPRING_DRAWER}
-            >
-              {/* Handle */}
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.18)' }} />
-              </div>
-
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 pb-3 pt-1">
-                <p className="font-heading text-sm font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>More</p>
-                <button
-                  onClick={() => setMoreOpen(false)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full cursor-pointer"
-                  style={{ background: 'rgba(255,255,255,0.08)' }}
-                >
-                  <X className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.6)' }} strokeWidth={2} />
-                </button>
-              </div>
-
-              {/* Overflow nav items */}
-              <div className="px-4 pb-4 grid grid-cols-3 gap-3">
-                {overflowItems.map((item: any, idx: number) => {
-                  const isActive = currentPage === item.id
-                  const Icon = item.icon
-                  return (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, scale: 0.88, y: 12 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      transition={{ ...SPRING_NAV, delay: idx * 0.05 }}
-                    >
-                      <Link
-                        href={item.href}
-                        onClick={() => setMoreOpen(false)}
-                        className="flex flex-col items-center gap-2 rounded-2xl p-4 cursor-pointer transition-all"
-                        style={{
-                          background: isActive ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.06)',
-                          border: `1px solid ${isActive ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.06)'}`,
-                        }}
-                      >
-                        <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.8}
-                          style={{ color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.55)' }} />
-                        <span className="text-[11px] font-semibold"
-                          style={{ color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.55)' }}>
-                          {item.label}
-                        </span>
-                      </Link>
-                    </motion.div>
-                  )
-                })}
-              </div>
-
-              {/* Divider */}
-              <div className="mx-5 mb-4" style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-
-              {/* Settings + Theme + Sign out */}
-              <div className="px-4 pb-5 space-y-1">
-                <Link
-                  href="/settings"
-                  onClick={() => setMoreOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.65)' }}
-                  onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.06)')}
-                  onMouseLeave={e => (e.currentTarget.style.background='')}
-                >
-                  <Settings className="w-4 h-4" strokeWidth={1.8} />
-                  <span className="text-sm font-medium">Settings</span>
-                </Link>
-
-                <button
-                  onClick={cycleTheme}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.65)' }}
-                  onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.06)')}
-                  onMouseLeave={e => (e.currentTarget.style.background='')}
-                >
-                  <ThemeIcon className="w-4 h-4" strokeWidth={1.8} />
-                  <span className="text-sm font-medium">{themeLabel}</span>
-                </button>
-
-                <button
-                  onClick={() => logout()}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors"
-                  style={{ color: 'rgba(239,68,68,0.75)' }}
-                  onMouseEnter={e => (e.currentTarget.style.background='rgba(239,68,68,0.08)')}
-                  onMouseLeave={e => (e.currentTarget.style.background='')}
-                >
-                  <LogOut className="w-4 h-4" strokeWidth={1.8} />
-                  <span className="text-sm font-medium">Sign out</span>
-                </button>
-              </div>
-
-              {/* User avatar strip */}
-              <div
-                className="flex items-center gap-3 mx-4 mb-4 p-3 rounded-2xl"
-                style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}
-              >
-                <div suppressHydrationWarning
-                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                  style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}>
-                  {initials()}
-                </div>
-                <div className="min-w-0">
-                  <p suppressHydrationWarning className="text-xs font-semibold truncate" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                    {fullName() || 'Guest User'}
-                  </p>
-                  <p className="text-[11px] capitalize" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                    {user?.role || userRole}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </>
         )}
       </AnimatePresence>
 
