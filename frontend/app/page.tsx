@@ -338,51 +338,81 @@ function StickyStack() {
   }, [reduce])
 
   return (
-    <section ref={ref} className="relative">
-      {HOW_STEPS.map(({ step, title, desc, icon: Icon, color, Visual }, i) => (
-        <div
-          key={i}
-          className="stack-card sticky top-0 min-h-[100dvh] flex items-center"
-          style={{ background: 'var(--canvas)' }}
-        >
-          <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center py-24">
-            <div className="space-y-7 order-2 lg:order-1">
-              <div className="flex items-end gap-4">
-                <span
-                  className="font-heading leading-[0.85] font-bold select-none"
-                  style={{ fontSize: 'clamp(64px, 10vw, 100px)', color: 'var(--border-strong)' }}
-                >
-                  {step}
-                </span>
-                <div
-                  className="mb-2 w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
-                >
-                  <Icon className="w-5 h-5" strokeWidth={2} />
+    <>
+      {/* Desktop: GSAP sticky stack */}
+      <section ref={ref} className="hidden lg:block relative">
+        {HOW_STEPS.map(({ step, title, desc, icon: Icon, color, Visual }, i) => (
+          <div
+            key={i}
+            className="stack-card sticky top-0 min-h-[100dvh] flex items-center"
+            style={{ background: 'var(--canvas)' }}
+          >
+            <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center py-24">
+              <div className="space-y-7 order-2 lg:order-1">
+                <div className="flex items-end gap-4">
+                  <span
+                    className="font-heading leading-[0.85] font-bold select-none"
+                    style={{ fontSize: 'clamp(64px, 10vw, 100px)', color: 'var(--border-strong)' }}
+                  >
+                    {step}
+                  </span>
+                  <div
+                    className="mb-2 w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
+                  >
+                    <Icon className="w-5 h-5" strokeWidth={2} />
+                  </div>
                 </div>
+                <h3
+                  className="font-heading font-bold tracking-tight leading-[1.1]"
+                  style={{ fontSize: 'clamp(28px, 4vw, 48px)', color: 'var(--text-primary)' }}
+                >
+                  {title}
+                </h3>
+                <p
+                  className="text-base md:text-lg leading-relaxed"
+                  style={{ color: 'var(--text-secondary)', maxWidth: '46ch' }}
+                >
+                  {desc}
+                </p>
               </div>
-              <h3
-                className="font-heading font-bold tracking-tight leading-[1.1]"
-                style={{ fontSize: 'clamp(28px, 4vw, 48px)', color: 'var(--text-primary)' }}
-              >
-                {title}
-              </h3>
-              <p
-                className="text-base md:text-lg leading-relaxed"
-                style={{ color: 'var(--text-secondary)', maxWidth: '46ch' }}
-              >
-                {desc}
-              </p>
-            </div>
-            <div className="flex items-center justify-center order-1 lg:order-2">
-              <div className="w-full max-w-sm mx-auto">
-                <Visual />
+              <div className="flex items-center justify-center order-1 lg:order-2">
+                <div className="w-full max-w-sm mx-auto">
+                  <Visual />
+                </div>
               </div>
             </div>
           </div>
+        ))}
+      </section>
+
+      {/* Mobile: simple stacked flow (no pinning) */}
+      <section className="block lg:hidden py-8 px-4">
+        <div className="max-w-3xl mx-auto space-y-8">
+          {HOW_STEPS.map(({ step, title, desc, icon: Icon, color, Visual }, i) => (
+            <div key={i} className="rounded-2xl p-4 surface-card" style={{ background: 'var(--canvas)', border: '1px solid var(--border)' }}>
+              <div className="flex items-start gap-4">
+                <div className="w-12 flex-shrink-0">
+                  <div className="font-heading font-bold text-lg" style={{ color: 'var(--border-strong)' }}>{step}</div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-9 h-9 rounded-2xl flex items-center justify-center" style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}>
+                      <Icon className="w-4 h-4" strokeWidth={2} />
+                    </div>
+                    <h4 className="font-heading font-bold text-lg" style={{ color: 'var(--text-primary)' }}>{title}</h4>
+                  </div>
+                  <p className="text-sm text-[15px]" style={{ color: 'var(--text-secondary)' }}>{desc}</p>
+                  <div className="mt-4">
+                    <Visual />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </section>
+      </section>
+    </>
   )
 }
 
@@ -721,13 +751,13 @@ export default function LandingPage() {
       </div>
 
       {/* ── Navigation ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 pt-4">
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 pt-2 md:pt-4">
         <nav
           className="max-w-7xl mx-auto flex justify-between items-center px-4 md:px-6 py-2.5 rounded-pill"
           style={{
-            background: 'var(--nav-bg)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
+            background: 'color-mix(in srgb, var(--nav-bg) 65%, transparent)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
             border: '1px solid rgba(255,255,255,0.06)',
           }}
         >
@@ -756,7 +786,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <ThemeToggle />
             <Link
               href="/signin"
@@ -776,11 +806,11 @@ export default function LandingPage() {
       <main className="relative z-10">
 
         {/* ── HERO ── */}
-        <section className="px-4 md:px-8 min-h-[100dvh] flex items-center pt-20">
-          <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-16 items-center py-16">
+        <section className="px-4 md:px-8 pt-16 md:pt-24 min-h-[80dvh] md:min-h-[100dvh] flex items-start md:items-center">
+          <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
             {/* Left: headline + CTA (max 4 elements) */}
-            <div className="space-y-7">
+            <div className="space-y-5 md:space-y-7">
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -850,6 +880,49 @@ export default function LandingPage() {
                 <Link href="/tutors" className="btn-secondary text-base px-6 py-3.5 pressable">
                   Browse tutors
                 </Link>
+              </motion.div>
+
+              {/* Mobile visual — compact tutor cards (hidden on desktop) */}
+              <motion.div
+                className="lg:hidden"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="px-4">
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none">
+                  {[
+                    { name: 'Prof. Julian S.', sub: 'Mathematics', rate: '₦8,500/hr', color: 'lavender', match: '97%' },
+                    { name: 'Dr. Priya Nair', sub: 'Computer Science', rate: '₦9,500/hr', color: 'sky', match: '94%' },
+                    { name: 'Sarah Jenkins', sub: 'English Literature', rate: '₦6,000/hr', color: 'mint', match: '89%' },
+                  ].map((t, i) => (
+                    <motion.div
+                      key={i}
+                      className="flex-shrink-0 w-[200px] rounded-2xl p-4 surface-card space-y-3 snap-start"
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.4 + i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
+                          style={{ background: `var(--accent-${t.color}-bg)`, color: `var(--accent-${t.color}-fg)` }}
+                        >
+                          {t.name[0]}{t.name.split(' ')[1]?.[0]}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{t.name}</p>
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.sub}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+                        <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{t.rate}</span>
+                        <span className="text-[10px] font-bold" style={{ color: 'var(--accent-mint-fg)' }}>{t.match} match</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                  </div>
+                </div>
               </motion.div>
             </div>
 

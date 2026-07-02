@@ -154,7 +154,7 @@
   --blob-accent:  rgba(16, 185, 129, 0.08);
 
   /* Navbar */
-  --nav-bg: rgba(9, 9, 11, 0.85);
+  --nav-bg: rgba(9, 9, 11, 0.65);
 
   /* Aurora */
   --aurora-blend:   screen;
@@ -246,7 +246,7 @@
     --blob-primary: rgba(99, 102, 241, 0.08);
     --blob-accent:  rgba(16, 185, 129, 0.06);
 
-    --nav-bg: rgba(255, 255, 255, 0.85);
+    --nav-bg: rgba(255, 255, 255, 0.65);
 
     --aurora-blend:   multiply;
     --aurora-opacity: 0.25;
@@ -336,7 +336,7 @@
   --blob-primary: rgba(99, 102, 241, 0.08);
   --blob-accent:  rgba(16, 185, 129, 0.06);
 
-  --nav-bg: rgba(255, 255, 255, 0.85);
+  --nav-bg: rgba(255, 255, 255, 0.65);
 
   --aurora-blend:   multiply;
   --aurora-opacity: 0.25;
