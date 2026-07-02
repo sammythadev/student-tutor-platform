@@ -1,46 +1,54 @@
 'use client'
 
-import { ReactNode, useState, useEffect } from 'react'
+import { ReactNode, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { IconButton } from '@/components/Button'
 import {
-  BookOpen, Menu, X,
+  BookOpen, X,
   Home, BookMarked, Users, Calendar, User, Settings, LogOut,
-  Bell, Mail, Search, Moon, Sun, ChevronLeft, ChevronRight, LayoutDashboard, MessageSquare,
+  Bell, Mail, Search, Moon, Sun, Monitor, ChevronLeft, ChevronRight,
+  LayoutDashboard, MessageSquare, MoreHorizontal, Menu,
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/store/authStore'
 import { logout } from '@/lib/api/auth'
 import { NotificationsPanel } from '@/components/NotificationsPanel'
 import { getUnreadCount } from '@/lib/api/notifications'
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 
+/* ─── Types ───────────────────────────────────────────────── */
 interface AppShellProps {
   children: ReactNode
   currentPage: string
   userRole?: 'student' | 'tutor' | 'admin' | 'unassigned'
 }
 
+/* ─── Nav definitions ─────────────────────────────────────── */
+// First 4 = bottom bar core items, last items overflow to "More" drawer
 const NAV_ITEMS = {
   student: [
-    { id: 'dashboard', label: 'Overview',    icon: Home,           href: '/dashboard' },
-    { id: 'feed',      label: 'Feed',        icon: BookMarked,     href: '/feed' },
-    { id: 'tutors',    label: 'Find Tutors', icon: Users,          href: '/tutors' },
-    { id: 'schedules', label: 'Sessions',    icon: Calendar,       href: '/schedules' },
-    { id: 'messages',  label: 'Messages',    icon: MessageSquare,  href: '/messages' },
-    { id: 'profile',   label: 'Profile',     icon: User,           href: '/profile' },
+    { id: 'dashboard', label: 'Home',     icon: Home,           href: '/dashboard' },
+    { id: 'tutors',    label: 'Tutors',   icon: Users,          href: '/tutors'    },
+    { id: 'schedules', label: 'Sessions', icon: Calendar,       href: '/schedules' },
+    { id: 'messages',  label: 'Messages', icon: MessageSquare,  href: '/messages'  },
+    // overflow (shown in More drawer on mobile)
+    { id: 'feed',      label: 'Feed',     icon: BookMarked,     href: '/feed'      },
+    { id: 'profile',   label: 'Profile',  icon: User,           href: '/profile'   },
   ],
   tutor: [
-    { id: 'dashboard', label: 'Dashboard',   icon: LayoutDashboard, href: '/dashboard' },
-    { id: 'feed',      label: 'Feed',        icon: BookMarked,      href: '/feed'      },
-    { id: 'schedules', label: 'Availability', icon: Calendar,       href: '/schedules' },
-    { id: 'tutors',    label: 'Students',    icon: Users,           href: '/tutors'    },
-    { id: 'messages',  label: 'Messages',    icon: MessageSquare,   href: '/messages'  },
-    { id: 'profile',   label: 'Profile',     icon: User,            href: '/profile'   },
+    { id: 'dashboard', label: 'Home',      icon: LayoutDashboard, href: '/dashboard' },
+    { id: 'schedules', label: 'Schedule',  icon: Calendar,        href: '/schedules' },
+    { id: 'tutors',    label: 'Students',  icon: Users,           href: '/tutors'    },
+    { id: 'messages',  label: 'Messages',  icon: MessageSquare,   href: '/messages'  },
+    // overflow
+    { id: 'feed',      label: 'Feed',      icon: BookMarked,      href: '/feed'      },
+    { id: 'profile',   label: 'Profile',   icon: User,            href: '/profile'   },
   ],
   admin: [
-    { id: 'dashboard', label: 'Overview', icon: Home,       href: '/dashboard' },
-    { id: 'feed',      label: 'Feed',     icon: BookMarked, href: '/feed' },
-    { id: 'admin',     label: 'Admin',    icon: Users,      href: '/admin' },
-    { id: 'profile',   label: 'Profile',  icon: User,       href: '/profile' },
+    { id: 'dashboard', label: 'Home',    icon: Home,       href: '/dashboard' },
+    { id: 'feed',      label: 'Feed',    icon: BookMarked, href: '/feed'      },
+    { id: 'admin',     label: 'Admin',   icon: Users,      href: '/admin'     },
+    { id: 'profile',   label: 'Profile', icon: User,       href: '/profile'   },
   ],
 }
 
@@ -52,15 +60,57 @@ const ACCENT_COLORS = [
   { bg: 'var(--accent-coral-bg)',    fg: 'var(--accent-coral-fg)' },
 ]
 
+type ThemeMode = 'dark' | 'light' | 'system'
+
+function applyTheme(mode: ThemeMode) {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  const isDark = mode === 'dark' || (mode === 'system' && prefersDark)
+  document.documentElement.classList.toggle('dark-mode', isDark)
+  document.documentElement.classList.toggle('light-mode', !isDark)
+}
+
+/* ─── Spring configs ──────────────────────────────────────── */
+const SPRING_NAV  = { type: 'spring', stiffness: 480, damping: 36, mass: 0.8 }
+const SPRING_PAGE = { type: 'spring', stiffness: 340, damping: 32, mass: 1 }
+const SPRING_DRAWER = { type: 'spring', stiffness: 380, damping: 34, mass: 0.9 }
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE TRANSITION WRAPPER — wraps children per-route
+═══════════════════════════════════════════════════════════ */
+function PageTransition({ children, pageKey }: { children: ReactNode; pageKey: string }) {
+  const reduce = useReducedMotion()
+  if (reduce) return <>{children}</>
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={pageKey}
+        initial={{ opacity: 0, y: 14, filter: 'blur(4px)' }}
+        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        exit={{ opacity: 0, y: -8, filter: 'blur(2px)' }}
+        transition={SPRING_PAGE}
+        style={{ willChange: 'transform, opacity' }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN APP SHELL
+═══════════════════════════════════════════════════════════ */
 export function AppShell({ children, currentPage, userRole = 'student' }: AppShellProps) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false)
   const [sidebarCollapsed,  setSidebarCollapsed]  = useState(false)
-  const [isDark,            setIsDark]            = useState(true)
+  const [themeMode,         setThemeMode]         = useState<ThemeMode>('system')
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [moreOpen,          setMoreOpen]          = useState(false)   // mobile "More" drawer
   const [unreadCount,       setUnreadCount]       = useState(0)
 
   const { user, initials, fullName } = useAuthStore()
+  const pathname = usePathname()
 
+  /* Notification polling */
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>
     const poll = () => getUnreadCount().then(setUnreadCount).catch(() => {})
@@ -69,77 +119,87 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
     return () => clearInterval(interval)
   }, [notificationsOpen])
 
+  /* Theme init */
   useEffect(() => {
-    const saved = localStorage.getItem('tutorly-theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const dark = saved ? saved === 'dark' : prefersDark
-    setIsDark(dark)
-    document.documentElement.classList.toggle('dark-mode',  dark)
-    document.documentElement.classList.toggle('light-mode', !dark)
+    const saved = localStorage.getItem('tutorly-theme') as ThemeMode | null
+    const mode: ThemeMode = (saved === 'dark' || saved === 'light' || saved === 'system') ? saved : 'system'
+    setThemeMode(mode)
+    applyTheme(mode)
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onMqChange = () => {
+      const current = localStorage.getItem('tutorly-theme') as ThemeMode | null
+      if (!current || current === 'system') applyTheme('system')
+    }
+    mq.addEventListener('change', onMqChange)
+    return () => mq.removeEventListener('change', onMqChange)
   }, [])
 
-  const toggleTheme = () => {
-    const next = !isDark
-    setIsDark(next)
-    document.documentElement.classList.toggle('dark-mode',  next)
-    document.documentElement.classList.toggle('light-mode', !next)
-    localStorage.setItem('tutorly-theme', next ? 'dark' : 'light')
+  /* Close mobile overlays on route change */
+  useEffect(() => {
+    setSidebarOpen(false)
+    setMoreOpen(false)
+  }, [pathname])
+
+  const cycleTheme = () => {
+    const next: ThemeMode = themeMode === 'system' ? 'dark' : themeMode === 'dark' ? 'light' : 'system'
+    setThemeMode(next)
+    localStorage.setItem('tutorly-theme', next)
+    applyTheme(next)
   }
 
-  const navItems = NAV_ITEMS[userRole]
+  const ThemeIcon = themeMode === 'dark' ? Moon : themeMode === 'light' ? Sun : Monitor
+  const themeLabel = themeMode === 'dark' ? 'Dark mode' : themeMode === 'light' ? 'Light mode' : 'System theme'
+
+  const allNavItems = (NAV_ITEMS as any)[userRole] ?? NAV_ITEMS.student
+  // Core items (bottom bar) = first 4. Overflow = rest.
+  const coreItems     = allNavItems.slice(0, 4)
+  const overflowItems = allNavItems.slice(4)
+  const sidebarWidth  = sidebarCollapsed ? 72 : 256
 
   return (
-    <div className="flex min-h-[100dvh] bg-canvas overflow-hidden">
+    <div className="flex bg-canvas" style={{ height: '100dvh', overflow: 'hidden' }}>
 
-      {/* ─── SIDEBAR ─── */}
+      {/* ═══════════════════════════════════════════════════
+          DESKTOP SIDEBAR — unchanged, fixed
+      ═══════════════════════════════════════════════════ */}
       <aside
-        className={`
-          fixed md:relative z-40 inset-y-0 left-0
-          ${sidebarCollapsed ? 'w-[72px]' : 'w-64'}
-          md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          transition-all duration-300 ease-in-out
-          flex flex-col
-          md:m-3 md:h-[calc(100vh-1.5rem)] h-full
-          rounded-none md:rounded-2xl
-          sidebar-surface
-        `}
-        style={{ maxHeight: '100dvh' }}
+        className="app-sidebar fixed inset-y-0 left-0 z-40 flex flex-col transition-all duration-300 ease-in-out"
+        style={{
+          width: sidebarWidth,
+          background: 'var(--sidebar)',
+          borderRight: '1px solid var(--border)',
+          boxShadow: sidebarOpen ? '4px 0 40px rgba(0,0,0,0.45)' : 'none',
+          transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        }}
       >
-        {/* Logo area + mobile close button */}
-        <div className="p-4 flex items-center justify-between h-16 flex-shrink-0">
-          {!sidebarCollapsed && (
+        {/* Logo */}
+        <div className="flex h-16 flex-shrink-0 items-center justify-between px-4">
+          {!sidebarCollapsed ? (
             <Link href="/" className="flex items-center gap-2.5 cursor-pointer min-w-0">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--primary)' }}>
                 <BookOpen className="w-4 h-4 text-white" strokeWidth={2.5} />
               </div>
-              <span className="font-heading font-bold text-base text-text-primary truncate">tutorly</span>
+              <span className="font-heading font-bold text-base truncate" style={{ color: 'var(--text-primary)' }}>tutorly</span>
             </Link>
-          )}
-          {sidebarCollapsed && (
+          ) : (
             <div className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto flex-shrink-0" style={{ background: 'var(--primary)' }}>
               <BookOpen className="w-4 h-4 text-white" strokeWidth={2.5} />
             </div>
           )}
-
-          {/* X close button — visible only on mobile when sidebar is open */}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-all duration-150"
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer"
             style={{ color: 'var(--text-muted)' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--primary-subtle)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)' }}
-            aria-label="Close sidebar"
           >
             <X className="w-4 h-4" strokeWidth={2} />
           </button>
         </div>
 
-        {/* Collapse toggle (desktop only) */}
+        {/* Collapse toggle (desktop) */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="hidden md:flex absolute -right-3 top-14 w-6 h-6 rounded-full items-center justify-center cursor-pointer transition-all duration-150 hover:scale-110"
+          className="hidden md:flex absolute -right-3 top-14 w-6 h-6 rounded-full items-center justify-center cursor-pointer transition-all duration-150 hover:scale-110 z-50"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}
-          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {sidebarCollapsed
             ? <ChevronRight className="w-3 h-3 text-text-secondary" />
@@ -147,51 +207,28 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
           }
         </button>
 
-        {/* Navigation */}
+        {/* Nav links */}
         <nav className="flex-1 overflow-y-auto px-2.5 py-2 space-y-0.5">
           {!sidebarCollapsed && (
-            <p className="label-caps text-text-muted px-3 mb-3 mt-1">Main</p>
+            <p className="label-caps px-3 mb-3 mt-1" style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Main</p>
           )}
-
-          {navItems.map((item, idx) => {
+          {allNavItems.map((item: any, idx: number) => {
             const isActive = currentPage === item.id
-            const Icon     = item.icon
-            const accent   = ACCENT_COLORS[idx % ACCENT_COLORS.length]
-
+            const Icon = item.icon
+            const accent = ACCENT_COLORS[idx % ACCENT_COLORS.length]
             return (
               <Link
                 key={item.id}
                 href={item.href}
                 title={sidebarCollapsed ? item.label : undefined}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 cursor-pointer
-                  ${sidebarCollapsed ? 'justify-center' : ''}
-                `}
-                style={isActive ? {
-                  background: accent.bg,
-                  color: accent.fg,
-                } : {
-                  color: 'var(--text-secondary)',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = 'var(--primary-subtle)'
-                    e.currentTarget.style.color      = 'var(--text-primary)'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = ''
-                    e.currentTarget.style.color      = 'var(--text-secondary)'
-                  }
-                }}
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 cursor-pointer group relative ${sidebarCollapsed ? 'justify-center' : ''}`}
+                style={isActive ? { background: accent.bg, color: accent.fg } : { color: 'var(--text-secondary)' }}
               >
+                {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full" style={{ background: accent.fg }} />}
                 <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-                {!sidebarCollapsed && (
-                  <span className={`text-sm ${isActive ? 'font-semibold' : 'font-medium'} transition-none`}>
-                    {item.label}
-                  </span>
-                )}
+                {!sidebarCollapsed && <span className={`text-sm ${isActive ? 'font-semibold' : 'font-medium'}`}>{item.label}</span>}
+                {!isActive && <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ background: 'var(--primary-subtle)' }} />}
               </Link>
             )
           })}
@@ -199,55 +236,37 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
 
         {/* Bottom section */}
         <div className="p-2.5 space-y-1 flex-shrink-0 border-t" style={{ borderColor: 'var(--border)' }}>
-          {/* Theme toggle — moved from top navbar */}
           <button
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150 text-sm font-medium ${sidebarCollapsed ? 'justify-center' : ''}`}
+            onClick={cycleTheme}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm font-medium group relative ${sidebarCollapsed ? 'justify-center' : ''}`}
             style={{ color: 'var(--text-secondary)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--primary-subtle)'; e.currentTarget.style.color = 'var(--primary)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--text-secondary)' }}
           >
-            {isDark ? <Sun className="w-4 h-4 flex-shrink-0" strokeWidth={2} /> : <Moon className="w-4 h-4 flex-shrink-0" strokeWidth={2} />}
-            {!sidebarCollapsed && <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
+            <ThemeIcon className="w-4 h-4 flex-shrink-0 transition-transform duration-200 group-hover:rotate-12" strokeWidth={2} />
+            {!sidebarCollapsed && <span>{themeLabel}</span>}
+            <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ background: 'var(--primary-subtle)' }} />
           </button>
 
-          <Link
-            href="/settings"
-            title={sidebarCollapsed ? 'Settings' : undefined}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
-            style={{ color: currentPage === 'settings' ? 'var(--primary)' : 'var(--text-secondary)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--primary-subtle)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '' }}
-          >
+          <Link href="/settings" onClick={() => setSidebarOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer group relative ${sidebarCollapsed ? 'justify-center' : ''}`}
+            style={{ color: currentPage === 'settings' ? 'var(--primary)' : 'var(--text-secondary)' }}>
             <Settings className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
             {!sidebarCollapsed && <span className="text-sm font-medium">Settings</span>}
+            <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ background: 'var(--primary-subtle)' }} />
           </Link>
 
           {!sidebarCollapsed ? (
-            <div
-              className="p-3 rounded-xl flex items-center gap-2.5"
-              style={{ background: 'var(--primary-subtle)', border: '1px solid rgba(99,102,241,0.15)' }}
-            >
-              <div
-                suppressHydrationWarning
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}
-              >
+            <div className="p-3 rounded-xl flex items-center gap-2.5" style={{ background: 'var(--primary-subtle)', border: '1px solid rgba(99,102,241,0.15)' }}>
+              <div suppressHydrationWarning className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}>
                 {initials()}
               </div>
               <div className="flex-1 min-w-0">
-                <p suppressHydrationWarning className="text-xs font-semibold text-text-primary truncate">{fullName() || 'Guest User'}</p>
-                <p className="text-xs text-text-muted capitalize">{user?.role || userRole}</p>
+                <p suppressHydrationWarning className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{fullName() || 'Guest User'}</p>
+                <p className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>{user?.role || userRole}</p>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
-              <div
-                suppressHydrationWarning
-                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}
-              >
+              <div suppressHydrationWarning className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}>
                 {initials()}
               </div>
             </div>
@@ -255,53 +274,41 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
 
           <button
             onClick={() => logout()}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150 text-sm font-medium ${sidebarCollapsed ? 'justify-center' : ''}`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm font-medium group relative ${sidebarCollapsed ? 'justify-center' : ''}`}
             style={{ color: 'var(--text-muted)' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(239,68,68,0.08)'
-              e.currentTarget.style.color      = 'var(--accent-coral-fg)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = ''
-              e.currentTarget.style.color      = 'var(--text-muted)'
-            }}
-            title={sidebarCollapsed ? 'Sign out' : undefined}
           >
             <LogOut className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
             {!sidebarCollapsed && <span>Sign out</span>}
+            <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ background: 'rgba(239,68,68,0.08)' }} />
           </button>
         </div>
       </aside>
 
-      {/* ─── MAIN CONTENT ─── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* Desktop spacer */}
+      <div className="hidden md:block flex-shrink-0 transition-all duration-300" style={{ width: sidebarWidth }} />
 
-        {/* ─── TOP NAVBAR — glassmorphic squircle ─── */}
-        <header className="flex-shrink-0 px-2 md:px-4 pt-3 md:pt-4 pb-2 md:pb-4 relative z-30" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0.75rem))' }}>
-          {/* Top gradient glow */}
-          <div
-            className="absolute top-4 left-1/2 -translate-x-1/2 w-3/4 h-12 pointer-events-none"
-            style={{
-              background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.2) 0%, transparent 70%)',
-            }}
-          />
-          <div
-            className="w-full"
-            style={{ padding: 1, borderRadius: 9999, background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(16,185,129,0.1), transparent)' }}
-          >
+      {/* ═══════════════════════════════════════════════════
+          MAIN COLUMN
+      ═══════════════════════════════════════════════════ */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+        {/* ── TOP NAVBAR ── */}
+        <header
+          className="flex-shrink-0 sticky top-0 z-30 px-2 md:px-4 pt-3 pb-2"
+          style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0.75rem))' }}
+        >
+          <div style={{ padding: 1, borderRadius: 9999, background: 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(16,185,129,0.08), transparent)' }}>
             <div
               className="w-full px-3 md:px-5 h-12 flex items-center justify-between gap-3"
               style={{ borderRadius: 9998, background: 'var(--surface-glass)', backdropFilter: 'var(--blur-panel)', WebkitBackdropFilter: 'var(--blur-panel)' }}
             >
-              {/* Left — hamburger + breadcrumb */}
+              {/* Left — hamburger (desktop only) + breadcrumb */}
               <div className="flex items-center gap-2 min-w-0">
+                {/* Desktop hamburger to open sidebar */}
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer transition-colors flex-shrink-0"
+                  className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer flex-shrink-0"
                   style={{ color: 'var(--text-secondary)' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--primary-subtle)' }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
-                  aria-label="Toggle sidebar"
                 >
                   <Menu className="w-4 h-4" strokeWidth={2} />
                 </button>
@@ -312,47 +319,32 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
                 </div>
               </div>
 
-              {/* Center — search bar (desktop) */}
+              {/* Center — search */}
               <div className="hidden md:flex flex-1 max-w-xs lg:max-w-sm">
                 <div className="relative w-full">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--text-muted)' }} strokeWidth={2} />
                   <input
                     type="text"
                     placeholder="Search tutors, sessions..."
-                    className="w-full h-8 pl-8 pr-3 rounded-lg text-xs outline-none transition-all duration-150"
-                    style={{
-                      background: 'var(--surface-2)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid transparent',
-                    }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--surface)' }}
-                    onBlur={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.background = 'var(--surface-2)' }}
+                    className="w-full h-8 pl-8 pr-3 rounded-lg text-xs outline-none transition-all"
+                    style={{ background: 'var(--surface-2)', color: 'var(--text-primary)', border: '1px solid transparent' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--surface)' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.background = 'var(--surface-2)' }}
                   />
                 </div>
               </div>
 
               {/* Right — actions */}
               <div className="flex items-center gap-0.5">
-                <IconButton
-                  icon={<Search className="w-4 h-4" strokeWidth={2} />}
-                  label="Search"
-                  className="md:hidden"
-                />
-
+                <IconButton icon={<Search className="w-4 h-4" strokeWidth={2} />} label="Search" className="md:hidden" />
                 <Link href="/messages">
-                  <IconButton
-                    icon={<Mail className="w-4 h-4" strokeWidth={2} />}
-                    label="Messages"
-                  />
+                  <IconButton icon={<Mail className="w-4 h-4" strokeWidth={2} />} label="Messages" />
                 </Link>
-
                 <Link
                   href="/notifications"
-                  onClick={(e) => { e.preventDefault(); setNotificationsOpen(true) }}
-                  className="relative w-8 h-8 flex items-center justify-center rounded-xl cursor-pointer transition-all duration-150"
+                  onClick={e => { e.preventDefault(); setNotificationsOpen(true) }}
+                  className="relative w-8 h-8 flex items-center justify-center rounded-xl cursor-pointer transition-all"
                   style={{ color: 'var(--text-secondary)' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--primary-subtle)'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)' }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
                 >
                   <Bell className="w-4 h-4" strokeWidth={2} />
                   {unreadCount > 0 && (
@@ -370,20 +362,288 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-            {children}
+        <main
+          className="flex-1 overflow-y-auto"
+          style={{
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
+            /* extra bottom padding on mobile so content clears the glass nav bar */
+            paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)',
+          } as any}
+        >
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-28 md:pb-6">
+            <PageTransition pageKey={currentPage}>
+              {children}
+            </PageTransition>
           </div>
         </main>
       </div>
 
-      {/* Mobile overlay */}
-      {sidebarOpen && (
+      {/* Desktop: overlay backdrop when sidebar open */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            className="fixed inset-0 md:hidden z-30"
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════════════
+          MOBILE GLASS BOTTOM NAV BAR
+      ═══════════════════════════════════════════════════ */}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-40"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        {/* Gradient edge fade above the bar */}
         <div
-          className="fixed inset-0 bg-black/40 md:hidden z-30 backdrop-blur-sm"
-          onClick={() => setSidebarOpen(false)}
+          className="absolute -top-8 inset-x-0 h-8 pointer-events-none"
+          style={{ background: 'linear-gradient(to top, var(--canvas), transparent)' }}
         />
-      )}
+
+        {/* The glass bar */}
+        <div
+          className="mx-3 mb-3 rounded-2xl overflow-hidden"
+          style={{
+            background: 'rgba(var(--surface-glass-rgb, 15,15,30), 0.72)',
+            backdropFilter: 'blur(28px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.2) inset',
+          }}
+        >
+          <div className="flex items-center">
+            {/* Core nav items */}
+            {coreItems.map((item: any, idx: number) => {
+              const isActive = currentPage === item.id
+              const Icon = item.icon
+              const hasNotif = item.id === 'messages' && unreadCount > 0
+
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="relative flex flex-1 flex-col items-center justify-center gap-0.5 py-3 cursor-pointer group"
+                  style={{ minWidth: 0 }}
+                >
+                  {/* Active pill background — spring animated */}
+                  {isActive && (
+                    <motion.div
+                      layoutId="mobile-nav-active"
+                      className="absolute inset-x-2 inset-y-1.5 rounded-xl"
+                      style={{ background: 'rgba(99,102,241,0.22)', border: '1px solid rgba(99,102,241,0.28)' }}
+                      transition={SPRING_NAV}
+                    />
+                  )}
+
+                  {/* Icon */}
+                  <div className="relative">
+                    <motion.div
+                      animate={isActive
+                        ? { scale: 1.1, y: -1 }
+                        : { scale: 1,   y: 0 }
+                      }
+                      transition={SPRING_NAV}
+                    >
+                      <Icon
+                        className="w-5 h-5 relative z-10"
+                        strokeWidth={isActive ? 2.5 : 1.8}
+                        style={{ color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.45)' }}
+                      />
+                    </motion.div>
+
+                    {/* Notification badge */}
+                    {hasNotif && (
+                      <span
+                        className="absolute -top-1 -right-1 flex items-center justify-center min-w-[14px] h-[14px] rounded-full text-[8px] font-bold text-white z-20"
+                        style={{ background: 'var(--accent-coral-fg)' }}
+                      >
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Label */}
+                  <motion.span
+                    className="text-[10px] font-semibold relative z-10 leading-none"
+                    animate={{ color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.4)' }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {item.label}
+                  </motion.span>
+                </Link>
+              )
+            })}
+
+            {/* More button — only if there are overflow items */}
+            {overflowItems.length > 0 && (
+              <button
+                onClick={() => setMoreOpen(true)}
+                className="relative flex flex-1 flex-col items-center justify-center gap-0.5 py-3 cursor-pointer"
+              >
+                <MoreHorizontal
+                  className="w-5 h-5"
+                  strokeWidth={1.8}
+                  style={{ color: moreOpen ? 'var(--primary)' : 'rgba(255,255,255,0.45)' }}
+                />
+                <span className="text-[10px] font-semibold leading-none" style={{ color: moreOpen ? 'var(--primary)' : 'rgba(255,255,255,0.4)' }}>
+                  More
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* ═══════════════════════════════════════════════════
+          MOBILE "MORE" SLIDE-UP GLASS DRAWER
+      ═══════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {moreOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              className="md:hidden fixed inset-0 z-50"
+              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              onClick={() => setMoreOpen(false)}
+            />
+
+            {/* Drawer panel */}
+            <motion.div
+              className="md:hidden fixed bottom-0 inset-x-0 z-50 rounded-t-3xl overflow-hidden"
+              style={{
+                background: 'rgba(10,10,20,0.82)',
+                backdropFilter: 'blur(32px) saturate(200%)',
+                WebkitBackdropFilter: 'blur(32px) saturate(200%)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                borderBottom: 'none',
+                boxShadow: '0 -8px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+              }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={SPRING_DRAWER}
+            >
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.18)' }} />
+              </div>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 pb-3 pt-1">
+                <p className="font-heading text-sm font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>More</p>
+                <button
+                  onClick={() => setMoreOpen(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full cursor-pointer"
+                  style={{ background: 'rgba(255,255,255,0.08)' }}
+                >
+                  <X className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.6)' }} strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* Overflow nav items */}
+              <div className="px-4 pb-4 grid grid-cols-3 gap-3">
+                {overflowItems.map((item: any, idx: number) => {
+                  const isActive = currentPage === item.id
+                  const Icon = item.icon
+                  return (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, scale: 0.88, y: 12 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ ...SPRING_NAV, delay: idx * 0.05 }}
+                    >
+                      <Link
+                        href={item.href}
+                        onClick={() => setMoreOpen(false)}
+                        className="flex flex-col items-center gap-2 rounded-2xl p-4 cursor-pointer transition-all"
+                        style={{
+                          background: isActive ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.06)',
+                          border: `1px solid ${isActive ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                        }}
+                      >
+                        <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.8}
+                          style={{ color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.55)' }} />
+                        <span className="text-[11px] font-semibold"
+                          style={{ color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.55)' }}>
+                          {item.label}
+                        </span>
+                      </Link>
+                    </motion.div>
+                  )
+                })}
+              </div>
+
+              {/* Divider */}
+              <div className="mx-5 mb-4" style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+
+              {/* Settings + Theme + Sign out */}
+              <div className="px-4 pb-5 space-y-1">
+                <Link
+                  href="/settings"
+                  onClick={() => setMoreOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.65)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.06)')}
+                  onMouseLeave={e => (e.currentTarget.style.background='')}
+                >
+                  <Settings className="w-4 h-4" strokeWidth={1.8} />
+                  <span className="text-sm font-medium">Settings</span>
+                </Link>
+
+                <button
+                  onClick={cycleTheme}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.65)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.06)')}
+                  onMouseLeave={e => (e.currentTarget.style.background='')}
+                >
+                  <ThemeIcon className="w-4 h-4" strokeWidth={1.8} />
+                  <span className="text-sm font-medium">{themeLabel}</span>
+                </button>
+
+                <button
+                  onClick={() => logout()}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors"
+                  style={{ color: 'rgba(239,68,68,0.75)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background='rgba(239,68,68,0.08)')}
+                  onMouseLeave={e => (e.currentTarget.style.background='')}
+                >
+                  <LogOut className="w-4 h-4" strokeWidth={1.8} />
+                  <span className="text-sm font-medium">Sign out</span>
+                </button>
+              </div>
+
+              {/* User avatar strip */}
+              <div
+                className="flex items-center gap-3 mx-4 mb-4 p-3 rounded-2xl"
+                style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}
+              >
+                <div suppressHydrationWarning
+                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                  style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}>
+                  {initials()}
+                </div>
+                <div className="min-w-0">
+                  <p suppressHydrationWarning className="text-xs font-semibold truncate" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                    {fullName() || 'Guest User'}
+                  </p>
+                  <p className="text-[11px] capitalize" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                    {user?.role || userRole}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <NotificationsPanel
         isOpen={notificationsOpen}
