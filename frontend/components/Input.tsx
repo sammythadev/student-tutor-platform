@@ -38,9 +38,10 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?:  string
   icon?:   ReactNode
   helper?: string
+  rightElement?: ReactNode
 }
 
-export function Input({ label, error, icon, helper, className = '', style, ...props }: InputProps) {
+export function Input({ label, error, icon, helper, rightElement, className = '', style, ...props }: InputProps) {
   return (
     <div className="w-full">
       {label && (
@@ -68,6 +69,7 @@ export function Input({ label, error, icon, helper, className = '', style, ...pr
             ...inputStyle,
             ...(error ? inputErrorStyle : {}),
             paddingLeft: icon ? '38px' : '14px',
+            paddingRight: rightElement ? '38px' : '14px',
             ...style,
           }}
           onFocus={(e) => {
@@ -81,6 +83,15 @@ export function Input({ label, error, icon, helper, className = '', style, ...pr
           }}
           {...props}
         />
+
+        {rightElement && (
+          <div
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            {rightElement}
+          </div>
+        )}
       </div>
 
       {error && (

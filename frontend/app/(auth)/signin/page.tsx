@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
-import { BookOpen, ArrowRight, GraduationCap, CheckCircle2 } from 'lucide-react'
+import { BookOpen, ArrowRight, GraduationCap, CheckCircle2, Eye, EyeOff } from 'lucide-react'
 import { login } from '@/lib/api/auth'
 
 export default function SigninPage() {
@@ -13,6 +13,7 @@ export default function SigninPage() {
   const [formData, setFormData] = useState({ email: '', password: '', rememberMe: false })
   const [errors,  setErrors]  = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
@@ -176,11 +177,22 @@ export default function SigninPage() {
               <Input
                 label="Password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
                 error={errors.password}
+                rightElement={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="flex items-center justify-center w-5 h-5 cursor-pointer"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" strokeWidth={1.5} /> : <Eye className="w-4 h-4" strokeWidth={1.5} />}
+                  </button>
+                }
               />
               <div className="text-right">
                 <Link

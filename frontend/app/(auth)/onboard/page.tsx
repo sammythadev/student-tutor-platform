@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { motion, useReducedMotion } from 'motion/react'
 import { Button } from '@/components/Button'
 import { Input, Select, Textarea } from '@/components/Input'
 import { Badge } from '@/components/Badge'
@@ -303,9 +304,56 @@ export default function OnboardingPage() {
     )
   }
 
+  // Helper to compute student completion
+  const studentFields = [
+    { key: 'gradeLevel', filled: !!studentForm.gradeLevel, required: true, label: 'Grade' },
+    { key: 'subjects', filled: studentForm.subjects.length > 0, required: true, label: 'Subjects' },
+    { key: 'learningStylePreference', filled: !!studentForm.learningStylePreference, required: true, label: 'Learning style' },
+    { key: 'examTypes', filled: !!studentForm.examTypes, required: false, label: 'Exam type' },
+    { key: 'budget', filled: !!studentForm.budget, required: false, label: 'Budget' },
+    { key: 'deliveryPreference', filled: !!studentForm.deliveryPreference, required: false, label: 'Delivery' },
+    { key: 'formatPreference', filled: !!studentForm.formatPreference, required: false, label: 'Format' },
+    { key: 'languages', filled: studentForm.languages.length > 0, required: false, label: 'Languages' },
+    { key: 'timezone', filled: !!studentForm.timezone, required: false, label: 'Timezone' },
+    { key: 'region', filled: !!studentForm.region, required: false, label: 'Region' },
+    { key: 'bio', filled: !!studentForm.bio, required: false, label: 'Bio' },
+  ]
+  const studentCompletion = Math.round((studentFields.filter(f => f.filled).length / studentFields.length) * 100)
+
+  const fieldHelp: Record<string, string> = {
+    examTypes: 'Helps us match you with tutors who specialise in your exam board (WAEC, JAMB, etc.)',
+    bio: 'Tutors read this to understand your goals and tailor their teaching approach',
+    gradeLevel: 'Ensures tutors are experienced with your academic level and curriculum',
+    subjects: 'Pick what you actually need help with - tutors specialise by subject',
+    learningStylePreference: 'Some students learn by doing, others by listening. We match your style.',
+    budget: 'This helps filter tutors within your preferred range - no awkward price conversations',
+    deliveryPreference: 'Online or in-person? Your choice affects which tutors appear',
+    formatPreference: 'One-on-one gets you focused attention; group sessions are more affordable',
+    languages: 'Learning in your preferred language makes everything click faster',
+    timezone: 'Avoid scheduling headaches - we only show tutors available in your timezone',
+    region: 'For in-person tutoring, we need to know where you are',
+  }
+
+  // Animated counter for progress percentage
+  function AnimatedCounter({ value }: { value: number }) {
+    const reduce = useReducedMotion()
+    return (
+      <motion.span
+        className="text-sm font-bold"
+        style={{ color: 'var(--primary)' }}
+        key={value}
+        initial={reduce ? false : { opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {value}%
+      </motion.span>
+    )
+  }
+
   if (step === 'student' && role === 'student') {
     return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-canvas px-4 py-12">
         {/* Background blobs */}
         <div className="fixed inset-0 pointer-events-none -z-10">
           <div className="absolute top-0 left-0 w-96 h-96 rounded-full opacity-20" style={{
@@ -314,13 +362,52 @@ export default function OnboardingPage() {
           }}></div>
         </div>
 
-        <div className="w-full max-w-2xl space-y-8">
+        <div className="w-full max-w-2xl mx-auto space-y-6">
           {/* Header */}
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4 pt-4">
             <h1 className="text-3xl font-bold text-ink-900">Tell us about yourself</h1>
             <p className="text-center text-ink-600 text-base">
-              Help us find the perfect tutors for you
+              Fill in your details so we can find the best tutors for you
             </p>
+          </div>
+
+          {/* Progress bar — sticky on scroll */}
+          <div className="sticky top-4 z-10 glass-card p-5 space-y-3 transition-shadow duration-300 shadow-[var(--shadow)]">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Profile completion</span>
+              <AnimatedCounter value={studentCompletion} />
+            </div>
+            <motion.div
+              className="w-full h-2 rounded-full overflow-hidden"
+              style={{ background: 'var(--surface-2)' }}
+              layout
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: 'linear-gradient(90deg, var(--primary), var(--accent-mint-fg))' }}
+                animate={{ width: `${studentCompletion}%` }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </motion.div>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {studentFields.map(f => (
+                <motion.span
+                  key={f.key}
+                  layout
+                  className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                  style={{
+                    background: f.filled ? 'var(--accent-mint-fg)' : 'var(--surface-2)',
+                    color: f.filled ? 'white' : 'var(--text-muted)',
+                  }}
+                  initial={false}
+                  animate={{ scale: f.filled ? [null, 1.15, 1] : 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {f.label} {f.required ? '*' : ''}
+                </motion.span>
+              ))}
+            </div>
           </div>
 
           {/* Form */}
@@ -336,6 +423,7 @@ export default function OnboardingPage() {
                 { value: 'jamb', label: 'JAMB' },
               ]}
               placeholder="Select exam"
+              helper="Matches you with tutors who specialise in your exam board"
             />
 
             <Textarea
@@ -345,6 +433,7 @@ export default function OnboardingPage() {
               placeholder="What are you working toward?"
               value={studentForm.bio}
               onChange={handleStudentChange}
+              helper="Tutors read this to understand your goals and tailor their approach"
             />
 
             <Select
@@ -361,12 +450,14 @@ export default function OnboardingPage() {
                 { value: 'college', label: 'College' },
               ]}
               placeholder="Select your grade"
+              helper="Ensures tutors are experienced with your academic level"
             />
 
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-ink-600">
-                What subjects do you need help with?
+                What subjects do you need help with? <span className="text-accent-coral-fg">*</span>
               </label>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Pick the subjects you actually need help with — tutors specialise by subject</p>
               <div className="flex flex-wrap gap-2">
                 {subjects.map(subject => (
                   <Chip
@@ -399,12 +490,14 @@ export default function OnboardingPage() {
               placeholder="150"
               value={studentForm.budget}
               onChange={handleStudentChange}
+              helper="Filters tutors within your range — no awkward price conversations"
             />
 
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-ink-600">
                 What languages do you prefer?
               </label>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Learning in your preferred language makes everything click faster</p>
               <div className="flex flex-wrap gap-2">
                 {languages.map(lang => (
                   <Chip
@@ -430,6 +523,7 @@ export default function OnboardingPage() {
                 { value: 'mixed', label: 'Mixed approach' },
               ]}
               placeholder="Select your style"
+              helper="We match you with tutors who teach the way you learn best"
             />
 
             <Select
@@ -442,6 +536,7 @@ export default function OnboardingPage() {
                 { value: 'in-person', label: 'In Person' },
               ]}
               placeholder="How should sessions happen?"
+              helper="Online or in-person? Your choice determines which tutors appear"
             />
 
             <Select
@@ -454,6 +549,7 @@ export default function OnboardingPage() {
                 { value: 'group', label: 'Group' },
               ]}
               placeholder="Preferred session format"
+              helper="One-on-one gets focused attention; group sessions are more affordable"
             />
 
             <Select
@@ -469,6 +565,7 @@ export default function OnboardingPage() {
                 { value: 'America/Los_Angeles', label: 'America/Los_Angeles' },
               ]}
               placeholder="Select timezone"
+              helper="Ensures availability aligns with your tutors' schedules"
             />
 
             <Input
@@ -478,9 +575,10 @@ export default function OnboardingPage() {
               placeholder="E.g., Lagos, Abuja"
               value={studentForm.region}
               onChange={handleStudentChange}
+              helper="Important for in-person tutoring matches"
             />
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-4 pb-8">
               <Button
                 type="button"
                 variant="secondary"
@@ -504,9 +602,24 @@ export default function OnboardingPage() {
     )
   }
 
+  // Helper to compute tutor completion
+  const tutorFields = [
+    { key: 'expertise', filled: tutorForm.expertise.length > 0, required: true, label: 'Subjects' },
+    { key: 'yearsExperience', filled: !!tutorForm.yearsExperience, required: true, label: 'Experience' },
+    { key: 'hourlyRate', filled: !!tutorForm.hourlyRate, required: true, label: 'Rate' },
+    { key: 'languages', filled: tutorForm.languages.length > 0, required: false, label: 'Languages' },
+    { key: 'capacity', filled: !!tutorForm.capacity, required: false, label: 'Capacity' },
+    { key: 'teachingStyle', filled: !!tutorForm.teachingStyle, required: false, label: 'Style' },
+    { key: 'deliveryStyle', filled: !!tutorForm.deliveryStyle, required: false, label: 'Delivery' },
+    { key: 'formatStyle', filled: !!tutorForm.formatStyle, required: false, label: 'Format' },
+    { key: 'bio', filled: !!tutorForm.bio, required: false, label: 'Bio' },
+    { key: 'timezone', filled: !!tutorForm.timezone, required: false, label: 'Timezone' },
+  ]
+  const tutorCompletion = Math.round((tutorFields.filter(f => f.filled).length / tutorFields.length) * 100)
+
   if (step === 'tutor' && role === 'tutor') {
     return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-canvas px-4 py-12">
         {/* Background blobs */}
         <div className="fixed inset-0 pointer-events-none -z-10">
           <div className="absolute top-0 left-0 w-96 h-96 rounded-full opacity-20" style={{
@@ -515,21 +628,61 @@ export default function OnboardingPage() {
           }}></div>
         </div>
 
-        <div className="w-full max-w-2xl space-y-8">
+        <div className="w-full max-w-2xl mx-auto space-y-6">
           {/* Header */}
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4 pt-4">
             <h1 className="text-3xl font-bold text-ink-900">Build your tutor profile</h1>
             <p className="text-center text-ink-600 text-base">
               Let students know about your expertise
             </p>
           </div>
 
+          {/* Progress bar — sticky on scroll */}
+          <div className="sticky top-4 z-10 glass-card p-5 space-y-3 transition-shadow duration-300 shadow-[var(--shadow)]">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Profile completion</span>
+              <AnimatedCounter value={tutorCompletion} />
+            </div>
+            <motion.div
+              className="w-full h-2 rounded-full overflow-hidden"
+              style={{ background: 'var(--surface-2)' }}
+              layout
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: 'linear-gradient(90deg, var(--primary), var(--accent-mint-fg))' }}
+                animate={{ width: `${tutorCompletion}%` }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </motion.div>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {tutorFields.map(f => (
+                <motion.span
+                  key={f.key}
+                  layout
+                  className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                  style={{
+                    background: f.filled ? 'var(--accent-mint-fg)' : 'var(--surface-2)',
+                    color: f.filled ? 'white' : 'var(--text-muted)',
+                  }}
+                  initial={false}
+                  animate={{ scale: f.filled ? [null, 1.15, 1] : 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {f.label} {f.required ? '*' : ''}
+                </motion.span>
+              ))}
+            </div>
+          </div>
+
           {/* Form */}
           <form onSubmit={handleTutorSubmit} className="glass-card p-8 space-y-6">
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-ink-600">
-                What subjects do you teach?
+                What subjects do you teach? <span className="text-accent-coral-fg">*</span>
               </label>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Students search by subject — listing your real strengths gets you booked</p>
               <div className="flex flex-wrap gap-2">
                 {subjects.map(subject => (
                   <Chip
@@ -554,6 +707,7 @@ export default function OnboardingPage() {
               <label className="block text-sm font-semibold text-ink-600">
                 What languages do you teach in?
               </label>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Being multilingual widens your student pool</p>
               <div className="flex flex-wrap gap-2">
                 {languages.map(lang => (
                   <Chip
@@ -579,6 +733,7 @@ export default function OnboardingPage() {
                 { value: '10+', label: '10+ years' },
               ]}
               placeholder="Select experience"
+              helper="Students filter by experience level when choosing a tutor"
             />
 
             <Input
@@ -589,6 +744,7 @@ export default function OnboardingPage() {
               value={tutorForm.hourlyRate}
               onChange={handleTutorChange}
               error={errors.hourlyRate}
+              helper="Sets your rate clearly — no back-and-forth negotiation later"
             />
 
             <Input
@@ -612,6 +768,7 @@ export default function OnboardingPage() {
                 { value: 'lecture', label: 'Lecture (structured delivery)' },
               ]}
               placeholder="Select teaching style"
+              helper="Helps students pick tutors whose methods match their learning style"
             />
 
             <Select
@@ -624,6 +781,7 @@ export default function OnboardingPage() {
                 { value: 'in-person', label: 'In Person' },
               ]}
               placeholder="How do you teach?"
+              helper="Defines which students see you in search results"
             />
 
             <Select
@@ -636,6 +794,7 @@ export default function OnboardingPage() {
                 { value: 'group', label: 'Group' },
               ]}
               placeholder="Preferred session format"
+              helper="One-on-one is premium; group sessions scale your income"
             />
 
             <Textarea
@@ -645,6 +804,7 @@ export default function OnboardingPage() {
               placeholder="Tell students about your teaching style and experience..."
               value={tutorForm.bio}
               onChange={handleTutorChange}
+              helper="A good bio is the #1 reason students book a trial session"
             />
 
             <Select
@@ -660,9 +820,10 @@ export default function OnboardingPage() {
                 { value: 'America/Los_Angeles', label: 'America/Los_Angeles' },
               ]}
               placeholder="Select timezone"
+              helper="Essential for accurate availability and session scheduling"
             />
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-4 pb-8">
               <Button
                 type="button"
                 variant="secondary"

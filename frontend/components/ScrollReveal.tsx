@@ -1,13 +1,14 @@
-'use client'
+"use client"
 
 import React, { useEffect, useRef, useMemo, ReactNode } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useReducedMotion } from 'motion/react'
 
 gsap.registerPlugin(ScrollTrigger)
 
 interface ScrollRevealProps {
-  children: string
+  children: ReactNode
   as?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span'
   className?: string
   enableBlur?: boolean
@@ -32,45 +33,53 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
   scrub = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
+  const reduce = useReducedMotion()
 
-  const words = useMemo(() => children.split(/(\s+)/), [children])
+  const text = useMemo(() => {
+    if (typeof children === 'string') return children as string
+    // fallback: try to read textContent if children is not a string
+    return ''
+  }, [children])
+
+  const words = useMemo(() => text.split(/(\s+)/), [text])
 
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
+    if (reduce) return // respect reduced motion
 
-    const wordElements = el.querySelectorAll<HTMLElement>('.word')
+    const ctx = gsap.context(() => {
+      const wordElements = el.querySelectorAll<HTMLElement>('.word')
 
-    if (wordElements.length === 0) return
+      if (wordElements.length === 0) return
 
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: el,
-        start,
-        end,
-        scrub,
-      },
-    })
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: el,
+          start,
+          end,
+          scrub,
+        },
+      })
 
-    tl.fromTo(
-      wordElements,
-      { opacity: baseOpacity },
-      { opacity: 1, stagger, ease: 'none' }
-    )
-
-    if (enableBlur) {
       tl.fromTo(
         wordElements,
-        { filter: `blur(${blurStrength}px)` },
-        { filter: 'blur(0px)', stagger, ease: 'none' },
-        0
+        { opacity: baseOpacity },
+        { opacity: 1, stagger, ease: 'none' }
       )
-    }
 
-    return () => {
-      ScrollTrigger.getAll().forEach(t => t.kill())
-    }
-  }, [enableBlur, baseOpacity, blurStrength, stagger, start, end, scrub])
+      if (enableBlur) {
+        tl.fromTo(
+          wordElements,
+          { filter: `blur(${blurStrength}px)` },
+          { filter: 'blur(0px)', stagger, ease: 'none' },
+          0
+        )
+      }
+    }, el)
+
+    return () => ctx.revert()
+  }, [enableBlur, baseOpacity, blurStrength, stagger, start, end, scrub, reduce])
 
   return (
     <div ref={containerRef}>

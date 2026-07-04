@@ -3,7 +3,7 @@ import { Providers } from '@/components/Providers'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Tutorly — Premium Student & Tutor Platform',
+  title: 'Tutorly: Premium Student & Tutor Platform',
   description: 'Connect with world-class educators through our premium learning infrastructure. Personalized sessions, expert tutors, measurable results.',
   keywords: ['tutoring', 'education', 'online learning', 'tutors', 'students'],
   icons: {
