@@ -610,6 +610,9 @@
 
   .tilted-card {
     transform: rotateX(12deg) rotateY(-12deg) rotateZ(3deg);
+    transform-style: preserve-3d;
+    will-change: transform;
+    backface-visibility: hidden;
     box-shadow: var(--shadow-pop);
     transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
   }
@@ -638,7 +641,7 @@
     align-items: center;
     gap: 10px;
     padding: 8px 14px;
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     font-size: 14px;
     font-weight: 500;
     color: var(--text-secondary);
@@ -759,20 +762,6 @@
 .animate-blob-morph-slow { animation: blob-morph-slow 12s ease-in-out infinite; }
 .animate-scale-in    { animation: scale-in 0.4s var(--ease-out) forwards; }
 .animate-tilt-enter  { animation: tilt-enter 0.8s var(--ease-out) forwards; }
-
-/* Marquee (subjects strip on landing page) */
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-.animate-marquee {
-  animation: marquee 50s linear infinite;
-  will-change: transform;
-  display: flex;
-  width: max-content;
-  gap: 1rem;
-}
-.animate-marquee:hover { animation-play-state: paused; }
 
 /* Counter pop — KPI cards */
 @keyframes counter-pop {

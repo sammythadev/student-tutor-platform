@@ -1,13 +1,9 @@
 export interface User {
-    name: string;
-    email: string;
-    number: number
-};
-
-const user: User = {
-    name: "samuel",
-    email: "udo",
-    number: 9
+    name: string
+    email: string 
+    phone: number 
 }
 
-console.log(user)
+export const user: User{
+    name:
+}
