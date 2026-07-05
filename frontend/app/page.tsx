@@ -9,7 +9,6 @@ import {
   ArrowRight, Star, Search, BookOpen, SlidersHorizontal,
   CalendarCheck, GraduationCap, TrendingUp, Users, ChevronRight,
   Sparkles, Clock, Video, MessageSquare, BarChart3, Sun, Moon,
-  CheckCircle2, Zap, Globe,
 } from 'lucide-react'
 import Aurora from '@/components/Aurora'
 import TextType from '@/components/TextType'
@@ -25,7 +24,7 @@ function ThemeToggle() {
 
   useEffect(() => {
     const saved = localStorage.getItem('tutorly-theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const prefersDark = globalThis.matchMedia('(prefers-color-scheme: dark)').matches
     const dark = saved ? saved === 'dark' : prefersDark
     setIsDark(dark)
     document.documentElement.classList.toggle('dark-mode', dark)
@@ -53,27 +52,33 @@ function ThemeToggle() {
 }
 
 /* ──────────────────────────────────────────────────────────
-   Scroll Reveal — whileInView wrapper (motivated: hierarchy)
+   Navigation links
+────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────
+   Scroll Reveal — whileInView wrapper
 ────────────────────────────────────────────────────────── */
 function Reveal({
   children,
   className = '',
   delay = 0,
-  y = 28,
-}: {
+  y = 24,
+  style,
+}: Readonly<{
   children: React.ReactNode
   className?: string
   delay?: number
   y?: number
-}) {
+  style?: React.CSSProperties
+}>) {
   const reduce = useReducedMotion()
   return (
     <motion.div
       className={className}
+      style={style}
       initial={reduce ? false : { opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
-      transition={{ duration: 0.75, delay, ease: [0.16, 1, 0.3, 1] }}
+      viewport={{ once: true, amount: 0.12 }}
+      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
     </motion.div>
@@ -81,49 +86,7 @@ function Reveal({
 }
 
 /* ──────────────────────────────────────────────────────────
-   Subjects Marquee (motivated: breadth without data-dump)
-────────────────────────────────────────────────────────── */
-const SUBJECTS = [
-  'Mathematics', 'Physics', 'Chemistry', 'Biology', 'English Language',
-  'Literature in English', 'Economics', 'Further Mathematics', 'Financial Accounting',
-  'Government', 'Geography', 'History', 'Computer Science', 'Statistics',
-  'French', 'Yoruba Language', 'Agricultural Science', 'Technical Drawing',
-]
-
-function SubjectsMarquee() {
-  return (
-    <div
-      className="overflow-hidden py-5 border-y"
-      style={{ borderColor: 'var(--border)' }}
-    >
-      <div className="animate-marquee">
-        {[...SUBJECTS, ...SUBJECTS].map((s, i) => (
-          <span
-            key={i}
-            className="flex items-center gap-2.5 text-sm font-semibold px-4 py-2 rounded-full whitespace-nowrap flex-shrink-0"
-            style={{
-              color: 'var(--text-secondary)',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{
-                background: 'var(--primary)',
-                boxShadow: '0 0 5px var(--primary)',
-              }}
-            />
-            {s}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ──────────────────────────────────────────────────────────
-   Step Visuals — real product UI previews (not div screenshots)
+   Step Visuals — real product UI previews
 ────────────────────────────────────────────────────────── */
 function SearchVisual() {
   const tutors = [
@@ -132,15 +95,15 @@ function SearchVisual() {
     { name: 'Sarah Jenkins',   sub: 'English Literature', rate: '₦6,000/hr', color: 'mint',   match: '89%' },
   ]
   return (
-    <div className="surface-card p-5 space-y-3 w-full">
+    <div className="surface-card p-4 sm:p-5 space-y-3 w-full">
       <div
-        className="flex items-center gap-2 rounded-xl px-4 py-3"
+        className="flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3"
         style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
       >
-        <Search className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} strokeWidth={2} />
+        <Search className="w-4 h-4 shrink-0" style={{ color: 'var(--text-muted)' }} strokeWidth={2} />
         <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Search Mathematics tutors...</span>
         <div
-          className="ml-auto flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-md"
+          className="ml-auto flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap"
           style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
         >
           <SlidersHorizontal className="w-3 h-3" /> Filter
@@ -154,7 +117,7 @@ function SearchVisual() {
             style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
           >
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm"
               style={{ background: `var(--accent-${t.color}-bg)`, color: `var(--accent-${t.color}-fg)` }}
             >
               {t.name[0]}{t.name.split(' ')[1]?.[0]}
@@ -163,7 +126,7 @@ function SearchVisual() {
               <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{t.name}</p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.sub}</p>
             </div>
-            <div className="text-right flex-shrink-0">
+            <div className="text-right shrink-0">
               <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{t.rate}</p>
               <p className="text-[10px] font-bold" style={{ color: 'var(--accent-mint-fg)' }}>{t.match} match</p>
             </div>
@@ -176,7 +139,7 @@ function SearchVisual() {
 
 function CalendarVisual() {
   return (
-    <div className="surface-card p-5 space-y-4 w-full">
+    <div className="surface-card p-4 sm:p-5 space-y-4 w-full">
       <div className="flex items-center justify-between">
         <div>
           <p className="font-heading font-bold" style={{ color: 'var(--text-primary)' }}>Book a Session</p>
@@ -227,7 +190,7 @@ function CalendarVisual() {
 function ResultsVisual() {
   return (
     <div className="space-y-3 w-full">
-      <div className="surface-card p-5 space-y-4">
+      <div className="surface-card p-4 sm:p-5 space-y-4">
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -259,7 +222,7 @@ function ResultsVisual() {
         </div>
       </div>
       <div className="surface-card p-4 flex items-center gap-3">
-        <div className="flex gap-0.5 flex-shrink-0">
+        <div className="flex gap-0.5 shrink-0">
           {[1, 2, 3, 4, 5].map(s => (
             <Star key={s} className="w-3.5 h-3.5 fill-current" style={{ color: 'var(--accent-sun-fg)' }} />
           ))}
@@ -275,12 +238,15 @@ function ResultsVisual() {
 /* ──────────────────────────────────────────────────────────
    GSAP Sticky Stack — "How it works"
    Motivated: storytelling — steps reveal in narrative sequence
+   Pattern: CSS sticky top-0 pins each card; GSAP scrubs scale
+   + opacity on the PREVIOUS card as the next card arrives.
+   Mobile: Motion whileInView stagger — no conflicting sticky.
 ────────────────────────────────────────────────────────── */
 const HOW_STEPS = [
   {
     step: '01',
     title: 'Find your perfect tutor',
-    desc: 'Our algorithm matches you with tutors based on learning style, subject depth, and schedule — not just whoever is available.',
+    desc: 'Our algorithm matches you with tutors based on learning style, subject depth, and schedule. Not just whoever is available.',
     icon: Search,
     color: 'lavender',
     Visual: SearchVisual,
@@ -303,116 +269,223 @@ const HOW_STEPS = [
   },
 ]
 
-function StickyStack() {
+/* Card content — shared between desktop sticky and mobile reveal */
+function StepCardContent({
+  step, title, desc, color, icon: Icon, Visual,
+}: (typeof HOW_STEPS)[number]) {
+  return (
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-2 gap-8 lg:gap-20 items-center">
+      {/* Left: text */}
+      <div className="space-y-5 sm:space-y-6 order-2 lg:order-1">
+        <div className="flex items-end gap-3">
+          <span
+            className="font-heading leading-[0.85] font-black select-none"
+            style={{ fontSize: 'clamp(56px, 9vw, 112px)', color: 'var(--border-strong)', lineHeight: 1 }}
+          >
+            {step}
+          </span>
+          <div
+            className="mb-2 w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+            style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
+          >
+            <Icon className="w-5 h-5" strokeWidth={2} />
+          </div>
+        </div>
+        <h3
+          className="font-heading font-bold tracking-tight leading-[1.08]"
+          style={{ fontSize: 'clamp(24px, 3.2vw, 46px)', color: 'var(--text-primary)' }}
+        >
+          {title}
+        </h3>
+        <p
+          className="text-sm sm:text-base lg:text-lg leading-relaxed"
+          style={{ color: 'var(--text-secondary)', maxWidth: '44ch' }}
+        >
+          {desc}
+        </p>
+      </div>
+      {/* Right: visual */}
+      <div className="flex items-center justify-center order-1 lg:order-2">
+        <div className="w-full max-w-sm mx-auto">
+          <Visual />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Desktop sticky stack ── */
+function StickyStackDesktop() {
   const ref = useRef<HTMLDivElement>(null)
   const reduce = useReducedMotion()
 
   useEffect(() => {
     if (reduce || !ref.current) return
+
     const ctx = gsap.context(() => {
-      const cards = gsap.utils.toArray<HTMLElement>('.stack-card')
+      const cards = gsap.utils.toArray<HTMLElement>('.stack-card-desktop', ref.current!)
+      if (cards.length < 2) return
+
+      // For each card except the last: shrink it as the NEXT card scrolls into view.
       cards.forEach((card, i) => {
         if (i === cards.length - 1) return
+        const nextCard = cards[i + 1]
+
+        // Pin the current card at the top while the next scrolls over it.
         ScrollTrigger.create({
           trigger: card,
           start: 'top top',
           endTrigger: cards[cards.length - 1],
-          end: 'top top',
+          end: 'bottom bottom',
           pin: true,
           pinSpacing: false,
         })
+
+        // Shrink + fade this card as the next card approaches.
         gsap.to(card, {
-          scale: 0.93,
+          scale: 0.92,
           opacity: 0.5,
+          filter: 'blur(1px)',
           ease: 'none',
           scrollTrigger: {
-            trigger: cards[i + 1],
+            trigger: nextCard,
             start: 'top bottom',
             end: 'top top',
             scrub: true,
           },
         })
       })
+
+      ScrollTrigger.refresh()
     }, ref)
+
     return () => ctx.revert()
   }, [reduce])
 
   return (
-    <>
-      {/* Desktop: GSAP sticky stack */}
-      <section ref={ref} className="hidden lg:block relative">
-        {HOW_STEPS.map(({ step, title, desc, icon: Icon, color, Visual }, i) => (
-          <div
-            key={i}
-            className="stack-card sticky top-0 min-h-[100dvh] flex items-center"
-            style={{ background: 'var(--canvas)' }}
-          >
-            <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center py-24">
-              <div className="space-y-7 order-2 lg:order-1">
-                <div className="flex items-end gap-4">
-                  <span
-                    className="font-heading leading-[0.85] font-bold select-none"
-                    style={{ fontSize: 'clamp(64px, 10vw, 100px)', color: 'var(--border-strong)' }}
-                  >
-                    {step}
-                  </span>
-                  <div
-                    className="mb-2 w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
-                  >
-                    <Icon className="w-5 h-5" strokeWidth={2} />
-                  </div>
-                </div>
-                <h3
-                  className="font-heading font-bold tracking-tight leading-[1.1]"
-                  style={{ fontSize: 'clamp(28px, 4vw, 48px)', color: 'var(--text-primary)' }}
+    <div ref={ref} className="relative hidden lg:block">
+      {HOW_STEPS.map((step, i) => (
+        <div
+          key={i}
+          className="stack-card-desktop min-h-[100dvh] flex items-center py-20"
+          style={{
+            background: 'var(--canvas)',
+            transformOrigin: 'top center',
+            willChange: 'transform, opacity, filter',
+          }}
+        >
+          <StepCardContent {...step} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ── Mobile sticky stack — GSAP pin + scrub, adapted for mobile ── */
+function MobileSteps() {
+  const ref = useRef<HTMLDivElement>(null)
+  const reduce = useReducedMotion()
+
+  useEffect(() => {
+    if (reduce || !ref.current) return
+
+    const ctx = gsap.context(() => {
+      const cards = gsap.utils.toArray<HTMLElement>('.stack-card-mobile', ref.current!)
+      if (cards.length < 2) return
+
+      cards.forEach((card, i) => {
+        if (i === cards.length - 1) return
+        const nextCard = cards[i + 1]
+
+        // Pin each card (except last) at top of viewport (below navbar ~64px)
+        ScrollTrigger.create({
+          trigger: card,
+          start: 'top 64px',
+          endTrigger: cards[cards.length - 1],
+          end: 'bottom bottom',
+          pin: true,
+          pinSpacing: false,
+        })
+
+        // Scale + fade this card as the next card scrolls over it
+        gsap.to(card, {
+          scale: 0.88,
+          opacity: 0.4,
+          filter: 'blur(2px)',
+          ease: 'none',
+          scrollTrigger: {
+            trigger: nextCard,
+            start: 'top bottom',
+            end: 'top 64px',
+            scrub: true,
+          },
+        })
+      })
+
+      ScrollTrigger.refresh()
+    }, ref)
+
+    return () => ctx.revert()
+  }, [reduce])
+
+  return (
+    <div ref={ref} className="lg:hidden relative">
+      {HOW_STEPS.map((step, i) => (
+        <div
+          key={i}
+          className="stack-card-mobile min-h-[100dvh] flex items-center py-12 sm:py-16"
+          style={{
+            background: 'var(--canvas)',
+            transformOrigin: 'top center',
+            willChange: 'transform, opacity, filter',
+          }}
+        >
+          {/* Mobile layout: visual top, text below */}
+          <div className="w-full px-4 sm:px-6 flex flex-col gap-6">
+            {/* Visual */}
+            <div className="w-full max-w-xs mx-auto">
+              <step.Visual />
+            </div>
+            {/* Text */}
+            <div className="space-y-3">
+              <div className="flex items-end gap-2.5">
+                <span
+                  className="font-heading font-black select-none leading-none"
+                  style={{ fontSize: 'clamp(48px, 14vw, 80px)', color: 'var(--border-strong)' }}
                 >
-                  {title}
-                </h3>
-                <p
-                  className="text-base md:text-lg leading-relaxed"
-                  style={{ color: 'var(--text-secondary)', maxWidth: '46ch' }}
+                  {step.step}
+                </span>
+                <div
+                  className="mb-1.5 w-9 h-9 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ background: `var(--accent-${step.color}-bg)`, color: `var(--accent-${step.color}-fg)` }}
                 >
-                  {desc}
-                </p>
-              </div>
-              <div className="flex items-center justify-center order-1 lg:order-2">
-                <div className="w-full max-w-sm mx-auto">
-                  <Visual />
+                  <step.icon className="w-4.5 h-4.5" strokeWidth={2} />
                 </div>
               </div>
+              <h3
+                className="font-heading font-bold tracking-tight leading-[1.1]"
+                style={{ fontSize: 'clamp(22px, 6vw, 34px)', color: 'var(--text-primary)' }}
+              >
+                {step.title}
+              </h3>
+              <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--text-secondary)', maxWidth: '38ch' }}>
+                {step.desc}
+              </p>
             </div>
           </div>
-        ))}
-      </section>
-
-      {/* Mobile: simple stacked flow (no pinning) */}
-      <section className="block lg:hidden py-8 px-4">
-        <div className="max-w-3xl mx-auto space-y-8">
-          {HOW_STEPS.map(({ step, title, desc, icon: Icon, color, Visual }, i) => (
-            <div key={i} className="rounded-2xl p-4 surface-card" style={{ background: 'var(--canvas)', border: '1px solid var(--border)' }}>
-              <div className="flex items-start gap-4">
-                <div className="w-12 flex-shrink-0">
-                  <div className="font-heading font-bold text-lg" style={{ color: 'var(--border-strong)' }}>{step}</div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-9 h-9 rounded-2xl flex items-center justify-center" style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}>
-                      <Icon className="w-4 h-4" strokeWidth={2} />
-                    </div>
-                    <h4 className="font-heading font-bold text-lg" style={{ color: 'var(--text-primary)' }}>{title}</h4>
-                  </div>
-                  <p className="text-sm text-[15px]" style={{ color: 'var(--text-secondary)' }}>{desc}</p>
-                  <div className="mt-4">
-                    <Visual />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
-      </section>
-    </>
+      ))}
+    </div>
+  )
+}
+
+/* ── Combined section ── */
+function StickyStack() {
+  return (
+    <section>
+      <StickyStackDesktop />
+      <MobileSteps />
+    </section>
   )
 }
 
@@ -421,41 +494,43 @@ function StickyStack() {
 ────────────────────────────────────────────────────────── */
 function BentoFeatures() {
   return (
-    <section className="py-28 px-4 md:px-8" style={{ background: 'var(--surface)' }}>
-      <div className="max-w-7xl mx-auto space-y-12">
+    <section className="py-16 sm:py-24 lg:py-28 px-4 md:px-8" style={{ background: 'var(--surface)' }}>
+      <div className="max-w-7xl mx-auto space-y-10 sm:space-y-12">
         <Reveal className="max-w-2xl">
-          <div className="stat-badge w-fit mb-5">For every learner and teacher</div>
           <h2
             className="font-heading font-bold tracking-tight leading-tight"
-            style={{ fontSize: 'clamp(32px, 4vw, 52px)', color: 'var(--text-primary)' }}
+            style={{ fontSize: 'clamp(28px, 4vw, 52px)', color: 'var(--text-primary)' }}
           >
             Everything you need to learn or teach.
           </h2>
+          <p className="mt-3 text-sm sm:text-base leading-relaxed" style={{ color: 'var(--text-secondary)', maxWidth: '48ch' }}>
+            Built for students and tutors in Nigeria, from WAEC prep to university coursework.
+          </p>
         </Reveal>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {/* Cell 1: large student feature (2 cols) */}
           <Reveal
-            className="lg:col-span-2 rounded-2xl p-8 space-y-6 relative overflow-hidden flex flex-col justify-between"
+            className="lg:col-span-2 rounded-2xl p-6 sm:p-8 space-y-6 relative overflow-hidden flex flex-col justify-between"
             style={{ background: 'var(--canvas)', border: '1px solid var(--border)', minHeight: 240 }}
             delay={0}
           >
             <div
               className="absolute top-0 right-0 w-56 h-56 rounded-full pointer-events-none"
-              style={{ background: 'var(--primary)', filter: 'blur(60px)', opacity: 0.06, transform: 'translate(25%, -25%)' }}
+              style={{ background: 'var(--primary)', filter: 'blur(60px)', opacity: 0.07, transform: 'translate(25%, -25%)' }}
             />
             <div
-              className="w-11 h-11 rounded-2xl flex items-center justify-center relative z-10"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center relative z-10"
               style={{ background: 'var(--accent-lavender-bg)', color: 'var(--accent-lavender-fg)' }}
             >
               <Users className="w-5 h-5" strokeWidth={2} />
             </div>
             <div className="relative z-10 space-y-3">
-              <h3 className="font-heading text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              <h3 className="font-heading text-lg sm:text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
                 Fairness-first matching
               </h3>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)', maxWidth: '52ch' }}>
-                Our algorithm pairs you with tutors based on learning style, subject depth, and scheduling compatibility — not just whoever is available at that moment.
+                Our algorithm pairs you with tutors based on learning style, subject depth, and scheduling compatibility. Not just whoever is available.
               </p>
             </div>
             <div className="relative z-10 flex flex-wrap gap-2">
@@ -473,11 +548,11 @@ function BentoFeatures() {
 
           {/* Cell 2: stat card (1 col) */}
           <Reveal
-            className="rounded-2xl p-8 flex flex-col justify-between relative overflow-hidden"
+            className="rounded-2xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden"
             style={{
-              background: 'linear-gradient(145deg, rgba(99,102,241,0.15), rgba(56,189,248,0.1))',
-              border: '1px solid rgba(99,102,241,0.2)',
-              minHeight: 240,
+              background: 'linear-gradient(145deg, rgba(99,102,241,0.18), rgba(56,189,248,0.08))',
+              border: '1px solid rgba(99,102,241,0.25)',
+              minHeight: 220,
             }}
             delay={0.1}
           >
@@ -502,11 +577,11 @@ function BentoFeatures() {
 
           {/* Cell 3: stat card (1 col) */}
           <Reveal
-            className="rounded-2xl p-8 flex flex-col justify-between relative overflow-hidden"
+            className="rounded-2xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden"
             style={{
-              background: 'linear-gradient(145deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))',
-              border: '1px solid rgba(16,185,129,0.2)',
-              minHeight: 220,
+              background: 'linear-gradient(145deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05))',
+              border: '1px solid rgba(16,185,129,0.22)',
+              minHeight: 200,
             }}
             delay={0.15}
           >
@@ -531,29 +606,29 @@ function BentoFeatures() {
 
           {/* Cell 4: large tutor feature (2 cols) */}
           <Reveal
-            className="lg:col-span-2 rounded-2xl p-8 space-y-6 relative overflow-hidden flex flex-col justify-between"
-            style={{ background: 'var(--canvas)', border: '1px solid var(--border)', minHeight: 220 }}
+            className="lg:col-span-2 rounded-2xl p-6 sm:p-8 space-y-5 sm:space-y-6 relative overflow-hidden flex flex-col justify-between"
+            style={{ background: 'var(--canvas)', border: '1px solid var(--border)', minHeight: 200 }}
             delay={0.2}
           >
             <div
               className="absolute bottom-0 left-0 w-48 h-48 rounded-full pointer-events-none"
-              style={{ background: 'var(--accent)', filter: 'blur(60px)', opacity: 0.05, transform: 'translate(-25%, 25%)' }}
+              style={{ background: 'var(--accent)', filter: 'blur(60px)', opacity: 0.06, transform: 'translate(-25%, 25%)' }}
             />
             <div
-              className="w-11 h-11 rounded-2xl flex items-center justify-center relative z-10"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center relative z-10"
               style={{ background: 'var(--accent-mint-bg)', color: 'var(--accent-mint-fg)' }}
             >
               <GraduationCap className="w-5 h-5" strokeWidth={2} />
             </div>
             <div className="relative z-10 space-y-3">
-              <h3 className="font-heading text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              <h3 className="font-heading text-lg sm:text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
                 Tutors: focus on teaching. We handle the rest.
               </h3>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)', maxWidth: '52ch' }}>
-                Automated billing, a global student marketplace, professional profiles, and full booking management. Less admin, more impact.
+                Automated billing, a student marketplace, professional profiles, and full booking management. Less admin, more impact.
               </p>
             </div>
-            <div className="relative z-10 flex flex-col sm:flex-row gap-5">
+            <div className="relative z-10 flex flex-col sm:flex-row gap-4 sm:gap-5">
               {[
                 { icon: MessageSquare, label: 'Built-in messaging' },
                 { icon: Video, label: 'HD video sessions' },
@@ -561,7 +636,7 @@ function BentoFeatures() {
               ].map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-center gap-2.5">
                   <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                     style={{ background: 'var(--accent-mint-bg)', color: 'var(--accent-mint-fg)' }}
                   >
                     <Icon className="w-3.5 h-3.5" strokeWidth={2} />
@@ -589,32 +664,35 @@ const STATS = [
 
 function StatsSection() {
   return (
-    <section className="py-20 px-4 md:px-8">
+    <section className="py-12 sm:py-16 lg:py-20 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
-        <div
-          className="rounded-2xl py-14 px-8 md:px-16 grid grid-cols-2 md:grid-cols-4 gap-8 animate-gradient"
-          style={{ background: 'linear-gradient(135deg, #4338CA, var(--primary), #6366F1, #4338CA)', backgroundSize: '200% 200%' }}
-        >
-          {STATS.map((stat, i) => (
-            <Reveal
-              key={i}
-              className={`text-center ${i > 0 ? 'border-l border-white/15' : ''}`}
-              delay={i * 0.08}
-            >
-              <p className="font-heading font-bold text-white tracking-tight mb-1" style={{ fontSize: 'clamp(28px, 4vw, 48px)' }}>
-                {stat.value}
-              </p>
-              <p className="text-white/60 text-xs font-bold uppercase tracking-widest">{stat.label}</p>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal>
+          <div
+            className="rounded-2xl py-10 sm:py-14 px-6 sm:px-8 md:px-16 grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 animate-gradient"
+            style={{ background: 'linear-gradient(135deg, #4338CA, var(--primary), #6366F1, #4338CA)', backgroundSize: '200% 200%' }}
+          >
+            {STATS.map((stat, i) => (
+              <div
+                key={i}
+                className="text-center"
+                /* Only show divider line on md+ where all 4 are in a row */
+                style={i > 0 ? undefined : undefined}
+              >
+                <p className="font-heading font-bold text-white tracking-tight mb-1" style={{ fontSize: 'clamp(24px, 4vw, 48px)' }}>
+                  {stat.value}
+                </p>
+                <p className="text-white/60 text-[10px] sm:text-xs font-bold uppercase tracking-widest">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </Reveal>
       </div>
     </section>
   )
 }
 
 /* ──────────────────────────────────────────────────────────
-   Testimonials — staggered reveal
+   Testimonials — scroll-snap on mobile, grid on desktop
 ────────────────────────────────────────────────────────── */
 const TESTIMONIALS = [
   {
@@ -642,20 +720,22 @@ const TESTIMONIALS = [
 
 function TestimonialsSection() {
   return (
-    <section className="py-28 px-4 md:px-8" style={{ background: 'var(--surface)' }}>
-      <div className="max-w-7xl mx-auto">
-        <Reveal className="mb-16">
+    <section className="py-16 sm:py-24 lg:py-28" style={{ background: 'var(--surface)' }}>
+      <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <Reveal className="mb-10 sm:mb-14 lg:mb-16">
           <h2
             className="font-heading font-bold tracking-tight"
-            style={{ fontSize: 'clamp(32px, 4vw, 52px)', color: 'var(--text-primary)' }}
+            style={{ fontSize: 'clamp(28px, 4vw, 52px)', color: 'var(--text-primary)' }}
           >
             Real results, real students.
           </h2>
         </Reveal>
-        <div className="grid md:grid-cols-3 gap-6">
+
+        {/* Desktop: grid */}
+        <div className="hidden md:grid md:grid-cols-3 gap-5 sm:gap-6">
           {TESTIMONIALS.map((t, i) => (
             <Reveal key={i} delay={i * 0.1}>
-              <div className="surface-card p-7 space-y-5 h-full flex flex-col card-interactive">
+              <div className="surface-card p-6 sm:p-7 space-y-5 h-full flex flex-col card-interactive">
                 <div className="flex gap-1">
                   {Array.from({ length: t.rating }).map((_, j) => (
                     <Star key={j} className="w-4 h-4 fill-current" style={{ color: 'var(--accent-sun-fg)' }} />
@@ -669,7 +749,7 @@ function TestimonialsSection() {
                   style={{ borderColor: 'var(--border)' }}
                 >
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
+                    className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
                     style={{ background: `var(--accent-${t.color}-bg)`, color: `var(--accent-${t.color}-fg)` }}
                   >
                     {t.name[0]}
@@ -683,6 +763,40 @@ function TestimonialsSection() {
             </Reveal>
           ))}
         </div>
+
+        {/* Mobile: horizontal scroll-snap (avoids 3 long cards stacking awkwardly) */}
+        <div className="md:hidden flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
+          {TESTIMONIALS.map((t, i) => (
+            <div
+              key={i}
+              className="shrink-0 w-[85vw] max-w-sm snap-start surface-card p-5 space-y-4 flex flex-col"
+            >
+              <div className="flex gap-1">
+                {Array.from({ length: t.rating }).map((_, j) => (
+                  <Star key={j} className="w-4 h-4 fill-current" style={{ color: 'var(--accent-sun-fg)' }} />
+                ))}
+              </div>
+              <p className="text-sm leading-relaxed flex-1" style={{ color: 'var(--text-primary)' }}>
+                &ldquo;{t.quote}&rdquo;
+              </p>
+              <div
+                className="flex items-center gap-3 pt-3 border-t"
+                style={{ borderColor: 'var(--border)' }}
+              >
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
+                  style={{ background: `var(--accent-${t.color}-bg)`, color: `var(--accent-${t.color}-fg)` }}
+                >
+                  {t.name[0]}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t.name}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t.role}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -693,11 +807,11 @@ function TestimonialsSection() {
 ────────────────────────────────────────────────────────── */
 function CTASection() {
   return (
-    <section className="py-32 px-4 md:px-8" style={{ background: 'var(--canvas)' }}>
-      <Reveal className="max-w-5xl mx-auto text-center space-y-8">
+    <section className="py-20 sm:py-28 lg:py-32 px-4 md:px-8" style={{ background: 'var(--canvas)' }}>
+      <Reveal className="max-w-4xl lg:max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
         <h2
           className="font-heading font-bold tracking-tighter leading-[1.05]"
-          style={{ fontSize: 'clamp(36px, 6vw, 72px)', color: 'var(--text-primary)' }}
+          style={{ fontSize: 'clamp(32px, 6vw, 72px)', color: 'var(--text-primary)' }}
         >
           The right tutor{' '}
           <span
@@ -708,17 +822,17 @@ function CTASection() {
           </span>
         </h2>
         <p
-          className="text-lg md:text-xl mx-auto"
-          style={{ color: 'var(--text-secondary)', maxWidth: '44ch' }}
+          className="text-base sm:text-lg md:text-xl mx-auto"
+          style={{ color: 'var(--text-secondary)', maxWidth: '40ch' }}
         >
           Join 15,000+ students who found their perfect learning match on Tutorly.
         </p>
-        <div className="flex items-center justify-center gap-4 flex-wrap">
-          <Link href="/signup" className="btn-primary text-base px-8 py-4 group pressable">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4">
+          <Link href="/signup" className="btn-primary text-sm sm:text-base px-6 sm:px-8 py-3.5 sm:py-4 group pressable justify-center">
             Get started free
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
-          <Link href="/tutors" className="btn-secondary text-base px-8 py-4 pressable">
+          <Link href="/tutors" className="btn-secondary text-sm sm:text-base px-6 sm:px-8 py-3.5 sm:py-4 pressable justify-center">
             Browse tutors
           </Link>
         </div>
@@ -747,70 +861,125 @@ export default function LandingPage() {
           opacity: 'var(--aurora-opacity)' as any,
         }}
       >
-        <Aurora colorStops={['#6366F1', '#10B981', '#6366F1']} amplitude={1.2} blend={0.45} />
+        <Aurora colorStops={['#6366F1', '#10B981', '#6366F1']} amplitude={1.2} blend={0.45} speed={0.35} />
       </div>
 
       {/* ── Navigation ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 pt-2 md:pt-4">
-        <nav
-          className="max-w-7xl mx-auto flex justify-between items-center px-4 md:px-6 py-2.5 rounded-pill"
-          style={{
-            background: 'color-mix(in srgb, var(--nav-bg) 65%, transparent)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          <Link href="/" className="pressable flex items-center gap-2.5 cursor-pointer">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'var(--primary)' }}
-            >
-              <BookOpen className="w-4 h-4 text-white" strokeWidth={2.5} />
-            </div>
-            <span className="text-lg font-bold tracking-tight font-heading" style={{ color: 'var(--text-primary)' }}>
-              Tutorly
-            </span>
-          </Link>
+      <header className="fixed top-0 left-0 right-0 z-50">
 
-          <div className="hidden md:flex items-center gap-8">
-            {['How it works', 'Tutors', 'Pricing', 'Resources'].map(link => (
-              <a
-                key={link}
-                href="#"
-                className="text-sm font-medium transition-colors duration-150 cursor-pointer relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:rounded-full after:bg-primary after:transition-all after:duration-200 hover:after:w-full"
-                style={{ color: 'var(--text-secondary)' }}
+        {/* ── DESKTOP NAV ── full squircle pill with center links ── */}
+        <div className="hidden md:flex justify-center pt-4 px-6">
+          <nav
+            className="w-full max-w-5xl flex items-center justify-between gap-4 px-5 py-3"
+            style={{
+              background: 'color-mix(in srgb, var(--surface-glass) 80%, transparent)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 9999,
+              boxShadow: '0 4px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)',
+            }}
+          >
+            {/* Left: Logo */}
+            <Link href="/" className="pressable flex items-center gap-2 cursor-pointer shrink-0">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: 'var(--primary)', boxShadow: '0 0 12px rgba(99,102,241,0.4)' }}
               >
-                {link}
-              </a>
-            ))}
-          </div>
+                <BookOpen className="w-4 h-4 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-base font-bold tracking-tight font-heading" style={{ color: 'var(--text-primary)' }}>
+                Tutorly
+              </span>
+            </Link>
 
-          <div className="flex items-center gap-2 md:gap-3">
-            <ThemeToggle />
-            <Link
-              href="/signin"
-              className="hidden sm:block pressable text-sm font-semibold transition-colors cursor-pointer"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Sign in
+            {/* Center: Nav links */}
+            <div className="flex items-center gap-1">
+              {[['How it works', '#how'], ['Features', '#features'], ['Browse Tutors', '/tutors'], ['Pricing', '#pricing']].map(([label, href]) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 hover:text-white"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={e => {
+                    ;(e.currentTarget as HTMLElement).style.background = 'var(--primary-subtle)'
+                    ;(e.currentTarget as HTMLElement).style.color = 'var(--primary)'
+                  }}
+                  onMouseLeave={e => {
+                    ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+                    ;(e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'
+                  }}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Right: actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              <ThemeToggle />
+              <Link href="/signin"
+                className="text-sm font-medium px-4 py-2 rounded-xl transition-all duration-150"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
+              >
+                Sign in
+              </Link>
+              <Link href="/signup" className="btn-primary text-sm px-5 py-2.5 pressable whitespace-nowrap">
+                Get started
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </nav>
+        </div>
+
+        {/* ── MOBILE NAV ── floating pill, compact ── */}
+        <div className="md:hidden flex items-center justify-between px-3 pt-3">
+          <div
+            className="flex items-center justify-between w-full px-3 py-2.5"
+            style={{
+              background: 'color-mix(in srgb, var(--surface-glass) 85%, transparent)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 9999,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
+            }}
+          >
+            {/* Logo */}
+            <Link href="/" className="pressable flex items-center gap-2 cursor-pointer">
+              <div
+                className="w-7 h-7 rounded-xl flex items-center justify-center"
+                style={{ background: 'var(--primary)', boxShadow: '0 0 10px rgba(99,102,241,0.45)' }}
+              >
+                <BookOpen className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-bold tracking-tight font-heading" style={{ color: 'var(--text-primary)' }}>Tutorly</span>
             </Link>
-            <Link href="/signup" className="btn-primary text-sm px-5 py-2.5 pressable">
-              Get started
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
+
+            {/* Right: theme + CTA */}
+            <div className="flex items-center gap-1.5">
+              <ThemeToggle />
+              <Link href="/signin" className="btn-primary text-xs px-3.5 py-2 pressable whitespace-nowrap">
+                Sign in
+              </Link>
+            </div>
           </div>
-        </nav>
+        </div>
+
       </header>
 
       <main className="relative z-10">
 
         {/* ── HERO ── */}
-        <section className="px-4 md:px-8 pt-16 md:pt-24 min-h-[80dvh] md:min-h-[100dvh] flex items-start md:items-center">
-          <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <section className="px-4 md:px-8 pt-20 sm:pt-24 md:pt-24 lg:pt-20 pb-10 sm:pb-14 min-h-[100dvh] flex items-center">
+          <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
-            {/* Left: headline + CTA (max 4 elements) */}
-            <div className="space-y-5 md:space-y-7">
+            {/* Left: headline + CTA */}
+            <div className="w-full min-w-0 space-y-4 sm:space-y-5 md:space-y-6">
+
+              {/* 1. Eyebrow */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -822,9 +991,10 @@ export default function LandingPage() {
                 </div>
               </motion.div>
 
+              {/* 2. Headline */}
               <motion.h1
                 className="font-heading font-bold leading-[1.06] tracking-tighter"
-                style={{ fontSize: 'clamp(40px, 6vw, 72px)', color: 'var(--text-primary)' }}
+                style={{ fontSize: 'clamp(38px, 7vw, 72px)', color: 'var(--text-primary)' }}
                 initial={{ opacity: 0, y: 22 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
@@ -838,97 +1008,115 @@ export default function LandingPage() {
                 </span>
               </motion.h1>
 
-              {/* TextType — rotating taglines, motivated: show audience breadth without copy clutter */}
+              {/* 3. Typewriter + subtext */}
               <motion.div
+                className="space-y-2.5 sm:space-y-3"
                 initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <TextType
-                  text={['for WAEC & JAMB prep', 'for A-level students', 'for university entrance', 'for any subject, any level']}
-                  typingSpeed={45}
-                  deletingSpeed={28}
-                  pauseDuration={2200}
-                  loop
-                  showCursor
-                  cursorCharacter="|"
-                  className="font-heading font-semibold"
-                  style={{ fontSize: 'clamp(18px, 2.5vw, 28px)', color: 'var(--primary)', letterSpacing: '-0.02em' }}
-                />
-              </motion.div>
-
-              <motion.p
-                className="text-lg md:text-xl leading-relaxed"
-                style={{ color: 'var(--text-secondary)', maxWidth: '48ch' }}
-                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
               >
-                Fairness-first matching connects you with tutors based on your learning style, goals, and real compatibility.
-              </motion.p>
+                <div style={{ minHeight: '2rem' }}>
+                  <TextType
+                    text={['for WAEC & JAMB prep', 'for A-level students', 'for university entrance', 'for any subject, any level']}
+                    typingSpeed={45}
+                    deletingSpeed={28}
+                    pauseDuration={2200}
+                    loop
+                    showCursor
+                    cursorCharacter="|"
+                    className="font-heading font-semibold"
+                    style={{ fontSize: 'clamp(17px, 3vw, 26px)', color: 'var(--primary)', letterSpacing: '-0.02em' }}
+                  />
+                </div>
+                <p
+                  className="text-sm sm:text-base md:text-lg leading-relaxed"
+                  style={{ color: 'var(--text-secondary)', maxWidth: '42ch' }}
+                >
+                  Fairness-first matching connects you with tutors based on your learning style, goals, and real compatibility.
+                </p>
+              </motion.div>
 
+              {/* 4. CTAs — use grid so cells are always full-width on mobile */}
               <motion.div
-                className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.26, ease: [0.16, 1, 0.3, 1] }}
               >
-                <Link href="/signup" className="btn-primary text-base px-8 py-4 group pressable cursor-pointer">
-                  Get started
+                <Link
+                  href="/signup"
+                  className="btn-primary text-sm sm:text-base px-4 py-3.5 group pressable cursor-pointer"
+                  style={{ display: 'flex', justifyContent: 'center', width: '100%' }}
+                >
+                  Get started free
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <Link href="/tutors" className="btn-secondary text-base px-6 py-3.5 pressable">
+                <Link
+                  href="/tutors"
+                  className="btn-secondary text-sm sm:text-base px-4 py-3.5 pressable"
+                  style={{ display: 'flex', justifyContent: 'center', width: '100%' }}
+                >
                   Browse tutors
                 </Link>
               </motion.div>
 
-              {/* Mobile visual — compact tutor cards (hidden on desktop) */}
+              {/* Mobile-only: quick trust stats strip — grid-cols-3 guarantees even distribution */}
               <motion.div
-                className="lg:hidden"
-                initial={{ opacity: 0, y: 24 }}
+                className="grid grid-cols-3 lg:hidden w-full pt-1"
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.6, delay: 0.36, ease: [0.16, 1, 0.3, 1] }}
               >
-                <div className="px-4">
-                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none">
-                  {[
-                    { name: 'Prof. Julian S.', sub: 'Mathematics', rate: '₦8,500/hr', color: 'lavender', match: '97%' },
-                    { name: 'Dr. Priya Nair', sub: 'Computer Science', rate: '₦9,500/hr', color: 'sky', match: '94%' },
-                    { name: 'Sarah Jenkins', sub: 'English Literature', rate: '₦6,000/hr', color: 'mint', match: '89%' },
-                  ].map((t, i) => (
-                    <motion.div
-                      key={i}
-                      className="flex-shrink-0 w-[200px] rounded-2xl p-4 surface-card space-y-3 snap-start"
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.4 + i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
-                          style={{ background: `var(--accent-${t.color}-bg)`, color: `var(--accent-${t.color}-fg)` }}
-                        >
-                          {t.name[0]}{t.name.split(' ')[1]?.[0]}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{t.name}</p>
-                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.sub}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
-                        <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{t.rate}</span>
-                        <span className="text-[10px] font-bold" style={{ color: 'var(--accent-mint-fg)' }}>{t.match} match</span>
-                      </div>
-                    </motion.div>
-                  ))}
+                {[{ value: '98%', label: 'Success rate' }, { value: '4.9★', label: 'Avg rating' }, { value: '50+', label: 'Subjects' }].map(({ value, label }, i) => (
+                  <div key={label} className={`flex flex-col items-center gap-0.5 py-2 ${i !== 0 ? 'border-l' : ''}`} style={{ borderColor: 'var(--border)' }}>
+                    <span className="font-heading font-bold text-base" style={{ color: 'var(--text-primary)' }}>{value}</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>{label}</span>
                   </div>
+                ))}
+              </motion.div>
+
+              {/* Mobile-only: featured tutors micro-strip — negative margin bleed so scroll stays within page bounds */}
+              <motion.div
+                className="lg:hidden -mx-4"
+                style={{ overflow: 'clip' }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.44, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div
+                  className="flex gap-2 overflow-x-auto pb-1 px-4"
+                  style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+                >
+                  {[
+                    { name: 'Prof. Julian', sub: 'Maths', color: 'lavender', match: '97%' },
+                    { name: 'Dr. Priya', sub: 'CS', color: 'sky', match: '94%' },
+                    { name: 'Sarah J.', sub: 'English', color: 'mint', match: '89%' },
+                  ].map((t) => (
+                    <div
+                      key={t.name}
+                      className="shrink-0 flex items-center gap-2 px-3 py-2.5 rounded-2xl"
+                      style={{ background: 'var(--surface)', border: '1px solid var(--border)', width: 152 }}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold"
+                        style={{ background: `var(--accent-${t.color}-bg)`, color: `var(--accent-${t.color}-fg)` }}
+                      >
+                        {t.name[0]}{t.name.split(' ')[1]?.[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{t.name}</p>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t.sub} · {t.match}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
+
             </div>
 
-            {/* Right: schedule card with motion entrance */}
+            {/* Right: schedule card with tilt — desktop only */}
             <motion.div
-              className="perspective-container relative h-[520px] hidden lg:block"
+              className="perspective-container relative h-120 lg:h-130 hidden lg:block"
               initial={{ opacity: 0, scale: 0.94, y: 32 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
@@ -1017,9 +1205,6 @@ export default function LandingPage() {
             </motion.div>
           </div>
         </section>
-
-        {/* ── SUBJECTS MARQUEE ── */}
-        <SubjectsMarquee />
 
         {/* ── HOW IT WORKS — GSAP STICKY STACK ── */}
         <StickyStack />

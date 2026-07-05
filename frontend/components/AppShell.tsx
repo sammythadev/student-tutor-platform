@@ -304,13 +304,16 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
             >
               {/* Left — tutorly icon + breadcrumb */}
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 md:hidden flex-shrink-0">
+                <Link
+                  href="/"
+                  className="pressable flex items-center gap-1.5 md:hidden flex-shrink-0 cursor-pointer"
+                >
                   <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--primary)' }}>
                     <BookOpen className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
                   </div>
                   <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>tutorly</span>
-                </div>
-                <span className="hidden sm:inline text-xs font-medium tracking-wider uppercase" style={{ color: 'var(--text-muted)' }}>tutorly</span>
+                </Link>
+                <Link href="/" className="hidden sm:inline text-xs font-medium tracking-wider uppercase hover:opacity-70 transition-opacity" style={{ color: 'var(--text-muted)' }}>tutorly</Link>
                 <ChevronRight className="hidden sm:block w-3 h-3 flex-shrink-0" style={{ color: 'var(--text-muted)' }} strokeWidth={2.5} />
                 <span className="hidden sm:inline text-sm font-semibold capitalize truncate" style={{ color: 'var(--text-primary)' }}>{currentPage}</span>
               </div>

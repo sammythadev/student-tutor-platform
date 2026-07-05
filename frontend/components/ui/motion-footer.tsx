@@ -4,6 +4,7 @@ import * as React from "react";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useReducedMotion } from "motion/react";
 import { ArrowUp, ArrowRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,11 +34,6 @@ const STYLES = `
   100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
 }
 
-@keyframes footer-scroll-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
 @keyframes footer-heartbeat {
   0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px color-mix(in oklch, var(--destructive) 50%, transparent)); }
   15%, 45% { transform: scale(1.2); filter: drop-shadow(0 0 10px color-mix(in oklch, var(--destructive) 80%, transparent)); }
@@ -46,10 +42,6 @@ const STYLES = `
 
 .animate-footer-breathe {
   animation: footer-breathe 8s ease-in-out infinite alternate;
-}
-
-.animate-footer-scroll-marquee {
-  animation: footer-scroll-marquee 40s linear infinite;
 }
 
 .animate-footer-heartbeat {
@@ -205,10 +197,15 @@ export function CinematicFooter() {
   const giantTextRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const linksRef = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!wrapperRef.current) return;
+    if (reduce) return;
+
+    const refresh = () => ScrollTrigger.refresh();
+    window.addEventListener('resize', refresh);
 
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -224,6 +221,7 @@ export function CinematicFooter() {
             start: "top 80%",
             end: "bottom bottom",
             scrub: 1,
+            invalidateOnRefresh: true,
           },
         }
       );
@@ -241,13 +239,19 @@ export function CinematicFooter() {
             start: "top 40%",
             end: "bottom bottom",
             scrub: 1,
+            invalidateOnRefresh: true,
           },
         }
       );
+
+      ScrollTrigger.refresh();
     }, wrapperRef);
 
-    return () => ctx.revert();
-  }, []);
+    return () => {
+      ctx.revert();
+      window.removeEventListener('resize', refresh);
+    }
+  }, [reduce]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -275,8 +279,7 @@ export function CinematicFooter() {
           </div>
 
           <div className="absolute top-12 left-0 w-full overflow-hidden border-y border-border/50 bg-background/60 backdrop-blur-md py-4 z-10 -rotate-2 scale-110 shadow-2xl">
-            <div className="flex w-max animate-footer-scroll-marquee text-xs md:text-sm font-bold tracking-[0.3em] text-muted-foreground uppercase">
-              <MarqueeItem />
+            <div className="flex justify-center text-xs md:text-sm font-bold tracking-[0.3em] text-muted-foreground uppercase">
               <MarqueeItem />
             </div>
           </div>
