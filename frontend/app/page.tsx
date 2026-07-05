@@ -973,7 +973,7 @@ export default function LandingPage() {
       <main className="relative z-10">
 
         {/* ── HERO ── */}
-        <section className="px-4 md:px-8 pt-20 sm:pt-24 md:pt-24 lg:pt-20 pb-10 sm:pb-14 min-h-[100dvh] flex items-center">
+        <section className="px-4 md:px-8 pt-20 sm:pt-24 md:pt-24 lg:pt-20 pb-10 sm:pb-14 min-h-[100dvh] flex items-center md:mt-3">
           <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
             {/* Left: headline + CTA */}
@@ -986,7 +986,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               >
                 <div className="stat-badge w-fit">
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles className="w-3 h-3 mt-2" />
                   Trusted by 15,000+ students across Nigeria
                 </div>
               </motion.div>
