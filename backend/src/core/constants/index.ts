@@ -1,6 +1,8 @@
 /** Barrel — re-exports all core constants. */
 export {
+  ACADEMIC_LEVEL_WEIGHT,
   COLD_START_QUALITY,
+  EXAM_TYPE_MISMATCH_PENALTY,
   EXPERIENCE_THETA,
   EXPERIENCE_YEARS_MAX,
   FEEDBACK_LAMBDA,

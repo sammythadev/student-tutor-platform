@@ -3,7 +3,11 @@ export type { AdaptiveWeightKey } from './adaptation/weight-adaptation';
 export { AssignmentLifecycle } from './assignment/assignment-lifecycle';
 export type { CancellationResult } from './assignment/assignment-lifecycle';
 export { GreedyAssignmentEngine } from './assignment/greedy-assignment.engine';
-export type { AssignmentRunResult } from './assignment/greedy-assignment.engine';
+export type {
+  AssignmentRunResult,
+  AssignmentStats,
+  AssignBatchOptions,
+} from './assignment/greedy-assignment.engine';
 export { EligibilityFilter } from './filters/eligibility.filter';
 export { FeedbackUpdater } from './feedback/feedback-updater';
 export { TopKRanker } from './ranking/top-k-ranker';

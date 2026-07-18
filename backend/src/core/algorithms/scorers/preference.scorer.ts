@@ -35,17 +35,26 @@ export class PreferenceScorer {
   }
 
   public budgetCompatibility(student: Student, tutor: Tutor): number {
-    const budget = student.budget ?? 0;
+    // Explicit coercion: numeric DB columns can surface as strings at runtime
+    // (e.g. pg numeric without mode:'number'), and string comparison of
+    // "80" <= "100" silently misbehaves. Non-numeric input degrades to 0.
+    const budget = this.toFiniteNumber(student.budget, 0);
+    const hourlyRate = this.toFiniteNumber(tutor.hourlyRate, 0);
 
-    if (tutor.hourlyRate <= budget) {
+    if (hourlyRate <= budget) {
       return 1;
     }
 
     if (budget <= 0) {
-      return tutor.hourlyRate > 0 ? 0 : 1;
+      return hourlyRate > 0 ? 0 : 1;
     }
 
-    return Math.max(0, 1 - (tutor.hourlyRate - budget) / budget);
+    return Math.max(0, 1 - (hourlyRate - budget) / budget);
+  }
+
+  private toFiniteNumber(value: unknown, fallback: number): number {
+    const parsed = Number(value ?? fallback);
+    return Number.isFinite(parsed) ? parsed : fallback;
   }
 
   public regionCompatibility(student: Student, tutor: Tutor): number {

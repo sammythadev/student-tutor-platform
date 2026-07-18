@@ -17,6 +17,7 @@ import {
   type Tutor,
 } from '@core/entities';
 import { MatchingEngine } from '@core/engine';
+import { computeOptimal } from '../evaluation/optimal-baseline';
 import {
   AssignmentStatus,
   DeliveryMode,
@@ -76,11 +77,12 @@ describe('core matchmaking engine', () => {
     const weights = AlgorithmWeights.defaults();
     const score = academic.score(student(), tutor(), weights);
 
-    // By hand: Exp'=0.4*(10/20)+0.6*0.8=0.68; A=(0.3/0.55)*1+(0.25/0.55)*0.68=0.854545.
+    // By hand: Exp'=0.4*(10/20)+0.6*0.8=0.68; level share=0.3, remaining 0.7 split
+    // (0.3/0.55):(0.25/0.55) → A=(0.3/0.55)*0.7*1 + 0.3*1 + (0.25/0.55)*0.7*0.68 = 0.898182.
     expect(score.subjectDepth).toBe(1);
     expect(score.level).toBe(1);
     expect(score.experience).toBeCloseTo(0.68);
-    expect(score.total).toBeCloseTo(0.854545, 5);
+    expect(score.total).toBeCloseTo(0.898182, 5);
 
     const composite = new CompositeScorer().score(student(), tutor());
     expect(composite.total).toBeGreaterThan(0.85);
@@ -297,5 +299,92 @@ describe('core matchmaking engine', () => {
       ) / greedy.assignments.length;
 
     expect(greedyAverage).toBeGreaterThan(naiveAverage);
+  });
+});
+
+describe('GreedyAssignmentEngine — top-k truncation', () => {
+  it('produces identical assignments to no-cap when k >= candidate count', () => {
+    const students = Array.from({ length: 8 }, (_, index) =>
+      student({ id: `student-${index}`, budget: 50 + index * 10 }),
+    );
+    const makeTutors = () =>
+      Array.from({ length: 6 }, (_, index) =>
+        tutor({ id: `tutor-${index}`, capacity: 2, hourlyRate: 40 + index * 5 }),
+      );
+
+    const uncapped = new GreedyAssignmentEngine().assignBatch(students, makeTutors());
+    const capped = new GreedyAssignmentEngine().assignBatch(students, makeTutors(), { topK: 10 });
+
+    const key = (a: { studentId: string; tutorId: string | null }) => `${a.studentId}->${a.tutorId}`;
+    expect(capped.assignments.map(key).sort()).toEqual(uncapped.assignments.map(key).sort());
+  });
+
+  it('recovers a student via fallback when their top-1 tutor is taken', () => {
+    // Two students both rank tutor-high best; capacity 1 forces one onto tutor-low.
+    // With topK=1, the loser would be waitlisted without the fallback pass.
+    const students = [
+      student({ id: 'student-a', budget: 100 }),
+      student({ id: 'student-b', budget: 100 }),
+    ];
+    const tutors = [
+      tutor({ id: 'tutor-high', hourlyRate: 90, avgRating: 1, capacity: 1 }),
+      tutor({ id: 'tutor-low', hourlyRate: 40, avgRating: 0.6, capacity: 1 }),
+    ];
+
+    const result = new GreedyAssignmentEngine().assignBatch(students, tutors, { topK: 1 });
+
+    // Both students should be assigned: one to tutor-high, one recovered onto tutor-low.
+    expect(result.assignments).toHaveLength(2);
+    expect(result.unassignable).toHaveLength(0);
+    const tutorIds = result.assignments.map((a) => a.tutorId).sort();
+    expect(tutorIds).toEqual(['tutor-high', 'tutor-low']);
+  });
+
+  it('does not double-assign a student across main and fallback passes', () => {
+    const students = Array.from({ length: 5 }, (_, index) =>
+      student({ id: `student-${index}` }),
+    );
+    const tutors = Array.from({ length: 3 }, (_, index) =>
+      tutor({ id: `tutor-${index}`, capacity: 2 }),
+    );
+
+    const result = new GreedyAssignmentEngine().assignBatch(students, tutors, { topK: 1 });
+
+    const assignedIds = result.assignments.map((a) => a.studentId);
+    expect(new Set(assignedIds).size).toBe(assignedIds.length);
+    // Total assigned must not exceed total capacity (6).
+    expect(result.assignments.length).toBeLessThanOrEqual(6);
+  });
+});
+
+describe('optimal baseline (min-cost max-flow)', () => {
+  it('assigns at least as many students as greedy and never exceeds capacity', () => {
+    const students = Array.from({ length: 6 }, (_, index) =>
+      student({ id: `student-${index}`, budget: 40 + index * 15 }),
+    );
+    const makeTutors = () => [
+      tutor({ id: 'tutor-a', capacity: 2, hourlyRate: 50 }),
+      tutor({ id: 'tutor-b', capacity: 1, hourlyRate: 90, avgRating: 1 }),
+      tutor({ id: 'tutor-c', capacity: 2, hourlyRate: 30, avgRating: 0.4 }),
+    ];
+
+    const greedy = new GreedyAssignmentEngine().assignBatch(students, makeTutors());
+    const optimal = computeOptimal(students, makeTutors());
+
+    // Max-flow assigns the maximum possible number of students; greedy cannot beat it.
+    expect(optimal.assignedCount).toBeGreaterThanOrEqual(greedy.assignments.length);
+    expect(optimal.assignedCount).toBeLessThanOrEqual(5); // total capacity
+    expect(optimal.totalScore).toBeGreaterThan(0);
+  });
+
+  it('matches greedy exactly on a trivial single-student case', () => {
+    const singleStudent = [student({ id: 'only-student' })];
+    const singleTutor = () => [tutor({ id: 'only-tutor', capacity: 1 })];
+
+    const greedy = new GreedyAssignmentEngine().assignBatch(singleStudent, singleTutor());
+    const optimal = computeOptimal(singleStudent, singleTutor());
+
+    expect(greedy.assignments).toHaveLength(1);
+    expect(optimal.assignedCount).toBe(1);
   });
 });

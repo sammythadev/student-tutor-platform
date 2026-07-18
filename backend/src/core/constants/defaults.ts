@@ -9,6 +9,12 @@ export const COLD_START_QUALITY = 0.5;
 /** Maximum level gap used as denominator in level compatibility (Algorithm.md §1.3). */
 export const LEVEL_MAX = 12;
 
+/** Share of the academic sub-score allocated to grade-level compatibility (Algorithm.md §1.3). */
+export const ACADEMIC_LEVEL_WEIGHT = 0.3;
+
+/** Multiplier applied to subject depth when the tutor does not support the student's exam type. */
+export const EXAM_TYPE_MISMATCH_PENALTY = 0.5;
+
 /** Experience weighting factor θ — balances years vs. quality (Algorithm.md §1.4). */
 export const EXPERIENCE_THETA = 0.4;
 

@@ -88,8 +88,8 @@ export class CandidateTutorDto {
   @ApiProperty({ example: 42 })
   ratingCount!: number;
 
-  @ApiProperty({ example: '25.00' })
-  hourlyRate!: string;
+  @ApiProperty({ example: 25 })
+  hourlyRate!: number;
 
   @ApiPropertyOptional({ example: 'Expert in calculus and linear algebra', nullable: true })
   bio!: string | null;

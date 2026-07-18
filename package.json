@@ -1,0 +1,7 @@
+{
+  "name": "student-tutor-matchmaking",
+  "private": true,
+  "scripts": {
+    "test:backend": "pnpm --filter backend test"
+  }
+}

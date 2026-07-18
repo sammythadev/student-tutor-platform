@@ -270,7 +270,7 @@ export class MatchmakingRepository {
         .update(tutorProfiles)
         .set({
           // updatedQuality is a 0-1 EMA value; store as-is (displayed as ×5 in UI)
-          avgRating: updatedQuality.toFixed(4),
+          avgRating: Number(updatedQuality.toFixed(2)),
           // Increment ratingCount so the count is always accurate
           ratingCount: sql`${tutorProfiles.ratingCount} + 1`,
           updatedAt: new Date(),

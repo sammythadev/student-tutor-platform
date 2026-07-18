@@ -4,6 +4,7 @@ import { inArray, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { loadEnvironmentFiles, getDatabaseUrl } from '@config';
+import { ExamType } from '@core/enums';
 import {
   scheduleSlots,
   studentProfiles,
@@ -57,6 +58,15 @@ function slot(day: number, hour: number): { start: string; end: string } {
     start: `2026-02-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00:00.000Z`,
     end: `2026-02-${String(day).padStart(2, '0')}T${String(hour + 2).padStart(2, '0')}:00:00.000Z`,
   };
+}
+
+/**
+ * Deterministically pick 1-2 specializations from the tutor's taught subjects so
+ * the AcademicScorer specialization path is exercised on seed data.
+ */
+function pickSpecializations(subjectsTaught: string[], index: number): string[] {
+  const count = 1 + (index % 2);
+  return subjectsTaught.slice(0, Math.min(count, subjectsTaught.length));
 }
 
 async function seed(): Promise<void> {
@@ -113,9 +123,9 @@ async function seed(): Promise<void> {
           requiredSubject: subject[1].toLowerCase(),
           subjects: [subject[1].toLowerCase()],
           gradeLevel: 7 + (index % 6),
-          examType: index % 2 === 0 ? 'waec' : 'neco',
+          examType: index % 2 === 0 ? ExamType.WAEC : ExamType.NECO,
           requestedAvailability: [slot((index % 20) + 1, 9 + (index % 5))],
-          budget: String(3000 + (index % 8) * 500),
+          budget: 3000 + (index % 8) * 500,
           deliveryPreference: index % 3 === 0 ? 'in-person' : 'online',
           formatPreference: 'one-on-one',
           learningStylePreference: index % 2 === 0 ? 'auditory' : 'visual',
@@ -164,9 +174,12 @@ async function seed(): Promise<void> {
           userId,
           primarySubjectId: primarySubjectRow?.id,
           subjectsTaught: [primarySubject[1].toLowerCase(), secondarySubject[1].toLowerCase()],
-          specializations: [],
+          specializations: pickSpecializations(
+            [primarySubject[1].toLowerCase(), secondarySubject[1].toLowerCase()],
+            index,
+          ),
           gradeLevelsSupported: [7 + (index % 6), 8 + (index % 5)],
-          examTypesSupported: ['waec', 'neco'],
+          examTypesSupported: [ExamType.WAEC, ExamType.NECO],
           availability: [slot((index % 20) + 1, 9 + (index % 5))],
           experienceYears: 1 + (index % 12),
           languages: ['english'],
@@ -174,8 +187,8 @@ async function seed(): Promise<void> {
           teachingStyle: index % 2 === 0 ? 'lecture' : 'interactive',
           deliveryStyle: index % 3 === 0 ? 'in-person' : 'online',
           formatStyle: 'one-on-one',
-          avgRating: String(0.5 + (index % 5) / 10),
-          hourlyRate: String(2500 + (index % 10) * 500),
+          avgRating: 0.5 + (index % 5) / 10,
+          hourlyRate: 2500 + (index % 10) * 500,
           capacity: 2 + (index % 3),
           bio: `I am an experienced tutor specializing in ${primarySubject[1].toLowerCase()}.`,
         })

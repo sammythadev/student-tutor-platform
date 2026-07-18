@@ -4,6 +4,8 @@ export interface User {
     phone: number 
 }
 
-export const user: User{
-    name:
+export const user: User = {
+    name: '',
+    email: '',
+    phone: 0,
 }

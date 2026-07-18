@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
+import { ExamType } from '@core/enums';
 import {
   DATABASE,
   type AppDatabase,
@@ -39,10 +40,7 @@ export class UsersRepository {
           examType: dto.studentProfile.examType,
           requestedAvailability: dto.studentProfile.requestedAvailability,
           preferenceWeights: dto.studentProfile.preferenceWeights,
-          budget:
-            dto.studentProfile.budget === undefined
-              ? undefined
-              : String(dto.studentProfile.budget),
+          budget: dto.studentProfile.budget,
           deliveryPreference: dto.studentProfile.deliveryPreference,
           formatPreference: dto.studentProfile.formatPreference,
           learningStylePreference: dto.studentProfile.learningStylePreference,
@@ -66,7 +64,7 @@ export class UsersRepository {
           teachingStyle: dto.tutorProfile.teachingStyle,
           deliveryStyle: dto.tutorProfile.deliveryStyle,
           formatStyle: dto.tutorProfile.formatStyle,
-          hourlyRate: String(dto.tutorProfile.hourlyRate),
+          hourlyRate: dto.tutorProfile.hourlyRate,
           capacity: dto.tutorProfile.capacity,
         });
       }
@@ -112,7 +110,7 @@ export class UsersRepository {
           learningGoals: sp.learningGoals,
           // preference fields
           languages: sp.languages ?? [],
-          budget: sp.budget !== undefined ? String(sp.budget) : undefined,
+          budget: sp.budget,
           deliveryPreference: sp.deliveryPreference as any,
           formatPreference: sp.formatPreference as any,
           learningStylePreference: sp.learningStylePreference as any,
@@ -141,9 +139,9 @@ export class UsersRepository {
           userId,
           subjectsTaught: tp.subjectsTaught,
           gradeLevelsSupported: tp.gradeLevelsSupported ?? [9, 10, 11, 12],
-          examTypesSupported: tp.examTypesSupported ?? ['waec', 'neco', 'jamb'],
+          examTypesSupported: tp.examTypesSupported ?? Object.values(ExamType),
           availability: tp.availability,
-          hourlyRate: String(tp.hourlyRate),
+          hourlyRate: tp.hourlyRate,
           bio: tp.bio,
           // enrichment fields — all write through now
           experienceYears: tp.experienceYears ?? 0,
@@ -196,7 +194,7 @@ export class UsersRepository {
     dto: UpdateStudentPreferencesDto,
   ): Promise<UserWithProfilesRecord> {
     const updatePayload: Record<string, any> = {};
-    if (dto.budget !== undefined) updatePayload.budget = String(dto.budget);
+    if (dto.budget !== undefined) updatePayload.budget = dto.budget;
     if (dto.deliveryPreference !== undefined) updatePayload.deliveryPreference = dto.deliveryPreference;
     if (dto.formatPreference !== undefined) updatePayload.formatPreference = dto.formatPreference;
     if (dto.learningStylePreference !== undefined) updatePayload.learningStylePreference = dto.learningStylePreference;

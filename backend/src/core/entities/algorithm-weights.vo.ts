@@ -1,4 +1,4 @@
-import { WEIGHT_EPSILON } from '@core/constants';
+import { ACADEMIC_LEVEL_WEIGHT, WEIGHT_EPSILON } from '@core/constants';
 import { CriterionWeights } from './criterion-weights.vo';
 
 export interface AlgorithmWeightsInput {
@@ -58,18 +58,27 @@ export class AlgorithmWeights {
     const academicTotal = weights.subjectFit + weights.experience + weights.feedback;
     const preferenceTotal = weights.languageStyleFit;
 
+    // Grade-level compatibility gets a fixed share of the academic sub-score;
+    // the remaining share is split between subject depth and experience in
+    // proportion to the student's criterion weights (normalised so the
+    // academic sub-weights still sum to 1).
+    const remainingShare = 1 - ACADEMIC_LEVEL_WEIGHT;
+
     return new AlgorithmWeights({
       alpha: academicTotal,
       beta: preferenceTotal,
       gamma: weights.availability,
       delta: weights.loadFactor,
       academic: {
-        subjectDepth: academicTotal === 0 ? 0.5 : weights.subjectFit / academicTotal,
-        level: 0,
+        subjectDepth:
+          academicTotal === 0
+            ? remainingShare / 2
+            : (weights.subjectFit / academicTotal) * remainingShare,
+        level: ACADEMIC_LEVEL_WEIGHT,
         experience:
           academicTotal === 0
-            ? 0.5
-            : (weights.experience + weights.feedback) / academicTotal,
+            ? remainingShare / 2
+            : ((weights.experience + weights.feedback) / academicTotal) * remainingShare,
       },
       preference: {
         style: preferenceTotal === 0 ? 0.65 : 0.65,

@@ -1,5 +1,6 @@
 import {
   COLD_START_QUALITY,
+  EXAM_TYPE_MISMATCH_PENALTY,
   EXPERIENCE_THETA,
   EXPERIENCE_YEARS_MAX,
   LEVEL_MAX,
@@ -15,7 +16,9 @@ export interface AcademicScore {
 
 export class AcademicScorer {
   public score(student: Student, tutor: Tutor, weights: AlgorithmWeights): AcademicScore {
-    const subjectDepth = this.subjectDepth(student, tutor);
+    // Exam-type mismatch attenuates subject depth: the tutor may still teach
+    // the subject, but is a weaker fit for the student's target exam.
+    const subjectDepth = this.subjectDepth(student, tutor) * this.examTypeFit(student, tutor);
     const level = this.levelCompatibility(student, tutor);
     const experience = this.experienceQuality(tutor);
 
@@ -28,6 +31,19 @@ export class AcademicScorer {
       level,
       experience,
     };
+  }
+
+  public examTypeFit(student: Student, tutor: Tutor): number {
+    // Missing examType never penalises — only an explicit mismatch does.
+    if (!student.examType || !tutor.examTypesSupported?.length) {
+      return 1;
+    }
+
+    const supported = tutor.examTypesSupported
+      .map((examType) => examType.toLowerCase())
+      .includes(student.examType.toLowerCase());
+
+    return supported ? 1 : EXAM_TYPE_MISMATCH_PENALTY;
   }
 
   public subjectDepth(student: Student, tutor: Tutor): number {

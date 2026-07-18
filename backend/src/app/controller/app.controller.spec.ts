@@ -16,7 +16,9 @@ describe('AppController', () => {
 
   describe('root', () => {
     it('should return the backend status message', () => {
-      expect(appController.getStatus()).toBe('Student tutor matchmaking backend is running.');
+      expect(appController.getStatus()).toBe(
+        'Student tutor matchmaking backend is running in the current environment.',
+      );
     });
   });
 });

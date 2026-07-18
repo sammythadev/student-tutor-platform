@@ -129,7 +129,7 @@ export const studentProfiles = pgTable(
       feedback?: number;
       loadFactor?: number;
     }>(),
-    budget: numeric('budget', { precision: 10, scale: 2 }),
+    budget: numeric('budget', { precision: 10, scale: 2, mode: 'number' }),
     deliveryPreference: deliveryModeEnum('delivery_preference'),
     formatPreference: formatPreferenceEnum('format_preference'),
     learningStylePreference: learningStyleEnum('learning_style_preference'),
@@ -184,8 +184,8 @@ export const tutorProfiles = pgTable(
     teachingStyle: teachingStyleEnum('teaching_style'),
     deliveryStyle: deliveryModeEnum('delivery_style'),
     formatStyle: formatPreferenceEnum('format_style'),
-    avgRating: numeric('avg_rating', { precision: 3, scale: 2 }),
-    hourlyRate: numeric('hourly_rate', { precision: 10, scale: 2 }).notNull(),
+    avgRating: numeric('avg_rating', { precision: 3, scale: 2, mode: 'number' }),
+    hourlyRate: numeric('hourly_rate', { precision: 10, scale: 2, mode: 'number' }).notNull(),
     capacity: integer('capacity').notNull().default(0),
     assignedCount: integer('assigned_count').notNull().default(0),
     // Profile enrichment

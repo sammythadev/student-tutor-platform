@@ -300,8 +300,8 @@ export class StudentProfileResponseDto {
   @ApiPropertyOptional({ type: PreferenceWeightsDto })
   preferenceWeights!: PreferenceWeightsDto | null;
 
-  @ApiPropertyOptional({ example: '5000.00' })
-  budget!: string | null;
+  @ApiPropertyOptional({ example: 5000 })
+  budget!: number | null;
 
   @ApiPropertyOptional({ example: 'Lagos' })
   region!: string | null;
@@ -326,8 +326,8 @@ export class TutorProfileResponseDto {
   @ApiProperty({ example: 5 })
   experienceYears!: number;
 
-  @ApiProperty({ example: '4000.00' })
-  hourlyRate!: string;
+  @ApiProperty({ example: 4000 })
+  hourlyRate!: number;
 
   @ApiProperty({ example: 3 })
   capacity!: number;
