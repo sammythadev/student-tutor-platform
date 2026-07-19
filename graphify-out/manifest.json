@@ -184,11 +184,6 @@
     "ast_hash": "0713351d7514598a35cf98b30b3034d9",
     "semantic_hash": ""
   },
-  "backend/coverage-core/coverage-final.json": {
-    "mtime": 1784468069.5440052,
-    "ast_hash": "e3e766840362c19357b8898ecfd1658c",
-    "semantic_hash": ""
-  },
   "backend/drizzle.config.ts": {
     "mtime": 1781877881.8475242,
     "ast_hash": "e21f00e7af6b818ed09a92d352a76984",
