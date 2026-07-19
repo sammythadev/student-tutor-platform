@@ -1,8 +1,8 @@
 {
   ".claude/settings.local.json": {
-    "mtime": 1784390634.8817215,
-    "ast_hash": "b3edd4b6cea0d8899dc8f819e2587863",
-    "semantic_hash": "b3edd4b6cea0d8899dc8f819e2587863"
+    "mtime": 1784401771.317078,
+    "ast_hash": "37ac62d013cd18397bb5aef2c76c59d8",
+    "semantic_hash": "37ac62d013cd18397bb5aef2c76c59d8"
   },
   ".husky/commit-msg": {
     "mtime": 1780761950.2883098,
@@ -115,9 +115,9 @@
     "semantic_hash": "a222e4c1079ee9f286fed551cd3da11b"
   },
   "package.json": {
-    "mtime": 1784389239.2547603,
-    "ast_hash": "2045916e28936c4d9d205a734ec8fed2",
-    "semantic_hash": "2045916e28936c4d9d205a734ec8fed2"
+    "mtime": 1784402418.0434656,
+    "ast_hash": "b7593ae10dbaa7b7f3c48e23ce73b41b",
+    "semantic_hash": "b7593ae10dbaa7b7f3c48e23ce73b41b"
   },
   "scripts/apply-jwt-keys.js": {
     "mtime": 1782133696.6177125,
@@ -445,9 +445,9 @@
     "semantic_hash": "b5b89c7b0e81694093a1926388d43f73"
   },
   "src/core/evaluation/evaluation-harness.ts": {
-    "mtime": 1784389278.151265,
-    "ast_hash": "16d0600caf25a14056947c53f6c921dd",
-    "semantic_hash": "16d0600caf25a14056947c53f6c921dd"
+    "mtime": 1784402955.0269535,
+    "ast_hash": "65fb1d300d9c142580e8515c1f086569",
+    "semantic_hash": "65fb1d300d9c142580e8515c1f086569"
   },
   "src/core/evaluation/optimal-baseline.ts": {
     "mtime": 1784385401.9622798,

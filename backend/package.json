@@ -26,6 +26,7 @@
     "typecheck:watch": "tsc --noEmit -w -p tsconfig.json",
     "test": "jest",
     "eval": "ts-node -r tsconfig-paths/register src/core/evaluation/evaluation-harness.ts",
+    "eval:moderate": "ts-node -r tsconfig-paths/register src/core/evaluation/evaluation-harness.ts --moderate",
     "eval:topk": "ts-node -r tsconfig-paths/register src/core/evaluation/evaluation-harness.ts --topk-sweep",
     "eval:gap": "ts-node -r tsconfig-paths/register src/core/evaluation/evaluation-harness.ts --optimality-gap",
     "eval:all": "pnpm run eval && pnpm run eval:topk && pnpm run eval:gap",

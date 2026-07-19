@@ -1,0 +1,17 @@
+
+> backend@0.0.1 test:core C:\Users\USER\Desktop\Final Year Research\project\backend
+> jest core-units
+
+  console.log
+    
+    [fairness-weight-probe]
+    loadFactor=0.05  A(2/3)=0.890635  B(0/3)=0.926500  Δ(B-A)=0.035865
+    loadFactor=0     A(2/3)=0.922632  B(0/3)=0.922632  Δ(B-A)=0.000000
+
+      at Object.<anonymous> (core/__tests__/core-units.spec.ts:304:13)
+
+Test Suites: 1 passed, 1 total
+Tests:       54 passed, 54 total
+Snapshots:   0 total
+Time:        2.564 s, estimated 6 s
+Ran all test suites matching core-units.

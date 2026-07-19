@@ -1,0 +1,189 @@
+
+> backend@0.0.1 test:cov C:\Users\USER\Desktop\Final Year Research\project\backend
+> jest --coverage
+
+-----------------------------------|---------|----------|---------|---------|-------------------------
+File                               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s       
+-----------------------------------|---------|----------|---------|---------|-------------------------
+All files                          |   19.44 |    12.93 |   24.63 |   19.46 |                         
+ src                               |       0 |      100 |       0 |       0 |                         
+  main.ts                          |       0 |      100 |       0 |       0 | 1-50                    
+  swagger.ts                       |       0 |      100 |       0 |       0 | 2-56                    
+ src/app/controller                |     100 |       75 |     100 |     100 |                         
+  app.controller.ts                |     100 |       75 |     100 |     100 | 8                       
+ src/app/module                    |       0 |      100 |     100 |       0 |                         
+  app.module.ts                    |       0 |      100 |     100 |       0 | 1-35                    
+ src/app/service                   |     100 |      100 |     100 |     100 |                         
+  app.service.ts                   |     100 |      100 |     100 |     100 |                         
+ src/common                        |       0 |      100 |     100 |       0 |                         
+  common.module.ts                 |       0 |      100 |     100 |       0 | 1-53                    
+  index.ts                         |       0 |      100 |     100 |       0 | 1-5                     
+ src/common/auth                   |       0 |        0 |       0 |       0 |                         
+  auth-token.service.ts            |       0 |        0 |       0 |       0 | 1-104                   
+  auth.constants.ts                |       0 |      100 |     100 |       0 | 1-5                     
+  auth.guard.ts                    |       0 |        0 |       0 |       0 | 1-37                    
+  current-user.decorator.ts        |       0 |        0 |       0 |       0 | 1-12                    
+  index.ts                         |       0 |      100 |     100 |       0 | 1-11                    
+  jwt-access.strategy.ts           |       0 |        0 |       0 |       0 | 1-23                    
+  jwt-refresh.strategy.ts          |       0 |        0 |       0 |       0 | 1-27                    
+  owner-or-admin.guard.ts          |       0 |        0 |       0 |       0 | 1-39                    
+  refresh-auth.guard.ts            |       0 |      100 |     100 |       0 | 1-6                     
+  roles.decorator.ts               |       0 |      100 |       0 |       0 | 1-5                     
+  roles.guard.ts                   |       0 |        0 |       0 |       0 | 1-36                    
+ src/common/filters                |       0 |        0 |       0 |       0 |                         
+  http-exception.filter.ts         |       0 |        0 |       0 |       0 | 1-118                   
+  index.ts                         |       0 |      100 |       0 |       0 | 1                       
+ src/common/interceptors           |       0 |        0 |       0 |       0 |                         
+  http-logging.interceptor.ts      |       0 |        0 |       0 |       0 | 1-72                    
+  index.ts                         |       0 |      100 |       0 |       0 | 1                       
+ src/common/logger                 |       0 |        0 |       0 |       0 |                         
+  app-logger.service.ts            |       0 |        0 |       0 |       0 | 1-159                   
+  index.ts                         |       0 |      100 |       0 |       0 | 1                       
+ src/configs                       |       0 |        0 |       0 |       0 |                         
+  environment.ts                   |       0 |        0 |       0 |       0 | 1-222                   
+  index.ts                         |       0 |      100 |       0 |       0 | 1-20                    
+ src/core                          |       0 |      100 |     100 |       0 |                         
+  index.ts                         |       0 |      100 |     100 |       0 | 1-7                     
+ src/core/algorithms               |     100 |      100 |     100 |     100 |                         
+  index.ts                         |     100 |      100 |     100 |     100 |                         
+ src/core/algorithms/adaptation    |     100 |       50 |     100 |     100 |                         
+  weight-adaptation.ts             |     100 |       50 |     100 |     100 | 19-30                   
+ src/core/algorithms/assignment    |   79.71 |    69.84 |      85 |   79.41 |                         
+  assignment-lifecycle.ts          |      80 |    63.63 |   83.33 |   78.94 | 14-15,32,41             
+  greedy-assignment.engine.ts      |   79.66 |    71.15 |   85.71 |   79.48 | 110,131-133,143,288-316 
+ src/core/algorithms/feedback      |   85.71 |    85.71 |     100 |   85.71 |                         
+  feedback-updater.ts              |   85.71 |    85.71 |     100 |   85.71 | 6                       
+ src/core/algorithms/filters       |   82.14 |    83.33 |   81.81 |      84 |                         
+  eligibility.filter.ts            |   82.14 |    83.33 |   81.81 |      84 | 20,43,54,67             
+ src/core/algorithms/ranking       |   46.87 |    35.71 |   57.14 |   53.57 |                         
+  top-k-ranker.ts                  |   46.87 |    35.71 |   57.14 |   53.57 | 19,35,41,50-70          
+ src/core/algorithms/scorers       |   94.89 |    81.03 |   96.42 |   94.79 |                         
+  academic.scorer.ts               |   92.59 |    77.77 |     100 |      92 | 55,59                   
+  composite.scorer.ts              |   91.66 |       75 |   83.33 |   91.66 | 61-62                   
+  fairness.scorer.ts               |     100 |      100 |     100 |     100 |                         
+  preference.scorer.ts             |   96.55 |    81.81 |     100 |   96.55 | 99                      
+  schedule.scorer.ts               |     100 |       75 |     100 |     100 | 23                      
+ src/core/algorithms/utils         |     100 |    96.15 |     100 |     100 |                         
+  max-heap.ts                      |     100 |      100 |     100 |     100 |                         
+  vector-math.ts                   |     100 |     87.5 |     100 |     100 | 2                       
+ src/core/constants                |     100 |      100 |     100 |     100 |                         
+  defaults.ts                      |     100 |      100 |     100 |     100 |                         
+  index.ts                         |     100 |      100 |     100 |     100 |                         
+ src/core/engine                   |      70 |      100 |      50 |   66.66 |                         
+  index.ts                         |     100 |      100 |     100 |     100 |                         
+  matching-engine.ts               |    62.5 |      100 |      40 |    62.5 | 16,24-32                
+ src/core/entities                 |   91.66 |       75 |     100 |   90.62 |                         
+  algorithm-weights.vo.ts          |   91.66 |    56.25 |     100 |    90.9 | 93,99                   
+  availability-slot.vo.ts          |      75 |       70 |     100 |      75 | 12,16,26                
+  criterion-weights.vo.ts          |   95.83 |     90.9 |     100 |   95.45 | 72                      
+  index.ts                         |     100 |      100 |     100 |     100 |                         
+  match-score.vo.ts                |     100 |      100 |     100 |     100 |                         
+ src/core/enums                    |     100 |      100 |   91.66 |     100 |                         
+  assignment-status.enum.ts        |     100 |      100 |     100 |     100 |                         
+  delivery-mode.enum.ts            |     100 |      100 |     100 |     100 |                         
+  exam-type.enum.ts                |     100 |      100 |     100 |     100 |                         
+  format-preference.enum.ts        |     100 |      100 |     100 |     100 |                         
+  index.ts                         |     100 |      100 |   83.33 |     100 |                         
+  learning-style.enum.ts           |     100 |      100 |     100 |     100 |                         
+  teaching-style.enum.ts           |     100 |      100 |     100 |     100 |                         
+ src/core/evaluation               |    38.2 |       18 |   15.21 |   38.42 |                         
+  evaluation-harness.ts            |       0 |        0 |       0 |       0 | 1-422                   
+  optimal-baseline.ts              |   98.78 |       90 |     100 |   98.64 | 139                     
+ src/core/exceptions               |     100 |       50 |     100 |     100 |                         
+  incomplete-profile.exception.ts  |     100 |      100 |     100 |     100 |                         
+  index.ts                         |     100 |      100 |     100 |     100 |                         
+  no-eligible-tutors.exception.ts  |     100 |       50 |     100 |     100 | 14                      
+ src/database                      |       0 |      100 |       0 |       0 |                         
+  database.constants.ts            |       0 |      100 |     100 |       0 | 1                       
+  database.module.ts               |       0 |      100 |       0 |       0 | 1-21                    
+  index.ts                         |       0 |      100 |       0 |       0 | 1-4                     
+  schema.ts                        |       0 |      100 |       0 |       0 | 1-457                   
+ src/database/seeds                |       0 |        0 |       0 |       0 |                         
+  nigerian-secondary.seed.ts       |       0 |        0 |       0 |       0 | 3-230                   
+ src/modules/auth                  |       0 |        0 |       0 |       0 |                         
+  auth.controller.ts               |       0 |        0 |       0 |       0 | 1-141                   
+  auth.module.ts                   |       0 |      100 |     100 |       0 | 1-12                    
+  auth.service.ts                  |       0 |        0 |       0 |       0 | 1-175                   
+  index.ts                         |       0 |      100 |       0 |       0 | 1                       
+ src/modules/auth/dtos             |       0 |        0 |       0 |       0 |                         
+  admin-signup.dto.ts              |       0 |      100 |     100 |       0 | 1-29                    
+  auth-login.dto.ts                |       0 |      100 |     100 |       0 | 1-12                    
+  auth-session.dto.ts              |       0 |        0 |     100 |       0 | 1-37                    
+  auth-signup.dto.ts               |       0 |      100 |     100 |       0 | 1-25                    
+  onboard-users.dto.ts             |       0 |        0 |       0 |       0 | 1-187                   
+  refresh-token.dto.ts             |       0 |      100 |     100 |       0 | 1-7                     
+ src/modules/dashboard             |       0 |        0 |       0 |       0 |                         
+  dashboard.controller.ts          |       0 |        0 |       0 |       0 | 1-39                    
+  dashboard.module.ts              |       0 |      100 |     100 |       0 | 1-14                    
+  dashboard.repository.ts          |       0 |        0 |       0 |       0 | 1-143                   
+  dashboard.service.ts             |       0 |        0 |       0 |       0 | 1-105                   
+ src/modules/dashboard/dtos        |       0 |        0 |     100 |       0 |                         
+  dashboard.dto.ts                 |       0 |        0 |     100 |       0 | 1-88                    
+ src/modules/feed                  |       0 |        0 |       0 |       0 |                         
+  feed.controller.ts               |       0 |        0 |       0 |       0 | 1-52                    
+  feed.module.ts                   |       0 |      100 |     100 |       0 | 1-14                    
+  feed.repository.ts               |       0 |        0 |       0 |       0 | 1-143                   
+  feed.service.ts                  |       0 |        0 |       0 |       0 | 1-31                    
+ src/modules/feed/dtos             |       0 |        0 |       0 |       0 |                         
+  feed.dto.ts                      |       0 |        0 |       0 |       0 | 1-149                   
+ src/modules/matchmaking           |       0 |        0 |       0 |       0 |                         
+  index.ts                         |       0 |      100 |       0 |       0 | 1                       
+  matchmaking.controller.ts        |       0 |        0 |       0 |       0 | 1-138                   
+  matchmaking.module.ts            |       0 |      100 |     100 |       0 | 1-13                    
+  matchmaking.repository.ts        |       0 |        0 |       0 |       0 | 1-296                   
+  matchmaking.service.ts           |       0 |        0 |       0 |       0 | 1-423                   
+ src/modules/matchmaking-test      |       0 |        0 |       0 |       0 |                         
+  index.ts                         |       0 |      100 |       0 |       0 | 1                       
+  matchmaking-test.controller.ts   |       0 |        0 |       0 |       0 | 1-214                   
+  matchmaking-test.module.ts       |       0 |      100 |     100 |       0 | 1-7                     
+ src/modules/matchmaking-test/dtos |       0 |      100 |     100 |       0 |                         
+  matchmaking-test-response.dto.ts |       0 |      100 |     100 |       0 | 1-37                    
+ src/modules/matchmaking/dtos      |       0 |        0 |       0 |       0 |                         
+  matchmaking.dto.ts               |       0 |        0 |       0 |       0 | 1-213                   
+ src/modules/messages              |       0 |        0 |       0 |       0 |                         
+  messages.controller.ts           |       0 |        0 |       0 |       0 | 1-49                    
+  messages.module.ts               |       0 |      100 |     100 |       0 | 1-14                    
+  messages.repository.ts           |       0 |        0 |       0 |       0 | 1-117                   
+  messages.service.ts              |       0 |        0 |       0 |       0 | 1-22                    
+ src/modules/messages/dtos         |       0 |        0 |     100 |       0 |                         
+  message.dto.ts                   |       0 |        0 |     100 |       0 | 1-45                    
+ src/modules/notifications         |       0 |        0 |       0 |       0 |                         
+  notifications.controller.ts      |       0 |        0 |       0 |       0 | 1-45                    
+  notifications.module.ts          |       0 |      100 |     100 |       0 | 1-14                    
+  notifications.repository.ts      |       0 |        0 |       0 |       0 | 1-48                    
+  notifications.service.ts         |       0 |        0 |       0 |       0 | 1-141                   
+ src/modules/scheduling            |       0 |        0 |       0 |       0 |                         
+  index.ts                         |       0 |      100 |       0 |       0 | 1                       
+  scheduling.controller.ts         |       0 |        0 |       0 |       0 | 1-71                    
+  scheduling.module.ts             |       0 |      100 |     100 |       0 | 1-14                    
+  scheduling.repository.ts         |       0 |        0 |       0 |       0 | 1-93                    
+  scheduling.service.ts            |       0 |        0 |       0 |       0 | 1-111                   
+ src/modules/scheduling/dtos       |       0 |        0 |       0 |       0 |                         
+  create-schedule-slot.dto.ts      |       0 |        0 |       0 |       0 | 1-63                    
+ src/modules/sessions              |       0 |        0 |       0 |       0 |                         
+  sessions.controller.ts           |       0 |        0 |       0 |       0 | 1-117                   
+  sessions.module.ts               |       0 |      100 |     100 |       0 | 1-15                    
+  sessions.repository.ts           |       0 |        0 |       0 |       0 | 1-191                   
+  sessions.service.ts              |       0 |        0 |       0 |       0 | 1-264                   
+ src/modules/sessions/dtos         |       0 |        0 |       0 |       0 |                         
+  session.dto.ts                   |       0 |        0 |       0 |       0 | 1-128                   
+ src/modules/users                 |       0 |        0 |       0 |       0 |                         
+  index.ts                         |       0 |      100 |       0 |       0 | 1                       
+  users.controller.ts              |       0 |        0 |       0 |       0 | 1-105                   
+  users.module.ts                  |       0 |      100 |     100 |       0 | 1-14                    
+  users.repository.ts              |       0 |        0 |       0 |       0 | 1-283                   
+  users.service.ts                 |       0 |        0 |       0 |       0 | 1-73                    
+  users.types.ts                   |       0 |      100 |       0 |       0 | 21-24                   
+ src/modules/users/dtos            |       0 |        0 |       0 |       0 |                         
+  create-user.dto.ts               |       0 |        0 |       0 |       0 | 1-350                   
+  update-user.dto.ts               |       0 |        0 |       0 |       0 | 1-191                   
+ src/types                         |       0 |        0 |       0 |       0 |                         
+  bcrypt.d.ts                      |       0 |        0 |       0 |       0 |                         
+  pg.d.ts                          |       0 |        0 |       0 |       0 |                         
+-----------------------------------|---------|----------|---------|---------|-------------------------
+
+Test Suites: 3 passed, 3 total
+Tests:       75 passed, 75 total
+Snapshots:   0 total
+Time:        10.034 s
+Ran all test suites.

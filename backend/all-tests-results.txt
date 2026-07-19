@@ -1,0 +1,10 @@
+
+> backend@0.0.1 test C:\Users\USER\Desktop\Final Year Research\project\backend
+> jest
+
+
+Test Suites: 3 passed, 3 total
+Tests:       75 passed, 75 total
+Snapshots:   0 total
+Time:        6.825 s
+Ran all test suites.

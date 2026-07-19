@@ -30,21 +30,18 @@ interface EvaluationRow {
   averageScore: number;
   unassignedPercent: number;
   jainFairnessIndex: number;
-  elapsedMs: number;
+  elapsedMinMs: number;
+  elapsedMeanMs: number;
+  elapsedMaxMs: number;
   pairsScored: number;
   peakHeapEntries: number;
 }
 
-/** Number of repeated runs; elapsedMs is reported as the median across runs. */
+/** Number of repeated runs; elapsed time is reported as min/mean/max across runs. */
 const BENCHMARK_RUNS = 5;
 
-const median = (values: number[]): number => {
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0
-    ? (sorted[mid - 1] + sorted[mid]) / 2
-    : sorted[mid];
-};
+const mean = (values: number[]): number =>
+  values.length === 0 ? 0 : values.reduce((total, value) => total + value, 0) / values.length;
 
 const SUBJECTS = ['mathematics', 'english', 'biology', 'chemistry'];
 
@@ -81,8 +78,7 @@ export function generateStudents(count: number, loadFactorWeight: number): Stude
       budget: 30 + (index % 8) * 10,
       deliveryPreference: DeliveryMode.ONLINE,
       formatPreference: FormatPreference.ONE_ON_ONE,
-      learningStylePreference:
-        index % 2 === 0 ? LearningStyle.AUDITORY : LearningStyle.KINESTHETIC,
+      learningStylePreference: index % 2 === 0 ? LearningStyle.AUDITORY : LearningStyle.KINESTHETIC,
       preferenceWeights: {
         subjectFit: 0.3,
         availability: 0.25,
@@ -103,8 +99,7 @@ export function generateTutors(
     const subject = SUBJECTS[index % SUBJECTS.length];
     // 'seed' mirrors the platform's nigerian-secondary seed: capacity = 2 + (index % 3) → {2,3,4}.
     // 'synthetic' uses the index-decoupled hash so subject and capacity are uncorrelated.
-    const capacity =
-      capacityStrategy === 'seed' ? 2 + (index % 3) : capacityForIndex(index);
+    const capacity = capacityStrategy === 'seed' ? 2 + (index % 3) : capacityForIndex(index);
 
     return {
       id: `tutor-${index}`,
@@ -114,8 +109,7 @@ export function generateTutors(
       availability: [makeSlot((index % 5) + 1, 8 + (index % 6))],
       experienceYears: 1 + (index % 15),
       languages: ['english'],
-      teachingStyle:
-        index % 2 === 0 ? TeachingStyle.LECTURE : TeachingStyle.INTERACTIVE,
+      teachingStyle: index % 2 === 0 ? TeachingStyle.LECTURE : TeachingStyle.INTERACTIVE,
       deliveryStyle: DeliveryMode.ONLINE,
       formatStyle: FormatPreference.ONE_ON_ONE,
       avgRating: 0.5 + (index % 5) / 10,
@@ -128,7 +122,7 @@ export function generateTutors(
 
 export function evaluate(config: EvaluationConfig): EvaluationRow {
   // The engine mutates tutor.assignedCount, so each run needs fresh fixtures.
-  // Quality metrics are deterministic across runs; timing is the median of N.
+  // Quality metrics are deterministic across runs; timing is min/mean/max of N.
   const elapsedSamples: number[] = [];
   let result = new GreedyAssignmentEngine().assignBatch([], []);
   let assignedCounts: number[] = [];
@@ -155,10 +149,7 @@ export function evaluate(config: EvaluationConfig): EvaluationRow {
     0,
   );
   const assignedSum = assignedCounts.reduce((total, count) => total + count, 0);
-  const assignedSquareSum = assignedCounts.reduce(
-    (total, count) => total + count * count,
-    0,
-  );
+  const assignedSquareSum = assignedCounts.reduce((total, count) => total + count * count, 0);
 
   return {
     scenario: config.scenario,
@@ -172,7 +163,9 @@ export function evaluate(config: EvaluationConfig): EvaluationRow {
       assignedSquareSum === 0
         ? 1
         : (assignedSum * assignedSum) / (assignedCounts.length * assignedSquareSum),
-    elapsedMs: median(elapsedSamples),
+    elapsedMinMs: Math.min(...elapsedSamples),
+    elapsedMeanMs: mean(elapsedSamples),
+    elapsedMaxMs: Math.max(...elapsedSamples),
     pairsScored: stats.pairsScored,
     peakHeapEntries: stats.peakHeapEntries,
   };
@@ -180,20 +173,20 @@ export function evaluate(config: EvaluationConfig): EvaluationRow {
 
 export function runEvaluation(): EvaluationRow[] {
   const sizes = [50, 200, 1000, 5000];
-  const ratios = sizes.flatMap((size) => [
+  const ratios: EvaluationConfig[] = sizes.flatMap((size) => [
     {
       scenario: 'stress-sweep',
       students: size,
       tutors: Math.max(5, Math.floor(size / 10)),
       loadFactorWeight: 0.05,
-      capacityStrategy: 'synthetic' as CapacityStrategy,
+      capacityStrategy: 'synthetic',
     },
     {
       scenario: 'stress-sweep',
       students: size,
       tutors: Math.max(5, Math.floor(size / 10)),
       loadFactorWeight: 0,
-      capacityStrategy: 'synthetic' as CapacityStrategy,
+      capacityStrategy: 'synthetic',
     },
   ]);
 
@@ -213,7 +206,7 @@ export function runTopKSweep(): EvaluationRow[] {
         students: size,
         tutors: Math.max(5, Math.floor(size / 10)),
         loadFactorWeight: 0.05,
-        capacityStrategy: 'synthetic' as CapacityStrategy,
+        capacityStrategy: 'synthetic',
         topK: k,
       }),
     ),
@@ -319,7 +312,28 @@ export function runRealisticEvaluation(): EvaluationRow[] {
   return configs.map(evaluate);
 }
 
-/** Render rows as an aligned box-drawing table for terminal display. */
+// Moderate-load band: ratios between the 1:1 realistic seed (self-saturating)
+// and the 3:1+ capacity-bound regime, where the load-factor term has the most
+// room to affect aggregate outcomes. Uses seed capacities (2 + index % 3) to
+// mirror the platform's real supply distribution.
+export function runModerateEvaluation(): EvaluationRow[] {
+  const bands = [
+    { scenario: 'moderate-1.5to1', students: 150, tutors: 100 },
+    { scenario: 'moderate-2to1', students: 150, tutors: 75 },
+    { scenario: 'moderate-3to1', students: 150, tutors: 50 },
+    { scenario: 'moderate-4to1', students: 200, tutors: 50 },
+  ];
+
+  return bands.flatMap((band) =>
+    [0.05, 0].map((loadFactorWeight) =>
+      evaluate({
+        ...band,
+        loadFactorWeight,
+        capacityStrategy: 'seed',
+      }),
+    ),
+  );
+}
 function formatTable(header: string[], rows: string[][]): string {
   const widths = header.map((cell, column) =>
     Math.max(cell.length, ...rows.map((row) => row[column].length)),
@@ -327,8 +341,7 @@ function formatTable(header: string[], rows: string[][]): string {
   const pad = (cell: string, column: number): string => cell.padStart(widths[column]);
   const line = (left: string, mid: string, right: string): string =>
     left + widths.map((width) => '─'.repeat(width + 2)).join(mid) + right;
-  const renderRow = (cells: string[]): string =>
-    '│ ' + cells.map(pad).join(' │ ') + ' │';
+  const renderRow = (cells: string[]): string => '│ ' + cells.map(pad).join(' │ ') + ' │';
 
   return [
     line('┌', '┬', '┐'),
@@ -384,9 +397,12 @@ if (require.main === module) {
     );
   } else {
     const includeSweep = process.argv.includes('--topk-sweep');
+    const moderateOnly = process.argv.includes('--moderate');
     const rows = includeSweep
       ? runTopKSweep()
-      : [...runRealisticEvaluation(), ...runEvaluation()];
+      : moderateOnly
+        ? runModerateEvaluation()
+        : [...runRealisticEvaluation(), ...runModerateEvaluation(), ...runEvaluation()];
     printResults(
       [
         'scenario',
@@ -397,7 +413,9 @@ if (require.main === module) {
         'averageScore',
         'unassignedPercent',
         'jainFairnessIndex',
-        'elapsedMs',
+        'elapsedMinMs',
+        'elapsedMeanMs',
+        'elapsedMaxMs',
         'pairsScored',
         'peakHeapEntries',
       ],
@@ -410,7 +428,9 @@ if (require.main === module) {
         row.averageScore.toFixed(6),
         row.unassignedPercent.toFixed(2),
         row.jainFairnessIndex.toFixed(6),
-        String(row.elapsedMs),
+        String(row.elapsedMinMs),
+        row.elapsedMeanMs.toFixed(1),
+        String(row.elapsedMaxMs),
         String(row.pairsScored),
         String(row.peakHeapEntries),
       ]),
