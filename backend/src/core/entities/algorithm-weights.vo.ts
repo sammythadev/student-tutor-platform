@@ -33,12 +33,7 @@ export class AlgorithmWeights {
   public readonly preference: AlgorithmWeightsInput['preference'];
 
   constructor(input: AlgorithmWeightsInput) {
-    this.assertSum('top-level weights', [
-      input.alpha,
-      input.beta,
-      input.gamma,
-      input.delta,
-    ]);
+    this.assertSum('top-level weights', [input.alpha, input.beta, input.gamma, input.delta]);
     this.assertSum('academic weights', Object.values(input.academic));
     this.assertSum('preference weights', Object.values(input.preference));
 

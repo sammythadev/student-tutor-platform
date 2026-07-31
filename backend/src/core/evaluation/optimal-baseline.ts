@@ -1,6 +1,8 @@
-import { CompositeScorer } from '@core/algorithms';
+import { CompositeScorer, GreedyAssignmentEngine } from '@core/algorithms';
 import { EligibilityFilter } from '@core/algorithms';
 import type { Student, Tutor } from '@core/entities';
+import { emitResults, getFlagValue, runCli } from './cli-output';
+import { generateStudents, generateTutors } from './fixtures';
 
 /**
  * Optimal assignment via min-cost max-flow (successive shortest augmenting
@@ -33,7 +35,13 @@ class MinCostMaxFlow {
 
   public addEdge(from: number, to: number, cap: number, cost: number): void {
     this.graph[from].push({ to, cap, cost, flow: 0, rev: this.graph[to].length });
-    this.graph[to].push({ to: from, cap: 0, cost: -cost, flow: 0, rev: this.graph[from].length - 1 });
+    this.graph[to].push({
+      to: from,
+      cap: 0,
+      cost: -cost,
+      flow: 0,
+      rev: this.graph[from].length - 1,
+    });
   }
 
   /** Returns { flow, cost } of the min-cost max-flow from source to sink. */
@@ -130,8 +138,6 @@ export function computeOptimal(students: Student[], tutors: Tutor[]): OptimalRes
     mcmf.addEdge(tutorNode(j), sink, tutors[j].capacity, 0);
   }
 
-  // Store static scores so we can reconstruct the achieved total from flow.
-  const edgeScore = new Map<string, number>();
   for (let i = 0; i < S; i += 1) {
     const weights = scorer.buildWeights(students[i]);
     for (let j = 0; j < T; j += 1) {
@@ -140,7 +146,6 @@ export function computeOptimal(students: Student[], tutors: Tutor[]): OptimalRes
       }
       const match = scorer.score(students[i], tutors[j], weights);
       const staticScore = scorer.staticScoreFromMatch(match, weights);
-      edgeScore.set(`${i}:${j}`, staticScore);
       const cost = Math.round((1 - staticScore) * COST_SCALE);
       mcmf.addEdge(studentNode(i), tutorNode(j), 1, cost);
     }
@@ -151,4 +156,135 @@ export function computeOptimal(students: Student[], tutors: Tutor[]): OptimalRes
   const totalScore = flow - cost / COST_SCALE;
 
   return { assignedCount: flow, totalScore };
+}
+
+export interface OptimalityGapRow {
+  size: number;
+  students: number;
+  tutors: number;
+  greedyAssigned: number;
+  optimalAssigned: number;
+  greedyStaticTotal: number;
+  optimalStaticTotal: number;
+  scoreRatio: number; // greedy / optimal on static-score basis
+  greedyMs: number;
+  optimalMs: number;
+}
+
+/** Sum the STATIC (academic+preference+schedule) score of greedy's assignments,
+ *  so the comparison uses the same basis as the flow-based optimal (which cannot
+ *  model live-load fairness). */
+function greedyStaticTotal(
+  assignments: { studentId: string; tutorId: string | null }[],
+  studentsById: Map<string, Student>,
+  tutorsById: Map<string, Tutor>,
+): number {
+  const scorer = new CompositeScorer();
+  let total = 0;
+  for (const assignment of assignments) {
+    if (!assignment.tutorId) {
+      continue;
+    }
+    const student = studentsById.get(assignment.studentId)!;
+    const tutor = tutorsById.get(assignment.tutorId)!;
+    const weights = scorer.buildWeights(student);
+    const match = scorer.score(student, tutor, weights);
+    total += scorer.staticScoreFromMatch(match, weights);
+  }
+  return total;
+}
+
+const DEFAULT_GAP_SIZES = [10, 25, 50, 100];
+
+/**
+ * Optimality gap: greedy is a ½-approximation for weighted matching in the worst
+ * case; this measures the ACTUAL ratio against the min-cost max-flow optimum at
+ * sizes small enough for the exact solver to finish. Shows the greedy/optimal
+ * tradeoff that justifies greedy at production scale.
+ */
+export function runOptimalityGap(sizes: number[] = DEFAULT_GAP_SIZES): OptimalityGapRow[] {
+  return sizes.map((size) => {
+    const tutorCount = Math.max(3, Math.floor(size / 3));
+    const students = generateStudents(size, 0.05);
+    const buildTutors = () => generateTutors(tutorCount, 'synthetic');
+
+    const greedyTutors = buildTutors();
+    const tutorsById = new Map(greedyTutors.map((tutor) => [tutor.id, tutor]));
+    const studentsById = new Map(students.map((student) => [student.id, student]));
+    const greedyStart = Date.now();
+    const greedy = new GreedyAssignmentEngine().assignBatch(students, greedyTutors);
+    const greedyMs = Date.now() - greedyStart;
+    const greedyStatic = greedyStaticTotal(greedy.assignments, studentsById, tutorsById);
+
+    const optimalTutors = buildTutors();
+    const optimalStart = Date.now();
+    const optimal = computeOptimal(students, optimalTutors);
+    const optimalMs = Date.now() - optimalStart;
+
+    return {
+      size,
+      students: size,
+      tutors: tutorCount,
+      greedyAssigned: greedy.assignments.length,
+      optimalAssigned: optimal.assignedCount,
+      greedyStaticTotal: greedyStatic,
+      optimalStaticTotal: optimal.totalScore,
+      scoreRatio: optimal.totalScore === 0 ? 1 : greedyStatic / optimal.totalScore,
+      greedyMs,
+      optimalMs,
+    };
+  });
+}
+
+/** Parses `--sizes 10,25,50`; falls back to the default sweep when absent or unusable. */
+function parseSizes(): number[] {
+  const raw = getFlagValue('--sizes');
+  if (!raw) {
+    return DEFAULT_GAP_SIZES;
+  }
+  const sizes = raw
+    .split(',')
+    .map((part) => Number.parseInt(part.trim(), 10))
+    .filter((size) => Number.isInteger(size) && size > 0);
+
+  if (sizes.length === 0) {
+    throw new Error(`--sizes expects a comma-separated list of positive integers, got "${raw}"`);
+  }
+  return sizes;
+}
+
+const HEADER = [
+  'size',
+  'students',
+  'tutors',
+  'greedyAssigned',
+  'optimalAssigned',
+  'greedyStaticTotal',
+  'optimalStaticTotal',
+  'scoreRatio',
+  'greedyMs',
+  'optimalMs',
+];
+
+const toRow = (row: OptimalityGapRow): string[] => [
+  String(row.size),
+  String(row.students),
+  String(row.tutors),
+  String(row.greedyAssigned),
+  String(row.optimalAssigned),
+  row.greedyStaticTotal.toFixed(6),
+  row.optimalStaticTotal.toFixed(6),
+  row.scoreRatio.toFixed(6),
+  String(row.greedyMs),
+  String(row.optimalMs),
+];
+
+if (require.main === module) {
+  runCli(() =>
+    emitResults({
+      defaultName: 'optimality-gap-results.csv',
+      header: HEADER,
+      rows: runOptimalityGap(parseSizes()).map(toRow),
+    }),
+  );
 }

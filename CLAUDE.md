@@ -24,6 +24,8 @@ pnpm run test               # jest (unit tests, *.spec.ts under src/)
 pnpm run test:core          # only core matchmaking unit tests (jest core-units)
 pnpm run test:e2e           # e2e tests (test/, *.e2e-spec.ts)
 pnpm run eval               # matchmaking evaluation harness (src/core/evaluation)
+pnpm run eval:gap           # greedy vs min-cost max-flow optimum
+pnpm run eval:baselines     # greedy vs FCFS baseline strategies
 pnpm jest path/to/file.spec.ts        # run a single test file
 pnpm jest -t "test name"              # run tests matching a name
 ```
@@ -49,7 +51,7 @@ The key structural rule: **matchmaking logic lives in `src/core/` and is framewo
 
 - `src/core/entities` — plain domain types (Student, Tutor, AvailabilitySlot, CriterionWeights, MatchScore, Assignment) and repository *interfaces* scoped to what the engine needs.
 - `src/core/algorithms` — separately testable units: `filters` (hard eligibility pre-filter — subject match is a filter, not a weighted term), `scorers` (per-criterion normalization/scoring), `ranking`, `assignment` (Iterative Best-Match-First), `feedback`, `adaptation`.
-- `src/core/engine/matching-engine.ts` — orchestrates filter → score → assign; supports batch assignment and incremental single-request handling with waitlisting, plus assignment lifecycle (completion/cancellation decrements assignedCount and re-checks the waitlist).
+- `src/core/engine/matching-engine.ts` — convenience facade bundling filter → score → assign, incremental single-request handling, and the assignment lifecycle behind one object. The Nest layer does **not** go through it: `MatchmakingService` composes `GreedyAssignmentEngine`, `AssignmentLifecycle` and the scorers directly, because the HTTP flows need per-unit options (`stats`, `topK`) and because lifecycle accounting — decrementing `assignedCount`, retiring waitlist rows — has to happen in SQL inside a transaction, not on in-memory copies. The facade stays for callers that want the whole pipeline in one call.
 - `src/core/evaluation` — evaluation harness run via `pnpm run eval`.
 
 - `src/modules/<feature>` — Nest feature modules (auth, users, matchmaking, scheduling, sessions, messages, notifications, feed, dashboard, matchmaking-test). Strict controller → service → repository layering: controllers handle HTTP + Swagger only, services own business rules, repositories own Drizzle queries. DTOs for API I/O; database records stay out of controllers.

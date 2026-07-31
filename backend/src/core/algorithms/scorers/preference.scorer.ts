@@ -10,11 +10,7 @@ export interface PreferenceScore {
 }
 
 export class PreferenceScorer {
-  public score(
-    student: Student,
-    tutor: Tutor,
-    weights: AlgorithmWeights,
-  ): PreferenceScore {
+  public score(student: Student, tutor: Tutor, weights: AlgorithmWeights): PreferenceScore {
     const style = this.styleSimilarity(student, tutor);
     const budget = this.budgetCompatibility(student, tutor);
     const region = this.regionCompatibility(student, tutor);
@@ -66,9 +62,7 @@ export class PreferenceScorer {
       return 0.5;
     }
 
-    return student.region.trim().toLowerCase() === tutor.region.trim().toLowerCase()
-      ? 1
-      : 0;
+    return student.region.trim().toLowerCase() === tutor.region.trim().toLowerCase() ? 1 : 0;
   }
 
   private studentVector(student: Student): number[] {

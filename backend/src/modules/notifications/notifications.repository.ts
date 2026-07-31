@@ -8,10 +8,7 @@ export class NotificationsRepository {
   constructor(@Inject(DATABASE) private readonly db: AppDatabase) {}
 
   async create(data: NewNotificationRecord): Promise<NotificationRecord> {
-    const [created] = await this.db
-      .insert(notifications)
-      .values(data)
-      .returning();
+    const [created] = await this.db.insert(notifications).values(data).returning();
     return created;
   }
 

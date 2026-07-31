@@ -21,11 +21,7 @@ export class MatchScore {
 
   public readonly subBreakdown: MatchSubBreakdown;
 
-  constructor(
-    total: number,
-    breakdown: MatchScoreBreakdown,
-    subBreakdown: MatchSubBreakdown,
-  ) {
+  constructor(total: number, breakdown: MatchScoreBreakdown, subBreakdown: MatchSubBreakdown) {
     this.total = Math.max(0, Math.min(1, total));
     this.breakdown = breakdown;
     this.subBreakdown = subBreakdown;

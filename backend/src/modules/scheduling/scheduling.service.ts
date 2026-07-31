@@ -86,10 +86,7 @@ export class SchedulingService {
   /**
    * Splits a time range by subtracting booked intervals from it.
    */
-  private subtractRanges(
-    slot: AvailableSlot,
-    booked: AvailableSlot[],
-  ): AvailableSlot[] {
+  private subtractRanges(slot: AvailableSlot, booked: AvailableSlot[]): AvailableSlot[] {
     let free: AvailableSlot[] = [slot];
 
     for (const b of booked) {

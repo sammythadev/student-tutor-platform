@@ -1,5 +1,13 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '@common/auth';
 import {
   CreatePostDto,
@@ -27,7 +35,7 @@ export class FeedController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Query() query: FeedQueryDto,
   ): Promise<FeedResponseDto> {
-    return this.feedService.getFeed(currentUser.id, query) as any;
+    return this.feedService.getFeed(currentUser.id, query);
   }
 
   @Post()
@@ -38,17 +46,14 @@ export class FeedController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() dto: CreatePostDto,
   ): Promise<PostResponseDto> {
-    return this.feedService.createPost(currentUser.id, dto) as any;
+    return this.feedService.createPost(currentUser.id, dto);
   }
 
   @Post(':id/like')
   @ApiOperation({ summary: 'Toggle like on a post' })
   @ApiParam({ name: 'id', description: 'Post UUID' })
   @ApiResponse({ status: 201, description: 'Like toggled.' })
-  toggleLike(
-    @CurrentUser() currentUser: AuthenticatedUser,
-    @Param() params: PostParamDto,
-  ) {
+  toggleLike(@CurrentUser() currentUser: AuthenticatedUser, @Param() params: PostParamDto) {
     return this.feedService.toggleLike(params.id, currentUser.id);
   }
 }

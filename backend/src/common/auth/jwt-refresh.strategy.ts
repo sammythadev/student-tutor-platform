@@ -5,7 +5,9 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { JWT_REFRESH_STRATEGY_NAME } from './auth.constants';
 import type { AuthTokenClaims, AuthenticatedUser } from './auth.types';
 
-function fromRefreshTokenBody(request: { body?: { refreshToken?: string } } | undefined): string | null {
+function fromRefreshTokenBody(
+  request: { body?: { refreshToken?: string } } | undefined,
+): string | null {
   return request?.body?.refreshToken ?? null;
 }
 

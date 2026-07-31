@@ -8,7 +8,10 @@ export interface EligibilityResult {
 export class EligibilityFilter {
   public checkEligibility(student: Student, tutor: Tutor): EligibilityResult {
     if (!this.hasSubject(student, tutor)) {
-      return { isEligible: false, reason: 'Tutor does not teach any of the student\'s required subjects' };
+      return {
+        isEligible: false,
+        reason: "Tutor does not teach any of the student's required subjects",
+      };
     }
     if (!this.supportsGradeLevel(student, tutor)) {
       return { isEligible: false, reason: 'Tutor does not support the student grade level' };

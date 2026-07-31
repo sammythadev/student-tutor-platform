@@ -10,12 +10,7 @@ import {
   magnitude,
   oneHot,
 } from '@core/algorithms';
-import {
-  AlgorithmWeights,
-  AvailabilitySlot,
-  type Student,
-  type Tutor,
-} from '@core/entities';
+import { AlgorithmWeights, AvailabilitySlot, type Student, type Tutor } from '@core/entities';
 import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
 
 const defaultWeights = AlgorithmWeights.defaults();
@@ -104,7 +99,9 @@ describe('PreferenceScorer', () => {
 
   it('returns budget=1 when hourly rate is within budget', () => {
     expect(scorer.budgetCompatibility(student({ budget: 100 }), tutor({ hourlyRate: 80 }))).toBe(1);
-    expect(scorer.budgetCompatibility(student({ budget: 100 }), tutor({ hourlyRate: 100 }))).toBe(1);
+    expect(scorer.budgetCompatibility(student({ budget: 100 }), tutor({ hourlyRate: 100 }))).toBe(
+      1,
+    );
   });
 
   it('returns budget=0 when hourly rate far exceeds budget', () => {
@@ -112,10 +109,7 @@ describe('PreferenceScorer', () => {
   });
 
   it('returns a fractional budget score for moderate overruns', () => {
-    const score = scorer.budgetCompatibility(
-      student({ budget: 100 }),
-      tutor({ hourlyRate: 130 }),
-    );
+    const score = scorer.budgetCompatibility(student({ budget: 100 }), tutor({ hourlyRate: 130 }));
     // 1 - (130 - 100) / 100 = 1 - 0.3 = 0.7
     expect(score).toBeCloseTo(0.7);
   });
@@ -267,16 +261,13 @@ describe('CompositeScorer — fairness weight effect on empty vs nearly-full tut
 
   // A shared slot keeps ScheduleScorer satisfied and schedule score constant,
   // so it cannot confound the A-vs-B comparison.
-  const slot = () =>
-    new AvailabilitySlot('2026-01-01T09:00:00.000Z', '2026-01-01T11:00:00.000Z');
+  const slot = () => new AvailabilitySlot('2026-01-01T09:00:00.000Z', '2026-01-01T11:00:00.000Z');
 
   // Two tutors identical in every scored dimension except load: A is nearly
   // full (2/3), B is empty (0/3). Only the fairness term F(t) can differ, so
   // this isolates whether loadFactor flips or narrows the A-vs-B ranking.
-  const tutorA = () =>
-    tutor({ id: 'A', capacity: 3, assignedCount: 2, availability: [slot()] });
-  const tutorB = () =>
-    tutor({ id: 'B', capacity: 3, assignedCount: 0, availability: [slot()] });
+  const tutorA = () => tutor({ id: 'A', capacity: 3, assignedCount: 2, availability: [slot()] });
+  const tutorB = () => tutor({ id: 'B', capacity: 3, assignedCount: 0, availability: [slot()] });
 
   const withLoadFactor = (loadFactor: number): Student =>
     student({
@@ -300,7 +291,6 @@ describe('CompositeScorer — fairness weight effect on empty vs nearly-full tut
     const aNo = scorer.score(noFairness, tutorA()).total;
     const bNo = scorer.score(noFairness, tutorB()).total;
 
-    // eslint-disable-next-line no-console
     console.log(
       '\n[fairness-weight-probe]\n' +
         `loadFactor=0.05  A(2/3)=${aWith.toFixed(6)}  B(0/3)=${bWith.toFixed(6)}  ` +
@@ -576,13 +566,21 @@ describe('AcademicScorer — exam type fit', () => {
   const scorer = new AcademicScorer();
 
   it('returns examTypeFit=1 on match and 0.5 on mismatch', () => {
-    expect(scorer.examTypeFit(student({ examType: 'waec' }), tutor({ examTypesSupported: ['waec'] }))).toBe(1);
-    expect(scorer.examTypeFit(student({ examType: 'waec' }), tutor({ examTypesSupported: ['neco'] }))).toBe(0.5);
+    expect(
+      scorer.examTypeFit(student({ examType: 'waec' }), tutor({ examTypesSupported: ['waec'] })),
+    ).toBe(1);
+    expect(
+      scorer.examTypeFit(student({ examType: 'waec' }), tutor({ examTypesSupported: ['neco'] })),
+    ).toBe(0.5);
   });
 
   it('returns examTypeFit=1 when examType is missing or tutor list is empty', () => {
-    expect(scorer.examTypeFit(student({ examType: '' }), tutor({ examTypesSupported: ['neco'] }))).toBe(1);
-    expect(scorer.examTypeFit(student({ examType: 'waec' }), tutor({ examTypesSupported: [] }))).toBe(1);
+    expect(
+      scorer.examTypeFit(student({ examType: '' }), tutor({ examTypesSupported: ['neco'] })),
+    ).toBe(1);
+    expect(
+      scorer.examTypeFit(student({ examType: 'waec' }), tutor({ examTypesSupported: [] })),
+    ).toBe(1);
   });
 
   it('penalises the academic score for an exam type mismatch vs a match', () => {

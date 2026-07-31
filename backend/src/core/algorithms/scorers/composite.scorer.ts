@@ -21,9 +21,7 @@ export class CompositeScorer {
   /** Build the α/β/γ/δ weights for a student. Depends only on the student, so
    *  callers scoring many tutors for one student should build once and reuse. */
   public buildWeights(student: Student): AlgorithmWeights {
-    return AlgorithmWeights.fromCriterionWeights(
-      CriterionWeights.from(student.preferenceWeights),
-    );
+    return AlgorithmWeights.fromCriterionWeights(CriterionWeights.from(student.preferenceWeights));
   }
 
   public score(student: Student, tutor: Tutor, weights?: AlgorithmWeights): MatchScore {
@@ -90,10 +88,6 @@ export class CompositeScorer {
       weights.gamma * cached.breakdown.schedule +
       weights.delta * fairness;
 
-    return new MatchScore(
-      total,
-      { ...cached.breakdown, fairness },
-      cached.subBreakdown,
-    );
+    return new MatchScore(total, { ...cached.breakdown, fairness }, cached.subBreakdown);
   }
 }

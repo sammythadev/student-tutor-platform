@@ -1,11 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsISO8601,
-  IsOptional,
-  IsString,
-  IsUUID,
-} from 'class-validator';
+import { IsEnum, IsISO8601, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export enum SessionStatus {
   PENDING = 'pending',
@@ -20,7 +14,10 @@ export class BookSessionDto {
   @IsUUID()
   tutorId!: string;
 
-  @ApiPropertyOptional({ format: 'uuid', description: 'The student (tutors use this to book for a specific student)' })
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'The student (tutors use this to book for a specific student)',
+  })
   @IsOptional()
   @IsUUID()
   studentId?: string;

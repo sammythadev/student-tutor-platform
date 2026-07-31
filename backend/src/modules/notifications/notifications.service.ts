@@ -43,7 +43,7 @@ export class NotificationsService {
   ): Promise<NotificationRecord> {
     return this.notificationsRepository.create({
       userId,
-      type: type as any,
+      type: type,
       title,
       message,
       relatedId,
@@ -63,7 +63,7 @@ export class NotificationsService {
     await this.notificationsRepository.createMany(
       userIds.map((userId) => ({
         userId,
-        type: type as any,
+        type,
         title,
         message,
         relatedId,
@@ -75,7 +75,14 @@ export class NotificationsService {
    * Creates the appropriate notification when a session changes state.
    */
   async onSessionEvent(
-    event: 'created' | 'accepted' | 'declined' | 'completed' | 'cancelled' | 'upcoming' | 'proposed',
+    event:
+      | 'created'
+      | 'accepted'
+      | 'declined'
+      | 'completed'
+      | 'cancelled'
+      | 'upcoming'
+      | 'proposed',
     sessionId: string,
     tutorName: string,
     studentName: string,

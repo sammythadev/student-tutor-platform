@@ -2,29 +2,27 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
+  AssignmentLifecycle,
   CompositeScorer,
+  EligibilityFilter,
   FeedbackUpdater,
   GreedyAssignmentEngine,
   TopKRanker,
 } from '@core/algorithms';
-import {
-  DeliveryMode,
-  FormatPreference,
-  LearningStyle,
-  TeachingStyle,
-} from '@core/enums';
+import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
 import { AvailabilitySlot, type Student, type Tutor } from '@core/entities';
 import type { AuthenticatedUser } from '@common/auth';
-import type { ScheduleSlotRecord } from '@database';
 import {
   AssignmentPageDto,
   AssignmentResponseDto,
   AssignmentUpdateStatus,
   BatchMatchmakingResponseDto,
   CandidatePageDto,
+  CandidateStudentPageDto,
   FeedbackResponseDto,
   PaginationQueryDto,
   SubmitFeedbackDto,
@@ -38,11 +36,18 @@ import {
 
 @Injectable()
 export class MatchmakingService {
+  private readonly logger = new Logger(MatchmakingService.name);
+
   private readonly greedyAssignmentEngine = new GreedyAssignmentEngine();
+
+  /** Owns the "who takes a freed seat" decision — see promoteFromWaitlist. */
+  private readonly assignmentLifecycle = new AssignmentLifecycle(this.greedyAssignmentEngine);
 
   private readonly topKRanker = new TopKRanker();
 
   private readonly compositeScorer = new CompositeScorer();
+
+  private readonly eligibilityFilter = new EligibilityFilter();
 
   private readonly feedbackUpdater = new FeedbackUpdater();
 
@@ -63,7 +68,15 @@ export class MatchmakingService {
     ]);
     const student = this.toStudent(studentRow, schedules.get(studentRow.user.id));
     const tutors = tutorRows.map((row) => this.toTutor(row, schedules.get(row.user.id)));
-    const ranked = this.topKRanker.rank(student, tutors, page * limit);
+
+    if (!this.hasAvailability(student)) {
+      throw new BadRequestException(
+        'Set your availability before requesting tutor recommendations',
+      );
+    }
+
+    // Rank the full set: `total` must reflect every candidate, not just this page.
+    const ranked = this.topKRanker.rank(student, tutors, tutors.length);
     const data = ranked.slice((page - 1) * limit, page * limit).map((candidate) => {
       const row = tutorRows.find((tutorRow) => tutorRow.user.id === candidate.tutor.id);
 
@@ -83,17 +96,13 @@ export class MatchmakingService {
         reason: candidate.eligibility.reason,
         experienceYears: row.profile.experienceYears,
         // avgRating stored as 0-1 EMA; display as 1-5 star scale
-        avgRating: row.profile.avgRating !== null
-          ? (Number(row.profile.avgRating) * 5).toFixed(1)
-          : null,
+        avgRating:
+          row.profile.avgRating !== null ? (Number(row.profile.avgRating) * 5).toFixed(1) : null,
         ratingCount: row.profile.ratingCount,
         hourlyRate: row.profile.hourlyRate,
         bio: row.profile.bio,
         isVerified: row.profile.isVerified === 1,
-        capacity: row.profile.capacity,
-        assignedCount: row.profile.assignedCount,
       };
-
     });
 
     return {
@@ -107,7 +116,7 @@ export class MatchmakingService {
   async candidateStudents(
     currentUser: AuthenticatedUser,
     query: PaginationQueryDto,
-  ): Promise<any> {
+  ): Promise<CandidateStudentPageDto> {
     this.assertRole(currentUser, 'tutor');
     const page = query.page ?? 1;
     const limit = query.limit ?? 5;
@@ -118,10 +127,14 @@ export class MatchmakingService {
       ...studentRows.map((row) => row.user.id),
     ]);
     const tutor = this.toTutor(tutorRow, schedules.get(tutorRow.user.id));
-    const students = studentRows.map((row) => this.toStudent(row, schedules.get(row.user.id)));
-    
-    // We only rank students up to the requested page * limit
-    const ranked = this.topKRanker.rankStudents(tutor, students, page * limit);
+    // A student with no availability would make ScheduleScorer throw and take the
+    // whole list down with them; they are simply not rankable yet.
+    const students = studentRows
+      .map((row) => this.toStudent(row, schedules.get(row.user.id)))
+      .filter((student) => this.hasAvailability(student));
+
+    // Rank the full set: `total` must reflect every candidate, not just this page.
+    const ranked = this.topKRanker.rankStudents(tutor, students, students.length);
     const data = ranked.slice((page - 1) * limit, page * limit).map((candidate) => {
       const row = studentRows.find((studentRow) => studentRow.user.id === candidate.student.id);
 
@@ -135,7 +148,9 @@ export class MatchmakingService {
         lastName: row.user.lastName,
         region: row.profile.region ?? row.user.region,
         requiredSubject: row.profile.requiredSubject,
-        subjects: row.profile.subjects?.length ? row.profile.subjects : [row.profile.requiredSubject],
+        subjects: row.profile.subjects?.length
+          ? row.profile.subjects
+          : [row.profile.requiredSubject],
         gradeLevel: row.profile.gradeLevel,
         budget: row.profile.budget,
         score: candidate.score.total,
@@ -159,8 +174,18 @@ export class MatchmakingService {
   ): Promise<AssignmentResponseDto> {
     this.assertRole(currentUser, 'student');
 
-    if (await this.matchmakingRepository.hasActiveAssignmentWithTutor(currentUser.id, tutorId)) {
-      throw new BadRequestException('Student already has an active or waitlisted assignment with this tutor');
+    // Algorithm.md §6.1 allows at most one tutor per student (Σ_t x(s,t) ≤ 1), so
+    // an active assignment with ANY tutor blocks a new selection — not just one
+    // with this tutor.
+    const existing = await this.matchmakingRepository.findActiveAssignmentForStudent(
+      currentUser.id,
+    );
+    if (existing) {
+      throw new BadRequestException(
+        existing.tutorId === tutorId
+          ? 'Student already has an active assignment with this tutor'
+          : 'Student already has an active assignment; end it before selecting another tutor',
+      );
     }
 
     const [studentRow, tutorRow] = await Promise.all([
@@ -171,8 +196,12 @@ export class MatchmakingService {
     const student = this.toStudent(studentRow, schedules.get(studentRow.user.id));
     const tutor = this.toTutor(tutorRow, schedules.get(tutorRow.user.id));
 
-    if (tutor.assignedCount >= tutor.capacity) {
-      throw new BadRequestException('Tutor is at capacity');
+    // Manual selection is still subject to the hard pre-filter (Algorithm.md §1.1):
+    // subject, grade level and exam type are eligibility gates, not soft preferences.
+    // The capacity check is part of checkEligibility, so it is covered here too.
+    const eligibility = this.eligibilityFilter.checkEligibility(student, tutor);
+    if (!eligibility.isEligible) {
+      throw new BadRequestException(eligibility.reason ?? 'Tutor is not eligible for this student');
     }
 
     const score = this.compositeScorer.score(student, tutor);
@@ -199,8 +228,15 @@ export class MatchmakingService {
       ...studentRows.map((row) => row.user.id),
       ...tutorRows.map((row) => row.user.id),
     ]);
-    const students = studentRows.map((row) => this.toStudent(row, schedules.get(row.user.id)));
+    const allStudents = studentRows.map((row) => this.toStudent(row, schedules.get(row.user.id)));
     const tutors = tutorRows.map((row) => this.toTutor(row, schedules.get(row.user.id)));
+
+    // Algorithm.md §3 treats zero availability as a precondition failure for that
+    // student, not for the run. ScheduleScorer throws on them, so partition them out
+    // and waitlist them with an actionable reason instead of aborting the batch.
+    const students = allStudents.filter((student) => this.hasAvailability(student));
+    const incomplete = allStudents.filter((student) => !this.hasAvailability(student));
+
     const result = this.greedyAssignmentEngine.assignBatch(students, tutors);
     const activeAssignments = result.assignments
       .filter((assignment) => assignment.tutorId && assignment.matchScore)
@@ -213,16 +249,27 @@ export class MatchmakingService {
           subBreakdown: assignment.matchScore?.subBreakdown,
         },
       }));
-    const waitlisted = result.unassignable.map((assignment) => ({
-      studentId: assignment.studentId,
-      reason: assignment.reason ?? 'No eligible tutor currently available',
-    }));
+    const waitlisted = [
+      ...result.unassignable.map((assignment) => ({
+        studentId: assignment.studentId,
+        reason: assignment.reason ?? 'No eligible tutor currently available',
+      })),
+      ...incomplete.map((student) => ({
+        studentId: student.id,
+        reason: 'Student has no availability set',
+      })),
+    ];
 
-    await this.matchmakingRepository.persistBatchResults(activeAssignments, waitlisted);
+    const persisted = await this.matchmakingRepository.persistBatchResults(
+      activeAssignments,
+      waitlisted,
+    );
 
+    // Report what was actually written, not what greedy proposed — the two differ
+    // when a concurrent selection took a seat before this batch committed.
     return {
-      activeAssignments: activeAssignments.length,
-      waitlisted: waitlisted.length,
+      activeAssignments: persisted.activeAssignments,
+      waitlisted: persisted.waitlisted,
       elapsedSeconds: (performance.now() - start) / 1000,
     };
   }
@@ -254,12 +301,65 @@ export class MatchmakingService {
     status: AssignmentUpdateStatus,
   ): Promise<AssignmentResponseDto> {
     const assignment = await this.loadAssignmentForParticipant(currentUser, assignmentId);
-    const updated = await this.matchmakingRepository.updateAssignmentStatus(
-      assignment.id,
-      status,
-    );
+    const updated = await this.matchmakingRepository.updateAssignmentStatus(assignment.id, status);
+
+    // A seat just came free. Offer it to the longest-waiting eligible student
+    // instead of making them wait for an admin to re-run the batch.
+    if (assignment.status === 'active' && assignment.tutorId) {
+      await this.promoteFromWaitlist(assignment.tutorId);
+    }
 
     return this.toAssignmentResponse(updated);
+  }
+
+  /**
+   * Best-effort waitlist promotion after a seat is freed. The status change has
+   * already committed, so a failure here must not fail the caller's request — it
+   * is logged and the student simply stays waitlisted until the next batch run.
+   */
+  private async promoteFromWaitlist(tutorId: string): Promise<void> {
+    try {
+      const [tutorRow, studentRows] = await Promise.all([
+        this.matchmakingRepository.findTutor(tutorId),
+        this.matchmakingRepository.findWaitlistedStudentRows(),
+      ]);
+
+      if (!tutorRow || studentRows.length === 0) {
+        return;
+      }
+
+      const schedules = await this.loadSchedules([
+        tutorRow.user.id,
+        ...studentRows.map((row) => row.user.id),
+      ]);
+      const tutor = this.toTutor(tutorRow, schedules.get(tutorRow.user.id));
+      const candidates = studentRows
+        .map((row) => this.toStudent(row, schedules.get(row.user.id)))
+        .filter((student) => this.hasAvailability(student));
+
+      // recheckWaitlist promotes at most one student, in the order given (oldest
+      // waitlist row first), and only against this freed tutor.
+      const promoted = this.assignmentLifecycle.recheckWaitlist(candidates, [tutor]);
+
+      if (!promoted?.tutorId || !promoted.matchScore) {
+        return;
+      }
+
+      await this.matchmakingRepository.promoteWaitlistedStudent(
+        promoted.studentId,
+        promoted.tutorId,
+        promoted.matchScore.total,
+        {
+          breakdown: promoted.matchScore.breakdown,
+          subBreakdown: promoted.matchScore.subBreakdown,
+        },
+      );
+    } catch (error) {
+      this.logger.error(
+        `Waitlist promotion failed for tutor ${tutorId}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   async submitFeedback(
@@ -353,6 +453,17 @@ export class MatchmakingService {
     return grouped;
   }
 
+  /**
+   * Mirrors ScheduleScorer's precondition: it throws when the student's requested
+   * availability sums to zero minutes. Checking the same condition up front lets
+   * callers exclude that student instead of failing the whole request.
+   */
+  private hasAvailability(student: Student): boolean {
+    return (
+      student.requestedAvailability.reduce((total, slot) => total + slot.durationMinutes(), 0) > 0
+    );
+  }
+
   private toStudent(row: StudentRow, slots: AvailabilitySlot[] | undefined): Student {
     const subjects = row.profile.subjects?.length
       ? row.profile.subjects
@@ -363,20 +474,17 @@ export class MatchmakingService {
       requiredSubject: subjects[0], // backward compat for greedy engine
       gradeLevel: row.profile.gradeLevel,
       examType: row.profile.examType,
-      requestedAvailability:
-        slots?.length
-          ? slots
-          : row.profile.requestedAvailability.map(
-              (slot) => new AvailabilitySlot(slot.start, slot.end),
-            ),
+      requestedAvailability: slots?.length
+        ? slots
+        : row.profile.requestedAvailability.map(
+            (slot) => new AvailabilitySlot(slot.start, slot.end),
+          ),
       preferenceWeights: row.profile.preferenceWeights ?? undefined,
       bookingTimestamp: row.profile.bookingTimestamp,
       budget: row.profile.budget === null ? undefined : Number(row.profile.budget),
       deliveryPreference: row.profile.deliveryPreference as DeliveryMode | undefined,
       formatPreference: row.profile.formatPreference as FormatPreference | undefined,
-      learningStylePreference: row.profile.learningStylePreference as
-        | LearningStyle
-        | undefined,
+      learningStylePreference: row.profile.learningStylePreference as LearningStyle | undefined,
       languages: row.profile.languages,
       subjectSpecialization: row.profile.subjectSpecialization ?? undefined,
       region: row.profile.region ?? row.user.region ?? undefined,
@@ -389,10 +497,9 @@ export class MatchmakingService {
       subjectsTaught: row.profile.subjectsTaught,
       gradeLevelsSupported: row.profile.gradeLevelsSupported,
       examTypesSupported: row.profile.examTypesSupported,
-      availability:
-        slots?.length
-          ? slots
-          : row.profile.availability.map((slot) => new AvailabilitySlot(slot.start, slot.end)),
+      availability: slots?.length
+        ? slots
+        : row.profile.availability.map((slot) => new AvailabilitySlot(slot.start, slot.end)),
       experienceYears: row.profile.experienceYears,
       languages: row.profile.languages,
       teachingStyle: row.profile.teachingStyle as TeachingStyle | undefined,

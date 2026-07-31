@@ -1,13 +1,16 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthenticatedUser } from '@common/auth/auth.types';
 import { CurrentUser } from '@common/auth/current-user.decorator';
 import { AuthGuard, OwnerOrAdminGuard, Roles, RolesGuard } from '@common/auth';
-import {
-  CreateUserDto,
-  UserIdParamDto,
-  UserWithProfilesResponseDto,
-} from './dtos/create-user.dto';
+import { CreateUserDto, UserIdParamDto, UserWithProfilesResponseDto } from './dtos/create-user.dto';
 import {
   UpdateUserDto,
   UpdateStudentPreferencesDto,
@@ -77,7 +80,11 @@ export class UsersController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update student preferences (budget, languages, learning style, etc.)' })
   @ApiBody({ type: UpdateStudentPreferencesDto })
-  @ApiResponse({ status: 200, description: 'Student preferences updated.', type: UserWithProfilesResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Student preferences updated.',
+    type: UserWithProfilesResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'User is not onboarded as a student.' })
   @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
   @ApiResponse({ status: 403, description: 'Student role required.' })
@@ -92,9 +99,15 @@ export class UsersController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('tutor')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Update tutor preferences (specializations, capacity, format style, etc.)' })
+  @ApiOperation({
+    summary: 'Update tutor preferences (specializations, capacity, format style, etc.)',
+  })
   @ApiBody({ type: UpdateTutorPreferencesDto })
-  @ApiResponse({ status: 200, description: 'Tutor preferences updated.', type: UserWithProfilesResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Tutor preferences updated.',
+    type: UserWithProfilesResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'User is not onboarded as a tutor.' })
   @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
   @ApiResponse({ status: 403, description: 'Tutor role required.' })

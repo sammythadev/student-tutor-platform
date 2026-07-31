@@ -31,7 +31,7 @@ export class SessionsRepository {
         status: 'pending',
         meetingUrl: dto.meetingUrl,
         notes: dto.notes,
-      } as any)
+      })
       .returning({ id: sessions.id });
 
     const session = await this.findById(created.id);
@@ -40,11 +40,7 @@ export class SessionsRepository {
   }
 
   async findById(id: string): Promise<SessionWithParticipants | null> {
-    const [row] = await this.db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, id))
-      .limit(1);
+    const [row] = await this.db.select().from(sessions).where(eq(sessions.id, id)).limit(1);
 
     if (!row) return null;
     return this.enrichSession(row);
@@ -67,12 +63,9 @@ export class SessionsRepository {
   ): Promise<SessionWithParticipants> {
     await this.db
       .update(sessions)
-      .set({ status: dto.status as any, updatedAt: new Date() })
+      .set({ status: dto.status, updatedAt: new Date() })
       .where(
-        and(
-          eq(sessions.id, id),
-          or(eq(sessions.studentId, userId), eq(sessions.tutorId, userId)),
-        ),
+        and(eq(sessions.id, id), or(eq(sessions.studentId, userId), eq(sessions.tutorId, userId))),
       );
 
     const updated = await this.findById(id);
@@ -149,11 +142,7 @@ export class SessionsRepository {
     return updated;
   }
 
-  async findOverlappingSessionCount(
-    tutorId: string,
-    startAt: Date,
-    endAt: Date,
-  ): Promise<number> {
+  async findOverlappingSessionCount(tutorId: string, startAt: Date, endAt: Date): Promise<number> {
     const [result] = await this.db
       .select({ value: sql<number>`count(*)::int` })
       .from(sessions)

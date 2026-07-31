@@ -1,14 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsBoolean,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+
+/** Shape of a post attachment; mirrors the `posts.attachments` jsonb column. */
+export interface PostAttachment {
+  type: 'link' | 'book';
+  title: string;
+  meta?: string;
+  url?: string;
+}
 
 export class CreatePostDto {
   @ApiProperty({ example: 'Just published a new calculus study guide for all enrolled students!' })
@@ -22,11 +22,18 @@ export class CreatePostDto {
   tags?: string[];
 
   @ApiPropertyOptional({
-    example: [{ type: 'link', title: 'Calculus Essentials', meta: '5 chapters · 120 min', url: 'https://...' }],
+    example: [
+      {
+        type: 'link',
+        title: 'Calculus Essentials',
+        meta: '5 chapters · 120 min',
+        url: 'https://...',
+      },
+    ],
   })
   @IsOptional()
   @IsArray()
-  attachments?: Array<{ type: 'link' | 'book'; title: string; meta?: string; url?: string }>;
+  attachments?: PostAttachment[];
 
   @ApiPropertyOptional({ example: false })
   @IsOptional()
@@ -78,8 +85,8 @@ export class PostResponseDto {
   @ApiProperty()
   tags!: string[];
 
-  @ApiPropertyOptional()
-  attachments!: any[] | null;
+  @ApiPropertyOptional({ type: [Object] })
+  attachments!: PostAttachment[] | null;
 
   @ApiProperty()
   likesCount!: number;
@@ -119,8 +126,8 @@ export class ActiveTutorDto {
   @ApiPropertyOptional()
   avatarUrl!: string | null;
 
-  @ApiProperty()
-  avgRating!: string | null;
+  @ApiProperty({ description: 'Average rating in [0, 1]', example: 0.85 })
+  avgRating!: number | null;
 }
 
 export class FeedResponseDto {

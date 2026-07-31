@@ -1,5 +1,5 @@
-import { AssignmentStatus } from '@core/enums';
-import { MatchScore } from './match-score.vo';
+import type { AssignmentStatus } from '@core/enums';
+import type { MatchScore } from './match-score.vo';
 
 export interface Assignment {
   studentId: string;

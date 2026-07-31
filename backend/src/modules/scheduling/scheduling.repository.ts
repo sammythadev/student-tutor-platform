@@ -7,10 +7,7 @@ import {
   sessions,
   type ScheduleSlotRecord,
 } from '@database';
-import {
-  CreateScheduleSlotDto,
-  ScheduleSlotStatus,
-} from './dtos/create-schedule-slot.dto';
+import { CreateScheduleSlotDto, ScheduleSlotStatus } from './dtos/create-schedule-slot.dto';
 
 export interface BookedSlot {
   id: string;
@@ -103,4 +100,3 @@ export class SchedulingRepository {
     });
   }
 }
-

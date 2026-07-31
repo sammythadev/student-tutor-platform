@@ -3,16 +3,10 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nes
 import { AuthGuard } from '../../common/auth/auth.guard';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { RefreshAuthGuard } from '../../common/auth/refresh-auth.guard';
-import { Roles } from '../../common/auth/roles.decorator';
-import { RolesGuard } from '../../common/auth/roles.guard';
 import type { AuthenticatedUser } from '../../common/auth/auth.types';
 import { AdminSignupDto } from './dtos/admin-signup.dto';
 import { AuthLoginDto } from './dtos/auth-login.dto';
-import {
-  AuthSessionResponseDto,
-  AuthVerifyResponseDto,
-} from './dtos/auth-session.dto';
-import { UserWithProfilesResponseDto } from '../users/dtos/create-user.dto';
+import { AuthSessionResponseDto, AuthVerifyResponseDto } from './dtos/auth-session.dto';
 import { AuthSignupDto } from './dtos/auth-signup.dto';
 import { OnboardUserDto } from './dtos/onboard-users.dto';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';

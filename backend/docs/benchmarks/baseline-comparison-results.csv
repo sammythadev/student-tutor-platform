@@ -1,0 +1,16 @@
+scenario,strategy,students,tutors,averageScore,unassignedPercent,jainFairnessIndex
+realistic-1to1,fcfs-filter,50,50,0.605030,0.00,0.357143
+realistic-1to1,fcfs-best,50,50,0.819750,0.00,1.000000
+realistic-1to1,greedy-engine,50,50,0.819750,0.00,1.000000
+moderate-1.5to1,fcfs-filter,150,100,0.593723,0.00,0.513699
+moderate-1.5to1,fcfs-best,150,100,0.813475,0.00,0.900000
+moderate-1.5to1,greedy-engine,150,100,0.812278,0.00,0.878906
+moderate-2to1,fcfs-filter,150,75,0.594178,0.67,0.677376
+moderate-2to1,fcfs-best,150,75,0.800528,0.67,0.933796
+moderate-2to1,greedy-engine,150,75,0.799991,0.67,0.933796
+moderate-3to1,fcfs-filter,150,50,0.585897,11.33,0.869238
+moderate-3to1,fcfs-best,150,50,0.757922,11.33,0.943413
+moderate-3to1,greedy-engine,150,50,0.777133,11.33,0.938408
+stress-10to1,fcfs-filter,1000,100,0.599619,75.00,0.833333
+stress-10to1,fcfs-best,1000,100,0.758003,75.00,0.833333
+stress-10to1,greedy-engine,1000,100,0.803875,75.00,0.833333

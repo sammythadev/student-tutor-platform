@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { SessionsRepository } from './sessions.repository';
 import type { BookSessionDto, ProposeSessionDto, UpdateSessionStatusDto } from './dtos/session.dto';
 import { SessionStatus } from './dtos/session.dto';
@@ -63,7 +68,10 @@ export class SessionsService {
       throw new ForbiddenException('Only students and tutors can book sessions');
     }
 
-    const session = await this.sessionsRepository.create(initiatorId, { ...dto, resolvedStudentId });
+    const session = await this.sessionsRepository.create(initiatorId, {
+      ...dto,
+      resolvedStudentId,
+    });
 
     // Notify the non-initiator of the new session request
     this.notificationsService
@@ -77,7 +85,9 @@ export class SessionsService {
         session.studentId,
         initiatorId,
       )
-      .catch(() => {/* non-blocking */});
+      .catch(() => {
+        /* non-blocking */
+      });
 
     return session;
   }
@@ -124,7 +134,9 @@ export class SessionsService {
         session.studentId,
         session.initiatorId ?? '',
       )
-      .catch(() => {/* non-blocking */});
+      .catch(() => {
+        /* non-blocking */
+      });
 
     return updated;
   }
@@ -230,7 +242,9 @@ export class SessionsService {
       session.endAt,
     );
     if (overlapCount > 0) {
-      throw new BadRequestException('The new tutor already has a session scheduled during this time');
+      throw new BadRequestException(
+        'The new tutor already has a session scheduled during this time',
+      );
     }
 
     return this.sessionsRepository.updateTutor(id, newTutorId);
@@ -246,7 +260,7 @@ export class SessionsService {
     const updated = await this.sessionsRepository.updateStatus(id, userId, dto);
 
     // Emit notification for completed/cancelled
-    if (dto.status === 'completed' || dto.status === 'cancelled') {
+    if (dto.status === SessionStatus.COMPLETED || dto.status === SessionStatus.CANCELLED) {
       this.notificationsService
         .onSessionEvent(
           dto.status,
@@ -258,10 +272,11 @@ export class SessionsService {
           session.studentId,
           session.initiatorId ?? '',
         )
-        .catch(() => {/* non-blocking */});
+        .catch(() => {
+          /* non-blocking */
+        });
     }
 
     return updated;
   }
 }
-

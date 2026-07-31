@@ -104,7 +104,10 @@ export class AuthTokenService {
     return (
       typeof claims.sub === 'string' &&
       typeof claims.email === 'string' &&
-      (claims.role === 'admin' || claims.role === 'student' || claims.role === 'tutor' || claims.role === 'unassigned') &&
+      (claims.role === 'admin' ||
+        claims.role === 'student' ||
+        claims.role === 'tutor' ||
+        claims.role === 'unassigned') &&
       (claims.tokenUse === 'access' || claims.tokenUse === 'refresh') &&
       typeof claims.jti === 'string' &&
       typeof claims.iat === 'number' &&

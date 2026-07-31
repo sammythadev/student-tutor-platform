@@ -64,9 +64,7 @@ export class AcademicScorer {
 
   public levelCompatibility(student: Student, tutor: Tutor): number {
     const nearestLevelGap = Math.min(
-      ...tutor.gradeLevelsSupported.map((level) =>
-        Math.abs(student.gradeLevel - level),
-      ),
+      ...tutor.gradeLevelsSupported.map((level) => Math.abs(student.gradeLevel - level)),
     );
 
     return Math.max(0, 1 - nearestLevelGap / LEVEL_MAX);

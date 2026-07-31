@@ -1,7 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayNotEmpty, IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min, ValidateIf, ValidateNested } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
+import { DeliveryMode, FormatPreference, TeachingStyle } from '@core/enums';
+import { learningStyleEnum } from '@database';
 import { UserRole } from '@modules/users/dtos/create-user.dto';
+
+/**
+ * Learning styles accepted at the API boundary. Broader than the core
+ * `LearningStyle` enum, which has no `'mixed'` member — the database column
+ * does, so the DTO validates against the database's set.
+ */
+type LearningStylePreference = (typeof learningStyleEnum.enumValues)[number];
 
 export class AvailabilitySlotDto {
   @ApiProperty({ example: '2026-01-01T09:00:00.000Z' })
@@ -14,7 +35,10 @@ export class AvailabilitySlotDto {
 }
 
 export class OnboardStudentDto {
-  @ApiProperty({ example: ['mathematics', 'physics'], description: 'Subjects the student needs tutoring in' })
+  @ApiProperty({
+    example: ['mathematics', 'physics'],
+    description: 'Subjects the student needs tutoring in',
+  })
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
@@ -63,20 +87,20 @@ export class OnboardStudentDto {
   @IsNumber()
   budget?: number;
 
-  @ApiPropertyOptional({ example: 'online', enum: ['online', 'in-person'] })
+  @ApiPropertyOptional({ example: 'online', enum: DeliveryMode })
   @IsOptional()
-  @IsString()
-  deliveryPreference?: string;
+  @IsEnum(DeliveryMode)
+  deliveryPreference?: DeliveryMode;
 
-  @ApiPropertyOptional({ example: 'one-on-one', enum: ['one-on-one', 'group'] })
+  @ApiPropertyOptional({ example: 'one-on-one', enum: FormatPreference })
   @IsOptional()
-  @IsString()
-  formatPreference?: string;
+  @IsEnum(FormatPreference)
+  formatPreference?: FormatPreference;
 
-  @ApiPropertyOptional({ example: 'visual', enum: ['visual', 'auditory', 'kinesthetic', 'mixed'] })
+  @ApiPropertyOptional({ example: 'visual', enum: learningStyleEnum.enumValues })
   @IsOptional()
-  @IsString()
-  learningStylePreference?: string;
+  @IsIn(learningStyleEnum.enumValues)
+  learningStylePreference?: LearningStylePreference;
 
   @ApiPropertyOptional({ example: 'algebra' })
   @IsOptional()
@@ -143,20 +167,20 @@ export class OnboardTutorDto {
   @IsString({ each: true })
   languages?: string[];
 
-  @ApiPropertyOptional({ example: 'interactive', enum: ['interactive', 'lecture'] })
+  @ApiPropertyOptional({ example: 'interactive', enum: TeachingStyle })
   @IsOptional()
-  @IsString()
-  teachingStyle?: string;
+  @IsEnum(TeachingStyle)
+  teachingStyle?: TeachingStyle;
 
-  @ApiPropertyOptional({ example: 'online', enum: ['online', 'in-person'] })
+  @ApiPropertyOptional({ example: 'online', enum: DeliveryMode })
   @IsOptional()
-  @IsString()
-  deliveryStyle?: string;
+  @IsEnum(DeliveryMode)
+  deliveryStyle?: DeliveryMode;
 
-  @ApiPropertyOptional({ example: 'one-on-one', enum: ['one-on-one', 'group'] })
+  @ApiPropertyOptional({ example: 'one-on-one', enum: FormatPreference })
   @IsOptional()
-  @IsString()
-  formatStyle?: string;
+  @IsEnum(FormatPreference)
+  formatStyle?: FormatPreference;
 
   /**
    * Maximum number of simultaneous students. Defaults to 5 to ensure new

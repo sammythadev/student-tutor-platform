@@ -1,5 +1,3 @@
-/// <reference path="../../types/pg.d.ts" />
-
 import { inArray, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
@@ -205,9 +203,7 @@ async function seed(): Promise<void> {
     }
 
     if (seededUserIds.length > 0) {
-      await db
-        .delete(scheduleSlots)
-        .where(inArray(scheduleSlots.userId, seededUserIds));
+      await db.delete(scheduleSlots).where(inArray(scheduleSlots.userId, seededUserIds));
 
       for (let index = 0; index < seededUserIds.length; index += 1) {
         const timeSlot = slot((index % 20) + 1, 9 + (index % 5));

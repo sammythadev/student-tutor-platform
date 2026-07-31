@@ -39,7 +39,9 @@ export class MessagesRepository {
 
   async getConversationList(userId: string) {
     const partnerIds = await this.db
-      .select({ otherId: sql<string>`DISTINCT CASE WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} ELSE ${messages.senderId} END` })
+      .select({
+        otherId: sql<string>`DISTINCT CASE WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} ELSE ${messages.senderId} END`,
+      })
       .from(messages)
       .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)));
 
@@ -48,7 +50,13 @@ export class MessagesRepository {
     return Promise.all(
       partnerIds.map(async ({ otherId }) => {
         const [user] = await this.db
-          .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, avatarUrl: users.avatarUrl, isVerified: tutorProfiles.isVerified })
+          .select({
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            avatarUrl: users.avatarUrl,
+            isVerified: tutorProfiles.isVerified,
+          })
           .from(users)
           .leftJoin(tutorProfiles, eq(tutorProfiles.userId, users.id))
           .where(eq(users.id, otherId))
@@ -90,7 +98,7 @@ export class MessagesRepository {
           unreadCount: unreadResult?.count ?? 0,
         };
       }),
-    ).then((list) => list.filter(Boolean) as NonNullable<typeof list[number]>[]);
+    ).then((list) => list.filter(Boolean) as NonNullable<(typeof list)[number]>[]);
   }
 
   async markRead(senderId: string, receiverId: string) {
@@ -108,7 +116,11 @@ export class MessagesRepository {
 
   private async enrichMessage(row: typeof messages.$inferSelect) {
     const [sender] = await this.db
-      .select({ firstName: users.firstName, lastName: users.lastName, isVerified: tutorProfiles.isVerified })
+      .select({
+        firstName: users.firstName,
+        lastName: users.lastName,
+        isVerified: tutorProfiles.isVerified,
+      })
       .from(users)
       .leftJoin(tutorProfiles, eq(tutorProfiles.userId, users.id))
       .where(eq(users.id, row.senderId))

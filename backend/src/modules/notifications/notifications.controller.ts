@@ -29,10 +29,7 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Mark a notification as read' })
   @ApiParam({ name: 'id', description: 'Notification UUID' })
   @ApiResponse({ status: 200, description: 'Notification marked as read.' })
-  async markRead(
-    @CurrentUser() currentUser: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
+  async markRead(@CurrentUser() currentUser: AuthenticatedUser, @Param('id') id: string) {
     await this.notificationsService.markRead(id, currentUser.id);
     return { success: true };
   }

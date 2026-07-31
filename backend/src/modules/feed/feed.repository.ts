@@ -1,13 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
-import {
-  DATABASE,
-  type AppDatabase,
-  posts,
-  postLikes,
-  tutorProfiles,
-  users,
-} from '@database';
+import { DATABASE, type AppDatabase, posts, postLikes, tutorProfiles, users } from '@database';
 import type { CreatePostDto, FeedQueryDto } from './dtos/feed.dto';
 
 @Injectable()
@@ -21,7 +14,7 @@ export class FeedRepository {
         authorId,
         content: dto.content,
         tags: dto.tags ?? [],
-        attachments: (dto.attachments as any) ?? [],
+        attachments: dto.attachments ?? [],
         isPromo: dto.isPromo ? 1 : 0,
       })
       .returning();
@@ -44,19 +37,20 @@ export class FeedRepository {
     if (query.filter === 'tutors') {
       rows = rows.filter((p) => p.isPromo === 1);
     } else if (query.filter === 'resources') {
-      rows = rows.filter((p) => p.isPromo === 0 && (p.attachments as any[])?.length > 0);
+      rows = rows.filter((p) => p.isPromo === 0 && (p.attachments?.length ?? 0) > 0);
     }
 
-    const [countResult] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(posts);
+    const [countResult] = await this.db.select({ count: sql<number>`count(*)::int` }).from(posts);
 
     const enriched = await Promise.all(rows.map((r) => this.enrichPost(r, viewerId)));
 
     return { posts: enriched, total: countResult.count };
   }
 
-  async toggleLike(postId: string, userId: string): Promise<{ liked: boolean; likesCount: number }> {
+  async toggleLike(
+    postId: string,
+    userId: string,
+  ): Promise<{ liked: boolean; likesCount: number }> {
     const [existing] = await this.db
       .select()
       .from(postLikes)
@@ -71,7 +65,10 @@ export class FeedRepository {
         .update(posts)
         .set({ likesCount: sql`${posts.likesCount} - 1` })
         .where(eq(posts.id, postId));
-      const [p] = await this.db.select({ likesCount: posts.likesCount }).from(posts).where(eq(posts.id, postId));
+      const [p] = await this.db
+        .select({ likesCount: posts.likesCount })
+        .from(posts)
+        .where(eq(posts.id, postId));
       return { liked: false, likesCount: p.likesCount };
     } else {
       await this.db.insert(postLikes).values({ postId, userId });
@@ -79,7 +76,10 @@ export class FeedRepository {
         .update(posts)
         .set({ likesCount: sql`${posts.likesCount} + 1` })
         .where(eq(posts.id, postId));
-      const [p] = await this.db.select({ likesCount: posts.likesCount }).from(posts).where(eq(posts.id, postId));
+      const [p] = await this.db
+        .select({ likesCount: posts.likesCount })
+        .from(posts)
+        .where(eq(posts.id, postId));
       return { liked: true, likesCount: p.likesCount };
     }
   }

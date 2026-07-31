@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { compare } from 'bcrypt';
 import { getAdminSignupCode } from '../../configs/environment';
 import { AuthTokenService } from '../../common/auth/auth-token.service';
@@ -9,10 +14,7 @@ import { UsersService } from '../users/users.service';
 import { toPublicUserWithProfiles, type UserWithProfiles } from '../users/users.types';
 import { AdminSignupDto } from './dtos/admin-signup.dto';
 import { AuthLoginDto } from './dtos/auth-login.dto';
-import {
-  AuthSessionResponseDto,
-  AuthVerifyResponseDto,
-} from './dtos/auth-session.dto';
+import { AuthSessionResponseDto, AuthVerifyResponseDto } from './dtos/auth-session.dto';
 import { AuthSignupDto } from './dtos/auth-signup.dto';
 import { OnboardUserDto } from './dtos/onboard-users.dto';
 
@@ -57,7 +59,9 @@ export class AuthService {
     currentUser: AuthenticatedUser,
     dto: OnboardUserDto,
   ): Promise<AuthSessionResponseDto> {
-    if (currentUser.role !== dto.role && currentUser.role !== UserRole.UNASSIGNED) {
+    // AccountRole and UserRole share the same values (enforced in create-user.dto).
+    const currentRole = currentUser.role as UserRole;
+    if (currentRole !== dto.role && currentRole !== UserRole.UNASSIGNED) {
       throw new BadRequestException('Role in payload does not match authenticated user role');
     }
 

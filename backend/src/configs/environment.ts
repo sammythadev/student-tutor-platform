@@ -118,7 +118,7 @@ export function getLogFilePath(): string | null {
 export function getLogDriver(): LogDriver {
   const driver = process.env.LOG_DRIVER?.trim().toLowerCase();
   if (driver === 'pino' || driver === 'nest' || driver === 'winston') {
-    return driver as LogDriver;
+    return driver;
   }
   return 'winston';
 }

@@ -12,14 +12,8 @@ export class IncompleteProfileException extends Error {
   /** Name of the missing or invalid field. */
   public readonly missingField: string;
 
-  constructor(
-    entityId: string,
-    entityType: 'student' | 'tutor',
-    missingField: string,
-  ) {
-    super(
-      `Incomplete profile for ${entityType} ${entityId}: missing ${missingField}`,
-    );
+  constructor(entityId: string, entityType: 'student' | 'tutor', missingField: string) {
+    super(`Incomplete profile for ${entityType} ${entityId}: missing ${missingField}`);
 
     this.name = 'IncompleteProfileException';
     this.entityId = entityId;

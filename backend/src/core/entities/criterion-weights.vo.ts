@@ -52,8 +52,7 @@ export class CriterionWeights {
       subjectFit: input.subjectFit ?? CriterionWeights.defaults().subjectFit,
       availability: input.availability ?? CriterionWeights.defaults().availability,
       experience: input.experience ?? CriterionWeights.defaults().experience,
-      languageStyleFit:
-        input.languageStyleFit ?? CriterionWeights.defaults().languageStyleFit,
+      languageStyleFit: input.languageStyleFit ?? CriterionWeights.defaults().languageStyleFit,
       feedback: input.feedback ?? CriterionWeights.defaults().feedback,
       loadFactor: input.loadFactor ?? CriterionWeights.defaults().loadFactor,
     });

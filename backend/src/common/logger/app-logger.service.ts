@@ -1,8 +1,21 @@
 import { ConsoleLogger, Injectable, LoggerService } from '@nestjs/common';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { createLogger, format, Logger as WinstonLogger, transport as WinstonTransport, transports } from 'winston';
-import { getAppEnvironment, getLogDriver, getLogFilePath, getLoggerLevels, isLoggingEnabled, LogDriver } from '@config';
+import {
+  createLogger,
+  format,
+  Logger as WinstonLogger,
+  transport as WinstonTransport,
+  transports,
+} from 'winston';
+import {
+  getAppEnvironment,
+  getLogDriver,
+  getLogFilePath,
+  getLoggerLevels,
+  isLoggingEnabled,
+  LogDriver,
+} from '@config';
 
 /** Maps NestJS log level labels to winston severity names. */
 const NEST_TO_WINSTON: Record<string, string> = {
@@ -12,6 +25,21 @@ const NEST_TO_WINSTON: Record<string, string> = {
   debug: 'debug',
   verbose: 'verbose',
 };
+
+/** The subset of pino's API this service uses. pino is an optional dependency. */
+interface PinoLikeLogger {
+  info(meta: object, message: unknown): void;
+  error(meta: object, message: unknown): void;
+  warn(meta: object, message: unknown): void;
+  debug(meta: object, message: unknown): void;
+  trace(meta: object, message: unknown): void;
+}
+
+type PinoFactory = (options: { level: string; transport?: { target: string } }) => PinoLikeLogger;
+
+/** Renders a winston metadata value without risking '[object Object]'. */
+const stringifyMeta = (value: unknown): string =>
+  typeof value === 'string' ? value : JSON.stringify(value);
 
 /**
  * Strategy-based logger service.
@@ -28,7 +56,7 @@ export class AppLoggerService implements LoggerService {
   private readonly enabled: boolean;
   private readonly winstonLogger?: WinstonLogger;
   private readonly nestLogger?: ConsoleLogger;
-  private readonly pinoLogger?: any;
+  private readonly pinoLogger?: PinoLikeLogger;
 
   constructor() {
     this.enabled = isLoggingEnabled();
@@ -39,14 +67,16 @@ export class AppLoggerService implements LoggerService {
       this.nestLogger.setLogLevels(getLoggerLevels());
     } else if (this.driver === 'pino') {
       try {
-        // dynamic require so we don't break if pino isn't installed
-        const pino = require('pino');
+        // pino is an optional dependency: a static import would fail at module
+        // load when it isn't installed, so it must stay a runtime require.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const pino = require('pino') as PinoFactory;
         const isDevelopment = getAppEnvironment() === 'development';
         this.pinoLogger = pino({
           level: this.getWinstonLevel(),
           transport: isDevelopment ? { target: 'pino-pretty' } : undefined,
         });
-      } catch (err) {
+      } catch {
         // Fallback if pino isn't installed natively
         this.driver = 'nest';
         this.nestLogger = new ConsoleLogger('App');
@@ -63,10 +93,8 @@ export class AppLoggerService implements LoggerService {
             format.colorize(),
             format.timestamp({ format: 'HH:mm:ss' }),
             format.printf(({ level, message, context, timestamp, ...rest }) => {
-              const ctx = context ? ` [${String(context)}]` : '';
-              const extra = Object.keys(rest).length
-                ? ` ${JSON.stringify(rest)}`
-                : '';
+              const ctx = context ? ` [${stringifyMeta(context)}]` : '';
+              const extra = Object.keys(rest).length ? ` ${JSON.stringify(rest)}` : '';
               return `${String(timestamp)} ${level}${ctx} ${String(message)}${extra}`;
             }),
           )

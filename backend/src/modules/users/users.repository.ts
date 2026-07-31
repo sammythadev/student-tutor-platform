@@ -10,9 +10,19 @@ import {
   users,
 } from '@database';
 import { CreateUserDto, UserRole } from './dtos/create-user.dto';
-import type { UpdateUserDto, UpdateStudentPreferencesDto, UpdateTutorPreferencesDto } from './dtos/update-user.dto';
+import type {
+  UpdateUserDto,
+  UpdateStudentPreferencesDto,
+  UpdateTutorPreferencesDto,
+} from './dtos/update-user.dto';
 import type { OnboardUserDto } from '../auth/dtos/onboard-users.dto';
 import type { UserWithProfilesRecord } from './users.types';
+
+/** Partial update payloads, typed from the schema so column names and value
+ *  types are checked instead of being cast through `any`. */
+type UserUpdate = Partial<typeof users.$inferInsert>;
+type StudentProfileUpdate = Partial<typeof studentProfiles.$inferInsert>;
+type TutorProfileUpdate = Partial<typeof tutorProfiles.$inferInsert>;
 
 @Injectable()
 export class UsersRepository {
@@ -111,9 +121,9 @@ export class UsersRepository {
           // preference fields
           languages: sp.languages ?? [],
           budget: sp.budget,
-          deliveryPreference: sp.deliveryPreference as any,
-          formatPreference: sp.formatPreference as any,
-          learningStylePreference: sp.learningStylePreference as any,
+          deliveryPreference: sp.deliveryPreference,
+          formatPreference: sp.formatPreference,
+          learningStylePreference: sp.learningStylePreference,
           subjectSpecialization: sp.subjectSpecialization,
           region: sp.region,
         });
@@ -146,9 +156,9 @@ export class UsersRepository {
           // enrichment fields — all write through now
           experienceYears: tp.experienceYears ?? 0,
           languages: tp.languages ?? [],
-          teachingStyle: tp.teachingStyle as any,
-          deliveryStyle: tp.deliveryStyle as any,
-          formatStyle: tp.formatStyle as any,
+          teachingStyle: tp.teachingStyle,
+          deliveryStyle: tp.deliveryStyle,
+          formatStyle: tp.formatStyle,
           // IMPORTANT: default capacity to 5 so new tutors are always eligible in matchmaking
           capacity: tp.capacity ?? 5,
         });
@@ -166,9 +176,8 @@ export class UsersRepository {
     return updated;
   }
 
-
   async updateBaseUser(userId: string, dto: UpdateUserDto): Promise<UserWithProfilesRecord> {
-    const updatePayload: Record<string, any> = {};
+    const updatePayload: UserUpdate = {};
     if (dto.firstName !== undefined) updatePayload.firstName = dto.firstName;
     if (dto.lastName !== undefined) updatePayload.lastName = dto.lastName;
     if (dto.region !== undefined) updatePayload.region = dto.region;
@@ -177,7 +186,8 @@ export class UsersRepository {
     if (dto.language !== undefined) updatePayload.language = dto.language;
     if (dto.theme !== undefined) updatePayload.theme = dto.theme;
     if (dto.accentColor !== undefined) updatePayload.accentColor = dto.accentColor;
-    if (dto.notificationPrefs !== undefined) updatePayload.notificationPrefs = dto.notificationPrefs;
+    if (dto.notificationPrefs !== undefined)
+      updatePayload.notificationPrefs = dto.notificationPrefs;
 
     if (Object.keys(updatePayload).length > 0) {
       updatePayload.updatedAt = new Date();
@@ -193,21 +203,28 @@ export class UsersRepository {
     userId: string,
     dto: UpdateStudentPreferencesDto,
   ): Promise<UserWithProfilesRecord> {
-    const updatePayload: Record<string, any> = {};
+    const updatePayload: StudentProfileUpdate = {};
     if (dto.budget !== undefined) updatePayload.budget = dto.budget;
-    if (dto.deliveryPreference !== undefined) updatePayload.deliveryPreference = dto.deliveryPreference;
+    if (dto.deliveryPreference !== undefined)
+      updatePayload.deliveryPreference = dto.deliveryPreference;
     if (dto.formatPreference !== undefined) updatePayload.formatPreference = dto.formatPreference;
-    if (dto.learningStylePreference !== undefined) updatePayload.learningStylePreference = dto.learningStylePreference;
+    if (dto.learningStylePreference !== undefined)
+      updatePayload.learningStylePreference = dto.learningStylePreference;
     if (dto.languages !== undefined) updatePayload.languages = dto.languages;
-    if (dto.subjectSpecialization !== undefined) updatePayload.subjectSpecialization = dto.subjectSpecialization;
-    if (dto.preferenceWeights !== undefined) updatePayload.preferenceWeights = dto.preferenceWeights;
+    if (dto.subjectSpecialization !== undefined)
+      updatePayload.subjectSpecialization = dto.subjectSpecialization;
+    if (dto.preferenceWeights !== undefined)
+      updatePayload.preferenceWeights = dto.preferenceWeights;
     if (dto.bio !== undefined) updatePayload.bio = dto.bio;
     if (dto.learningGoals !== undefined) updatePayload.learningGoals = dto.learningGoals;
     if (dto.subjects !== undefined) updatePayload.subjects = dto.subjects;
 
     if (Object.keys(updatePayload).length > 0) {
       updatePayload.updatedAt = new Date();
-      await this.db.update(studentProfiles).set(updatePayload).where(eq(studentProfiles.userId, userId));
+      await this.db
+        .update(studentProfiles)
+        .set(updatePayload)
+        .where(eq(studentProfiles.userId, userId));
     }
 
     const updated = await this.findById(userId);
@@ -219,7 +236,7 @@ export class UsersRepository {
     userId: string,
     dto: UpdateTutorPreferencesDto,
   ): Promise<UserWithProfilesRecord> {
-    const updatePayload: Record<string, any> = {};
+    const updatePayload: TutorProfileUpdate = {};
     if (dto.specializations !== undefined) updatePayload.specializations = dto.specializations;
     if (dto.experienceYears !== undefined) updatePayload.experienceYears = dto.experienceYears;
     if (dto.languages !== undefined) updatePayload.languages = dto.languages;
@@ -232,7 +249,10 @@ export class UsersRepository {
 
     if (Object.keys(updatePayload).length > 0) {
       updatePayload.updatedAt = new Date();
-      await this.db.update(tutorProfiles).set(updatePayload).where(eq(tutorProfiles.userId, userId));
+      await this.db
+        .update(tutorProfiles)
+        .set(updatePayload)
+        .where(eq(tutorProfiles.userId, userId));
     }
 
     const updated = await this.findById(userId);

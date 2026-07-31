@@ -25,7 +25,7 @@ let exampleContent = fs.existsSync(examplePath) ? fs.readFileSync(examplePath, '
 let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
 
 const envMap = {};
-envContent.split(/\r?\n/).forEach(line => {
+envContent.split(/\r?\n/).forEach((line) => {
   const match = line.match(/^([^=]+)=(.*)$/);
   if (match) {
     envMap[match[1]] = match[2];
@@ -38,20 +38,23 @@ envMap['JWT_ACCESS_TOKEN_PUBLIC_KEY'] = `"${escapeForEnv(access.publicKey)}"`;
 envMap['JWT_REFRESH_TOKEN_PRIVATE_KEY'] = `"${escapeForEnv(refresh.privateKey)}"`;
 envMap['JWT_REFRESH_TOKEN_PUBLIC_KEY'] = `"${escapeForEnv(refresh.publicKey)}"`;
 
-let newEnv = exampleContent.split(/\r?\n/).map(line => {
-  const match = line.match(/^([^=]+)=(.*)$/);
-  if (match) {
-    const key = match[1];
-    if (envMap.hasOwnProperty(key)) {
-      return `${key}=${envMap[key]}`;
+let newEnv = exampleContent
+  .split(/\r?\n/)
+  .map((line) => {
+    const match = line.match(/^([^=]+)=(.*)$/);
+    if (match) {
+      const key = match[1];
+      if (Object.prototype.hasOwnProperty.call(envMap, key)) {
+        return `${key}=${envMap[key]}`;
+      }
     }
-  }
-  return line;
-}).join('\n');
+    return line;
+  })
+  .join('\n');
 
 // Append any existing variables from .env that weren't in .env.example
 const exampleKeys = new Set();
-exampleContent.split(/\r?\n/).forEach(line => {
+exampleContent.split(/\r?\n/).forEach((line) => {
   const match = line.match(/^([^=]+)=(.*)$/);
   if (match) exampleKeys.add(match[1]);
 });

@@ -128,8 +128,20 @@ export class CandidateStudentDto {
   @ApiProperty({ example: 'mathematics' })
   requiredSubject!: string;
 
+  @ApiProperty({ example: ['mathematics', 'physics'] })
+  subjects!: string[];
+
+  @ApiProperty({ example: 10 })
+  gradeLevel!: number;
+
+  @ApiPropertyOptional({ example: 50000, nullable: true })
+  budget!: number | null;
+
   @ApiProperty({ example: 0.87 })
   score!: number;
+
+  @ApiProperty({ example: 87, description: 'Score rendered as a whole percentage' })
+  rankPercentage!: number;
 
   @ApiProperty({ example: true })
   @IsOptional()

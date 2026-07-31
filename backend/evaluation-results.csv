@@ -1,5 +1,4 @@
 
-> backend@0.0.1 eval C:\Users\USER\Desktop\Final Year Research\project\backend
 > ts-node -r tsconfig-paths/register src/core/evaluation/evaluation-harness.ts "--csv"
 
 scenario,students,tutors,loadFactorWeight,topK,averageScore,unassignedPercent,jainFairnessIndex,elapsedMinMs,elapsedMeanMs,elapsedMaxMs,pairsScored,peakHeapEntries

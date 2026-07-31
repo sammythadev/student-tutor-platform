@@ -1,8 +1,4 @@
-import type {
-  StudentProfileRecord,
-  TutorProfileRecord,
-  UserRecord,
-} from '@database/schema';
+import type { StudentProfileRecord, TutorProfileRecord, UserRecord } from '@database/schema';
 
 export type PublicUserRecord = Omit<UserRecord, 'passwordHash'>;
 

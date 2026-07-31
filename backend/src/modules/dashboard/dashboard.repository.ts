@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gte, or, sql } from 'drizzle-orm';
+import { and, eq, gte, sql } from 'drizzle-orm';
 import {
   DATABASE,
   type AppDatabase,
@@ -31,17 +31,29 @@ export class DashboardRepository {
     return Promise.all(
       rows.map(async (s) => {
         const [tutor] = await this.db
-          .select({ firstName: users.firstName, lastName: users.lastName, avatarUrl: users.avatarUrl })
-          .from(users).where(eq(users.id, s.tutorId)).limit(1);
+          .select({
+            firstName: users.firstName,
+            lastName: users.lastName,
+            avatarUrl: users.avatarUrl,
+          })
+          .from(users)
+          .where(eq(users.id, s.tutorId))
+          .limit(1);
         const [student] = await this.db
-          .select({ firstName: users.firstName, lastName: users.lastName, avatarUrl: users.avatarUrl })
-          .from(users).where(eq(users.id, s.studentId)).limit(1);
+          .select({
+            firstName: users.firstName,
+            lastName: users.lastName,
+            avatarUrl: users.avatarUrl,
+          })
+          .from(users)
+          .where(eq(users.id, s.studentId))
+          .limit(1);
         return {
           id: s.id,
           subject: s.subject,
           tutorName: tutor ? `${tutor.firstName} ${tutor.lastName}` : 'Unknown',
           studentName: student ? `${student.firstName} ${student.lastName}` : 'Unknown',
-          avatarUrl: role === 'student' ? tutor?.avatarUrl ?? null : student?.avatarUrl ?? null,
+          avatarUrl: role === 'student' ? (tutor?.avatarUrl ?? null) : (student?.avatarUrl ?? null),
           startAt: s.startAt,
           endAt: s.endAt,
           status: s.status,
@@ -52,7 +64,10 @@ export class DashboardRepository {
   }
 
   /** Hours learned per day for last 7 days (from completed sessions duration) */
-  async getWeeklyHours(userId: string, role: string): Promise<Array<{ day: string; hours: number }>> {
+  async getWeeklyHours(
+    userId: string,
+    role: string,
+  ): Promise<Array<{ day: string; hours: number }>> {
     const result = await this.db.execute<{ day: string; hours: number }>(sql`
       SELECT
         to_char(DATE_TRUNC('day', start_at), 'Dy') AS day,
@@ -109,9 +124,7 @@ export class DashboardRepository {
     const [result] = await this.db
       .select({ count: sql<number>`count(*)::int` })
       .from(sessions)
-      .where(
-        role === 'student' ? eq(sessions.studentId, userId) : eq(sessions.tutorId, userId),
-      );
+      .where(role === 'student' ? eq(sessions.studentId, userId) : eq(sessions.tutorId, userId));
     return result?.count ?? 0;
   }
 

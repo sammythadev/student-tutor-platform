@@ -3,12 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { eq, inArray } from 'drizzle-orm';
 import { GreedyAssignmentEngine } from '@core/algorithms';
 import { AvailabilitySlot, type Student, type Tutor } from '@core/entities';
-import {
-  DeliveryMode,
-  FormatPreference,
-  LearningStyle,
-  TeachingStyle,
-} from '@core/enums';
+import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
 import {
   DATABASE,
   type AppDatabase,
@@ -79,10 +74,7 @@ export class MatchmakingTestController {
     const slots =
       userIds.length === 0
         ? []
-        : await this.db
-            .select()
-            .from(scheduleSlots)
-            .where(inArray(scheduleSlots.userId, userIds));
+        : await this.db.select().from(scheduleSlots).where(inArray(scheduleSlots.userId, userIds));
     const slotsByUser = new Map<string, AvailabilitySlot[]>();
 
     for (const slot of slots) {
@@ -177,20 +169,15 @@ export class MatchmakingTestController {
       requiredSubject: profile.requiredSubject,
       gradeLevel: profile.gradeLevel,
       examType: profile.examType,
-      requestedAvailability:
-        normalizedSlots?.length
-          ? normalizedSlots
-          : profile.requestedAvailability.map(
-              (slot) => new AvailabilitySlot(slot.start, slot.end),
-            ),
+      requestedAvailability: normalizedSlots?.length
+        ? normalizedSlots
+        : profile.requestedAvailability.map((slot) => new AvailabilitySlot(slot.start, slot.end)),
       preferenceWeights: profile.preferenceWeights ?? undefined,
       bookingTimestamp: profile.bookingTimestamp,
       budget: profile.budget === null ? undefined : Number(profile.budget),
       deliveryPreference: profile.deliveryPreference as DeliveryMode | undefined,
       formatPreference: profile.formatPreference as FormatPreference | undefined,
-      learningStylePreference: profile.learningStylePreference as
-        | LearningStyle
-        | undefined,
+      learningStylePreference: profile.learningStylePreference as LearningStyle | undefined,
       languages: profile.languages,
       subjectSpecialization: profile.subjectSpecialization ?? undefined,
       region: profile.region ?? userRegion ?? undefined,
@@ -208,10 +195,9 @@ export class MatchmakingTestController {
       subjectsTaught: profile.subjectsTaught,
       gradeLevelsSupported: profile.gradeLevelsSupported,
       examTypesSupported: profile.examTypesSupported,
-      availability:
-        normalizedSlots?.length
-          ? normalizedSlots
-          : profile.availability.map((slot) => new AvailabilitySlot(slot.start, slot.end)),
+      availability: normalizedSlots?.length
+        ? normalizedSlots
+        : profile.availability.map((slot) => new AvailabilitySlot(slot.start, slot.end)),
       experienceYears: profile.experienceYears,
       languages: profile.languages,
       teachingStyle: profile.teachingStyle as TeachingStyle | undefined,

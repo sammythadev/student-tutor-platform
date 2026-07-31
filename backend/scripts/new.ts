@@ -1,11 +1,11 @@
 export interface User {
-    name: string
-    email: string 
-    phone: number 
+  name: string;
+  email: string;
+  phone: number;
 }
 
 export const user: User = {
-    name: '',
-    email: '',
-    phone: 0,
-}
+  name: '',
+  email: '',
+  phone: 0,
+};

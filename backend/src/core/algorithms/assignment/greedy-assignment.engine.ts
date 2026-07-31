@@ -1,6 +1,6 @@
 import { AssignmentStatus } from '@core/enums';
+import type { AlgorithmWeights } from '@core/entities';
 import {
-  AlgorithmWeights,
   CriterionWeights,
   type Assignment,
   type MatchScore,
@@ -149,12 +149,7 @@ export class GreedyAssignmentEngine {
         continue;
       }
 
-      const freshPriority = this.priority(
-        staticScore,
-        tutor,
-        student.id,
-        fairnessWeight,
-      );
+      const freshPriority = this.priority(staticScore, tutor, student.id, fairnessWeight);
 
       if (freshPriority < item.priority) {
         heap.push(item.value, freshPriority);
@@ -192,10 +187,7 @@ export class GreedyAssignmentEngine {
           student.id,
           studentsWithCandidate.has(student.id)
             ? 'All eligible tutors reached capacity'
-            : new NoEligibleTutorsException(
-                student.id,
-                student.requiredSubject,
-              ).message,
+            : new NoEligibleTutorsException(student.id, student.requiredSubject).message,
         ),
       );
 
@@ -254,11 +246,7 @@ export class GreedyAssignmentEngine {
     return result.assignments[0] ?? this.createWaitlisted(student.id);
   }
 
-  private createAssignment(
-    studentId: string,
-    tutorId: string,
-    matchScore: MatchScore,
-  ): Assignment {
+  private createAssignment(studentId: string, tutorId: string, matchScore: MatchScore): Assignment {
     return {
       studentId,
       tutorId,

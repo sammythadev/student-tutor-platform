@@ -20,9 +20,7 @@ export class WeightAdaptation {
         ? Math.min(GAMMA_MAX, current[target] + amount)
         : Math.min(1, current[target] + amount);
     const remainingTotal = 1 - cappedTarget;
-    const otherKeys = (Object.keys(current) as AdaptiveWeightKey[]).filter(
-      (key) => key !== target,
-    );
+    const otherKeys = (Object.keys(current) as AdaptiveWeightKey[]).filter((key) => key !== target);
     const oldRemaining = otherKeys.reduce((total, key) => total + current[key], 0);
 
     for (const key of otherKeys) {

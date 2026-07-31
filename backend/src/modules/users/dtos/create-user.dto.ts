@@ -11,15 +11,10 @@ import {
   IsString,
   IsUUID,
   Min,
-  ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import {
-  DeliveryMode,
-  FormatPreference,
-  LearningStyle,
-  TeachingStyle,
-} from '@core/enums';
+import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
+import type { AccountRole } from '@common/auth';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -27,6 +22,15 @@ export enum UserRole {
   TUTOR = 'tutor',
   UNASSIGNED = 'unassigned',
 }
+
+/** Compile-time guard: UserRole must stay in lockstep with AccountRole. */
+const _roleParity: Record<AccountRole, UserRole> = {
+  admin: UserRole.ADMIN,
+  student: UserRole.STUDENT,
+  tutor: UserRole.TUTOR,
+  unassigned: UserRole.UNASSIGNED,
+};
+void _roleParity;
 
 export class AvailabilitySlotDto {
   @ApiProperty({ example: '2026-01-01T09:00:00.000Z' })

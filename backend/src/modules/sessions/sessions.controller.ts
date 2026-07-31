@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '@common/auth';
 import {
   BookSessionDto,
@@ -21,86 +28,111 @@ export class SessionsController {
   @Post()
   @ApiOperation({ summary: 'Book a session (student→tutor or tutor→student). Starts as pending.' })
   @ApiBody({ type: BookSessionDto })
-  @ApiResponse({ status: 201, description: 'Session request created (pending).', type: SessionResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Session request created (pending).',
+    type: SessionResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Invalid time window or missing studentId.' })
   @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
   bookSession(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() dto: BookSessionDto,
   ): Promise<SessionResponseDto> {
-    return this.sessionsService.bookSession(currentUser.id, currentUser.role, dto) as any;
+    return this.sessionsService.bookSession(currentUser.id, currentUser.role, dto);
   }
 
   @Get('me')
   @ApiOperation({ summary: 'Get all sessions for the current user (student or tutor)' })
   @ApiResponse({ status: 200, description: 'Sessions list.', type: [SessionResponseDto] })
   getMySessions(@CurrentUser() currentUser: AuthenticatedUser): Promise<SessionResponseDto[]> {
-    return this.sessionsService.getMySessions(currentUser.id) as any;
+    return this.sessionsService.getMySessions(currentUser.id);
   }
 
   @Patch(':id/propose')
   @ApiOperation({ summary: 'Propose a different date/time for a pending session' })
   @ApiParam({ name: 'id', description: 'Session UUID' })
   @ApiBody({ type: ProposeSessionDto })
-  @ApiResponse({ status: 200, description: 'New time proposed, awaiting student response.', type: SessionResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'New time proposed, awaiting student response.',
+    type: SessionResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Invalid time window.' })
   proposeNewTime(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param() params: SessionParamDto,
     @Body() dto: ProposeSessionDto,
   ): Promise<SessionResponseDto> {
-    return this.sessionsService.proposeNewTime(params.id, currentUser.id, dto) as any;
+    return this.sessionsService.proposeNewTime(params.id, currentUser.id, dto);
   }
 
   @Patch(':id/accept-proposal')
   @ApiOperation({ summary: 'Student accepts the proposed new time for a session' })
   @ApiParam({ name: 'id', description: 'Session UUID' })
-  @ApiResponse({ status: 200, description: 'Proposed time accepted, session updated.', type: SessionResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Proposed time accepted, session updated.',
+    type: SessionResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'No proposal to accept.' })
   acceptProposal(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param() params: SessionParamDto,
   ): Promise<SessionResponseDto> {
-    return this.sessionsService.acceptProposal(params.id, currentUser.id) as any;
+    return this.sessionsService.acceptProposal(params.id, currentUser.id);
   }
 
   @Patch(':id/accept')
   @ApiOperation({ summary: 'Accept a pending session request' })
   @ApiParam({ name: 'id', description: 'Session UUID' })
-  @ApiResponse({ status: 200, description: 'Session accepted (upcoming).', type: SessionResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Session accepted (upcoming).',
+    type: SessionResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Session is not pending.' })
   @ApiResponse({ status: 403, description: 'Cannot accept your own request.' })
   acceptSession(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param() params: SessionParamDto,
   ): Promise<SessionResponseDto> {
-    return this.sessionsService.respondToSession(params.id, currentUser.id, true) as any;
+    return this.sessionsService.respondToSession(params.id, currentUser.id, true);
   }
 
   @Patch(':id/decline')
   @ApiOperation({ summary: 'Decline a pending session request' })
   @ApiParam({ name: 'id', description: 'Session UUID' })
-  @ApiResponse({ status: 200, description: 'Session declined (cancelled).', type: SessionResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Session declined (cancelled).',
+    type: SessionResponseDto,
+  })
   declineSession(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param() params: SessionParamDto,
   ): Promise<SessionResponseDto> {
-    return this.sessionsService.respondToSession(params.id, currentUser.id, false) as any;
+    return this.sessionsService.respondToSession(params.id, currentUser.id, false);
   }
 
   @Patch(':id/tutor')
-  @ApiOperation({ summary: 'Transfer session to a different tutor. Only for pending or upcoming sessions.' })
+  @ApiOperation({
+    summary: 'Transfer session to a different tutor. Only for pending or upcoming sessions.',
+  })
   @ApiParam({ name: 'id', description: 'Session UUID' })
   @ApiBody({ type: TransferSessionDto })
   @ApiResponse({ status: 200, description: 'Session tutor changed.', type: SessionResponseDto })
-  @ApiResponse({ status: 400, description: 'New tutor does not teach the subject or has time conflict.' })
+  @ApiResponse({
+    status: 400,
+    description: 'New tutor does not teach the subject or has time conflict.',
+  })
   @ApiResponse({ status: 404, description: 'Session not found.' })
   transferTutor(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param() params: SessionParamDto,
     @Body() dto: TransferSessionDto,
   ): Promise<SessionResponseDto> {
-    return this.sessionsService.transferTutor(params.id, currentUser.id, dto.newTutorId) as any;
+    return this.sessionsService.transferTutor(params.id, currentUser.id, dto.newTutorId);
   }
 
   @Patch(':id/status')
@@ -114,6 +146,6 @@ export class SessionsController {
     @Param() params: SessionParamDto,
     @Body() dto: UpdateSessionStatusDto,
   ): Promise<SessionResponseDto> {
-    return this.sessionsService.updateStatus(params.id, currentUser.id, dto) as any;
+    return this.sessionsService.updateStatus(params.id, currentUser.id, dto);
   }
 }

@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '@common/auth';
 import { MessagesService } from './messages.service';
 import { MessageResponseDto, SendMessageDto } from './dtos/message.dto';
@@ -19,7 +26,7 @@ export class MessagesController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() dto: SendMessageDto,
   ): Promise<MessageResponseDto> {
-    return this.messagesService.send(currentUser.id, dto) as any;
+    return this.messagesService.send(currentUser.id, dto);
   }
 
   @Get('conversations')
@@ -36,16 +43,13 @@ export class MessagesController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param('userId') userId: string,
   ): Promise<MessageResponseDto[]> {
-    return this.messagesService.getConversation(currentUser.id, userId) as any;
+    return this.messagesService.getConversation(currentUser.id, userId);
   }
 
   @Patch(':userId/read')
   @ApiOperation({ summary: 'Mark messages from a user as read' })
   @ApiParam({ name: 'userId', description: 'Sender user UUID' })
-  markRead(
-    @CurrentUser() currentUser: AuthenticatedUser,
-    @Param('userId') userId: string,
-  ) {
+  markRead(@CurrentUser() currentUser: AuthenticatedUser, @Param('userId') userId: string) {
     return this.messagesService.markRead(userId, currentUser.id);
   }
 }

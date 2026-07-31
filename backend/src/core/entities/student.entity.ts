@@ -1,6 +1,6 @@
-import { DeliveryMode, FormatPreference, LearningStyle } from '@core/enums';
-import { AvailabilitySlot } from './availability-slot.vo';
-import { CriterionWeightsInput } from './criterion-weights.vo';
+import type { DeliveryMode, FormatPreference, LearningStyle } from '@core/enums';
+import type { AvailabilitySlot } from './availability-slot.vo';
+import type { CriterionWeightsInput } from './criterion-weights.vo';
 
 export interface Student {
   id: string;

@@ -144,12 +144,48 @@ If `Hs ∩ Ht = ∅`, `S(s,t) = 0` (this part of the original was already correc
 
 ## 4. Algorithm 4 — Fairness
 
+The draft's linear form was well-formed, but two behaviours showed up once the engine ran
+against realistic supply distributions, so the implemented term refines it:
+
 ```
-LoadRatio(t) = CurrentLoad(t) / Capacity(t)
-F(t) = 1 - LoadRatio(t)
-F(t) = 0   if CurrentLoad(t) ≥ Capacity(t)
+LoadRatio(t)   = CurrentLoad(t) / Capacity(t)
+Remaining(t)   = 1 - LoadRatio(t)
+ColdStart(t)   = 0.05  if CurrentLoad(t) = 0, else 0
+
+F(t) = min(1, Remaining(t)^1.15 + ColdStart(t))
+F(t) = 0   if Capacity(t) ≤ 0 or CurrentLoad(t) ≥ Capacity(t)
 ```
-No correction needed — this one was already well-formed.
+
+Two deviations from the linear `F(t) = 1 - LoadRatio(t)`, both deliberate:
+
+**Convex exponent (1.15).** Under the linear form, the marginal fairness penalty for taking
+one more student is constant across the whole load range, so a tutor at 1/4 capacity and a
+tutor at 3/4 capacity are separated by exactly the load difference and nothing more. Raising
+`Remaining(t)` to 1.15 makes the penalty grow as a tutor fills up — the gap between lightly
+and heavily loaded tutors widens near saturation, which is where spreading load actually
+matters. The exponent is deliberately close to 1: it reshapes the curve without letting
+fairness dominate the academic, preference, and schedule terms it is weighted against.
+
+**Cold-start boost (0.05).** A tutor with zero assignments is indistinguishable from any
+other unloaded tutor under the linear form, so tie-breaks fall to heap order and some tutors
+can go permanently unused across a batch. The additive nudge puts never-assigned tutors
+marginally ahead of otherwise-equivalent ones, pulling them into circulation. It applies only
+at exactly zero load and disappears after the first assignment. The `min(1, …)` clamp keeps
+`F(t) ∈ [0, 1]` so the composite score stays bounded — without it, an unassigned tutor would
+score `1.05`.
+
+Both refinements preserve the property the greedy correctness argument depends on: `F(t)` is
+still monotonically non-increasing in `CurrentLoad(t)`, so the lazy recompute in §6.3 remains
+valid. See §4.1 for the empirical effect.
+
+### 4.1 Measured effect
+
+The evaluation harness reports Jain's fairness index across tutor loads
+(`pnpm run eval`, `pnpm run eval:baselines`). The load-factor weight `δ` is swept at
+`0.05` and `0` in every scenario, isolating this term's contribution. The fairness term has
+the most room to act in the moderate band (1.5:1 to 4:1 student:tutor), where supply is
+neither trivially abundant nor fully capacity-bound; at 1:1 the assignment self-saturates and
+at 10:1 every tutor fills regardless, so the index converges in both extremes.
 
 ---
 
@@ -256,6 +292,20 @@ Greedy matching on a weighted bipartite graph guarantees at least **1/2 of the o
 total score (standard exchange-argument bound for greedy weighted matching). Cite this
 directly — it's real, defensible theory, not just "greedy is simple."
 
+### 6.6 Waitlist release
+
+A student who cannot be placed is waitlisted rather than dropped. Seats are released back
+to the waitlist by **two** events, not just the batch:
+
+1. **A batch re-run** — waitlisted students are reconsidered against current capacity.
+2. **A completion or cancellation** — the freed seat is offered immediately to the
+   longest-waiting eligible student for that tutor (FCFS by booking timestamp, consistent
+   with §6.1's arrival ordering).
+
+Exactly one student is promoted per freed seat, and the promotion is re-checked against
+live capacity at the moment of writing, so a seat cannot be handed to two students if a
+manual selection claims it concurrently.
+
 ---
 
 ## 7. Algorithm 7 — Feedback Update
@@ -313,5 +363,6 @@ view); use the heap for any "show top 5 tutors" student-facing feature.
 | Schedule score divides by \|Hs\| with no guard | Treated as incomplete-profile precondition, not 0/0 |
 | Dynamic weight adaptation breaks Σw=1 (only 2 of 4 weights updated) | Proportional renormalization of all remaining weights |
 | Greedy assignment sorts once and never updates fairness mid-run | Priority-Queue Greedy with lazy fairness recompute — same complexity class, fairness-correct |
+| Linear fairness applies a constant marginal penalty and leaves never-assigned tutors indistinguishable | Convex exponent (1.15) plus a 0.05 cold-start boost, clamped to `[0, 1]` — still monotone in load, so lazy recompute stays valid |
 | Region/proximity named in research.txt, absent from formal model | Added as optional term, in-person mode only |
 | "Other preferences" (gender) named in research.txt | Recommended explicit exclusion — flagged as a scope decision, not an omission |

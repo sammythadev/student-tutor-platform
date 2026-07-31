@@ -100,31 +100,35 @@ describe('core matchmaking engine', () => {
     });
 
     expect(normalized.sum()).toBeCloseTo(1);
-    expect(() => CriterionWeights.from({ subjectFit: -1 })).toThrow(
-      'Criterion weights',
-    );
+    expect(() => CriterionWeights.from({ subjectFit: -1 })).toThrow('Criterion weights');
   });
 
   it('scores schedule overlap and rejects missing availability', () => {
     const schedule = new ScheduleScorer();
 
     expect(
-      schedule.score(student({ requestedAvailability: [slot(9, 11)] }), tutor({
-        availability: [slot(10, 12)],
-      })),
+      schedule.score(
+        student({ requestedAvailability: [slot(9, 11)] }),
+        tutor({
+          availability: [slot(10, 12)],
+        }),
+      ),
     ).toBeCloseTo(0.5);
-    expect(() =>
-      schedule.score(student({ requestedAvailability: [] }), tutor()),
-    ).toThrow(IncompleteProfileException);
+    expect(() => schedule.score(student({ requestedAvailability: [] }), tutor())).toThrow(
+      IncompleteProfileException,
+    );
   });
 
   it('does not treat split tutor slots as full coverage for one contiguous request', () => {
     const schedule = new ScheduleScorer();
 
     expect(
-      schedule.score(student({ requestedAvailability: [slot(9, 11)] }), tutor({
-        availability: [slot(9, 10), slot(10, 11)],
-      })),
+      schedule.score(
+        student({ requestedAvailability: [slot(9, 11)] }),
+        tutor({
+          availability: [slot(9, 10), slot(10, 11)],
+        }),
+      ),
     ).toBeCloseTo(0.5);
   });
 
@@ -206,10 +210,9 @@ describe('core matchmaking engine', () => {
   });
 
   it('waitlists incremental requests at exact capacity', () => {
-    const result = new MatchingEngine().matchOne(
-      student(),
-      [tutor({ capacity: 1, assignedCount: 1 })],
-    );
+    const result = new MatchingEngine().matchOne(student(), [
+      tutor({ capacity: 1, assignedCount: 1 }),
+    ]);
 
     expect(result.status).toBe(AssignmentStatus.WAITLISTED);
     expect(result.tutorId).toBeNull();
@@ -235,6 +238,49 @@ describe('core matchmaking engine', () => {
     expect(result.promoted?.status).toBe(AssignmentStatus.ACTIVE);
   });
 
+  it('promotes exactly one waitlisted student per freed seat', () => {
+    // Regression: recheckWaitlist used to call assignBatch and return only
+    // assignments[0]. assignBatch had already incremented assignedCount for EVERY
+    // student it placed, so a tutor with 3 free seats and 3 waiting students
+    // reported one promotion while its load jumped by 3.
+    const freedTutor = tutor({ capacity: 3, assignedCount: 0 });
+    const waiting = [
+      student({ id: 'student-first' }),
+      student({ id: 'student-second' }),
+      student({ id: 'student-third' }),
+    ];
+
+    const promoted = new AssignmentLifecycle().recheckWaitlist(waiting, [freedTutor]);
+
+    expect(promoted?.studentId).toBe('student-first');
+    expect(promoted?.status).toBe(AssignmentStatus.ACTIVE);
+    expect(freedTutor.assignedCount).toBe(1);
+  });
+
+  it('skips ineligible candidates without consuming the freed seat', () => {
+    const freedTutor = tutor({ capacity: 1, assignedCount: 0 });
+    const waiting = [
+      student({ id: 'student-wrong-subject', subjects: ['biology'], requiredSubject: 'biology' }),
+      student({ id: 'student-eligible' }),
+    ];
+
+    const promoted = new AssignmentLifecycle().recheckWaitlist(waiting, [freedTutor]);
+
+    expect(promoted?.studentId).toBe('student-eligible');
+    expect(freedTutor.assignedCount).toBe(1);
+  });
+
+  it('leaves tutor load untouched when nobody can be promoted', () => {
+    const fullTutor = tutor({ capacity: 1, assignedCount: 1 });
+    const promoted = new AssignmentLifecycle().recheckWaitlist(
+      [student({ id: 'student-waiting' })],
+      [fullTutor],
+    );
+
+    expect(promoted).toBeNull();
+    expect(fullTutor.assignedCount).toBe(1);
+  });
+
   it('keeps assigned counts within tutor capacity across generated fixtures', () => {
     for (let run = 0; run < 25; run += 1) {
       const tutors = Array.from({ length: 5 }, (_, index) =>
@@ -250,26 +296,17 @@ describe('core matchmaking engine', () => {
 
       new GreedyAssignmentEngine().assignBatch(students, tutors);
 
-      expect(tutors.every((candidate) => candidate.assignedCount <= candidate.capacity)).toBe(
-        true,
-      );
+      expect(tutors.every((candidate) => candidate.assignedCount <= candidate.capacity)).toBe(true);
     }
   });
 
   it('ranks top-k tutors and adapts weights without breaking normalization', () => {
     const ranked = new TopKRanker().rank(
       student(),
-      [
-        tutor({ id: 'tutor-b', assignedCount: 0 }),
-        tutor({ id: 'tutor-a', assignedCount: 0 }),
-      ],
+      [tutor({ id: 'tutor-b', assignedCount: 0 }), tutor({ id: 'tutor-a', assignedCount: 0 })],
       1,
     );
-    const adapted = new WeightAdaptation().bump(
-      AlgorithmWeights.defaults(),
-      'gamma',
-      0.1,
-    );
+    const adapted = new WeightAdaptation().bump(AlgorithmWeights.defaults(), 'gamma', 0.1);
 
     expect(ranked).toHaveLength(1);
     expect(ranked[0].tutor.id).toBe('tutor-a');
@@ -287,9 +324,7 @@ describe('core matchmaking engine', () => {
     ];
     const scorer = new CompositeScorer();
     const naiveAverage =
-      (scorer.score(students[0], tutors[0]).total +
-        scorer.score(students[1], tutors[1]).total) /
-      2;
+      (scorer.score(students[0], tutors[0]).total + scorer.score(students[1], tutors[1]).total) / 2;
     const greedyTutors = tutors.map((candidate) => ({ ...candidate }));
     const greedy = new GreedyAssignmentEngine().assignBatch(students, greedyTutors);
     const greedyAverage =
@@ -315,7 +350,8 @@ describe('GreedyAssignmentEngine — top-k truncation', () => {
     const uncapped = new GreedyAssignmentEngine().assignBatch(students, makeTutors());
     const capped = new GreedyAssignmentEngine().assignBatch(students, makeTutors(), { topK: 10 });
 
-    const key = (a: { studentId: string; tutorId: string | null }) => `${a.studentId}->${a.tutorId}`;
+    const key = (a: { studentId: string; tutorId: string | null }) =>
+      `${a.studentId}->${a.tutorId}`;
     expect(capped.assignments.map(key).sort()).toEqual(uncapped.assignments.map(key).sort());
   });
 
@@ -341,9 +377,7 @@ describe('GreedyAssignmentEngine — top-k truncation', () => {
   });
 
   it('does not double-assign a student across main and fallback passes', () => {
-    const students = Array.from({ length: 5 }, (_, index) =>
-      student({ id: `student-${index}` }),
-    );
+    const students = Array.from({ length: 5 }, (_, index) => student({ id: `student-${index}` }));
     const tutors = Array.from({ length: 3 }, (_, index) =>
       tutor({ id: `tutor-${index}`, capacity: 2 }),
     );

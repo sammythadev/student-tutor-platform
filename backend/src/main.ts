@@ -1,7 +1,13 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@app/module/app.module';
-import { getCorsOrigin, getLoggerLevels, getPort, getSwaggerPath, loadEnvironmentFiles } from '@config';
+import {
+  getCorsOrigin,
+  getLoggerLevels,
+  getPort,
+  getSwaggerPath,
+  loadEnvironmentFiles,
+} from '@config';
 import { AppLoggerService } from '@common/logger';
 import { setupSwagger } from '@/swagger';
 
@@ -41,10 +47,7 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(port);
   logger.log(`Application started on port ${port}`, 'Bootstrap');
-  logger.log(
-    `Swagger docs available at http://localhost:${port}/${getSwaggerPath()}`,
-    'Bootstrap',
-  );
+  logger.log(`Swagger docs available at http://localhost:${port}/${getSwaggerPath()}`, 'Bootstrap');
 }
 
 void bootstrap();

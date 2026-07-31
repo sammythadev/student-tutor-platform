@@ -27,13 +27,26 @@ export class AssignmentLifecycle {
     return { cancelled, promoted };
   }
 
+  /**
+   * Promotes at most ONE waitlisted student into a freed seat, in the order given
+   * (callers pass them FCFS by booking time).
+   *
+   * Uses assignIncremental per candidate rather than a single assignBatch call:
+   * assignBatch would mutate assignedCount for EVERY student it managed to place
+   * while only one of them is returned, silently inflating tutor load. A candidate
+   * that cannot be placed comes back WAITLISTED and mutates nothing, so scanning
+   * past unsuccessful candidates is free.
+   */
   public recheckWaitlist(waitlistedStudents: Student[], tutors: Tutor[]): Assignment | null {
-    if (waitlistedStudents.length === 0) {
-      return null;
+    for (const student of waitlistedStudents) {
+      const assignment = this.engine.assignIncremental(student, tutors);
+
+      if (assignment.status === AssignmentStatus.ACTIVE) {
+        return assignment;
+      }
     }
 
-    const result = this.engine.assignBatch(waitlistedStudents, tutors);
-    return result.assignments[0] ?? null;
+    return null;
   }
 
   private decrementTutorLoad(assignment: Assignment, tutors: Tutor[]): void {

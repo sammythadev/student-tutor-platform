@@ -1,5 +1,13 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard, CurrentUser, OwnerOrAdminGuard, type AuthenticatedUser } from '@common/auth';
 import type { ScheduleSlotRecord } from '@database';
 import {
@@ -27,9 +35,7 @@ export class SchedulingController {
   @ApiResponse({ status: 400, description: 'Invalid time window.' })
   @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
   @ApiResponse({ status: 403, description: 'Only the owner or an admin can create availability.' })
-  createAvailability(
-    @Body() dto: CreateScheduleSlotDto,
-  ): Promise<ScheduleSlotRecord> {
+  createAvailability(@Body() dto: CreateScheduleSlotDto): Promise<ScheduleSlotRecord> {
     return this.schedulingService.createAvailability(dto);
   }
 
@@ -45,9 +51,7 @@ export class SchedulingController {
   })
   @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
   @ApiResponse({ status: 403, description: 'Only the owner or an admin can view availability.' })
-  findAvailableByUser(
-    @Param() params: UserScheduleParamDto,
-  ): Promise<ScheduleSlotRecord[]> {
+  findAvailableByUser(@Param() params: UserScheduleParamDto): Promise<ScheduleSlotRecord[]> {
     return this.schedulingService.findAvailableByUser(params.userId);
   }
 
@@ -55,7 +59,8 @@ export class SchedulingController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth('access-token')
   @ApiOperation({
-    summary: 'Get a tutor\'s real-time available + booked slots. Students see their own session details, others are opaque.',
+    summary:
+      "Get a tutor's real-time available + booked slots. Students see their own session details, others are opaque.",
   })
   @ApiParam({ name: 'tutorId', description: 'Tutor user UUID' })
   @ApiQuery({ name: 'from', required: false, description: 'ISO date string for range start' })

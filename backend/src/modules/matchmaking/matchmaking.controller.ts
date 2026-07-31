@@ -13,6 +13,7 @@ import {
   AssignmentResponseDto,
   BatchMatchmakingResponseDto,
   CandidatePageDto,
+  CandidateStudentPageDto,
   PaginationQueryDto,
   FeedbackResponseDto,
   SelectTutorDto,
@@ -61,11 +62,12 @@ export class MatchmakingController {
   @ApiResponse({
     status: 200,
     description: 'Ranked student candidates for the authenticated tutor.',
+    type: CandidateStudentPageDto,
   })
   candidateStudents(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Query() query: PaginationQueryDto,
-  ): Promise<any> {
+  ): Promise<CandidateStudentPageDto> {
     return this.matchmakingService.candidateStudents(currentUser, query);
   }
 
@@ -113,11 +115,7 @@ export class MatchmakingController {
     @Param('id') assignmentId: string,
     @Body() dto: UpdateAssignmentStatusDto,
   ): Promise<AssignmentResponseDto> {
-    return this.matchmakingService.updateAssignmentStatus(
-      currentUser,
-      assignmentId,
-      dto.status,
-    );
+    return this.matchmakingService.updateAssignmentStatus(currentUser, assignmentId, dto.status);
   }
 
   @Post('assignments/:id/feedback')

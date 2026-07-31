@@ -1,13 +1,18 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import {
-  DeliveryMode,
-  FormatPreference,
-  LearningStyle,
-  TeachingStyle,
-} from '@core/enums';
-import { AvailabilitySlotDto, PreferenceWeightsDto } from './create-user.dto';
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
+import { PreferenceWeightsDto } from './create-user.dto';
 
 export class NotificationPrefsDto {
   @ApiPropertyOptional({ example: true })

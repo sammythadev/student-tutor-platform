@@ -1,5 +1,3 @@
-
-> backend@0.0.1 eval C:\Users\USER\Desktop\Final Year Research\project\backend
 > ts-node -r tsconfig-paths/register src/core/evaluation/evaluation-harness.ts "--optimality-gap" "--csv"
 
 size,students,tutors,greedyAssigned,optimalAssigned,greedyStaticTotal,optimalStaticTotal,scoreRatio,greedyMs,optimalMs

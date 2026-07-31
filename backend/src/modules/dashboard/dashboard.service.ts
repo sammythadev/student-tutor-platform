@@ -49,21 +49,26 @@ export class DashboardService {
       },
     ];
 
-    return { kpis, weeklyBars, upcomingSessions, streakDays, totalHoursLearned: String(totalHoursLearned) };
+    return {
+      kpis,
+      weeklyBars,
+      upcomingSessions,
+      streakDays,
+      totalHoursLearned: String(totalHoursLearned),
+    };
   }
 
   async getTutorMetrics(userId: string): Promise<TutorDashboardMetricsDto> {
-    const [upcomingSessions, weeklyBars, profile, studentsCount, completedCount] = await Promise.all([
-      this.dashboardRepository.getUpcomingSessions(userId, 'tutor'),
-      this.dashboardRepository.getWeeklyHours(userId, 'tutor'),
-      this.dashboardRepository.getTutorProfile(userId),
-      this.dashboardRepository.countDistinctStudents(userId),
-      this.dashboardRepository.countCompletedSessions(userId, 'tutor'),
-    ]);
+    const [upcomingSessions, weeklyBars, profile, studentsCount, completedCount] =
+      await Promise.all([
+        this.dashboardRepository.getUpcomingSessions(userId, 'tutor'),
+        this.dashboardRepository.getWeeklyHours(userId, 'tutor'),
+        this.dashboardRepository.getTutorProfile(userId),
+        this.dashboardRepository.countDistinctStudents(userId),
+        this.dashboardRepository.countCompletedSessions(userId, 'tutor'),
+      ]);
 
-    const avgRating = profile?.avgRating
-      ? (Number(profile.avgRating) * 5).toFixed(1)
-      : null;
+    const avgRating = profile?.avgRating ? (Number(profile.avgRating) * 5).toFixed(1) : null;
 
     const totalSessions = await this.dashboardRepository.countAllUserSessions(userId, 'tutor');
 

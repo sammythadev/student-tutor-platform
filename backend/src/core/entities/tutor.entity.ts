@@ -1,5 +1,5 @@
-import { DeliveryMode, FormatPreference, TeachingStyle } from '@core/enums';
-import { AvailabilitySlot } from './availability-slot.vo';
+import type { DeliveryMode, FormatPreference, TeachingStyle } from '@core/enums';
+import type { AvailabilitySlot } from './availability-slot.vo';
 
 export interface Tutor {
   id: string;

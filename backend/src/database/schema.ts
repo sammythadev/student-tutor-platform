@@ -23,20 +23,14 @@ export const assignmentStatusEnum = pgEnum('assignment_status', [
   'waitlisted',
 ]);
 export const deliveryModeEnum = pgEnum('delivery_mode', ['online', 'in-person']);
-export const formatPreferenceEnum = pgEnum('format_preference', [
-  'one-on-one',
-  'group',
-]);
+export const formatPreferenceEnum = pgEnum('format_preference', ['one-on-one', 'group']);
 export const learningStyleEnum = pgEnum('learning_style', [
   'visual',
   'auditory',
   'kinesthetic',
   'mixed',
 ]);
-export const teachingStyleEnum = pgEnum('teaching_style', [
-  'interactive',
-  'lecture',
-]);
+export const teachingStyleEnum = pgEnum('teaching_style', ['interactive', 'lecture']);
 export const scheduleSlotStatusEnum = pgEnum('schedule_slot_status', [
   'available',
   'booked',
@@ -74,12 +68,8 @@ export const users = pgTable(
       marketingEmails?: boolean;
       weeklyReports?: boolean;
     }>(),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex('users_email_unique_idx').on(sql`lower(${table.email})`),
@@ -95,9 +85,7 @@ export const subjects = pgTable(
     name: text('name').notNull(),
     category: text('category').notNull().default('secondary'),
     isActive: integer('is_active').notNull().default(1),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex('subjects_code_unique_idx').on(sql`lower(${table.code})`),
@@ -115,7 +103,10 @@ export const studentProfiles = pgTable(
     subjectId: uuid('subject_id').references(() => subjects.id, { onDelete: 'set null' }),
     // Keep requiredSubject for matchmaking engine backward compat; subjects[] is the UI-facing list
     requiredSubject: text('required_subject').notNull(),
-    subjects: text('subjects').array().notNull().default(sql`ARRAY[]::text[]`),
+    subjects: text('subjects')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     gradeLevel: integer('grade_level').notNull(),
     examType: text('exam_type').notNull(),
     requestedAvailability: jsonb('requested_availability')
@@ -133,7 +124,10 @@ export const studentProfiles = pgTable(
     deliveryPreference: deliveryModeEnum('delivery_preference'),
     formatPreference: formatPreferenceEnum('format_preference'),
     learningStylePreference: learningStyleEnum('learning_style_preference'),
-    languages: text('languages').array().notNull().default(sql`ARRAY[]::text[]`),
+    languages: text('languages')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     subjectSpecialization: text('subject_specialization'),
     region: text('region'),
     // Profile enrichment
@@ -141,15 +135,9 @@ export const studentProfiles = pgTable(
     learningGoals: text('learning_goals'),
     totalHoursLearned: numeric('total_hours_learned', { precision: 8, scale: 2 }).default('0'),
     streakDays: integer('streak_days').notNull().default(0),
-    bookingTimestamp: timestamp('booking_timestamp', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    bookingTimestamp: timestamp('booking_timestamp', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.userId] }),
@@ -172,14 +160,18 @@ export const tutorProfiles = pgTable(
       onDelete: 'set null',
     }),
     subjectsTaught: text('subjects_taught').array().notNull(),
-    specializations: text('specializations').array().notNull().default(sql`ARRAY[]::text[]`),
+    specializations: text('specializations')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     gradeLevelsSupported: integer('grade_levels_supported').array().notNull(),
     examTypesSupported: text('exam_types_supported').array().notNull(),
-    availability: jsonb('availability')
-      .$type<Array<{ start: string; end: string }>>()
-      .notNull(),
+    availability: jsonb('availability').$type<Array<{ start: string; end: string }>>().notNull(),
     experienceYears: integer('experience_years').notNull().default(0),
-    languages: text('languages').array().notNull().default(sql`ARRAY[]::text[]`),
+    languages: text('languages')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     region: text('region'),
     teachingStyle: teachingStyleEnum('teaching_style'),
     deliveryStyle: deliveryModeEnum('delivery_style'),
@@ -193,19 +185,12 @@ export const tutorProfiles = pgTable(
     ratingCount: integer('rating_count').notNull().default(0),
     studentsCount: integer('students_count').notNull().default(0),
     isVerified: integer('is_verified').notNull().default(0),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.userId] }),
-    index('tutor_profiles_subjects_gin_idx').using(
-      'gin',
-      table.subjectsTaught,
-    ),
+    index('tutor_profiles_subjects_gin_idx').using('gin', table.subjectsTaught),
     index('tutor_profiles_exams_gin_idx').using('gin', table.examTypesSupported),
     index('tutor_profiles_capacity_idx').on(table.capacity, table.assignedCount),
     check('tutor_profiles_experience_non_negative_chk', sql`${table.experienceYears} >= 0`),
@@ -230,9 +215,7 @@ export const tutorSubjects = pgTable(
     subjectId: uuid('subject_id')
       .notNull()
       .references(() => subjects.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.tutorId, table.subjectId] }),
@@ -251,19 +234,11 @@ export const scheduleSlots = pgTable(
     endAt: timestamp('end_at', { withTimezone: true }).notNull(),
     status: scheduleSlotStatusEnum('status').notNull().default('available'),
     region: text('region'),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index('schedule_slots_user_status_start_idx').on(
-      table.userId,
-      table.status,
-      table.startAt,
-    ),
+    index('schedule_slots_user_status_start_idx').on(table.userId, table.status, table.startAt),
     index('schedule_slots_available_window_idx').on(table.status, table.startAt, table.endAt),
     check('schedule_slots_time_order_chk', sql`${table.endAt} > ${table.startAt}`),
   ],
@@ -310,9 +285,7 @@ export const tutorFeedback = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     rating: integer('rating').notNull(),
     comment: text('comment'),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.assignmentId] }),
@@ -341,12 +314,8 @@ export const sessions = pgTable(
     notes: text('notes'),
     proposedStartAt: timestamp('proposed_start_at', { withTimezone: true }),
     proposedEndAt: timestamp('proposed_end_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('sessions_student_status_start_idx').on(table.studentId, table.status, table.startAt),
@@ -367,16 +336,15 @@ export const posts = pgTable(
     attachments: jsonb('attachments')
       .$type<Array<{ type: 'link' | 'book'; title: string; meta?: string; url?: string }>>()
       .default(sql`'[]'::jsonb`),
-    tags: text('tags').array().notNull().default(sql`ARRAY[]::text[]`),
+    tags: text('tags')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     likesCount: integer('likes_count').notNull().default(0),
     commentsCount: integer('comments_count').notNull().default(0),
     isPromo: integer('is_promo').notNull().default(0),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('posts_author_created_idx').on(table.authorId, table.createdAt),
@@ -394,9 +362,7 @@ export const postLikes = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.postId, table.userId] }),
@@ -417,9 +383,7 @@ export const messages = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
     readAt: timestamp('read_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('messages_sender_receiver_idx').on(table.senderId, table.receiverId),
@@ -450,9 +414,7 @@ export const notifications = pgTable(
     message: text('message').notNull(),
     isRead: integer('is_read').notNull().default(0),
     relatedId: text('related_id'), // session/assignment id for deep linking
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('notifications_user_read_idx').on(table.userId, table.isRead),

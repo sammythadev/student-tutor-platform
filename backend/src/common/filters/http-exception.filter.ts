@@ -1,13 +1,11 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { isLoggingEnabled } from '@config';
-import { IncompleteProfileException, NoEligibleTutorsException } from '@core/exceptions';
+import {
+  IncompleteProfileException,
+  NoEligibleTutorsException,
+  TutorCapacityExceededException,
+} from '@core/exceptions';
 import { AppLoggerService } from '@common/logger';
 import type { AuthenticatedUser } from '@common/auth';
 
@@ -110,6 +108,14 @@ export class CommonExceptionFilter implements ExceptionFilter {
     if (exception instanceof NoEligibleTutorsException) {
       return {
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        message: exception.message,
+      };
+    }
+
+    // Domain exception: tutor filled up concurrently — the client should pick again.
+    if (exception instanceof TutorCapacityExceededException) {
+      return {
+        statusCode: HttpStatus.CONFLICT,
         message: exception.message,
       };
     }

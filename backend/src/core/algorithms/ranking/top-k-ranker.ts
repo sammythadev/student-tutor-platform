@@ -20,10 +20,10 @@ export class TopKRanker {
     }
 
     return tutors
-      .map((tutor) => ({ 
-        tutor, 
+      .map((tutor) => ({
+        tutor,
         score: this.compositeScorer.score(student, tutor),
-        eligibility: this.eligibilityFilter.checkEligibility(student, tutor)
+        eligibility: this.eligibilityFilter.checkEligibility(student, tutor),
       }))
       .sort((left, right) => {
         if (left.eligibility.isEligible && !right.eligibility.isEligible) return -1;
@@ -46,16 +46,20 @@ export class TopKRanker {
       .slice(0, k);
   }
 
-  public rankStudents(tutor: Tutor, students: Student[], k: number): { student: Student; score: MatchScore; eligibility: EligibilityResult }[] {
+  public rankStudents(
+    tutor: Tutor,
+    students: Student[],
+    k: number,
+  ): { student: Student; score: MatchScore; eligibility: EligibilityResult }[] {
     if (k <= 0) {
       return [];
     }
 
     return students
-      .map((student) => ({ 
-        student, 
+      .map((student) => ({
+        student,
         score: this.compositeScorer.score(student, tutor),
-        eligibility: this.eligibilityFilter.checkEligibility(student, tutor)
+        eligibility: this.eligibilityFilter.checkEligibility(student, tutor),
       }))
       .sort((left, right) => {
         if (left.eligibility.isEligible && !right.eligibility.isEligible) return -1;

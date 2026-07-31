@@ -15,9 +15,7 @@ export class DashboardController {
   @Roles('student')
   @ApiOperation({ summary: 'Get student dashboard KPIs, weekly hours, and upcoming sessions' })
   @ApiResponse({ status: 200, type: DashboardMetricsDto })
-  getStudentMetrics(
-    @CurrentUser() currentUser: AuthenticatedUser,
-  ): Promise<DashboardMetricsDto> {
+  getStudentMetrics(@CurrentUser() currentUser: AuthenticatedUser): Promise<DashboardMetricsDto> {
     return this.dashboardService.getStudentMetrics(currentUser.id);
   }
 

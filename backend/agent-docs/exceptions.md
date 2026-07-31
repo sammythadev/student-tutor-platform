@@ -7,6 +7,7 @@ Error
 ├── HttpException (NestJS)          → passthrough — use its built-in status
 ├── IncompleteProfileException      → 422 Unprocessable Entity
 ├── NoEligibleTutorsException       → 422 Unprocessable Entity
+├── TutorCapacityExceededException  → 409 Conflict
 └── (unknown)                       → 500 Internal Server Error (generic message)
 ```
 
