@@ -8,7 +8,8 @@ import { Button } from '@/components/Button'
 import { Input, Select, Textarea } from '@/components/Input'
 import { Badge } from '@/components/Badge'
 import { BookOpen, ArrowRight, Check } from 'lucide-react'
-import { onboard } from '@/lib/api/auth'
+import { onboard, type TeachingStyle, type DeliveryMode, type FormatPreference } from '@/lib/api/auth'
+import { apiErrorText } from '@/lib/api/errors'
 
 type OnboardingStep = 'role' | 'student' | 'tutor'
 
@@ -165,17 +166,16 @@ export default function OnboardingPage() {
         budget: studentForm.budget ? Number(studentForm.budget) : undefined,
         requestedAvailability: defaultAvailability,
         learningStylePreference: studentForm.learningStylePreference,
-        deliveryPreference: studentForm.deliveryPreference || undefined,
-        formatPreference: studentForm.formatPreference || undefined,
+        deliveryPreference: (studentForm.deliveryPreference || undefined) as DeliveryMode | undefined,
+        formatPreference: (studentForm.formatPreference || undefined) as FormatPreference | undefined,
         languages: studentForm.languages.length > 0 ? studentForm.languages : ['English'],
         region: studentForm.region || undefined,
         timezone: studentForm.timezone || 'Africa/Lagos',
         bio: studentForm.bio || undefined,
       })
       router.push('/dashboard')
-    } catch (err: any) {
-      const msg = err?.response?.data?.message ?? 'Onboarding failed. Please try again.'
-      setErrors({ subjects: Array.isArray(msg) ? msg.join(', ') : msg })
+    } catch (err) {
+      setErrors({ subjects: apiErrorText(err) })
     } finally {
       setLoading(false)
     }
@@ -214,14 +214,13 @@ export default function OnboardingPage() {
         experienceYears: Number(tutorForm.yearsExperience.split('-')[0]) || 1,
         languages: tutorForm.languages.length > 0 ? tutorForm.languages : ['English'],
         capacity: Number(tutorForm.capacity) || 5,
-        teachingStyle: (tutorForm.teachingStyle as any) || 'interactive',
-        deliveryStyle: (tutorForm.deliveryStyle as any) || 'online',
-        formatStyle: (tutorForm.formatStyle as any) || 'one-on-one',
+        teachingStyle: (tutorForm.teachingStyle || undefined) as TeachingStyle | undefined,
+        deliveryStyle: (tutorForm.deliveryStyle || undefined) as DeliveryMode | undefined,
+        formatStyle: (tutorForm.formatStyle || undefined) as FormatPreference | undefined,
       })
       router.push('/tutor-dashboard')
-    } catch (err: any) {
-      const msg = err?.response?.data?.message ?? 'Onboarding failed. Please try again.'
-      setErrors({ expertise: Array.isArray(msg) ? msg.join(', ') : msg })
+    } catch (err) {
+      setErrors({ expertise: apiErrorText(err) })
     } finally {
       setLoading(false)
     }

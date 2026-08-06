@@ -8,6 +8,7 @@ import {
   bookSession, getMySessions, proposeSession, updateSessionStatus, type SessionItem,
 } from '@/lib/api/sessions'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
+import { apiErrorText } from '@/lib/api/errors'
 import { useAuthStore } from '@/lib/store/authStore'
 import { useToast } from '@/lib/toast-context'
 import {
@@ -25,6 +26,9 @@ const DAYS_FULL  = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Sat
 const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 8)
+const HOUR_PX = 52          // pixel height of one hour row in the week grid
+const DAY_START = 8         // first hour shown (08:00)
+const DAY_END = 20          // last hour boundary (20:00) — 12 rows total
 
 const SUBJECT_ICONS: Record<string, any> = {
   mathematics: Calculator, physics: FlaskConical, chemistry: FlaskConical,
@@ -34,15 +38,29 @@ const SUBJECT_ICONS: Record<string, any> = {
 }
 const ACCENT_COLORS: AccentKey[] = ['lavender', 'sky', 'mint', 'sun', 'coral', 'tangerine']
 const AC: Record<AccentKey, { bg: string; fg: string; border: string; solid: string }> = {
-  lavender:  { bg: 'var(--accent-lavender-bg)', fg: 'var(--accent-lavender-fg)', border: 'rgba(99,102,241,0.3)',  solid: '#6366F1' },
-  sky:       { bg: 'var(--accent-sky-bg)',      fg: 'var(--accent-sky-fg)',      border: 'rgba(14,165,233,0.3)',  solid: '#0EA5E9' },
-  mint:      { bg: 'var(--accent-mint-bg)',     fg: 'var(--accent-mint-fg)',     border: 'rgba(16,185,129,0.3)',  solid: '#10B981' },
-  sun:       { bg: 'var(--accent-sun-bg)',      fg: 'var(--accent-sun-fg)',      border: 'rgba(245,158,11,0.3)',  solid: '#F59E0B' },
-  coral:     { bg: 'var(--accent-coral-bg)',    fg: 'var(--accent-coral-fg)',    border: 'rgba(239,68,68,0.3)',   solid: '#EF4444' },
-  tangerine: { bg: 'var(--accent-tangerine-bg)',fg: 'var(--accent-tangerine-fg)',border: 'rgba(234,88,12,0.3)',  solid: '#EA580C' },
+  lavender:  { bg: 'var(--accent-lavender-bg)', fg: 'var(--accent-lavender-fg)', border: 'rgba(47,122,99,0.3)',  solid: '#2F7A63' },
+  sky:       { bg: 'var(--accent-sky-bg)',      fg: 'var(--accent-sky-fg)',      border: 'rgba(93,156,170,0.3)',  solid: '#5D9CAA' },
+  mint:      { bg: 'var(--accent-mint-bg)',     fg: 'var(--accent-mint-fg)',     border: 'rgba(122,155,90,0.3)',  solid: '#7A9B5A' },
+  sun:       { bg: 'var(--accent-sun-bg)',      fg: 'var(--accent-sun-fg)',      border: 'rgba(201,162,75,0.3)',  solid: '#C9A24B' },
+  coral:     { bg: 'var(--accent-coral-bg)',    fg: 'var(--accent-coral-fg)',    border: 'rgba(196,96,72,0.3)',   solid: '#C46048' },
+  tangerine: { bg: 'var(--accent-tangerine-bg)',fg: 'var(--accent-tangerine-fg)',border: 'rgba(199,124,62,0.3)',  solid: '#C77C3E' },
 }
 const STATUS_COLORS: Record<string, AccentKey> = {
   pending: 'sun', confirmed: 'mint', cancelled: 'coral', completed: 'sky',
+}
+
+/** Compute top-offset (px) for a session block in the grid, from 08:00 (row 0) */
+function sessionTopPx(startAt: string): number {
+  const d = new Date(startAt)
+  const h = d.getHours(), m = d.getMinutes()
+  return ((h - DAY_START) + m / 60) * HOUR_PX
+}
+/** Compute height (px) for a session block (default 1h if no endAt) */
+function sessionHeightPx(startAt: string, endAt: string | null): number {
+  const start = new Date(startAt).getTime()
+  const end = endAt ? new Date(endAt).getTime() : start + 3600000
+  const durationHours = (end - start) / 3600000
+  return durationHours * HOUR_PX
 }
 
 /* ─── Date helpers ────────────────────────────────────────── */
@@ -110,23 +128,23 @@ function MiniCalendar({
         background: 'var(--surface-glass)',
         backdropFilter: 'var(--blur-panel)',
         WebkitBackdropFilter: 'var(--blur-panel)',
-        border: '1px solid rgba(99,102,241,0.18)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-lg)',
       }}
     >
       {/* Header */}
       <div
         className="flex items-center justify-between px-4 py-3"
         style={{
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          background: 'rgba(99,102,241,0.05)',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--surface-2)',
         }}
       >
         <button
           onClick={() => onNavigate(-1)}
           className="flex h-7 w-7 items-center justify-center rounded-lg cursor-pointer transition-all"
           style={{ color: 'var(--text-secondary)' }}
-          onMouseEnter={e => { e.currentTarget.style.background='rgba(99,102,241,0.15)'; e.currentTarget.style.color='var(--primary)' }}
+          onMouseEnter={e => { e.currentTarget.style.background='var(--primary-subtle)'; e.currentTarget.style.color='var(--primary)' }}
           onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='var(--text-secondary)' }}
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -138,7 +156,7 @@ function MiniCalendar({
           }}
           className="font-heading text-sm font-bold tracking-tight cursor-pointer transition-colors rounded-md px-2 py-0.5"
           style={{ color: 'var(--text-primary)' }}
-          onMouseEnter={e => { e.currentTarget.style.color='var(--primary)'; e.currentTarget.style.background='rgba(99,102,241,0.08)' }}
+          onMouseEnter={e => { e.currentTarget.style.color='var(--primary)'; e.currentTarget.style.background='var(--primary-subtle)' }}
           onMouseLeave={e => { e.currentTarget.style.color='var(--text-primary)'; e.currentTarget.style.background='' }}
           title="Jump to this month"
         >
@@ -148,7 +166,7 @@ function MiniCalendar({
           onClick={() => onNavigate(1)}
           className="flex h-7 w-7 items-center justify-center rounded-lg cursor-pointer transition-all"
           style={{ color: 'var(--text-secondary)' }}
-          onMouseEnter={e => { e.currentTarget.style.background='rgba(99,102,241,0.15)'; e.currentTarget.style.color='var(--primary)' }}
+          onMouseEnter={e => { e.currentTarget.style.background='var(--primary-subtle)'; e.currentTarget.style.color='var(--primary)' }}
           onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='var(--text-secondary)' }}
         >
           <ChevronRight className="h-3.5 w-3.5" />
@@ -180,12 +198,12 @@ function MiniCalendar({
                 className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all cursor-pointer"
                 style={{
                   background: isToday
-                    ? 'linear-gradient(135deg, var(--primary), #818CF8)'
+                    ? 'linear-gradient(135deg, var(--primary), var(--primary-hover))'
                     : isSel
-                    ? 'rgba(99,102,241,0.22)'
+                    ? 'var(--primary-subtle)'
                     : 'transparent',
                   color: isToday
-                    ? '#fff'
+                    ? 'var(--primary-fg)'
                     : isSel
                     ? 'var(--primary)'
                     : isWeekend
@@ -193,14 +211,14 @@ function MiniCalendar({
                     : 'var(--text-primary)',
                   fontWeight: isToday || isSel ? 700 : 500,
                   boxShadow: isToday
-                    ? '0 2px 8px rgba(99,102,241,0.4)'
+                    ? '0 2px 8px rgba(47,122,99,0.4)'
                     : isSel
-                    ? '0 0 0 1.5px rgba(99,102,241,0.55)'
+                    ? '0 0 0 1.5px rgba(47,122,99,0.55)'
                     : 'none',
                 }}
                 onMouseEnter={e => {
                   if (!isToday && !isSel) {
-                    e.currentTarget.style.background = 'rgba(99,102,241,0.12)'
+                    e.currentTarget.style.background = 'var(--primary-subtle)'
                     e.currentTarget.style.color = 'var(--primary)'
                   }
                 }}
@@ -217,7 +235,7 @@ function MiniCalendar({
               {hasSes && (
                 <div
                   className="h-1 w-1 rounded-full -mt-0.5"
-                  style={{ background: isToday ? 'rgba(255,255,255,0.8)' : 'var(--primary)', opacity: isSel ? 1 : 0.7 }}
+                  style={{ background: isToday ? 'var(--primary-fg)' : 'var(--primary)', opacity: isSel ? 1 : 0.7 }}
                 />
               )}
             </div>
@@ -229,7 +247,7 @@ function MiniCalendar({
       {monthSessionCount > 0 && (
         <div
           className="flex items-center gap-2 px-4 py-2.5"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(99,102,241,0.04)' }}
+          style={{ borderTop: '1px solid var(--border)', background: 'var(--surface-2)' }}
         >
           <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: 'var(--primary)' }} />
           <span className="text-[10px] font-medium" style={{ color: 'var(--text-secondary)' }}>
@@ -271,6 +289,13 @@ export default function SchedulesPage() {
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState(() => (new Date().getDay() + 6) % 7)
 
+  // Live clock for the week-grid "now" indicator (updates each minute)
+  const [nowTick, setNowTick] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 60000)
+    return () => clearInterval(id)
+  }, [])
+
   // Month view state
   const now = new Date()
   const [monthYear,  setMonthYear]  = useState(now.getFullYear())
@@ -294,8 +319,8 @@ export default function SchedulesPage() {
         ])
         setSessions(s); setTutors(c.candidates)
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Could not load sessions.')
+    } catch (err) {
+      setError(apiErrorText(err))
     } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [isTutor])
@@ -382,16 +407,16 @@ export default function SchedulesPage() {
     try {
       const start = addDays(weekStart, dayIdx); start.setHours(8 + slotIdx, 0, 0, 0)
       const end   = new Date(start); end.setHours(start.getHours() + 1)
-      const created = await bookSession({ tutorId:tutor.userId, subject, startAt:start.toISOString(), endAt:end.toISOString() })
+      const created = await bookSession({ tutorId:tutor.tutorId, subject, startAt:start.toISOString(), endAt:end.toISOString() })
       setSessions(prev => [...prev, created])
-    } catch (err: any) { setError(err?.response?.data?.message ?? 'Could not book session.') }
+    } catch (err) { setError(apiErrorText(err)) }
   }
 
   async function cancelSession(id: string) {
     try {
       const updated = await updateSessionStatus(id, 'cancelled')
       setSessions(prev => prev.map(s => s.id === id ? updated : s))
-    } catch (err: any) { setError(err?.response?.data?.message ?? 'Could not cancel session.') }
+    } catch (err) { setError(apiErrorText(err)) }
   }
 
   function navigateMonth(dir: -1|1) {
@@ -413,6 +438,13 @@ export default function SchedulesPage() {
 
   const weekLabel = `${addDays(weekStart, 0).toLocaleDateString('en',{month:'short',day:'numeric'})} – ${addDays(weekStart,6).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})}`
   const today = new Date().toDateString()
+
+  // Live "now" line for the week grid
+  const nowDate = new Date(nowTick)
+  const isThisWeek = nowDate.getTime() >= weekStart.getTime() && nowDate.getTime() < addDays(weekStart, 7).getTime()
+  const nowTopPx = ((nowDate.getHours() - DAY_START) + nowDate.getMinutes() / 60) * HOUR_PX
+  const showNowLine = isThisWeek && nowDate.getHours() >= DAY_START && nowDate.getHours() < DAY_END
+  const nowColIdx = (nowDate.getDay() + 6) % 7 // Mon=0 … Sun=6
   const daysInCurrentMonth = getDaysInMonth(monthYear, monthMonth)
 
   return (
@@ -548,82 +580,112 @@ export default function SchedulesPage() {
                 <Button size="sm" variant="secondary" onClick={() => setWeekStart(getMonday(new Date()))}>Today</Button>
               </div>
 
-              {/* Week grid */}
+              {/* Week grid — time-grid calendar */}
               <div className="overflow-x-auto flex-1">
-                <div style={{ minWidth:640 }}>
-                  {/* Day headers */}
-                  <div className="grid" style={{ gridTemplateColumns:'52px repeat(7,1fr)' }}>
-                    <div style={{ background:'var(--surface-2)', borderBottom:'1px solid var(--border)' }} />
+                <div style={{ minWidth: 680 }}>
+                  {/* Sticky day headers */}
+                  <div className="grid sticky top-0 z-20" style={{ gridTemplateColumns:'56px repeat(7,1fr)', background:'var(--surface)' }}>
+                    <div style={{ borderBottom:'1px solid var(--border)' }} />
                     {DAYS_SHORT.map((day, idx) => {
                       const date = addDays(weekStart, idx)
                       const isToday = date.toDateString() === today
+                      const dow = date.getDay()
+                      const isWeekend = dow === 0 || dow === 6
                       const hasSes  = weekSessions.some(s => new Date(s.startAt).toDateString() === date.toDateString())
                       return (
-                        <div key={day} className="flex flex-col items-center py-3"
-                          style={{ borderLeft:'1px solid var(--border)', borderBottom:'1px solid var(--border)', background: isToday ? 'rgba(99,102,241,0.05)' : 'var(--surface-2)' }}>
-                          <p className="text-[9px] font-bold uppercase tracking-widest"
-                            style={{ color: isToday ? 'var(--primary)' : 'var(--text-muted)' }}>{day}</p>
-                          <div className="mt-1 flex h-7 w-7 items-center justify-center rounded-full font-heading text-sm font-bold"
-                            style={{ background: isToday ? 'var(--primary)' : 'transparent', color: isToday ? '#fff' : 'var(--text-primary)' }}>
+                        <div key={day} className="flex flex-col items-center gap-1 py-3"
+                          style={{ borderLeft:'1px solid var(--border)', borderBottom:'1px solid var(--border)', background: isToday ? 'var(--primary-subtle)' : undefined }}>
+                          <span className="text-[10px] font-bold uppercase tracking-widest"
+                            style={{ color: isToday ? 'var(--primary)' : isWeekend ? 'var(--text-muted)' : 'var(--text-secondary)' }}>{day}</span>
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full font-heading text-sm font-bold"
+                            style={{ background: isToday ? 'var(--primary)' : 'transparent', color: isToday ? 'var(--primary-fg)' : 'var(--text-primary)' }}>
                             {date.getDate()}
-                          </div>
+                          </span>
                           {hasSes && !isToday && (
-                            <div className="mt-0.5 h-1 w-1 rounded-full" style={{ background:'var(--accent-lavender-fg)' }} />
+                            <div className="h-1 w-1 rounded-full" style={{ background:'var(--primary)', opacity:0.7 }} />
                           )}
                         </div>
                       )
                     })}
                   </div>
 
-                  {/* Time slots */}
-                  {HOURS.map((hour, slotIdx) => (
-                    <div key={hour} className="grid" style={{ gridTemplateColumns:'52px repeat(7,1fr)' }}>
-                      <div className="flex items-start justify-end pr-2.5 pt-1.5"
-                        style={{ borderBottom:'1px solid var(--border)', height:64, background:'var(--surface-2)' }}>
-                        <span className="text-[9px] font-semibold tabular-nums" style={{ color:'var(--text-muted)' }}>
-                          {hour < 12 ? `${hour}am` : hour === 12 ? '12pm' : `${hour-12}pm`}
-                        </span>
-                      </div>
+                  {/* Time-grid body */}
+                  <div className="grid relative" style={{ gridTemplateColumns:'56px repeat(7,1fr)' }}>
+                    {/* Time gutter */}
+                    <div>
+                      {HOURS.map(hour => (
+                        <div key={hour} className="relative" style={{ height: HOUR_PX, borderBottom:'1px solid transparent' }}>
+                          <span className="absolute -top-1.5 right-2.5 text-[10px] font-semibold tabular-nums" style={{ color:'var(--text-muted)' }}>
+                            {hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour-12} PM`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
 
-                      {DAYS_SHORT.map((_, dayIdx) => {
-                        const slotDate = addDays(weekStart, dayIdx); slotDate.setHours(hour,0,0,0)
-                        const isPast   = slotDate < new Date()
-                        const isTarget = dropTarget?.dayIdx===dayIdx && dropTarget.slotIdx===slotIdx
-                        const isToday  = addDays(weekStart, dayIdx).toDateString() === today
-                        const cellSes  = weekSessions.filter(s => {
-                          const t = new Date(s.startAt)
-                          return t.getHours() === hour && t.getDay() === ((dayIdx+1)%7)
-                        })
-                        return (
-                          <div key={`${dayIdx}-${slotIdx}`}
-                            onDragOver={!isTutor && !isPast ? e => { e.preventDefault(); setDropTarget({dayIdx,slotIdx}) } : undefined}
-                            onDragLeave={!isTutor && !isPast ? () => setDropTarget(null) : undefined}
-                            onDrop={!isTutor && !isPast && onDrop ? e => onDrop(e,dayIdx,slotIdx) : undefined}
-                            className="relative px-1 py-0.5 transition-colors"
-                            style={{
-                              borderBottom:'1px solid var(--border)', borderLeft:'1px solid var(--border)', height:64,
-                              background: isTarget ? 'var(--primary-subtle)' : isPast ? 'rgba(0,0,0,0.015)' : isToday ? 'rgba(99,102,241,0.02)' : undefined,
-                            }}>
-                            {isTarget && (
-                              <div className="absolute inset-1 flex items-center justify-center rounded-lg border-2 border-dashed"
-                                style={{ borderColor:'var(--primary)', color:'var(--primary)' }}>
-                                <Plus className="h-4 w-4" />
+                    {/* Day columns */}
+                    {DAYS_SHORT.map((_, dayIdx) => {
+                      const colDate = addDays(weekStart, dayIdx)
+                      const isTodayCol = colDate.toDateString() === today
+                      const dow = colDate.getDay()
+                      const isWeekend = dow === 0 || dow === 6
+                      const colSes = weekSessions
+                        .filter(s => new Date(s.startAt).toDateString() === colDate.toDateString())
+                        .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+                      return (
+                        <div key={dayIdx} className="relative"
+                          style={{ borderLeft:'1px solid var(--border)', background: isTodayCol ? 'rgba(47,122,99,0.04)' : isWeekend ? 'rgba(0,0,0,0.015)' : undefined }}>
+                          {/* Hour cells — grid lines + drop targets */}
+                          {HOURS.map((hour, slotIdx) => {
+                            const slotDate = addDays(weekStart, dayIdx); slotDate.setHours(hour,0,0,0)
+                            const isPast   = slotDate < new Date()
+                            const isTarget = dropTarget?.dayIdx===dayIdx && dropTarget.slotIdx===slotIdx
+                            return (
+                              <div key={hour}
+                                onDragOver={!isTutor && !isPast ? e => { e.preventDefault(); setDropTarget({dayIdx,slotIdx}) } : undefined}
+                                onDragLeave={!isTutor && !isPast ? () => setDropTarget(null) : undefined}
+                                onDrop={!isTutor && !isPast && onDrop ? e => onDrop(e,dayIdx,slotIdx) : undefined}
+                                className="transition-colors"
+                                style={{
+                                  height: HOUR_PX,
+                                  borderBottom:'1px solid var(--border)',
+                                  background: isTarget ? 'var(--primary-subtle)' : undefined,
+                                }}>
+                                {isTarget && (
+                                  <div className="m-1 flex items-center justify-center rounded-lg border-2 border-dashed"
+                                    style={{ height:`calc(${HOUR_PX}px - 8px)`, borderColor:'var(--primary)', color:'var(--primary)' }}>
+                                    <Plus className="h-4 w-4" />
+                                  </div>
+                                )}
                               </div>
-                            )}
-                            {cellSes.map(session => {
+                            )
+                          })}
+
+                          {/* Event blocks — absolutely positioned by time */}
+                          <div className="absolute inset-0 pointer-events-none">
+                            {colSes.map((session, i) => {
                               const ac = AC[chipColor(session.subject)]
                               const Icon = SUBJECT_ICONS[session.subject?.toLowerCase()] ?? Clock
+                              const top = Math.max(sessionTopPx(session.startAt), 0)
+                              const height = Math.max(sessionHeightPx(session.startAt, session.endAt ?? null) - 3, 26)
+                              const tall = height >= 46
                               return (
                                 <div key={session.id}
-                                  className="group relative mb-0.5 rounded-lg px-2 py-1.5 cursor-pointer transition-all hover:shadow-md"
-                                  style={{ background:ac.bg, color:ac.fg, borderLeft:`3px solid ${ac.solid}` }}>
+                                  className="group pointer-events-auto absolute overflow-visible rounded-lg px-2 py-1 cursor-pointer transition-shadow hover:shadow-md"
+                                  style={{
+                                    top, height, left: 3 + i * 4, right: 3, zIndex: 10 + i,
+                                    background: ac.bg, borderLeft:`3px solid ${ac.solid}`, boxShadow:'var(--shadow-xs)',
+                                  }}>
                                   <div className="flex items-center gap-1">
-                                    <Icon className="h-2.5 w-2.5 flex-shrink-0 opacity-80" />
-                                    <span className="truncate text-[10px] font-bold">{session.subject}</span>
+                                    <Icon className="h-2.5 w-2.5 flex-shrink-0" style={{ color: ac.fg }} />
+                                    <span className="truncate text-[10px] font-bold" style={{ color:'var(--text-primary)' }}>{session.subject}</span>
                                   </div>
-                                  <span className="text-[9px] opacity-70">{fmtTime(session.startAt)}</span>
-                                  {/* Tooltip */}
-                                  <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-52 rounded-xl px-3.5 py-3 shadow-xl group-hover:block"
+                                  {tall && (
+                                    <span className="mt-0.5 block text-[9px] font-medium tabular-nums" style={{ color: ac.fg }}>
+                                      {fmtTime(session.startAt)}
+                                    </span>
+                                  )}
+                                  {/* Hover popover */}
+                                  <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-52 rounded-xl px-3.5 py-3 group-hover:block"
                                     style={{ background:'var(--surface)', border:'1px solid var(--border)', color:'var(--text-primary)', boxShadow:'var(--shadow-lg)' }}>
                                     <p className="font-bold text-xs">{session.subject}</p>
                                     <p className="mt-0.5 text-[11px]" style={{ color:'var(--text-secondary)' }}>{isTutor ? session.studentName : session.tutorName}</p>
@@ -641,10 +703,22 @@ export default function SchedulesPage() {
                               )
                             })}
                           </div>
-                        )
-                      })}
-                    </div>
-                  ))}
+                        </div>
+                      )
+                    })}
+
+                    {/* Live "now" indicator across the grid */}
+                    {showNowLine && (
+                      <div className="pointer-events-none absolute z-30 flex items-center"
+                        style={{ top: nowTopPx, left: 56, right: 0 }}>
+                        <span className="text-[9px] font-bold tabular-nums -ml-[52px] w-[48px] text-right pr-1" style={{ color:'var(--accent)' }}>
+                          {fmtTime(nowDate.toISOString())}
+                        </span>
+                        <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background:'var(--accent)', boxShadow:'0 0 0 3px rgba(201,162,75,0.2)' }} />
+                        <span className="h-[1.5px] flex-1" style={{ background:'var(--accent)', opacity: nowColIdx >= 0 ? 0.7 : 0.7 }} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>

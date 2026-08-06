@@ -6,6 +6,7 @@ import { Button } from '@/components/Button'
 import { Input, Select } from '@/components/Input'
 import { logout } from '@/lib/api/auth'
 import { getMe, updateMe, type UpdateMePayload } from '@/lib/api/users'
+import { apiErrorText } from '@/lib/api/errors'
 import { useAuthStore } from '@/lib/store/authStore'
 import { Bell, Lock, LogOut, Palette, User, Book } from 'lucide-react'
 
@@ -132,8 +133,8 @@ export default function SettingsPage() {
         })
       }
       setMessage('Settings saved.')
-    } catch (err: any) {
-      setMessage(err?.response?.data?.message ?? 'Could not save settings.')
+    } catch (err) {
+      setMessage(apiErrorText(err))
     } finally {
       setSaving(false)
     }

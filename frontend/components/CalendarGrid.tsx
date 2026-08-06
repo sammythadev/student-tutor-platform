@@ -2,6 +2,8 @@
 
 import { useState, useRef } from 'react'
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
+import type { SessionItem } from '@/lib/api/sessions'
+import type { Accent } from '@/lib/ui'
 
 interface CalendarEvent {
   id: string
@@ -9,8 +11,8 @@ interface CalendarEvent {
   startTime: string
   endTime: string
   subject: string
-  color: 'lavender' | 'sky' | 'mint' | 'sun' | 'coral' | 'tangerine'
-  status: 'confirmed' | 'pending'
+  color: Accent
+  status: SessionItem['status']
   isDragging?: boolean
 }
 

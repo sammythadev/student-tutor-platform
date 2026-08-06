@@ -70,9 +70,9 @@ function applyTheme(mode: ThemeMode) {
 }
 
 /* ─── Spring configs ──────────────────────────────────────── */
-const SPRING_NAV  = { type: 'spring', stiffness: 480, damping: 36, mass: 0.8 }
-const SPRING_PAGE = { type: 'spring', stiffness: 340, damping: 32, mass: 1 }
-const SPRING_DRAWER = { type: 'spring', stiffness: 380, damping: 34, mass: 0.9 }
+const SPRING_NAV  = { type: 'spring', stiffness: 480, damping: 36, mass: 0.8 } as const
+const SPRING_PAGE = { type: 'spring', stiffness: 340, damping: 32, mass: 1 } as const
+const SPRING_DRAWER = { type: 'spring', stiffness: 380, damping: 34, mass: 0.9 } as const
 
 /* ═══════════════════════════════════════════════════════════
    PAGE TRANSITION WRAPPER — wraps children per-route
@@ -456,12 +456,12 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
               <motion.div
                 className="md:hidden fixed bottom-0 inset-x-0 z-50 rounded-t-3xl overflow-hidden"
                 style={{
-                  background: 'rgba(10,10,20,0.82)',
+                  background: 'var(--surface-glass-strong)',
                   backdropFilter: 'blur(32px) saturate(200%)',
                   WebkitBackdropFilter: 'blur(32px) saturate(200%)',
-                  border: '1px solid rgba(255,255,255,0.10)',
+                  border: 'var(--surface-border)',
                   borderBottom: 'none',
-                  boxShadow: '0 -8px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
+                  boxShadow: 'var(--shadow-pop)',
                   paddingBottom: 'env(safe-area-inset-bottom, 0px)',
                 }}
                 initial={{ y: '100%' }}
@@ -471,17 +471,18 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
               >
                 {/* Handle */}
                 <div className="flex justify-center pt-3 pb-1">
-                  <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.18)' }} />
+                  <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border-strong)' }} />
                 </div>
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 pb-3 pt-1">
-                  <p className="font-heading text-sm font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>More</p>
+                  <p className="font-heading text-sm font-bold" style={{ color: 'var(--text-primary)' }}>More</p>
                   <button
                     onClick={() => setMoreOpen(false)}
                     className="w-7 h-7 flex items-center justify-center rounded-full cursor-pointer"
-                    style={{ background: 'rgba(255,255,255,0.08)' }}
+                    style={{ background: 'var(--surface-2)' }}
+                    aria-label="Close menu"
                   >
-                    <X className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.6)' }} strokeWidth={2} />
+                    <X className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} strokeWidth={2} />
                   </button>
                 </div>
                 {/* Overflow items */}
@@ -501,14 +502,14 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
                           onClick={() => setMoreOpen(false)}
                           className="flex flex-col items-center gap-2 rounded-2xl p-4 cursor-pointer transition-all"
                           style={{
-                            background: isActive ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.06)',
-                            border: `1px solid ${isActive ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                            background: isActive ? 'var(--primary-subtle)' : 'var(--surface-2)',
+                            border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border)'}`,
                           }}
                         >
                           <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.8}
-                            style={{ color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.55)' }} />
+                            style={{ color: isActive ? 'var(--primary)' : 'var(--text-secondary)' }} />
                           <span className="text-[11px] font-semibold"
-                            style={{ color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.55)' }}>
+                            style={{ color: isActive ? 'var(--primary)' : 'var(--text-secondary)' }}>
                             {item.label}
                           </span>
                         </Link>
@@ -517,15 +518,15 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
                   })}
                 </div>
                 {/* Divider */}
-                <div className="mx-5 mb-4" style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+                <div className="mx-5 mb-4" style={{ height: 1, background: 'var(--divider)' }} />
                 {/* Footer options */}
                 <div className="px-4 pb-5 space-y-1">
                   <Link
                     href="/settings"
                     onClick={() => setMoreOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors"
-                    style={{ color: 'rgba(255,255,255,0.65)' }}
-                    onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.06)')}
+                    style={{ color: 'var(--text-secondary)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background='var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background='')}
                   >
                     <Settings className="w-4 h-4" strokeWidth={1.8} />
@@ -534,8 +535,8 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
                   <button
                     onClick={cycleTheme}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors"
-                    style={{ color: 'rgba(255,255,255,0.65)' }}
-                    onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.06)')}
+                    style={{ color: 'var(--text-secondary)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background='var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background='')}
                   >
                     <ThemeIcon className="w-4 h-4" strokeWidth={1.8} />

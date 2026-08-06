@@ -7,7 +7,8 @@ import { Dropdown } from './Dropdown'
 import { bookSession, type BookSessionPayload } from '@/lib/api/sessions'
 import { getTutorSlots } from '@/lib/api/notifications'
 import { selectTutor } from '@/lib/api/users'
-import { Calendar, Clock, Plus, Trash2, AlertCircle } from 'lucide-react'
+import { apiErrorText } from '@/lib/api/errors'
+import { Calendar, Clock, Plus, Trash2 } from 'lucide-react'
 
 interface TimeSlot {
   date: string
@@ -116,42 +117,48 @@ export function BookSessionModal({
   }
 
   async function handleBook() {
+    const now = new Date()
+    const requested = slots.map((slot) => ({
+      slot,
+      startAt: new Date(`${slot.date}T${slot.hour.padStart(2, '0')}:${slot.min.padStart(2, '0')}:00`),
+    }))
+
+    const past = requested.find(({ startAt }) => startAt <= now)
+    if (past) {
+      onError(`Start time must be in the future (${past.slot.date})`)
+      return
+    }
+
+    const taken = requested.find(({ slot }) => isTimeOccupied(slot.date, slot.hour, slot.min))
+    if (taken) {
+      onError(`The selected time on ${taken.slot.date} is occupied`)
+      return
+    }
+
     setLoading(true)
     try {
+      // A student may hold only one assignment (Algorithm.md §6.1), so this runs
+      // once for the whole booking — calling it per slot would fail on slot two
+      // with sessions already committed.
+      if (!studentId) {
+        await selectTutor(tutorId)
+      }
+
       const results = []
-      for (const slot of slots) {
-        const startAt = new Date(`${slot.date}T${slot.hour.padStart(2, '0')}:${slot.min.padStart(2, '0')}:00`)
-        const endAt = new Date(startAt.getTime() + parseInt(duration) * 60000)
-
-        if (startAt <= new Date()) {
-          onError(`Start time must be in the future (${slot.date})`)
-          setLoading(false)
-          return
-        }
-
-        if (isTimeOccupied(slot.date, slot.hour, slot.min)) {
-          onError(`The selected time on ${slot.date} is occupied`)
-          setLoading(false)
-          return
-        }
-
+      for (const { slot, startAt } of requested) {
         const payload: BookSessionPayload = {
           tutorId,
           subject,
           startAt: startAt.toISOString(),
-          endAt: endAt.toISOString(),
+          endAt: new Date(startAt.getTime() + parseInt(duration) * 60000).toISOString(),
         }
         if (studentId) payload.studentId = studentId
-        if (!studentId) {
-          await selectTutor(tutorId)
-        }
-        const session = await bookSession(payload)
-        results.push(session)
+        results.push(await bookSession(payload))
       }
       onSuccess(results)
       onClose()
-    } catch (err: any) {
-      onError(err?.response?.data?.message ?? 'Could not book session.')
+    } catch (err) {
+      onError(apiErrorText(err))
     } finally {
       setLoading(false)
     }

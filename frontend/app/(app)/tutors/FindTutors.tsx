@@ -6,45 +6,61 @@ import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { BookSessionModal } from '@/components/BookSessionModal'
 import { MessageModal } from '@/components/MessageModal'
-import { Dropdown, type DropdownOption } from '@/components/Dropdown'
+import { Dropdown } from '@/components/Dropdown'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
+import { apiErrorText } from '@/lib/api/errors'
+import { accentFor, matchStrength } from '@/lib/ui'
 import {
   CheckCircle2, Heart, Search, SlidersHorizontal, MessageSquare,
-  Sparkles, X, BookOpen,
+  Sparkles, X, BookOpen, Star, Wallet, ArrowRight,
 } from 'lucide-react'
 import { useToast } from '@/lib/toast-context'
 import { StarRating } from '@/components/StarRating'
 import { Pagination } from '@/components/Pagination'
 import { TutorProfileModal } from '@/components/TutorProfileModal'
+import { MatchRing } from '@/components/MatchRing'
 
-const ACCENTS = ['lavender', 'sky', 'mint', 'sun', 'coral', 'tangerine'] as const
 const PER_PAGE = 12
+// Backend PaginationQueryDto caps limit at 50 and exposes no filter params, so
+// filtering happens client-side over whatever this fetch returned.
+const PAGE_SIZE = 50
+const EASE = [0.16, 1, 0.3, 1] as const
+
+// ─── Human-readable reasons a tutor surfaced — the "why recommended" layer ───
+function matchReasons(t: TutorCandidate): string[] {
+  const reasons: string[] = []
+  const rating = Number(t.avgRating ?? 0)
+  if (rating >= 4.5) reasons.push('Top-rated by students')
+  else if (rating >= 4) reasons.push('Highly rated')
+  if ((t.subjectsTaught?.length ?? 0) > 0) reasons.push(`Teaches ${t.subjectsTaught![0]}`)
+  if (t.isVerified) reasons.push('Verified tutor')
+  const rate = Number(t.hourlyRate ?? 0)
+  if (rate > 0 && rate <= 5000) reasons.push('Budget-friendly rate')
+  return reasons.slice(0, 3)
+}
 
 // ─── Skeleton card ───────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+    <div className="rounded-3xl p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
       <div className="flex items-start gap-3">
-        <div className="h-12 w-12 rounded-xl animate-pulse" style={{ background: 'var(--surface-2)' }} />
+        <div className="h-14 w-14 rounded-2xl animate-pulse" style={{ background: 'var(--surface-2)' }} />
         <div className="flex-1 space-y-2 pt-1">
           <div className="h-3.5 w-28 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
           <div className="h-3 w-20 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
         </div>
+        <div className="h-12 w-12 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
       </div>
       <div className="space-y-2">
         <div className="h-2.5 w-full rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
         <div className="h-2.5 w-4/5 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
-        <div className="h-2.5 w-3/5 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
       </div>
       <div className="flex gap-2">
         <div className="h-6 w-16 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
         <div className="h-6 w-20 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
       </div>
       <div className="h-px w-full" style={{ background: 'var(--border)' }} />
-      <div className="flex gap-2">
-        <div className="h-9 flex-1 rounded-xl animate-pulse" style={{ background: 'var(--surface-2)' }} />
-        <div className="h-9 flex-1 rounded-xl animate-pulse" style={{ background: 'var(--surface-2)' }} />
-      </div>
+      <div className="h-11 w-full rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
     </div>
   )
 }
@@ -64,6 +80,7 @@ export function FindTutors() {
   const [messageTarget, setMessageTarget] = useState<TutorCandidate | null>(null)
   const [profileTarget, setProfileTarget] = useState<TutorCandidate | null>(null)
   const [page, setPage]               = useState(1)
+  const [total, setTotal]             = useState(0)
   const { addToast } = useToast()
 
   useEffect(() => {
@@ -71,10 +88,10 @@ export function FindTutors() {
     async function load() {
       setLoading(true); setError(null)
       try {
-        const result = await getTutorCandidates({ page: 1, limit: 50 })
-        if (alive) { setCandidates(result.candidates) }
-      } catch (err: any) {
-        if (alive) setError(err?.response?.data?.message ?? 'Could not load tutors.')
+        const result = await getTutorCandidates({ page: 1, limit: PAGE_SIZE })
+        if (alive) { setCandidates(result.candidates); setTotal(result.total) }
+      } catch (err) {
+        if (alive) setError(apiErrorText(err))
       } finally {
         if (alive) setLoading(false)
       }
@@ -85,7 +102,7 @@ export function FindTutors() {
 
   const subjects = useMemo(() => {
     const unique = new Set<string>()
-    candidates.forEach(c => { c.subjectsTaught?.forEach((s: string) => unique.add(s)) })
+    candidates.forEach(c => { c.subjectsTaught?.forEach(s => unique.add(s)) })
     return ['All', ...Array.from(unique).sort()]
   }, [candidates])
 
@@ -93,22 +110,20 @@ export function FindTutors() {
     const q = search.toLowerCase()
     return candidates.filter(c => {
       const cSubjects = c.subjectsTaught ?? []
-      const matchSearch  = !q || `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) || cSubjects.some((s: string) => s.toLowerCase().includes(q))
+      const matchSearch  = !q || `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) || cSubjects.some(s => s.toLowerCase().includes(q))
       const matchSubject = subject === 'All' || cSubjects.includes(subject)
-      const matchRating  = !minRating || (c.avgRating ?? 0) >= minRating
-      const matchRate    = !maxRate || (c.hourlyRate ?? 0) <= maxRate
+      const matchRating  = !minRating || Number(c.avgRating ?? 0) >= minRating
+      const matchRate    = !maxRate || Number(c.hourlyRate ?? 0) <= maxRate
       return matchSearch && matchSubject && matchRating && matchRate
     }).sort((a, b) => {
       switch (sortBy) {
-        case 'rating':     return (b.avgRating ?? 0) - (a.avgRating ?? 0)
-        case 'price_asc':  return (a.hourlyRate ?? 0) - (b.hourlyRate ?? 0)
-        case 'price_desc': return (b.hourlyRate ?? 0) - (a.hourlyRate ?? 0)
+        case 'rating':     return Number(b.avgRating ?? 0) - Number(a.avgRating ?? 0)
+        case 'price_asc':  return Number(a.hourlyRate ?? 0) - Number(b.hourlyRate ?? 0)
+        case 'price_desc': return Number(b.hourlyRate ?? 0) - Number(a.hourlyRate ?? 0)
         default:           return (b.score ?? 0) - (a.score ?? 0)
       }
     })
   }, [candidates, search, subject, minRating, maxRate, sortBy])
-
-  const suggested = useMemo(() => [...filtered].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 3), [filtered])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
   const safePage   = Math.min(page, totalPages)
@@ -118,22 +133,43 @@ export function FindTutors() {
 
   const hasFilters = minRating > 0 || maxRate > 0 || sortBy !== 'score'
 
+  // The single strongest pick, spotlighted so its primary action never hides below the fold.
+  const showFeatured = !loading && !hasFilters && search === '' && subject === 'All' && filtered.length > 2
+  const featured = showFeatured ? filtered[0] : null
+  // On page one the featured tutor is lifted out of the grid to avoid a duplicate.
+  const gridItems = featured && safePage === 1
+    ? paginated.filter(p => p.tutorId !== featured.tutorId)
+    : paginated
+
+  const toggleLike = (id: string) => setLiked(prev => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
+
   return (
-    <div className="space-y-6 py-3">
+    <div className="space-y-7 py-3">
 
       {/* ── Page header ── */}
-      <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-          Find Tutors
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          {loading ? 'Loading matched tutors…' : `${filtered.length} tutors match your profile`}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <span className="label-caps" style={{ color: 'var(--accent)' }}>Your matches</span>
+          <h1 className="text-display text-4xl mt-1.5" style={{ color: 'var(--text-primary)' }}>
+            Find your tutor
+          </h1>
+          <p className="mt-2 text-sm max-w-md" style={{ color: 'var(--text-secondary)' }}>
+            {loading
+              ? 'Ranking tutors against your learning profile…'
+              : total > candidates.length
+                ? `${filtered.length} of ${candidates.length} loaded match your filters · ${total} eligible in total`
+                : `${filtered.length} of ${total} tutors ranked for how well they fit you`}
+          </p>
+        </div>
       </div>
 
       {/* ── Error ── */}
       {error && (
-        <div className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm" style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)', border: '1px solid rgba(239,68,68,0.2)' }}>
+        <div className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm" style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)', border: '1px solid var(--accent-coral-bg)' }}>
           {error}
           <button onClick={() => setError(null)} className="ml-auto"><X className="h-4 w-4" /></button>
         </div>
@@ -296,83 +332,142 @@ export function FindTutors() {
         </AnimatePresence>
       </div>
 
-      {/* ── Suggested Tutors ── */}
-      {!loading && suggested.length > 1 && search === '' && subject === 'All' && (
-        <motion.div
-          className="rounded-2xl overflow-hidden"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-        >
-          {/* Header */}
-          <div className="flex items-center gap-2 px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0" style={{ background: 'var(--accent-sun-bg)' }}>
-              <Sparkles className="h-3.5 w-3.5" style={{ color: 'var(--accent-sun-fg)' }} />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Suggested for You</h2>
-              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Best matches based on your learning profile</p>
-            </div>
-          </div>
+      {/* ── Featured recommendation — top pick, primary action above the fold ── */}
+      {featured && (() => {
+        const color = accentFor(featured.tutorId)
+        const matchPct = Math.round((featured.score ?? 0) * 100)
+        const strength = matchStrength(featured.score ?? 0)
+        const reasons = matchReasons(featured)
+        const isEligible = featured.isEligible !== false
+        const fSubjects = [...new Set(featured.subjectsTaught ?? [])] as string[]
+        return (
+          <motion.section
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE }}
+            className="relative overflow-hidden rounded-3xl"
+            style={{ background: 'linear-gradient(150deg, #12241D 0%, #0C1A15 55%, #0A1410 100%)', boxShadow: 'var(--shadow-lg)' }}
+          >
+            {/* Ambient glows + grain to match the hero language */}
+            <div aria-hidden className="pointer-events-none absolute -top-24 -right-16 h-80 w-80 rounded-full"
+              style={{ background: 'radial-gradient(circle, rgba(201,162,75,0.20), transparent 65%)', filter: 'blur(20px)' }} />
+            <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-24 h-96 w-96 rounded-full"
+              style={{ background: 'radial-gradient(circle, rgba(47,122,99,0.28), transparent 65%)', filter: 'blur(20px)' }} />
+            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.04]"
+              style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(230,200,126,0.35), transparent)' }} />
 
-          {/* Cards row */}
-          <div className="flex gap-0 divide-x" style={{ borderColor: 'var(--border)' }}>
-            {suggested.map((tutor, idx) => {
-              const color = ACCENTS[idx % ACCENTS.length]
-              const matchPct = Math.round((tutor.score ?? 0) * 100)
-              return (
-                <div
-                  key={tutor.userId}
-                  className="flex-1 relative p-5 cursor-pointer group transition-all"
-                  style={{ minWidth: 0 }}
-                  onClick={() => setProfileTarget(tutor)}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '')}
+            <div className="relative z-10 flex flex-col gap-6 p-6 md:flex-row md:items-center md:gap-8 md:p-8">
+              {/* Identity */}
+              <div className="flex items-start gap-4 md:min-w-0 md:flex-1">
+                <button
+                  onClick={() => setProfileTarget(featured)}
+                  className="relative flex-shrink-0 cursor-pointer transition-transform hover:scale-105"
                 >
-                  {idx === 0 && (
-                    <div
-                      className="absolute top-3 right-3 flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold"
-                      style={{ background: 'var(--accent-sun-bg)', color: 'var(--accent-sun-fg)', border: '1px solid rgba(245,158,11,0.3)' }}
-                    >
-                      <Sparkles className="h-2.5 w-2.5" /> Best match
-                    </div>
-                  )}
-
-                  {/* Accent strip */}
-                  <div className="h-0.5 w-8 rounded-full mb-3" style={{ background: `var(--accent-${color}-fg)` }} />
-
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold"
-                      style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
-                    >
-                      {tutor.firstName?.[0]}{tutor.lastName?.[0]}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                        {tutor.firstName} {tutor.lastName}
-                      </p>
-                      <StarRating rating={tutor.avgRating} count={tutor.ratingCount} size="sm" showCount={false} />
-                    </div>
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-bold md:h-[72px] md:w-[72px]"
+                    style={{ background: 'rgba(242,237,227,0.08)', color: '#F4F0E8', border: '1px solid rgba(242,237,227,0.16)' }}>
+                    {featured.firstName?.[0]}{featured.lastName?.[0]}
                   </div>
-
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex flex-wrap gap-1 min-w-0">
-                      {(tutor.subjectsTaught ?? []).slice(0, 1).map((s: string) => (
-                        <Badge key={s} color={color as any} size="sm">{s}</Badge>
-                      ))}
-                    </div>
-                    <span
-                      className="flex-shrink-0 text-xs font-bold tabular-nums"
-                      style={{ color: 'var(--accent-mint-fg)' }}
-                    >
-                      {matchPct}% match
+                  {featured.isVerified && (
+                    <CheckCircle2 className="absolute -bottom-1 -right-1 h-5 w-5" style={{ color: '#C0D89A', background: '#12241D', borderRadius: 999 }} fill="currentColor" />
+                  )}
+                </button>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5" style={{ color: '#E6C87E' }} />
+                    <span className="label-caps" style={{ color: '#D9B868' }}>Recommended for you</span>
+                  </div>
+                  <button onClick={() => setProfileTarget(featured)} className="mt-1.5 block text-left cursor-pointer">
+                    <h2 className="text-display text-2xl md:text-[1.75rem]" style={{ color: '#F4F0E8' }}>
+                      {featured.firstName} {featured.lastName}
+                    </h2>
+                  </button>
+                  <div className="mt-1.5 flex items-center gap-2 text-xs" style={{ color: '#AEB6AA' }}>
+                    <span className="inline-flex items-center gap-1">
+                      <Star className="h-3.5 w-3.5" fill="#E6C87E" style={{ color: '#E6C87E' }} />
+                      <span className="font-semibold" style={{ color: '#F4F0E8' }}>{Number(featured.avgRating ?? 0).toFixed(1)}</span>
+                      {featured.ratingCount ? <span>({featured.ratingCount})</span> : null}
+                    </span>
+                    <span aria-hidden>·</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Wallet className="h-3.5 w-3.5" />
+                      <span className="font-semibold tabular-nums" style={{ color: '#F4F0E8' }}>₦{Number(featured.hourlyRate ?? 0).toLocaleString()}</span>/hr
                     </span>
                   </div>
+                  {/* Why recommended */}
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {reasons.map(r => (
+                      <span key={r} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium"
+                        style={{ background: 'rgba(242,237,227,0.07)', color: '#EDE7DA', border: '1px solid rgba(242,237,227,0.12)' }}>
+                        <CheckCircle2 className="h-3 w-3" style={{ color: '#C0D89A' }} /> {r}
+                      </span>
+                    ))}
+                    {fSubjects.slice(0, 2).map(s => (
+                      <span key={s} className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                        style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}>{s}</span>
+                    ))}
+                  </div>
                 </div>
-              )
-            })}
-          </div>
-        </motion.div>
+              </div>
+
+              {/* Score + actions */}
+              <div className="flex flex-shrink-0 items-center gap-5 md:flex-col md:items-stretch md:gap-4">
+                <div className="flex items-center gap-3 md:justify-center">
+                  <MatchRing pct={matchPct} accent={strength.accent} size={64} stroke={5} />
+                  <div className="md:hidden">
+                    <p className="text-sm font-bold" style={{ color: '#F4F0E8' }}>{strength.label}</p>
+                    <p className="text-xs" style={{ color: '#AEB6AA' }}>fit for your profile</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 md:w-52">
+                  <div className="relative group/btn">
+                    <button
+                      onClick={() => setBookTarget(featured)}
+                      disabled={!isEligible}
+                      className="rounded-pill inline-flex w-full items-center justify-center gap-2 px-5 py-3 text-sm font-bold transition-all cursor-pointer active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                      style={{ background: '#F4F0E8', color: '#12241D', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}
+                    >
+                      <BookOpen className="h-4 w-4" /> Book Session
+                    </button>
+                    {!isEligible && (
+                      <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[10px] font-semibold opacity-0 group-hover/btn:opacity-100 transition-opacity"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', boxShadow: 'var(--shadow-sm)', zIndex: 10 }}>
+                        {featured.reason || 'Tutor is currently full'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setMessageTarget(featured)}
+                      className="rounded-pill inline-flex flex-1 items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all cursor-pointer active:scale-[0.98]"
+                      style={{ background: 'rgba(242,237,227,0.08)', color: '#F4F0E8', border: '1px solid rgba(242,237,227,0.16)' }}
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" /> Message
+                    </button>
+                    <button
+                      onClick={() => setProfileTarget(featured)}
+                      className="rounded-pill inline-flex items-center justify-center gap-1 px-4 py-2.5 text-xs font-semibold transition-all cursor-pointer active:scale-[0.98]"
+                      style={{ background: 'rgba(242,237,227,0.08)', color: '#F4F0E8', border: '1px solid rgba(242,237,227,0.16)' }}
+                    >
+                      View <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        )
+      })()}
+
+      {/* ── Section label for the full list ── */}
+      {!loading && filtered.length > 0 && (
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+            {featured ? 'More tutors for you' : 'Tutors'}
+          </h2>
+          <span className="h-px flex-1" style={{ background: 'var(--border)' }} />
+        </div>
       )}
 
       {/* ── Tutor grid ── */}
@@ -404,38 +499,47 @@ export function FindTutors() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginated.map((person, index) => {
-              const color = ACCENTS[index % ACCENTS.length]
-              const id = person.userId
+            {gridItems.map((person, index) => {
+              const color = accentFor(person.tutorId)
+              const id = person.tutorId
               const isLiked = liked.has(id)
               const isEligible = person.isEligible !== false
               const personSubjects = [...new Set(person.subjectsTaught ?? [])] as string[]
               const matchPct = Math.round((person.score ?? 0) * 100)
+              const strength = matchStrength(person.score ?? 0)
 
               return (
                 <motion.div
                   key={id}
-                  className="relative rounded-2xl flex flex-col overflow-hidden group"
+                  className="relative rounded-3xl flex flex-col overflow-hidden group"
                   style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-40px' }}
-                  transition={{ delay: (index % 6) * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  whileHover={{ y: -3, boxShadow: 'var(--shadow-md)' }}
+                  transition={{ delay: (index % 6) * 0.06, duration: 0.4, ease: EASE }}
+                  whileHover={{ y: -4, boxShadow: 'var(--shadow-lg)' }}
                 >
-                  {/* Top strip accent */}
-                  <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, var(--accent-${color}-fg), transparent)` }} />
+                  {/* Soft corner accent wash — depth without a slop gradient strip */}
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-60 transition-opacity duration-300 group-hover:opacity-100"
+                    style={{ background: `var(--accent-${color}-bg)`, filter: 'blur(36px)' }}
+                  />
 
-                  <div className="flex flex-col flex-1 p-5 space-y-4">
-                    {/* Header row */}
+                  <div className="relative flex flex-col flex-1 p-5 space-y-3.5">
+                    {/* Header row — avatar, name, match ring */}
                     <div className="flex items-start gap-3">
                       <button
                         onClick={() => setProfileTarget(person)}
-                        className="relative flex-shrink-0 transition-transform hover:scale-105"
+                        className="relative flex-shrink-0 transition-transform hover:scale-105 cursor-pointer"
                       >
                         <div
-                          className="flex h-12 w-12 items-center justify-center rounded-xl text-sm font-bold"
-                          style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
+                          className="flex h-14 w-14 items-center justify-center rounded-2xl text-base font-bold"
+                          style={{
+                            background: `var(--accent-${color}-bg)`,
+                            color: `var(--accent-${color}-fg)`,
+                            boxShadow: 'inset 0 0 0 1px var(--border)',
+                          }}
                         >
                           {person.firstName?.[0]}{person.lastName?.[0]}
                         </div>
@@ -448,82 +552,67 @@ export function FindTutors() {
                         )}
                       </button>
 
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 pt-0.5">
                         <button
                           onClick={() => setProfileTarget(person)}
-                          className="text-left"
+                          className="text-left cursor-pointer"
                         >
-                          <p className="truncate text-sm font-bold hover:opacity-80 transition-opacity" style={{ color: 'var(--text-primary)' }}>
+                          <p className="truncate text-[15px] font-bold hover:opacity-80 transition-opacity" style={{ color: 'var(--text-primary)' }}>
                             {person.firstName} {person.lastName}
                           </p>
                         </button>
-                        <div className="mt-0.5">
+                        <div className="mt-1">
                           <StarRating rating={person.avgRating} count={person.ratingCount} size="sm" />
                         </div>
                       </div>
 
-                      {/* Like button */}
-                      <button
-                        onClick={() => setLiked(prev => {
-                          const next = new Set(prev)
-                          next.has(id) ? next.delete(id) : next.add(id)
-                          return next
-                        })}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl flex-shrink-0 transition-all hover:scale-110"
-                        style={{ color: isLiked ? 'var(--accent-coral-fg)' : 'var(--text-muted)', background: isLiked ? 'var(--accent-coral-bg)' : 'var(--surface-2)' }}
-                      >
-                        <Heart className="h-4 w-4" fill={isLiked ? 'currentColor' : 'none'} />
-                      </button>
+                      {/* Match ring — the recommendation signal, top-right */}
+                      <MatchRing pct={matchPct} accent={strength.accent} size={48} />
                     </div>
 
                     {/* Bio */}
-                    <p className="line-clamp-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    <p className="line-clamp-2 text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                       {person.bio ?? 'No bio provided yet.'}
                     </p>
 
                     {/* Subject tags */}
                     <div className="flex flex-wrap gap-1.5">
                       {personSubjects.slice(0, 3).map((s, i) => (
-                        <Badge key={`${s}-${i}`} color={color as any} size="sm">{s}</Badge>
+                        <Badge key={`${s}-${i}`} color={color} size="sm">{s}</Badge>
                       ))}
                       {personSubjects.length > 3 && (
-                        <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>+{personSubjects.length - 3}</span>
+                        <span className="self-center text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>+{personSubjects.length - 3} more</span>
                       )}
                     </div>
 
                     {/* Match + rate row */}
                     <div
-                      className="flex items-center justify-between py-3 mt-auto"
+                      className="flex items-center justify-between gap-2 py-3 mt-auto"
                       style={{ borderTop: '1px solid var(--border)' }}
                     >
-                      <span className="flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--accent-mint-fg)' }}>
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        {matchPct}% match
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                        style={{ background: `var(--accent-${strength.accent}-bg)`, color: `var(--accent-${strength.accent}-fg)` }}
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {strength.label}
                       </span>
-                      <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+                      <span className="font-bold text-base tabular-nums" style={{ color: 'var(--text-primary)' }}>
                         ₦{Number(person.hourlyRate ?? 0).toLocaleString()}
-                        <span className="text-xs font-normal ml-1" style={{ color: 'var(--text-muted)' }}>/hr</span>
+                        <span className="text-xs font-normal ml-0.5" style={{ color: 'var(--text-muted)' }}>/hr</span>
                       </span>
                     </div>
 
-                    {/* CTA buttons */}
+                    {/* CTA row — Book Session is the anchor, kept inside the fold */}
                     <div className="flex gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => setMessageTarget(person)}
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        Message
-                      </Button>
                       <div className="flex-1 relative group/btn">
                         <Button
-                          size="sm"
+                          size="md"
                           className="w-full"
                           onClick={() => setBookTarget(person)}
                           disabled={!isEligible}
                         >
+                          <BookOpen className="w-4 h-4" />
                           Book Session
                         </Button>
                         {!isEligible && (
@@ -535,6 +624,23 @@ export function FindTutors() {
                           </div>
                         )}
                       </div>
+                      <Button
+                        variant="secondary"
+                        size="md"
+                        aria-label={`Message ${person.firstName}`}
+                        className="flex-shrink-0 !px-3"
+                        onClick={() => setMessageTarget(person)}
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </Button>
+                      <button
+                        onClick={() => toggleLike(id)}
+                        aria-label={isLiked ? 'Remove from saved' : 'Save tutor'}
+                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-all hover:scale-105 cursor-pointer"
+                        style={{ color: isLiked ? 'var(--accent-coral-fg)' : 'var(--text-muted)', background: isLiked ? 'var(--accent-coral-bg)' : 'var(--surface-2)', border: '1px solid var(--border)' }}
+                      >
+                        <Heart className="h-4 w-4" fill={isLiked ? 'currentColor' : 'none'} />
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -553,7 +659,7 @@ export function FindTutors() {
           onClose={() => setBookTarget(null)}
           onSuccess={() => { addToast(`Session request sent to ${bookTarget.firstName}!`, 'success'); setBookTarget(null) }}
           onError={msg => addToast(msg, 'error')}
-          tutorId={bookTarget.userId}
+          tutorId={bookTarget.tutorId}
           tutorName={`${bookTarget.firstName} ${bookTarget.lastName}`}
           subjects={bookTarget.subjectsTaught}
         />
@@ -562,7 +668,7 @@ export function FindTutors() {
         <MessageModal
           isOpen
           onClose={() => setMessageTarget(null)}
-          otherUserId={messageTarget.userId}
+          otherUserId={messageTarget.tutorId}
           otherUserName={`${messageTarget.firstName} ${messageTarget.lastName}`}
           otherUserVerified={messageTarget.isVerified}
         />

@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { getMySessions, acceptSession, declineSession, type SessionItem } from '@/lib/api/sessions'
+import { apiErrorText } from '@/lib/api/errors'
 import { useAuthStore } from '@/lib/store/authStore'
-import { AlertCircle, CheckCircle2, Clock, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock, XCircle } from 'lucide-react'
 
 export default function NotificationsPage() {
   const user = useAuthStore(s => s.user)
@@ -20,8 +21,8 @@ export default function NotificationsPage() {
     try {
       const data = await getMySessions()
       setSessions(data)
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Could not load sessions')
+    } catch (err) {
+      setError(apiErrorText(err))
     } finally {
       setLoading(false)
     }
@@ -33,8 +34,8 @@ export default function NotificationsPage() {
     try {
       const updated = await acceptSession(id)
       setSessions(prev => prev.map(s => s.id === id ? updated : s))
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Could not accept session')
+    } catch (err) {
+      setError(apiErrorText(err))
     }
   }
 
@@ -42,8 +43,8 @@ export default function NotificationsPage() {
     try {
       const updated = await declineSession(id)
       setSessions(prev => prev.map(s => s.id === id ? updated : s))
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Could not decline session')
+    } catch (err) {
+      setError(apiErrorText(err))
     }
   }
 

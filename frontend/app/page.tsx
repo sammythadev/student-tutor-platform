@@ -2,13 +2,15 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion, useInView, useReducedMotion, animate } from 'motion/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import Lenis from 'lenis'
 import {
-  ArrowRight, Star, Search, BookOpen, SlidersHorizontal,
+  ArrowRight, Search, BookOpen, SlidersHorizontal,
   CalendarCheck, GraduationCap, TrendingUp, Users, ChevronRight,
-  Sparkles, Clock, Video, MessageSquare, BarChart3, Sun, Moon,
+  Clock, Video, MessageSquare, Sun, Moon,
+  Funnel, Sigma, Scale, ShieldCheck,
 } from 'lucide-react'
 import Aurora from '@/components/Aurora'
 import TextType from '@/components/TextType'
@@ -61,7 +63,7 @@ function Reveal({
   children,
   className = '',
   delay = 0,
-  y = 24,
+  y = 40,
   style,
 }: Readonly<{
   children: React.ReactNode
@@ -77,7 +79,7 @@ function Reveal({
       style={style}
       initial={reduce ? false : { opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
+      viewport={{ once: true, margin: '-100px' }}
       transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
@@ -86,13 +88,35 @@ function Reveal({
 }
 
 /* ──────────────────────────────────────────────────────────
+   Lenis smooth scroll — skipped entirely under reduced motion
+────────────────────────────────────────────────────────── */
+function useSmoothScroll(enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return
+    const lenis = new Lenis({ lerp: 0.1 })
+    let rafId = 0
+    const raf = (t: number) => {
+      lenis.raf(t)
+      rafId = requestAnimationFrame(raf)
+    }
+    rafId = requestAnimationFrame(raf)
+    lenis.on('scroll', ScrollTrigger.update)
+    return () => {
+      cancelAnimationFrame(rafId)
+      lenis.off('scroll', ScrollTrigger.update)
+      lenis.destroy()
+    }
+  }, [enabled])
+}
+
+/* ──────────────────────────────────────────────────────────
    Step Visuals — real product UI previews
 ────────────────────────────────────────────────────────── */
 function SearchVisual() {
   const tutors = [
-    { name: 'Prof. Julian S.', sub: 'Mathematics', rate: '₦8,500/hr', color: 'lavender', match: '97%' },
-    { name: 'Dr. Priya Nair',  sub: 'Computer Science', rate: '₦9,500/hr', color: 'sky',      match: '94%' },
-    { name: 'Sarah Jenkins',   sub: 'English Literature', rate: '₦6,000/hr', color: 'mint',   match: '89%' },
+    { id: 'tv-1', name: 'Adaeze Okonkwo', sub: 'Mathematics · SS3', rate: '₦4,500/hr', color: 'mint', match: '97%' },
+    { id: 'tv-2', name: 'Ibrahim Bello', sub: 'Further Maths · SS2', rate: '₦3,800/hr', color: 'mint', match: '91%' },
+    { id: 'tv-3', name: 'Funmi Adeyemi', sub: 'Mathematics · SS1', rate: '₦3,000/hr', color: 'sun', match: '74%' },
   ]
   return (
     <div className="surface-card p-4 sm:p-5 space-y-3 w-full">
@@ -101,7 +125,7 @@ function SearchVisual() {
         style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
       >
         <Search className="w-4 h-4 shrink-0" style={{ color: 'var(--text-muted)' }} strokeWidth={2} />
-        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Search Mathematics tutors...</span>
+        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Mathematics tutors</span>
         <div
           className="ml-auto flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap"
           style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
@@ -110,25 +134,25 @@ function SearchVisual() {
         </div>
       </div>
       <div className="space-y-2">
-        {tutors.map((t, i) => (
+        {tutors.map(t => (
           <div
-            key={i}
+            key={t.id}
             className="flex items-center gap-3 p-3 rounded-xl"
             style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
           >
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm"
-              style={{ background: `var(--accent-${t.color}-bg)`, color: `var(--accent-${t.color}-fg)` }}
+              style={{ background: 'var(--accent-lavender-bg)', color: 'var(--accent-lavender-fg)' }}
             >
               {t.name[0]}{t.name.split(' ')[1]?.[0]}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{t.name}</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.sub}</p>
+              <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{t.sub}</p>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{t.rate}</p>
-              <p className="text-[10px] font-bold" style={{ color: 'var(--accent-mint-fg)' }}>{t.match} match</p>
+              <p className="text-xs font-bold tabular" style={{ color: 'var(--text-primary)' }}>{t.rate}</p>
+              <p className="text-[10px] font-bold tabular" style={{ color: `var(--accent-${t.color}-fg)` }}>{t.match} match</p>
             </div>
           </div>
         ))}
@@ -142,12 +166,12 @@ function CalendarVisual() {
     <div className="surface-card p-4 sm:p-5 space-y-4 w-full">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-heading font-bold" style={{ color: 'var(--text-primary)' }}>Book a Session</p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>with Prof. Julian S.</p>
+          <p className="font-heading font-bold" style={{ color: 'var(--text-primary)' }}>Book a session</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>with Adaeze Okonkwo</p>
         </div>
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: 'var(--accent-lavender-bg)', color: 'var(--accent-lavender-fg)' }}
+          style={{ background: 'var(--accent-sky-bg)', color: 'var(--accent-sky-fg)' }}
         >
           <CalendarCheck className="w-5 h-5" strokeWidth={2} />
         </div>
@@ -155,23 +179,25 @@ function CalendarVisual() {
       <div className="grid grid-cols-4 gap-2">
         {['Mon 23', 'Tue 24', 'Wed 25', 'Thu 26'].map((d, i) => (
           <button
-            key={i}
-            className="rounded-xl py-2.5 text-center text-xs font-semibold transition-all"
+            key={d}
+            type="button"
+            className="rounded-xl py-2.5 text-center text-xs font-semibold cursor-pointer"
             style={
               i === 1
-                ? { background: 'var(--primary)', color: '#fff', boxShadow: '0 0 12px rgba(99,102,241,0.35)' }
+                ? { background: 'var(--primary)', color: 'var(--primary-fg)' }
                 : { background: 'var(--surface-2)', color: 'var(--text-secondary)' }
             }
           >
-            {d.split(' ').map((p, j) => <span key={j} className="block">{p}</span>)}
+            {d.split(' ').map(p => <span key={p} className="block tabular">{p}</span>)}
           </button>
         ))}
       </div>
       <div className="space-y-2">
         {['9:00 AM', '11:00 AM', '2:00 PM'].map((t, i) => (
           <button
-            key={i}
-            className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+            key={t}
+            type="button"
+            className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium tabular cursor-pointer"
             style={
               i === 0
                 ? { background: 'var(--accent-mint-bg)', color: 'var(--accent-mint-fg)', border: '1.5px solid var(--accent-mint-fg)' }
@@ -182,7 +208,7 @@ function CalendarVisual() {
           </button>
         ))}
       </div>
-      <button className="btn-primary w-full justify-center text-sm py-2.5">Confirm Booking</button>
+      <button type="button" className="btn-primary w-full justify-center text-sm py-2.5">Confirm booking</button>
     </div>
   )
 }
@@ -199,20 +225,20 @@ function ResultsVisual() {
             <TrendingUp className="w-5 h-5" strokeWidth={2} />
           </div>
           <div>
-            <p className="font-heading font-bold" style={{ color: 'var(--text-primary)' }}>Your Progress</p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Mathematics this month</p>
+            <p className="font-heading font-bold" style={{ color: 'var(--text-primary)' }}>Session history</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Mathematics, SS2</p>
           </div>
         </div>
         <div className="space-y-3">
           {[
             { label: 'Algebra', pct: 88 },
-            { label: 'Calculus', pct: 71 },
+            { label: 'Geometry', pct: 71 },
             { label: 'Statistics', pct: 95 },
           ].map(item => (
             <div key={item.label}>
               <div className="flex justify-between text-xs mb-1.5">
                 <span style={{ color: 'var(--text-secondary)' }}>{item.label}</span>
-                <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{item.pct}%</span>
+                <span className="font-bold tabular" style={{ color: 'var(--text-primary)' }}>{item.pct}%</span>
               </div>
               <div className="progress-track">
                 <div className="progress-fill" style={{ width: `${item.pct}%` }} />
@@ -222,13 +248,14 @@ function ResultsVisual() {
         </div>
       </div>
       <div className="surface-card p-4 flex items-center gap-3">
-        <div className="flex gap-0.5 shrink-0">
-          {[1, 2, 3, 4, 5].map(s => (
-            <Star key={s} className="w-3.5 h-3.5 fill-current" style={{ color: 'var(--accent-sun-fg)' }} />
-          ))}
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: 'var(--accent-mint-bg)', color: 'var(--accent-mint-fg)' }}
+        >
+          <ShieldCheck className="w-4 h-4" strokeWidth={2} />
         </div>
         <p className="text-sm leading-snug" style={{ color: 'var(--text-primary)' }}>
-          <span className="font-semibold">GPA went from 2.8 to 3.7</span> in one semester.
+          Every completed session feeds back into your next match score.
         </p>
       </div>
     </div>
@@ -546,41 +573,41 @@ function BentoFeatures() {
             </div>
           </Reveal>
 
-          {/* Cell 2: stat card (1 col) */}
+          {/* Cell 2: algorithm fact (1 col) */}
           <Reveal
             className="rounded-2xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden"
             style={{
-              background: 'linear-gradient(145deg, rgba(99,102,241,0.18), rgba(56,189,248,0.08))',
-              border: '1px solid rgba(99,102,241,0.25)',
+              background: 'var(--canvas)',
+              border: '1px solid var(--border)',
               minHeight: 220,
             }}
             delay={0.1}
           >
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgba(99,102,241,0.2)', color: 'var(--accent-lavender-fg)' }}
+              style={{ background: 'var(--accent-lavender-bg)', color: 'var(--accent-lavender-fg)' }}
             >
-              <BarChart3 className="w-5 h-5" strokeWidth={2} />
+              <Sigma className="w-5 h-5" strokeWidth={2} />
             </div>
             <div>
               <p
-                className="font-heading font-bold mb-2"
+                className="font-heading font-bold mb-2 tabular"
                 style={{ fontSize: 'clamp(36px, 5vw, 52px)', color: 'var(--text-primary)', lineHeight: 1 }}
               >
-                15k+
+                4
               </p>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                Students learning every week across Nigeria
+                Weighted criteria scored into every match
               </p>
             </div>
           </Reveal>
 
-          {/* Cell 3: stat card (1 col) */}
+          {/* Cell 3: algorithm fact (1 col) */}
           <Reveal
             className="rounded-2xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden"
             style={{
-              background: 'linear-gradient(145deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05))',
-              border: '1px solid rgba(16,185,129,0.22)',
+              background: 'var(--canvas)',
+              border: '1px solid var(--border)',
               minHeight: 200,
             }}
             delay={0.15}
@@ -589,17 +616,17 @@ function BentoFeatures() {
               className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{ background: 'var(--accent-mint-bg)', color: 'var(--accent-mint-fg)' }}
             >
-              <TrendingUp className="w-5 h-5" strokeWidth={2} />
+              <Scale className="w-5 h-5" strokeWidth={2} />
             </div>
             <div>
               <p
-                className="font-heading font-bold mb-2"
+                className="font-heading font-bold mb-2 tabular"
                 style={{ fontSize: 'clamp(36px, 5vw, 52px)', color: 'var(--text-primary)', lineHeight: 1 }}
               >
-                ₦42k+
+                ½
               </p>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                Average daily earnings for top tutors
+                Approximation bound the greedy assignment is proven to hold
               </p>
             </div>
           </Reveal>
@@ -656,10 +683,10 @@ function BentoFeatures() {
    Stats Strip
 ────────────────────────────────────────────────────────── */
 const STATS = [
-  { value: '98%',  label: 'Student success rate' },
-  { value: '15k+', label: 'Active students' },
-  { value: '4.9',  label: 'Average tutor rating' },
-  { value: '50+',  label: 'Subjects covered' },
+  { value: '4',    label: 'Weighted match criteria' },
+  { value: '½',    label: 'Approximation guarantee' },
+  { value: '100%', label: 'Subject-verified tutors' },
+  { value: '0',    label: 'Manual steps to re-match' },
 ]
 
 function StatsSection() {
@@ -669,7 +696,7 @@ function StatsSection() {
         <Reveal>
           <div
             className="rounded-2xl py-10 sm:py-14 px-6 sm:px-8 md:px-16 grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 animate-gradient"
-            style={{ background: 'linear-gradient(135deg, #4338CA, var(--primary), #6366F1, #4338CA)', backgroundSize: '200% 200%' }}
+            style={{ background: 'linear-gradient(135deg, var(--primary-hover), var(--primary), var(--primary-hover))', backgroundSize: '200% 200%' }}
           >
             {STATS.map((stat, i) => (
               <div
@@ -692,110 +719,77 @@ function StatsSection() {
 }
 
 /* ──────────────────────────────────────────────────────────
-   Testimonials — scroll-snap on mobile, grid on desktop
+   How matching works — honest, algorithm-first explainer.
+   This is a final-year research project, not a deployed product,
+   so it explains the decision rules instead of quoting students
+   who do not exist.
 ────────────────────────────────────────────────────────── */
-const TESTIMONIALS = [
+const MATCH_STEPS = [
   {
-    quote: 'My GPA went from 2.8 to 3.7 in one semester. Dr. Chen is incredible at breaking down complex calculus problems.',
-    name: 'Marcus T.',
-    role: 'Engineering student, UST',
-    rating: 5,
+    icon: Funnel,
     color: 'lavender',
+    title: 'Subject is a hard filter',
+    body: 'Tutors who do not teach what you need never reach your list. Subject is a filter, not a weighted preference, so there is nothing to trade it away against.',
   },
   {
-    quote: 'I passed my IELTS with band 8.0 after just 6 sessions with Sarah. The structured approach made all the difference.',
-    name: 'Amara K.',
-    role: 'Graduate applicant',
-    rating: 5,
+    icon: Sigma,
     color: 'sky',
+    title: 'Four criteria, one score',
+    body: 'Availability overlap, learning style, budget and experience each feed a single match score. You can see exactly why a tutor ranked where they did.',
   },
   {
-    quote: 'Scheduling is frictionless, lessons are recorded, and tutor quality is far above anything I have tried before.',
-    name: 'Liam O.',
-    role: 'High school senior',
-    rating: 5,
+    icon: Scale,
     color: 'mint',
+    title: 'Assignment stays fair',
+    body: 'A greedy assignment with a proven ½-approximation bound spreads students across tutors instead of piling everyone onto the few most popular ones.',
+  },
+  {
+    icon: ShieldCheck,
+    color: 'sun',
+    title: 'Waitlisting is automatic',
+    body: 'If every eligible tutor is full, you keep your place in the queue and a seat is allocated the moment one frees up. You never have to re-apply.',
   },
 ]
 
-function TestimonialsSection() {
+function HowMatchingWorks() {
   return (
     <section className="py-16 sm:py-24 lg:py-28" style={{ background: 'var(--surface)' }}>
       <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <Reveal className="mb-10 sm:mb-14 lg:mb-16">
+        <Reveal className="mb-10 sm:mb-14 lg:mb-16 max-w-2xl">
+          <p className="label-caps" style={{ color: 'var(--text-muted)' }}>How matching works</p>
           <h2
-            className="font-heading font-bold tracking-tight"
+            className="font-heading font-bold tracking-tight mt-2"
             style={{ fontSize: 'clamp(28px, 4vw, 52px)', color: 'var(--text-primary)' }}
           >
-            Real results, real students.
+            Every match can be explained.
           </h2>
+          <p className="mt-3 text-sm sm:text-base leading-relaxed" style={{ color: 'var(--text-secondary)', maxWidth: '52ch' }}>
+            No black box and no pay-to-rank. The same four rules decide every pairing, and each one traces straight back to your profile.
+          </p>
         </Reveal>
 
-        {/* Desktop: grid */}
-        <div className="hidden md:grid md:grid-cols-3 gap-5 sm:gap-6">
-          {TESTIMONIALS.map((t, i) => (
-            <Reveal key={i} delay={i * 0.1}>
-              <div className="surface-card p-6 sm:p-7 space-y-5 h-full flex flex-col card-interactive">
-                <div className="flex gap-1">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-current" style={{ color: 'var(--accent-sun-fg)' }} />
-                  ))}
-                </div>
-                <p className="text-sm leading-relaxed flex-1" style={{ color: 'var(--text-primary)' }}>
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div
-                  className="flex items-center gap-3 pt-4 border-t"
-                  style={{ borderColor: 'var(--border)' }}
-                >
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
+          {MATCH_STEPS.map((step, i) => {
+            const Icon = step.icon
+            return (
+              <Reveal key={step.title} delay={i * 0.08}>
+                <div className="surface-card p-6 sm:p-7 h-full flex flex-col gap-4">
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
-                    style={{ background: `var(--accent-${t.color}-bg)`, color: `var(--accent-${t.color}-fg)` }}
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                    style={{ background: `var(--accent-${step.color}-bg)`, color: `var(--accent-${step.color}-fg)` }}
                   >
-                    {t.name[0]}
+                    <Icon className="w-5 h-5" strokeWidth={2} />
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t.name}</p>
-                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t.role}</p>
-                  </div>
+                  <h3 className="font-heading text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                    {step.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    {step.body}
+                  </p>
                 </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-
-        {/* Mobile: horizontal scroll-snap (avoids 3 long cards stacking awkwardly) */}
-        <div className="md:hidden flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
-          {TESTIMONIALS.map((t, i) => (
-            <div
-              key={i}
-              className="shrink-0 w-[85vw] max-w-sm snap-start surface-card p-5 space-y-4 flex flex-col"
-            >
-              <div className="flex gap-1">
-                {Array.from({ length: t.rating }).map((_, j) => (
-                  <Star key={j} className="w-4 h-4 fill-current" style={{ color: 'var(--accent-sun-fg)' }} />
-                ))}
-              </div>
-              <p className="text-sm leading-relaxed flex-1" style={{ color: 'var(--text-primary)' }}>
-                &ldquo;{t.quote}&rdquo;
-              </p>
-              <div
-                className="flex items-center gap-3 pt-3 border-t"
-                style={{ borderColor: 'var(--border)' }}
-              >
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
-                  style={{ background: `var(--accent-${t.color}-bg)`, color: `var(--accent-${t.color}-fg)` }}
-                >
-                  {t.name[0]}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t.name}</p>
-                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t.role}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+              </Reveal>
+            )
+          })}
         </div>
       </div>
     </section>
@@ -825,7 +819,7 @@ function CTASection() {
           className="text-base sm:text-lg md:text-xl mx-auto"
           style={{ color: 'var(--text-secondary)', maxWidth: '40ch' }}
         >
-          Join 15,000+ students who found their perfect learning match on Tutorly.
+          Create an account and get your first ranked matches in minutes.
         </p>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4">
           <Link href="/signup" className="btn-primary text-sm sm:text-base px-6 sm:px-8 py-3.5 sm:py-4 group pressable justify-center">
@@ -861,7 +855,7 @@ export default function LandingPage() {
           opacity: 'var(--aurora-opacity)' as any,
         }}
       >
-        <Aurora colorStops={['#6366F1', '#10B981', '#6366F1']} amplitude={1.2} blend={0.45} speed={0.35} />
+        <Aurora colorStops={['#2F7A63', '#C9A24B', '#3E9179']} amplitude={1.2} blend={0.45} speed={0.35} />
       </div>
 
       {/* ── Navigation ── */}
@@ -986,8 +980,8 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               >
                 <div className="stat-badge w-fit">
-                  <Sparkles className="w-3 h-3 mt-2" />
-                  Trusted by 15,000+ students across Nigeria
+                  <ShieldCheck className="w-3 h-3" />
+                  Fairness-first matching for Nigerian secondary schools
                 </div>
               </motion.div>
 
@@ -1067,7 +1061,7 @@ export default function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.36, ease: [0.16, 1, 0.3, 1] }}
               >
-                {[{ value: '98%', label: 'Success rate' }, { value: '4.9★', label: 'Avg rating' }, { value: '50+', label: 'Subjects' }].map(({ value, label }, i) => (
+                {[{ value: '4', label: 'Criteria' }, { value: '100%', label: 'Subject-checked' }, { value: 'Auto', label: 'Waitlist' }].map(({ value, label }, i) => (
                   <div key={label} className={`flex flex-col items-center gap-0.5 py-2 ${i !== 0 ? 'border-l' : ''}`} style={{ borderColor: 'var(--border)' }}>
                     <span className="font-heading font-bold text-base" style={{ color: 'var(--text-primary)' }}>{value}</span>
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>{label}</span>
@@ -1088,9 +1082,9 @@ export default function LandingPage() {
                   style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
                 >
                   {[
-                    { name: 'Prof. Julian', sub: 'Maths', color: 'lavender', match: '97%' },
-                    { name: 'Dr. Priya', sub: 'CS', color: 'sky', match: '94%' },
-                    { name: 'Sarah J.', sub: 'English', color: 'mint', match: '89%' },
+                    { name: 'Adaeze Okonkwo', sub: 'Maths', color: 'lavender', match: '97%' },
+                    { name: 'Ibrahim Bello', sub: 'Physics', color: 'sky', match: '94%' },
+                    { name: 'Funmi Adeyemi', sub: 'English', color: 'mint', match: '89%' },
                   ].map((t) => (
                     <div
                       key={t.name}
@@ -1162,11 +1156,11 @@ export default function LandingPage() {
                     </div>
                   ))}
                   {[
-                    { h: '9 AM',  evs: [{ c: 0, s: 'Calculus IV',    tu: 'Dr. Aris',  bc: '#818CF8', bg: 'var(--accent-lavender-bg)', fg: 'var(--accent-lavender-fg)' }, { c: 2, s: 'Macroeconomics', tu: 'Prof. Han',  bc: '#38BDF8', bg: 'var(--accent-sky-bg)',      fg: 'var(--accent-sky-fg)' }] },
-                    { h: '11 AM', evs: [{ c: 1, s: 'Art History',    tu: 'Ms. Blake', bc: '#FCD34D', bg: 'var(--accent-sun-bg)',      fg: 'var(--accent-sun-fg)' },      { c: 3, s: 'Bio Ethics',     tu: 'Dr. Osei',  bc: '#34D399', bg: 'var(--accent-mint-bg)',     fg: 'var(--accent-mint-fg)' }] },
-                    { h: '1 PM',  evs: [{ c: 0, s: 'Psych 101',     tu: 'Dr. Lima',  bc: '#FCA5A5', bg: 'var(--accent-coral-bg)',    fg: 'var(--accent-coral-fg)' },    { c: 4, s: 'Quantum Phys',   tu: 'Prof. Yun', bc: '#818CF8', bg: 'var(--accent-lavender-bg)', fg: 'var(--accent-lavender-fg)' }] },
-                    { h: '3 PM',  evs: [{ c: 2, s: 'Linear Algebra', tu: 'Dr. Aris',  bc: '#FDBA74', bg: 'var(--accent-tangerine-bg)', fg: 'var(--accent-tangerine-fg)' }, { c: 4, s: 'Spanish B2',     tu: 'Ms. Vega',  bc: '#34D399', bg: 'var(--accent-mint-bg)',     fg: 'var(--accent-mint-fg)' }] },
-                    { h: '5 PM',  evs: [{ c: 1, s: 'Essay Writing',  tu: 'Ms. Brown', bc: '#FCD34D', bg: 'var(--accent-sun-bg)',      fg: 'var(--accent-sun-fg)' }] },
+                    { h: '9 AM',  evs: [{ c: 0, s: 'Calculus IV',    tu: 'Dr. Aris',  bc: 'var(--accent-lavender-fg)', bg: 'var(--accent-lavender-bg)', fg: 'var(--accent-lavender-fg)' }, { c: 2, s: 'Macroeconomics', tu: 'Prof. Han',  bc: 'var(--accent-sky-fg)', bg: 'var(--accent-sky-bg)',      fg: 'var(--accent-sky-fg)' }] },
+                    { h: '11 AM', evs: [{ c: 1, s: 'Art History',    tu: 'Ms. Blake', bc: 'var(--accent-sun-fg)', bg: 'var(--accent-sun-bg)',      fg: 'var(--accent-sun-fg)' },      { c: 3, s: 'Bio Ethics',     tu: 'Dr. Osei',  bc: 'var(--accent-mint-fg)', bg: 'var(--accent-mint-bg)',     fg: 'var(--accent-mint-fg)' }] },
+                    { h: '1 PM',  evs: [{ c: 0, s: 'Psych 101',     tu: 'Dr. Lima',  bc: 'var(--accent-coral-fg)', bg: 'var(--accent-coral-bg)',    fg: 'var(--accent-coral-fg)' },    { c: 4, s: 'Quantum Phys',   tu: 'Prof. Yun', bc: 'var(--accent-lavender-fg)', bg: 'var(--accent-lavender-bg)', fg: 'var(--accent-lavender-fg)' }] },
+                    { h: '3 PM',  evs: [{ c: 2, s: 'Linear Algebra', tu: 'Dr. Aris',  bc: 'var(--accent-tangerine-fg)', bg: 'var(--accent-tangerine-bg)', fg: 'var(--accent-tangerine-fg)' }, { c: 4, s: 'Spanish B2',     tu: 'Ms. Vega',  bc: 'var(--accent-mint-fg)', bg: 'var(--accent-mint-bg)',     fg: 'var(--accent-mint-fg)' }] },
+                    { h: '5 PM',  evs: [{ c: 1, s: 'Essay Writing',  tu: 'Ms. Brown', bc: 'var(--accent-sun-fg)', bg: 'var(--accent-sun-bg)',      fg: 'var(--accent-sun-fg)' }] },
                   ].map((row, ri) => (
                     <React.Fragment key={ri}>
                       <div style={{ height: 56, borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)', background: 'var(--surface-2)', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', paddingRight: 6, paddingTop: 5 }}>
@@ -1215,8 +1209,8 @@ export default function LandingPage() {
         {/* ── STATS ── */}
         <StatsSection />
 
-        {/* ── TESTIMONIALS ── */}
-        <TestimonialsSection />
+        {/* ── HOW MATCHING WORKS ── */}
+        <HowMatchingWorks />
 
         {/* ── CTA ── */}
         <CTASection />

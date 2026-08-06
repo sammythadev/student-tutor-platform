@@ -1,6 +1,6 @@
 'use client'
 
-import { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes, ReactNode } from 'react'
+import { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes, ReactNode, useId } from 'react'
 import { AlertCircle } from 'lucide-react'
 import { Dropdown } from './Dropdown'
 
@@ -41,11 +41,14 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   rightElement?: ReactNode
 }
 
-export function Input({ label, error, icon, helper, rightElement, className = '', style, ...props }: InputProps) {
+export function Input({ label, error, icon, helper, rightElement, className = '', style, id, ...props }: InputProps) {
+  const generatedId = useId()
+  const fieldId = id ?? generatedId
   return (
     <div className="w-full">
       {label && (
         <label
+          htmlFor={fieldId}
           className="block text-sm font-semibold mb-2"
           style={{ color: 'var(--text-secondary)' }}
         >
@@ -64,6 +67,7 @@ export function Input({ label, error, icon, helper, rightElement, className = ''
         )}
 
         <input
+          id={fieldId}
           className={`${className}`}
           style={{
             ...inputStyle,
@@ -111,6 +115,7 @@ export function Input({ label, error, icon, helper, rightElement, className = ''
 interface SelectProps {
   label?:       string
   error?:       string
+  helper?:      string
   name?:        string
   value?:       string
   onChange?:    (e: React.ChangeEvent<HTMLSelectElement>) => void
@@ -118,23 +123,28 @@ interface SelectProps {
   placeholder?: string
 }
 
-export function Select({ label, error, name, value, onChange, options, placeholder }: SelectProps) {
+export function Select({ label, error, helper, name, value, onChange, options, placeholder }: SelectProps) {
   return (
-    <Dropdown
-      label={label}
-      value={value ?? ''}
-      onChange={(newVal) => {
-        // Create a synthetic event for backward compat with onChange handlers
-        const syntheticEvent = {
-          target: { name: name ?? '', value: newVal },
-          currentTarget: { name: name ?? '', value: newVal },
-        } as React.ChangeEvent<HTMLSelectElement>
-        onChange?.(syntheticEvent)
-      }}
-      options={options}
-      placeholder={placeholder}
-      error={error}
-    />
+    <div className="w-full">
+      <Dropdown
+        label={label}
+        value={value ?? ''}
+        onChange={(newVal) => {
+          // Synthetic event keeps the caller's existing onChange(e) handlers working
+          const syntheticEvent = {
+            target: { name: name ?? '', value: newVal },
+            currentTarget: { name: name ?? '', value: newVal },
+          } as React.ChangeEvent<HTMLSelectElement>
+          onChange?.(syntheticEvent)
+        }}
+        options={options}
+        placeholder={placeholder}
+        error={error}
+      />
+      {helper && !error && (
+        <p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{helper}</p>
+      )}
+    </div>
   )
 }
 
@@ -142,19 +152,23 @@ export function Select({ label, error, name, value, onChange, options, placehold
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?:  string
   error?:  string
+  helper?: string
   rows?:   number
 }
 
-export function Textarea({ label, error, rows = 4, className = '', ...props }: TextareaProps) {
+export function Textarea({ label, error, helper, rows = 4, className = '', id, ...props }: TextareaProps) {
+  const generatedId = useId()
+  const fieldId = id ?? generatedId
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
+        <label htmlFor={fieldId} className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
           {label}
         </label>
       )}
 
       <textarea
+        id={fieldId}
         rows={rows}
         className={className}
         style={{
@@ -179,6 +193,9 @@ export function Textarea({ label, error, rows = 4, className = '', ...props }: T
           <AlertCircle className="w-3 h-3 flex-shrink-0" strokeWidth={2} />
           {error}
         </p>
+      )}
+      {helper && !error && (
+        <p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{helper}</p>
       )}
     </div>
   )

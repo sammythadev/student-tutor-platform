@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Modal } from './Modal'
 import Link from 'next/link'
 import { Badge } from './Badge'
@@ -13,6 +13,8 @@ import {
   type NotificationItem,
 } from '@/lib/api/notifications'
 import { acceptSession, declineSession, acceptProposal, proposeSession } from '@/lib/api/sessions'
+import { apiErrorText } from '@/lib/api/errors'
+import type { Accent } from '@/lib/ui'
 import {
   Bell, CalendarCheck, CalendarX, Clock, CheckCircle, Info, ExternalLink, Check, X, ArrowRight,
 } from 'lucide-react'
@@ -23,15 +25,19 @@ interface NotificationsPanelProps {
   onRead?: () => void
 }
 
-const TYPE_CONFIG = {
-  session_request:   { icon: Clock,        color: 'sun',      label: 'Request'   },
-  session_upcoming:  { icon: CalendarCheck, color: 'mint',     label: 'Upcoming'  },
+/** Colour encodes what happened, not which row it is. */
+const TYPE_CONFIG: Record<
+  NotificationItem['type'],
+  { icon: typeof Clock; color: Accent; label: string }
+> = {
+  session_request:   { icon: Clock,         color: 'sun',      label: 'Request'   },
+  session_upcoming:  { icon: CalendarCheck, color: 'sky',      label: 'Scheduled' },
   session_accepted:  { icon: CheckCircle,   color: 'mint',     label: 'Accepted'  },
-  session_proposed:  { icon: CalendarCheck, color: 'sky',     label: 'Proposed'  },
+  session_proposed:  { icon: CalendarCheck, color: 'sun',      label: 'New time'  },
   session_passed:    { icon: CalendarX,     color: 'lavender', label: 'Completed' },
   session_cancelled: { icon: CalendarX,     color: 'coral',    label: 'Cancelled' },
   general:           { icon: Info,          color: 'sky',      label: 'Info'      },
-} as const
+}
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -66,8 +72,8 @@ function NotificationDetail({
       await markNotificationRead(notification.id)
       onRefresh()
       onClose()
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Failed to accept')
+    } catch (err) {
+      setError(apiErrorText(err))
     } finally {
       setActionLoading(null)
     }
@@ -81,8 +87,8 @@ function NotificationDetail({
       await markNotificationRead(notification.id)
       onRefresh()
       onClose()
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Failed to decline')
+    } catch (err) {
+      setError(apiErrorText(err))
     } finally {
       setActionLoading(null)
     }
@@ -99,8 +105,8 @@ function NotificationDetail({
       await markNotificationRead(notification.id)
       onRefresh()
       onClose()
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Failed to propose new time')
+    } catch (err) {
+      setError(apiErrorText(err))
     } finally {
       setActionLoading(null)
     }
@@ -124,7 +130,7 @@ function NotificationDetail({
             {formatTime(notification.createdAt)}
           </p>
         </div>
-        <Badge color={cfg.color as any} size="sm">{cfg.label}</Badge>
+        <Badge color={cfg.color} size="sm">{cfg.label}</Badge>
       </div>
 
       {isSessionProposed && sessionId && (
@@ -145,8 +151,8 @@ function NotificationDetail({
                   await markNotificationRead(notification.id)
                   onRefresh()
                   onClose()
-                } catch (err: any) {
-                  setError(err?.response?.data?.message ?? 'Failed to accept proposal')
+                } catch (err) {
+                  setError(apiErrorText(err))
                 } finally {
                   setActionLoading(null)
                 }
@@ -274,7 +280,7 @@ export function NotificationsPanel({ isOpen, onClose, onRead }: NotificationsPan
       })
       .catch((err) => {
         if (controller.signal.aborted) return
-        setError(err?.response?.data?.message ?? 'Could not load notifications')
+        setError(apiErrorText(err))
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false)
@@ -296,30 +302,49 @@ export function NotificationsPanel({ isOpen, onClose, onRead }: NotificationsPan
       <Modal isOpen={isOpen} onClose={onClose} title="Notifications" size="md">
         <div className="space-y-4 max-h-[62vh] overflow-y-auto pr-1">
           {error && (
-            <div className="p-3 rounded-lg text-xs" style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}>
+            <div
+              className="rounded-lg p-3 text-xs"
+              role="alert"
+              style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}
+            >
               {error}
             </div>
           )}
 
           {loading && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-14 animate-pulse rounded-xl" style={{ background: 'var(--surface-2)' }} />
+                <div
+                  key={i}
+                  className="flex items-start gap-3 rounded-xl border p-3"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  <div className="h-8 w-8 flex-shrink-0 animate-pulse rounded-lg" style={{ background: 'var(--surface-2)' }} />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="h-3.5 w-2/5 animate-pulse rounded" style={{ background: 'var(--surface-2)' }} />
+                    <div className="h-3 w-4/5 animate-pulse rounded" style={{ background: 'var(--surface-2)' }} />
+                    <div className="h-3 w-24 animate-pulse rounded" style={{ background: 'var(--surface-2)' }} />
+                  </div>
+                  <div className="h-5 w-16 flex-shrink-0 animate-pulse rounded-full" style={{ background: 'var(--surface-2)' }} />
+                </div>
               ))}
             </div>
           )}
 
-          {!loading && notifications.length === 0 && (
-            <div className="flex flex-col items-center gap-3 py-12" style={{ color: 'var(--text-muted)' }}>
-              <Bell className="w-10 h-10 opacity-30" />
-              <p className="text-sm">No notifications yet.</p>
+          {!loading && !error && notifications.length === 0 && (
+            <div className="flex flex-col items-center gap-2 py-12 text-center">
+              <Bell className="h-8 w-8" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>No notifications yet</p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Session requests and updates will appear here.
+              </p>
             </div>
           )}
 
           {unread.length > 0 && (
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
-                New ({unread.length})
+              <p className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+                New <span className="tabular">({unread.length})</span>
               </p>
               <div className="space-y-2">
                 {unread.map((n) => (
@@ -397,32 +422,30 @@ function NotificationCard({
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left rounded-xl border p-3 flex items-start gap-3 transition-all cursor-pointer hover:opacity-90"
+      className="flex w-full cursor-pointer items-start gap-3 rounded-xl border p-3 text-left transition-[background-color,border-color,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] active:scale-[0.99]"
       style={{
-        borderColor: 'var(--border)',
+        borderColor: dimmed ? 'var(--border)' : 'var(--border-strong)',
         background: dimmed ? 'transparent' : 'var(--primary-subtle)',
-        opacity: dimmed ? 0.7 : 1,
       }}
     >
       <div
         className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
         style={{ background: `var(--accent-${cfg.color}-bg)`, color: `var(--accent-${cfg.color}-fg)` }}
       >
-        <Icon className="w-4 h-4" />
+        <Icon className="h-4 w-4" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>
           {n.title}
         </p>
-        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+        <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           {n.message}
         </p>
-        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-          {new Date(n.createdAt).toLocaleString()}
+        <p className="tabular mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+          {formatTime(n.createdAt)}
         </p>
       </div>
-      <Badge color={cfg.color as any} size="sm">{cfg.label}</Badge>
-      <ExternalLink className="w-3 h-3 flex-shrink-0 mt-1" style={{ color: 'var(--text-muted)' }} />
+      <Badge color={cfg.color} size="sm">{cfg.label}</Badge>
     </button>
   )
 }

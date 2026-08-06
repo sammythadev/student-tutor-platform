@@ -8,121 +8,244 @@ import { Button } from '@/components/Button'
 import { DashboardHero } from '@/components/DashboardHero'
 import { MessageModal } from '@/components/MessageModal'
 import { SessionJoinModal } from '@/components/SessionJoinModal'
-import { getTutorDashboardMetrics, type TutorDashboardMetrics } from '@/lib/api/dashboard'
-import { getMySessions, updateSessionStatus, type SessionItem } from '@/lib/api/sessions'
+import { getTutorDashboardMetrics, type KpiItem, type TutorDashboardMetrics } from '@/lib/api/dashboard'
+import { getMySessions, type SessionItem } from '@/lib/api/sessions'
+import { apiErrorText } from '@/lib/api/errors'
 import { useAuthStore } from '@/lib/store/authStore'
 import {
+  accentBg, accentFg, accentFor, initials, stagger,
+  isJoinable, SESSION_ACCENT, SESSION_LABEL, type Accent,
+} from '@/lib/ui'
+import {
   BarChart3, Calendar, Clock, MessageSquare, Search,
-  Star, TrendingUp, Users, Video, BookOpen, Award, Target,
-  ChevronRight, Activity,
+  Star, Users, BookOpen, Award, Target,
+  ChevronRight, Activity, Video, AlertCircle, GraduationCap,
 } from 'lucide-react'
 import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-gsap.registerPlugin(ScrollTrigger)
 
-const COLORS = ['lavender', 'sky', 'mint', 'sun', 'coral'] as const
+const EASE = [0.16, 1, 0.3, 1] as const
 
-const KPI_CONFIG: { icon: typeof Users; label: string; color: typeof COLORS[number] }[] = [
-  { icon: Users,     label: 'Active Students',      color: 'lavender' },
-  { icon: Calendar,  label: 'Sessions This Week',   color: 'sky'      },
-  { icon: Clock,     label: 'Hours Logged',          color: 'mint'     },
-  { icon: Star,      label: 'Avg. Rating',           color: 'sun'      },
-]
+const KPI_ICON: Record<string, typeof Users> = {
+  'Total Students': Users,
+  'Sessions Completed': BookOpen,
+  'Total Sessions': Calendar,
+  'Avg Rating': Star,
+}
+
+const ACCENT_SET: readonly Accent[] = ['lavender', 'sky', 'mint', 'sun', 'coral', 'tangerine']
+
+/** The backend sends kpi.color as a plain string; keep it inside the token set. */
+function toAccent(value: string | undefined, fallback: Accent): Accent {
+  return ACCENT_SET.includes(value as Accent) ? (value as Accent) : fallback
+}
 
 function formatTime(value: string) {
+  return new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(new Date(value))
+}
+
+function formatDayTime(value: string) {
   return new Intl.DateTimeFormat('en', { weekday: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(value))
 }
 
 function formatShortDate(value: string) {
-  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(value))
+  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(new Date(value))
 }
 
-/* ── KPI Card with Motion entrance ─────────────────────── */
-function KpiCard({ kpi, index, Icon, color, isUp }: {
-  kpi: any; index: number; Icon: typeof Users; color: string; isUp: boolean
+function nameInitials(fullName: string) {
+  const [first, last] = fullName.trim().split(/\s+/)
+  return initials(first, last)
+}
+
+/* ── Panel shell ─────────────────────────────────────────── */
+function Panel({ title, subtitle, icon: Icon, accent, className = '', children }: {
+  title: string
+  subtitle?: string
+  icon: typeof Users
+  accent: Accent
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <section
+      className={`rounded-2xl p-5 sm:p-6 ${className}`}
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-rest)' }}
+    >
+      <div className="mb-5 flex items-center gap-3">
+        <div
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
+          style={{ background: accentBg(accent), color: accentFg(accent) }}
+        >
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <h2 className="font-heading text-base font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              {subtitle}
+            </p>
+          )}
+        </div>
+      </div>
+      {children}
+    </section>
+  )
+}
+
+/* ── KPI card ────────────────────────────────────────────── */
+function KpiCard({ kpi, index, Icon, accent }: {
+  kpi: KpiItem; index: number; Icon: typeof Users; accent: Accent
 }) {
   const reduce = useReducedMotion()
   return (
     <motion.div
-      className="group relative overflow-hidden rounded-2xl"
-      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-      initial={reduce ? false : { opacity: 0, y: 24, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.5, delay: index * 0.07, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      className="relative overflow-hidden rounded-2xl p-5"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-rest)' }}
+      initial={reduce ? false : { opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: stagger(index), ease: EASE }}
     >
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.04] transition-opacity duration-500 bg-gradient-to-br from-white to-transparent pointer-events-none" />
-      <div className="relative p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3"
-            style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
-          >
-            <Icon className="h-5 w-5" />
-          </div>
-          <span
-            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
-            style={{
-              color: isUp ? 'var(--accent-mint-fg)' : 'var(--accent-coral-fg)',
-              background: isUp
-                ? 'color-mix(in oklch, var(--accent-mint-fg) 12%, transparent)'
-                : 'color-mix(in oklch, var(--accent-coral-fg) 12%, transparent)',
-            }}
-          >
-            {kpi.trend}
-          </span>
-        </div>
-        <p className="font-heading text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-          {kpi.value}
-        </p>
-        <p className="mt-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-          {kpi.label}
-        </p>
-      </div>
+      {/* Soft corner accent wash for depth */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300"
-        style={{ background: `linear-gradient(90deg, transparent, var(--accent-${color}-fg), transparent)` }}
+        aria-hidden
+        className="pointer-events-none absolute -top-12 -right-12 h-28 w-28 rounded-full opacity-70"
+        style={{ background: accentBg(accent), filter: 'blur(30px)' }}
       />
+      <div className="relative mb-4 flex items-center justify-between gap-2">
+        <div
+          className="flex h-9 w-9 items-center justify-center rounded-xl"
+          style={{ background: accentBg(accent), color: accentFg(accent) }}
+        >
+          <Icon className="h-4 w-4" />
+        </div>
+      </div>
+      <p className="relative font-heading text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl" style={{ color: 'var(--text-primary)' }}>
+        {kpi.value}
+      </p>
+      <p className="relative mt-1 text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{kpi.label}</p>
+      <p className="relative mt-3 text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>{kpi.trend}</p>
     </motion.div>
   )
 }
 
-/* ── Animated Tab Bar ────────────────────────────────────── */
+/* ── Capacity meter ──────────────────────────────────────── */
+function CapacityPanel({ assigned, capacity }: { assigned: number; capacity: number }) {
+  const safeCapacity = Math.max(capacity, 1)
+  const ratio = Math.min(assigned / safeCapacity, 1)
+  const pct = Math.round(ratio * 100)
+  const accent: Accent = ratio >= 1 ? 'coral' : ratio >= 0.8 ? 'sun' : 'mint'
+  const note = ratio >= 1
+    ? 'You are at capacity. New students will be waitlisted until a place opens.'
+    : ratio >= 0.8
+      ? `Only ${safeCapacity - assigned} place${safeCapacity - assigned === 1 ? '' : 's'} left before you are full.`
+      : `You can take ${safeCapacity - assigned} more student${safeCapacity - assigned === 1 ? '' : 's'}.`
+
+  return (
+    <Panel title="Student Capacity" subtitle="Matching fairness" icon={GraduationCap} accent={accent}>
+      <div className="flex items-end justify-between gap-4">
+        <p className="font-heading text-3xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+          {assigned}
+          <span className="text-xl font-normal" style={{ color: 'var(--text-muted)' }}> / {capacity}</span>
+        </p>
+        <Badge color={accent} size="sm">{pct}% full</Badge>
+      </div>
+      <div
+        className="mt-4 h-2 w-full overflow-hidden rounded-full"
+        style={{ background: 'var(--surface-2)' }}
+        role="meter"
+        aria-valuenow={assigned}
+        aria-valuemin={0}
+        aria-valuemax={capacity}
+        aria-label={`${assigned} of ${capacity} student places filled`}
+      >
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: accentFg(accent) }} />
+      </div>
+      <p className="mt-3 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{note}</p>
+    </Panel>
+  )
+}
+
+/* ── Tab bar ─────────────────────────────────────────────── */
 const TABS = ['overview', 'students', 'sessions'] as const
 type Tab = typeof TABS[number]
+
+const TAB_LABEL: Record<Tab, string> = {
+  overview: 'Overview',
+  students: 'My Students',
+  sessions: 'Sessions',
+}
 
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   return (
     <div
-      className="flex w-fit items-center gap-1 rounded-xl p-1"
+      role="tablist"
+      aria-label="Dashboard sections"
+      className="flex w-full items-center gap-1 overflow-x-auto rounded-xl p-1 sm:w-fit"
       style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
     >
       {TABS.map(tab => (
         <button
           key={tab}
+          role="tab"
+          aria-selected={active === tab}
           onClick={() => onChange(tab)}
-          className="relative cursor-pointer rounded-lg px-5 py-2 text-sm font-semibold capitalize transition-colors duration-200"
-          style={{ color: active === tab ? 'var(--primary)' : 'var(--text-secondary)', minWidth: 90 }}
+          className="relative shrink-0 cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-5"
+          style={{ color: active === tab ? 'var(--primary)' : 'var(--text-secondary)' }}
         >
           {active === tab && (
-            <motion.div
+            <motion.span
               layoutId="tutor-tab-indicator"
               className="absolute inset-0 rounded-lg"
               style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-xs)' }}
               transition={{ type: 'spring', stiffness: 350, damping: 35 }}
             />
           )}
-          <span className="relative z-10">{tab}</span>
+          <span className="relative z-10">{TAB_LABEL[tab]}</span>
         </button>
       ))}
     </div>
   )
 }
 
-/* ── Main Component ─────────────────────────────────────── */
+/* ── Empty state ─────────────────────────────────────────── */
+function EmptyState({ icon: Icon, title, body }: { icon: typeof Users; title: string; body: string }) {
+  return (
+    <div
+      className="flex flex-col items-center gap-3 rounded-2xl px-6 py-16 text-center"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <div
+        className="flex h-12 w-12 items-center justify-center rounded-2xl"
+        style={{ background: 'var(--accent-lavender-bg)', color: 'var(--accent-lavender-fg)' }}
+      >
+        <Icon className="h-6 w-6" />
+      </div>
+      <p className="font-heading font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</p>
+      <p className="max-w-[34ch] text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{body}</p>
+    </div>
+  )
+}
+
+/* ── Status pill ─────────────────────────────────────────── */
+function StatusPill({ status }: { status: SessionItem['status'] }) {
+  const accent = SESSION_ACCENT[status]
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold"
+      style={{ background: accentBg(accent), color: accentFg(accent) }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: accentFg(accent) }} />
+      {SESSION_LABEL[status]}
+    </span>
+  )
+}
+
+/* ── Main component ──────────────────────────────────────── */
 export function TutorDashboard() {
   const user = useAuthStore(s => s.user)
   const tutorProfile = useAuthStore(s => s.tutorProfile)
+  const reduce = useReducedMotion()
   const [activeTab, setActiveTab] = useState<Tab>('overview')
   const [searchQ, setSearchQ] = useState('')
   const [metrics, setMetrics] = useState<TutorDashboardMetrics | null>(null)
@@ -143,8 +266,8 @@ export function TutorDashboard() {
         if (!alive) return
         setMetrics(dashboard)
         setSessions(sessionData)
-      } catch (err: any) {
-        if (alive) setError(err?.response?.data?.message ?? 'Could not load tutor dashboard.')
+      } catch (err) {
+        if (alive) setError(apiErrorText(err))
       } finally {
         if (alive) setLoading(false)
       }
@@ -154,24 +277,28 @@ export function TutorDashboard() {
   }, [])
 
   useEffect(() => {
-    if (loading || !metrics) return
+    if (loading || !metrics || activeTab !== 'overview') return
     const ctx = gsap.context(() => {
-      if (chartRef.current) {
-        const bars = chartRef.current.querySelectorAll('.bar-fill')
-        gsap.fromTo(bars, { scaleY: 0, transformOrigin: 'bottom center' }, { scaleY: 1, stagger: 0.05, duration: 0.65, ease: 'back.out(1.2)' })
+      const bars = chartRef.current?.querySelectorAll('.bar-fill')
+      if (bars?.length) {
+        gsap.fromTo(
+          bars,
+          { scaleY: 0, transformOrigin: 'bottom center' },
+          { scaleY: 1, stagger: 0.04, duration: 0.45, ease: 'power2.out' },
+        )
       }
-    })
+    }, chartRef)
     return () => ctx.revert()
-  }, [loading, metrics])
+  }, [loading, metrics, activeTab])
 
   useEffect(() => {
     if (!sessions.length) return
     const interval = setInterval(() => {
       const now = new Date()
-      const ongoing = sessions.find(s => {
-        const start = new Date(s.startAt)
-        const end = s.endAt ? new Date(s.endAt) : new Date(start.getTime() + 3600000)
-        return s.status === 'confirmed' && start <= now && now <= end
+      const ongoing = sessions.find(session => {
+        const start = new Date(session.startAt)
+        const end = session.endAt ? new Date(session.endAt) : new Date(start.getTime() + 3600000)
+        return isJoinable(session) && start <= now && now <= end
       })
       if (ongoing) setJoinTarget(prev => prev ?? ongoing)
     }, 15000)
@@ -182,7 +309,12 @@ export function TutorDashboard() {
     const map = new Map<string, { name: string; sessions: number; subjects: Set<string>; lastAt: string }>()
     sessions.forEach(session => {
       const key = session.studentId
-      const existing = map.get(key) ?? { name: session.studentName ?? 'Student', sessions: 0, subjects: new Set<string>(), lastAt: session.startAt }
+      const existing = map.get(key) ?? {
+        name: session.studentName ?? 'Student',
+        sessions: 0,
+        subjects: new Set<string>(),
+        lastAt: session.startAt,
+      }
       existing.sessions += 1
       existing.subjects.add(session.subject)
       if (new Date(session.startAt) > new Date(existing.lastAt)) existing.lastAt = session.startAt
@@ -191,311 +323,354 @@ export function TutorDashboard() {
     return Array.from(map.entries()).map(([id, value]) => ({ id, ...value, subjects: Array.from(value.subjects) }))
   }, [sessions])
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchQ.toLowerCase()) ||
-    student.subjects.some(subject => subject.toLowerCase().includes(searchQ.toLowerCase())),
+  const filteredStudents = useMemo(() => {
+    const q = searchQ.trim().toLowerCase()
+    if (!q) return students
+    return students.filter(student =>
+      student.name.toLowerCase().includes(q) ||
+      student.subjects.some(subject => subject.toLowerCase().includes(q)),
+    )
+  }, [students, searchQ])
+
+  const weeklyBars = metrics?.weeklyBars ?? []
+  const maxHours = Math.max(...weeklyBars.map(item => item.hours), 1)
+  const totalHours = weeklyBars.reduce((sum, item) => sum + item.hours, 0)
+  const todaySessions = useMemo(() => {
+    const today = new Date().toDateString()
+    return sessions
+      .filter(session => new Date(session.startAt).toDateString() === today)
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+  }, [sessions])
+  const pendingSessions = useMemo(() => sessions.filter(s => s.status === 'pending'), [sessions])
+  const sortedSessions = useMemo(
+    () => [...sessions].sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime()),
+    [sessions],
   )
-  const maxHours = Math.max(...(metrics?.weeklyBars?.map(item => item.hours) ?? [1]), 1)
-  const todaySessions = sessions.filter(session => new Date(session.startAt).toDateString() === new Date().toDateString())
-  const totalHours = metrics?.weeklyBars?.reduce((sum, item) => sum + item.hours, 0) ?? 0
+
+  const capacity = tutorProfile?.capacity ?? 0
+  const assignedCount = tutorProfile?.assignedCount ?? 0
+
+  const heroTitle = `Good day, ${user?.firstName ?? 'Tutor'}`
+  const heroStats = metrics
+    ? [
+      { icon: Calendar, label: 'today', value: String(todaySessions.length) },
+      { icon: Clock, label: 'hrs this week', value: `${totalHours.toFixed(1)}h` },
+      ...(metrics.avgRating ? [{ icon: Star, label: 'rating', value: `${metrics.avgRating}/5` }] : []),
+    ]
+    : undefined
 
   return (
     <div className="space-y-6 py-3">
+      {/* ── Page hero ── */}
       <DashboardHero
-        title={`Good day, ${user?.firstName ?? 'Tutor'}`}
+        title={heroTitle}
+        eyebrow="Tutor dashboard"
         accent="accent"
-        stats={metrics ? [
-          { icon: Calendar, label: 'Sessions Today', value: `${todaySessions.length}` },
-          { icon: Star, label: 'Rating', value: metrics.avgRating ?? '-' },
-        ] : undefined}
+        stats={heroStats}
         actions={[
-          { label: 'New Session', href: '/schedules' },
-          { label: 'Students', href: '/tutors', variant: 'primary' },
+          { label: 'Find students', href: '/tutor-dashboard/find-students' },
+          { label: 'Manage schedule', href: '/schedules', variant: 'primary' },
         ]}
       />
+      {(todaySessions.length > 0 || pendingSessions.length > 0) && (
+        <p className="-mt-2 px-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          {todaySessions.length === 0
+            ? 'No sessions scheduled for today.'
+            : `${todaySessions.length} session${todaySessions.length === 1 ? '' : 's'} scheduled today.`}
+          {pendingSessions.length > 0 && ` ${pendingSessions.length} awaiting your confirmation.`}
+        </p>
+      )}
 
       {error && (
-        <div className="surface-card flex items-center gap-3 p-4 text-sm" style={{ color: 'var(--accent-coral-fg)' }}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0" style={{ background: 'var(--accent-coral-bg)' }}>
-            <Activity className="h-4 w-4" />
-          </div>
-          {error}
+        <div
+          className="flex items-start gap-3 rounded-2xl p-4 text-sm"
+          style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}
+          role="alert"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <span className="leading-relaxed">{error}</span>
         </div>
       )}
 
-      {/* KPI Cards */}
+      {/* ── KPIs ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {(metrics?.kpis ?? []).map((kpi: any, index: number) => {
-          const Icon = KPI_CONFIG[index]?.icon ?? TrendingUp
-          const color = kpi.color || KPI_CONFIG[index % KPI_CONFIG.length]?.color || COLORS[index % COLORS.length]
-          const isUp = kpi.isUp !== false
-          return <KpiCard key={kpi.label} kpi={kpi} index={index} Icon={Icon} color={color} isUp={isUp} />
-        })}
-        {loading && Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-32 animate-pulse rounded-2xl" style={{ background: 'var(--surface)' }} />
-        ))}
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={`kpi-skeleton-${i}`}
+              className="h-[148px] animate-pulse rounded-2xl"
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+            />
+          ))
+          : (metrics?.kpis ?? []).map((kpi, index) => (
+            <KpiCard
+              key={kpi.label}
+              kpi={kpi}
+              index={index}
+              Icon={KPI_ICON[kpi.label] ?? Activity}
+              accent={toAccent(kpi.color, ACCENT_SET[index % ACCENT_SET.length])}
+            />
+          ))}
       </div>
 
-      {/* Animated Tab Bar */}
       <TabBar active={activeTab} onChange={setActiveTab} />
 
-      {/* Overview Tab */}
+      {/* ── Overview ── */}
       {activeTab === 'overview' && (
         <motion.div
           className="space-y-6"
-          initial={{ opacity: 0, y: 12 }}
+          initial={reduce ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.3, ease: EASE }}
         >
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* Teaching hours chart */}
-            <div
-              className="relative overflow-hidden rounded-2xl p-6 lg:col-span-2"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+            <Panel
+              title="Teaching Hours"
+              subtitle="Completed sessions, last 7 days"
+              icon={BarChart3}
+              accent="lavender"
+              className="lg:col-span-2"
             >
-              <div className="mb-6 flex items-center gap-3">
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{ background: 'var(--accent-lavender-bg)', color: 'var(--accent-lavender-fg)' }}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </div>
-                <div>
-                  <h2 className="font-heading font-bold" style={{ color: 'var(--text-primary)' }}>Teaching Hours</h2>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>This Week</p>
-                </div>
-              </div>
-              <div ref={chartRef} className="flex h-40 items-end gap-3">
-                {(metrics?.weeklyBars ?? []).map(bar => (
-                  <div key={bar.day} className="group/bar relative flex flex-1 flex-col items-center gap-2">
-                    <div className="flex h-32 w-full items-end rounded-xl overflow-hidden" style={{ background: 'var(--surface-2)' }}>
+              <div ref={chartRef} className="flex h-44 items-end gap-2 sm:gap-3">
+                {weeklyBars.length === 0 && (
+                  <p className="w-full self-center text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    No completed sessions in the last seven days.
+                  </p>
+                )}
+                {weeklyBars.map(bar => (
+                  <div key={bar.day} className="flex flex-1 flex-col items-center gap-2">
+                    <span className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                      {bar.hours > 0 ? `${bar.hours}h` : ''}
+                    </span>
+                    <div
+                      className="flex h-32 w-full items-end overflow-hidden rounded-lg"
+                      style={{ background: 'var(--surface-2)' }}
+                    >
                       <div
-                        className="bar-fill w-full rounded-xl transition-all duration-300 group-hover/bar:opacity-80"
+                        className="bar-fill w-full rounded-lg"
                         style={{
-                          height: `${Math.max((bar.hours / maxHours) * 100, bar.hours ? 8 : 0)}%`,
-                          background: 'linear-gradient(180deg, var(--accent-mint-fg), var(--accent-sky-fg))',
+                          height: `${bar.hours ? Math.max((bar.hours / maxHours) * 100, 6) : 0}%`,
+                          background: 'var(--accent-sky-fg)',
                         }}
                       />
                     </div>
-                    <span className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>{bar.day}</span>
-                    <div
-                      className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 rounded-lg px-2.5 py-1 text-xs font-bold opacity-0 transition-all duration-200 group-hover/bar:opacity-100"
-                      style={{ background: 'var(--surface-glass-strong)', color: 'var(--text-primary)', backdropFilter: 'var(--blur-panel)' }}
-                    >
-                      {bar.hours}h
-                    </div>
+                    <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>{bar.day}</span>
                   </div>
                 ))}
               </div>
-            </div>
+              <p className="mt-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+                {totalHours.toFixed(1)} hours taught this week
+              </p>
+            </Panel>
 
-            {/* Today's schedule */}
-            <div
-              className="relative overflow-hidden rounded-2xl p-6"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-            >
-              <div className="mb-4 flex items-center gap-3">
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{ background: 'var(--accent-sun-bg)', color: 'var(--accent-sun-fg)' }}
-                >
-                  <Clock className="h-4 w-4" />
-                </div>
-                <h2 className="font-heading font-bold" style={{ color: 'var(--text-primary)' }}>Today&apos;s Schedule</h2>
-              </div>
+            <Panel title="Today's Schedule" subtitle={formatShortDate(new Date().toISOString())} icon={Clock} accent="sun">
               <div className="space-y-3">
                 {todaySessions.length === 0 && (
-                  <div className="py-8 text-center">
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No sessions today</p>
-                  </div>
+                  <p className="py-8 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Nothing on today. Your next session will appear here.
+                  </p>
                 )}
                 {todaySessions.slice(0, 4).map(session => {
-                  const color = COLORS[Math.abs(session.id?.charCodeAt(0) ?? 0) % COLORS.length]
+                  const accent = SESSION_ACCENT[session.status]
+                  const joinable = isJoinable(session)
+                  const name = session.studentName ?? 'Student'
                   return (
                     <div
                       key={session.id}
-                      className="group rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5"
-                      style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
+                      className="rounded-xl p-3"
+                      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold flex-shrink-0"
-                          style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
+                          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-xs font-semibold"
+                          style={{ background: accentBg(accentFor(session.studentId)), color: accentFg(accentFor(session.studentId)) }}
                         >
-                          {(session.studentName ?? 'S').split(' ').map(p => p[0]).join('').slice(0, 2)}
+                          {nameInitials(name)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                            {session.studentName ?? 'Student'}
+                          <p className="truncate text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{name}</p>
+                          <p className="truncate text-xs" style={{ color: 'var(--text-muted)' }}>
+                            {session.subject} · {formatTime(session.startAt)}
                           </p>
-                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{session.subject}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-                            {formatTime(session.startAt)}
-                          </span>
-                          <Button size="sm" variant="primary" className="flex-shrink-0 cursor-pointer" onClick={() => setJoinTarget(session)}>
+                        {joinable ? (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            className="flex-shrink-0"
+                            onClick={() => setJoinTarget(session)}
+                          >
                             <Video className="h-3.5 w-3.5" /> Join
                           </Button>
-                        </div>
+                        ) : (
+                          <span
+                            className="flex-shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                            style={{ background: accentBg(accent), color: accentFg(accent) }}
+                          >
+                            {SESSION_LABEL[session.status]}
+                          </span>
+                        )}
                       </div>
                     </div>
                   )
                 })}
               </div>
-            </div>
+            </Panel>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Profile summary */}
-            <div
-              className="relative overflow-hidden rounded-2xl p-6"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-            >
-              <div className="mb-5 flex items-center gap-3">
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{ background: 'var(--accent-mint-bg)', color: 'var(--accent-mint-fg)' }}
-                >
-                  <Award className="h-4 w-4" />
-                </div>
-                <h2 className="font-heading font-bold" style={{ color: 'var(--text-primary)' }}>Profile Summary</h2>
-              </div>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <CapacityPanel assigned={assignedCount} capacity={capacity} />
+
+            <Panel title="Teaching Profile" subtitle="Used for matching" icon={Award} accent="mint">
               <div className="space-y-4">
                 {tutorProfile?.subjectsTaught?.length ? (
                   <div>
-                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Subjects Taught</p>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                      Subjects taught
+                    </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {tutorProfile.subjectsTaught.map(s => <Badge key={s} color="lavender" size="sm">{s}</Badge>)}
+                      {tutorProfile.subjectsTaught.map(subject => (
+                        <Badge key={subject} color="lavender" size="sm">{subject}</Badge>
+                      ))}
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No subjects set — update in Settings.</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    No subjects set. Students cannot be matched to you until you add at least one.
+                  </p>
                 )}
+                {tutorProfile?.gradeLevelsSupported?.length ? (
+                  <div>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                      Grade levels
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {tutorProfile.gradeLevelsSupported.map(level => (
+                        <Badge key={level} color="sky" size="sm">JSS/SSS {level}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 {tutorProfile?.bio && (
                   <div>
-                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Bio</p>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                      Bio
+                    </p>
                     <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{tutorProfile.bio}</p>
                   </div>
                 )}
                 <Link
                   href="/settings"
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
+                  className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                   style={{ color: 'var(--primary)' }}
                 >
-                  Edit Profile <ChevronRight className="h-3.5 w-3.5" />
+                  Edit profile <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
-            </div>
+            </Panel>
 
-            {/* Quick stats 2x2 */}
-            <div
-              className="relative overflow-hidden rounded-2xl p-6"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-            >
-              <div className="mb-5 flex items-center gap-3">
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{ background: 'var(--accent-sky-bg)', color: 'var(--accent-sky-fg)' }}
-                >
-                  <Activity className="h-4 w-4" />
-                </div>
-                <h2 className="font-heading font-bold" style={{ color: 'var(--text-primary)' }}>Quick Stats</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <Panel title="At a Glance" subtitle="Your teaching record" icon={Activity} accent="sky">
+              <dl className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Total Students', value: metrics?.studentsCount ?? 0,              icon: Users,     color: 'lavender' },
-                  { label: 'Sessions Done',  value: sessions.length,                           icon: BookOpen,  color: 'mint'     },
-                  { label: 'Subjects',       value: tutorProfile?.subjectsTaught?.length ?? 0, icon: Target,    color: 'sun'      },
-                  { label: 'This Week',      value: `${totalHours.toFixed(1)}h`,               icon: Clock,     color: 'sky'      },
-                ].map((stat, i) => (
-                  <div
-                    key={i}
-                    className="rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5"
-                    style={{ background: `var(--accent-${stat.color}-bg)` }}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <stat.icon className="h-3.5 w-3.5" style={{ color: `var(--accent-${stat.color}-fg)` }} />
-                      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: `var(--accent-${stat.color}-fg)` }}>
+                  { label: 'Students taught', value: `${metrics?.studentsCount ?? 0}`, icon: Users, accent: 'lavender' as Accent },
+                  { label: 'Sessions booked', value: `${sessions.length}`, icon: BookOpen, accent: 'mint' as Accent },
+                  { label: 'Subjects', value: `${tutorProfile?.subjectsTaught?.length ?? 0}`, icon: Target, accent: 'sun' as Accent },
+                  { label: 'Hours this week', value: `${totalHours.toFixed(1)}h`, icon: Clock, accent: 'sky' as Accent },
+                ].map(stat => (
+                  <div key={stat.label} className="rounded-xl p-3.5" style={{ background: 'var(--surface-2)' }}>
+                    <div className="mb-2 flex items-center gap-1.5">
+                      <stat.icon className="h-3.5 w-3.5" style={{ color: accentFg(stat.accent) }} />
+                      <dt className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                         {stat.label}
-                      </p>
+                      </dt>
                     </div>
-                    <p className="font-heading text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{stat.value}</p>
+                    <dd className="font-heading text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{stat.value}</dd>
                   </div>
                 ))}
-              </div>
-            </div>
+              </dl>
+            </Panel>
           </div>
         </motion.div>
       )}
 
-      {/* Students Tab */}
+      {/* ── Students ── */}
       {activeTab === 'students' && (
         <motion.div
-          className="space-y-5"
-          initial={{ opacity: 0, y: 12 }}
+          className="space-y-4"
+          initial={reduce ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.3, ease: EASE }}
         >
-          <div className="flex items-center gap-3">
-            <div
-              className="flex flex-1 items-center gap-2.5 rounded-xl px-4 py-2.5 sm:max-w-xs"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-            >
-              <Search className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-              <input
-                value={searchQ}
-                onChange={event => setSearchQ(event.target.value)}
-                placeholder="Search students..."
-                className="flex-1 bg-transparent text-sm outline-none"
-                style={{ color: 'var(--text-primary)' }}
-              />
-            </div>
+          <div
+            className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 sm:max-w-sm"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          >
+            <Search className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+            <input
+              value={searchQ}
+              onChange={event => setSearchQ(event.target.value)}
+              placeholder="Search by name or subject"
+              aria-label="Search your students"
+              className="flex-1 bg-transparent text-sm outline-none"
+              style={{ color: 'var(--text-primary)' }}
+            />
           </div>
 
           {filteredStudents.length === 0 ? (
-            <div
-              className="flex flex-col items-center gap-3 rounded-2xl px-6 py-16 text-center"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-            >
-              <div
-                className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                style={{ background: 'var(--accent-lavender-bg)', color: 'var(--accent-lavender-fg)' }}
-              >
-                <Users className="h-7 w-7" />
-              </div>
-              <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>No students yet</p>
-              <p className="text-sm max-w-[28ch]" style={{ color: 'var(--text-secondary)' }}>Book sessions to see your students here</p>
-            </div>
+            <EmptyState
+              icon={Users}
+              title={searchQ ? 'No students match that search' : 'No students yet'}
+              body={searchQ
+                ? 'Try a different name or subject.'
+                : 'Students matched to you will appear here once a session is booked.'}
+            />
           ) : (
             <div className="space-y-3">
               {filteredStudents.map((student, index) => {
-                const color = COLORS[index % COLORS.length]
+                const accent = accentFor(student.id)
                 return (
                   <motion.div
                     key={student.id}
-                    className="group flex items-center gap-4 rounded-2xl px-5 py-4 transition-colors"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                    whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                    className="flex flex-wrap items-center gap-4 rounded-2xl px-5 py-4"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-rest)' }}
+                    initial={reduce ? false : { opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-80px' }}
+                    transition={{ duration: 0.3, delay: stagger(index), ease: EASE }}
                   >
                     <div
-                      className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
-                      style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
+                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold"
+                      style={{ background: accentBg(accent), color: accentFg(accent) }}
                     >
-                      {student.name.split(' ').map(p => p[0]).join('').slice(0, 2)}
+                      {nameInitials(student.name)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{student.name}</p>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatShortDate(student.lastAt)}</p>
+                      <p className="truncate text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{student.name}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        Last session {formatShortDate(student.lastAt)}
+                      </p>
                     </div>
-                    <Badge color={color} size="sm">{student.subjects[0] ?? 'General'}</Badge>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{student.sessions}</p>
-                      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>sessions</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {student.subjects.slice(0, 2).map(subject => (
+                        <Badge key={subject} color="lavender" size="sm">{subject}</Badge>
+                      ))}
                     </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p className="font-heading text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        {student.sessions}
+                      </p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                        sessions
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="flex-shrink-0"
+                      onClick={() => setMessageTarget({ id: student.id, name: student.name })}
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" /> Message
+                    </Button>
                   </motion.div>
                 )
               })}
@@ -504,80 +679,66 @@ export function TutorDashboard() {
         </motion.div>
       )}
 
-      {/* Sessions Tab */}
+      {/* ── Sessions ── */}
       {activeTab === 'sessions' && (
         <motion.div
           className="space-y-3"
-          initial={{ opacity: 0, y: 12 }}
+          initial={reduce ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.3, ease: EASE }}
         >
-          {sessions.length === 0 && (
-            <div
-              className="flex flex-col items-center gap-3 rounded-2xl px-6 py-16 text-center"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-            >
-              <div
-                className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                style={{ background: 'var(--accent-lavender-bg)', color: 'var(--accent-lavender-fg)' }}
-              >
-                <Calendar className="h-7 w-7" />
-              </div>
-              <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>No sessions yet</p>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Create a session to get started</p>
-            </div>
+          {sortedSessions.length === 0 && (
+            <EmptyState
+              icon={Calendar}
+              title="No sessions yet"
+              body="Once a student books time with you, every session will be listed here."
+            />
           )}
-          {sessions.map((session, index) => {
-            const color = COLORS[index % COLORS.length]
-            const statusDot =
-              session.status === 'confirmed' ? 'var(--accent-mint-fg)'
-                : session.status === 'pending' ? 'var(--accent-sun-fg)'
-                  : 'var(--text-muted)'
+          {sortedSessions.map((session, index) => {
+            const stateAccent = SESSION_ACCENT[session.status]
+            const identityAccent = accentFor(session.studentId)
+            const name = session.studentName ?? 'Student'
             return (
               <motion.div
                 key={session.id}
-                className="group relative overflow-hidden rounded-2xl"
+                className="rounded-2xl"
                 style={{
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
-                  borderLeft: `4px solid var(--accent-${color}-fg)`,
+                  borderLeft: `3px solid ${accentFg(stateAccent)}`,
+                  boxShadow: 'var(--shadow-rest)',
                 }}
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
-                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                initial={reduce ? false : { opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ duration: 0.3, delay: stagger(index), ease: EASE }}
               >
-                <div className="flex items-center gap-4 p-5">
+                <div className="flex flex-wrap items-center gap-4 p-5">
                   <div
-                    className="flex h-11 w-11 items-center justify-center rounded-xl text-sm font-bold flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
-                    style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}
+                    className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-sm font-semibold"
+                    style={{ background: accentBg(identityAccent), color: accentFg(identityAccent) }}
                   >
-                    {(session.studentName ?? 'ST').split(' ').map(p => p[0]).join('').slice(0, 2)}
+                    {nameInitials(name)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{session.studentName ?? 'Student'}</p>
-                    <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                      <span>{session.subject}</span>
-                      <span className="text-[10px]">·</span>
-                      <span>{formatTime(session.startAt)}</span>
-                    </div>
+                    <p className="truncate text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{name}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {session.subject} · {formatDayTime(session.startAt)}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider"
-                      style={{ color: statusDot, background: `color-mix(in oklch, ${statusDot} 12%, transparent)` }}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusDot }} />
-                      {session.status}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => setMessageTarget({ id: session.studentId, name: session.studentName ?? 'Student' })}
-                    >
-                      <MessageSquare className="h-3.5 w-3.5" /> Message
+                  <StatusPill status={session.status} />
+                  {isJoinable(session) && (
+                    <Button size="sm" variant="primary" onClick={() => setJoinTarget(session)}>
+                      <Video className="h-3.5 w-3.5" /> Join
                     </Button>
-                  </div>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setMessageTarget({ id: session.studentId, name })}
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" /> Message
+                  </Button>
                 </div>
               </motion.div>
             )
@@ -585,10 +746,9 @@ export function TutorDashboard() {
         </motion.div>
       )}
 
-      {/* Modals */}
       {messageTarget && (
         <MessageModal
-          isOpen={!!messageTarget}
+          isOpen
           onClose={() => setMessageTarget(null)}
           otherUserId={messageTarget.id}
           otherUserName={messageTarget.name}
@@ -597,11 +757,11 @@ export function TutorDashboard() {
 
       {joinTarget && (
         <SessionJoinModal
-          isOpen={!!joinTarget}
+          isOpen
           onClose={() => setJoinTarget(null)}
           session={joinTarget}
-          onAttended={(updated) => {
-            setSessions(prev => prev.map(s => s.id === updated.id ? updated : s))
+          onAttended={updated => {
+            setSessions(prev => prev.map(s => (s.id === updated.id ? updated : s)))
             setJoinTarget(null)
           }}
         />

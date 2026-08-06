@@ -168,7 +168,7 @@ export default function MessagesPage() {
                         {convo.firstName[0]}{convo.lastName[0]}
                       </div>
                       {convo.unreadCount ? (
-                        <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent-coral-fg text-[9px] font-bold text-white ring-2" style={{ ringColor: 'var(--surface)' }}>
+                        <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold" style={{ background: 'var(--accent-coral-fg)', color: 'var(--surface)', boxShadow: '0 0 0 2px var(--surface)' }}>
                           {convo.unreadCount}
                         </span>
                       ) : null}

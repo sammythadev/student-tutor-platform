@@ -10,17 +10,23 @@ interface StarRatingProps {
   showCount?: boolean
   interactive?: boolean
   onRate?: (rating: number) => void
+  /**
+   * Scale of `rating`. Matchmaking candidates and dashboard metrics arrive
+   * pre-scaled to 0-5; the raw tutor_profiles EMA is 0-1. Passing the wrong one
+   * renders every tutor as five full stars.
+   */
+  scale?: '0-5' | '0-1'
 }
 
 const sizeMap = { sm: 12, md: 16, lg: 20 }
 const starCount = 5
 
-export function StarRating({ rating, count, size = 'sm', showCount = true, interactive = false, onRate }: StarRatingProps) {
+export function StarRating({ rating, count, size = 'sm', showCount = true, interactive = false, onRate, scale = '0-5' }: StarRatingProps) {
   const [hovered, setHovered] = useState(0)
   const [selected, setSelected] = useState(0)
   const px = sizeMap[size]
 
-  const numericRating = rating != null ? Number(rating) * 5 : 0
+  const numericRating = rating != null ? Number(rating) * (scale === '0-1' ? 5 : 1) : 0
 
   const getFill = (i: number) => {
     if (interactive) {

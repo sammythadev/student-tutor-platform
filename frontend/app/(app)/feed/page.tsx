@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { createPost, getFeed, toggleLike, type FeedResponse, type PostItem } from '@/lib/api/feed'
+import { apiErrorText } from '@/lib/api/errors'
 import { useAuthStore } from '@/lib/store/authStore'
 import {
   Bell, BookOpen, Heart, Image, Link, Loader2,
@@ -44,8 +45,8 @@ export default function FeedPage() {
       } else {
         setFeed(prev => prev ? { ...data, posts: [...(prev?.posts ?? []), ...data.posts] } : data)
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Could not load feed.')
+    } catch (err) {
+      setError(apiErrorText(err))
     } finally {
       if (pageNum === 1) setLoading(false)
       setLoadingMore(false)
@@ -66,8 +67,8 @@ export default function FeedPage() {
       setFeed(prev => prev ? { ...prev, posts: [created, ...prev.posts], total: prev.total + 1 } : prev)
       setDraft('')
       composerRef.current?.focus()
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Could not create post.')
+    } catch (err) {
+      setError(apiErrorText(err))
     } finally {
       setPosting(false)
     }
@@ -86,8 +87,8 @@ export default function FeedPage() {
         ...prev,
         posts: prev.posts.map(item => item.id === post.id ? { ...item, likedByMe: result.liked, likesCount: result.likesCount } : item),
       } : prev)
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Could not update like.')
+    } catch (err) {
+      setError(apiErrorText(err))
       load(filter, 1)
     }
   }
@@ -126,7 +127,7 @@ export default function FeedPage() {
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ background: 'var(--accent-lavender-bg)', color: 'var(--accent-lavender-fg)' }}>{initials}</div>
                 <div className="min-w-0 flex-1">
                   <textarea
-                    ref={composerRef as any}
+                    ref={composerRef}
                     value={draft}
                     onChange={e => setDraft(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handlePost() }}

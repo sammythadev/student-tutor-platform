@@ -5,8 +5,15 @@ import { Card } from '@/components/Badge'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { getMySessions, type SessionItem } from '@/lib/api/sessions'
-import { getMe, updateMe, updateStudentPreferences, updateTutorPreferences } from '@/lib/api/users'
-import { useAuthStore } from '@/lib/store/authStore'
+import { getMe, updateMe, updateStudentPreferences, updateTutorPreferences, type UpdateMePayload } from '@/lib/api/users'
+import { apiErrorText } from '@/lib/api/errors'
+import { useAuthStore, type UserProfile, type StudentProfile, type TutorProfile } from '@/lib/store/authStore'
+
+interface ProfileResponse {
+  user?: UserProfile | null
+  studentProfile?: StudentProfile | null
+  tutorProfile?: TutorProfile | null
+}
 import { BookOpen, Calendar, Edit2, MapPin, MessageCircle, Save, Target, X, Award, Clock, Users, Star, CheckCircle2 } from 'lucide-react'
 import { useToast } from '@/lib/toast-context'
 import { StarRating } from '@/components/StarRating'
@@ -15,7 +22,7 @@ export default function ProfilePage() {
   const storeUser = useAuthStore(s => s.user)
   const storeStudent = useAuthStore(s => s.studentProfile)
   const storeTutor = useAuthStore(s => s.tutorProfile)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<ProfileResponse | null>(null)
   const [sessions, setSessions] = useState<SessionItem[]>([])
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -34,7 +41,7 @@ export default function ProfilePage() {
     getMySessions().then(setSessions).catch(() => undefined)
   }, [])
 
-  function setFormFromProfile(data: any) {
+  function setFormFromProfile(data: ProfileResponse) {
     const u = data?.user ?? storeUser
     const s = data?.studentProfile ?? storeStudent
     const t = data?.tutorProfile ?? storeTutor
@@ -44,7 +51,7 @@ export default function ProfilePage() {
       learningGoals: s?.learningGoals ?? '',
       region: u?.region ?? '',
       subjects: (s?.subjects ?? t?.subjectsTaught ?? []).join(', '),
-      gradeLevel: s?.gradeLevel ?? '',
+      gradeLevel: s?.gradeLevel?.toString() ?? '',
       experienceYears: t?.experienceYears?.toString() ?? '',
       hourlyRate: t?.hourlyRate?.toString() ?? '',
     })
@@ -67,15 +74,15 @@ export default function ProfilePage() {
     return Array.from(names.values()).slice(0, 5)
   }, [sessions, role])
 
-  const subjects = role === 'tutor'
+  const subjects: string[] = role === 'tutor'
     ? (tutor?.subjectsTaught ?? [])
-    : student?.subjects?.length ? student.subjects : [student?.requiredSubject].filter(Boolean)
+    : student?.subjects?.length ? student.subjects : (student?.requiredSubject ? [student.requiredSubject] : [])
 
   async function handleSave() {
     setSaving(true)
     try {
       const subjectsArr = form.subjects.split(',').map(s => s.trim()).filter(Boolean)
-      const userPayload: any = {}
+      const userPayload: UpdateMePayload = {}
       if (form.firstName !== (user?.firstName ?? '')) userPayload.firstName = form.firstName
       if (form.lastName !== (user?.lastName ?? '')) userPayload.lastName = form.lastName
       if (form.region !== (user?.region ?? '')) userPayload.region = form.region
@@ -86,30 +93,30 @@ export default function ProfilePage() {
           bio: form.bio || undefined,
           learningGoals: form.learningGoals || undefined,
           subjects: subjectsArr,
-          gradeLevel: form.gradeLevel || undefined,
+          gradeLevel: form.gradeLevel ? Number(form.gradeLevel) : undefined,
         })
       } else {
         await updateTutorPreferences({
           bio: form.bio || undefined,
           subjectsTaught: subjectsArr,
           experienceYears: form.experienceYears ? Number(form.experienceYears) : undefined,
-          hourlyRate: form.hourlyRate || undefined,
+          hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : undefined,
         })
       }
 
       const fresh = await getMe()
       setProfile(fresh)
-      addToast('Profile updated!', 'success')
+      addToast('Profile updated', 'success')
       setIsEditing(false)
-    } catch (err: any) {
-      addToast(err?.response?.data?.message ?? 'Could not update profile.', 'error')
+    } catch (err) {
+      addToast(apiErrorText(err), 'error')
     } finally {
       setSaving(false)
     }
   }
 
   function handleCancel() {
-    setFormFromProfile(profile)
+    setFormFromProfile(profile ?? {})
     setIsEditing(false)
   }
 
@@ -142,7 +149,7 @@ export default function ProfilePage() {
                 <div className="mt-2 flex items-center gap-3">
                   <Badge color={role === 'tutor' ? 'mint' : 'lavender'} size="sm">{role}</Badge>
                   {student?.gradeLevel && <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Grade {student.gradeLevel}</span>}
-                  {tutor?.avgRating && <StarRating rating={tutor.avgRating} count={tutor.ratingCount} size="sm" />}
+                  {tutor?.avgRating && <StarRating rating={tutor.avgRating} count={tutor.ratingCount} size="sm" scale="0-1" />}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">

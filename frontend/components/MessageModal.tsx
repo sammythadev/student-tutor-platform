@@ -5,8 +5,9 @@ import { Modal } from './Modal'
 import { Button } from './Button'
 import { Input } from './Input'
 import { sendMessage, getConversation, type MessageItem } from '@/lib/api/messages'
+import { apiErrorText } from '@/lib/api/errors'
 import { useAuthStore } from '@/lib/store/authStore'
-import { Send, CheckCircle2 } from 'lucide-react'
+import { Send, CheckCircle2, CheckCheck, MessageSquare } from 'lucide-react'
 
 interface MessageModalProps {
   isOpen: boolean
@@ -29,12 +30,14 @@ export function MessageModal({
 
   useEffect(() => {
     if (!isOpen || !otherUserId) return
+    let alive = true
     setLoading(true)
     setError(null)
     getConversation(otherUserId)
-      .then(data => setMessages(data))
-      .catch(err => setError(err?.response?.data?.message ?? 'Could not load messages'))
-      .finally(() => setLoading(false))
+      .then(data => { if (alive) setMessages(data) })
+      .catch(err => { if (alive) setError(apiErrorText(err)) })
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
   }, [isOpen, otherUserId])
 
   useEffect(() => {
@@ -48,8 +51,8 @@ export function MessageModal({
       const msg = await sendMessage({ receiverId: otherUserId, content: content.trim() })
       setMessages(prev => [...prev, msg])
       setContent('')
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Could not send message')
+    } catch (err) {
+      setError(apiErrorText(err))
     } finally {
       setSending(false)
     }
@@ -64,18 +67,37 @@ export function MessageModal({
     } size="lg">
       <div className="flex flex-col h-[400px]">
         {error && (
-          <div className="p-2 rounded-lg text-xs mb-2" style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}>
+          <div
+            className="mb-2 rounded-lg px-3 py-2 text-xs"
+            role="alert"
+            style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}
+          >
             {error}
           </div>
         )}
 
         <div className="flex-1 overflow-y-auto space-y-3 mb-3 px-1">
           {loading && (
-            <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-10 animate-pulse rounded-xl" style={{ background: 'var(--surface-2)', width: i % 2 === 0 ? '60%' : '40%', marginLeft: i % 2 === 0 ? 0 : 'auto' }} />)}</div>
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
+                  <div
+                    className="h-12 w-[62%] animate-pulse rounded-xl"
+                    style={{ background: 'var(--surface-2)' }}
+                  />
+                </div>
+              ))}
+            </div>
           )}
 
           {!loading && messages.length === 0 && (
-            <p className="text-sm text-text-secondary text-center py-8">No messages yet. Say hello!</p>
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <MessageSquare className="h-7 w-7" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>No messages yet</p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Send the first message to {otherUserName}.
+              </p>
+            </div>
           )}
 
           {messages.map(msg => {
@@ -90,9 +112,17 @@ export function MessageModal({
                   }}
                 >
                   <p className="text-sm leading-relaxed">{msg.content}</p>
-                  <p className={`text-[10px] mt-0.5 ${isMine ? 'text-white/60' : 'text-text-muted'}`}>
+                  <p
+                    className="tabular mt-0.5 flex items-center gap-1 text-[10px]"
+                    style={{ color: isMine ? 'var(--primary-fg)' : 'var(--text-muted)', opacity: isMine ? 0.72 : 1 }}
+                  >
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    {msg.readAt && isMine && <span className="ml-1">✓ Read</span>}
+                    {isMine && msg.readAt && (
+                      <>
+                        <CheckCheck className="h-3 w-3" aria-hidden="true" />
+                        <span>Read</span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
@@ -110,8 +140,8 @@ export function MessageModal({
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
             />
           </div>
-          <Button size="md" onClick={handleSend} loading={sending} disabled={!content.trim()}>
-            <Send className="w-4 h-4" />
+          <Button size="md" onClick={handleSend} loading={sending} disabled={!content.trim()} aria-label="Send message">
+            <Send className="w-4 h-4" aria-hidden="true" />
           </Button>
         </div>
       </div>

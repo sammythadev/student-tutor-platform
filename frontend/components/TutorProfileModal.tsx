@@ -6,8 +6,9 @@ import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { StarRating } from '@/components/StarRating'
 import { submitFeedback } from '@/lib/api/users'
-import { getMySessions } from '@/lib/api/sessions'
-import type { TutorCandidate } from '@/lib/api/users'
+import { getCurrentAssignment } from '@/lib/api/assignments'
+import { apiErrorText } from '@/lib/api/errors'
+import type { Assignment, TutorCandidate } from '@/lib/api/users'
 import { useAuthStore } from '@/lib/store/authStore'
 import { useToast } from '@/lib/toast-context'
 
@@ -25,19 +26,30 @@ export function TutorProfileModal({ tutor, onClose, onBook, onMessage }: TutorPr
   const [userRating, setUserRating] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [canRate, setCanRate] = useState(false)
+  const [ratableAssignment, setRatableAssignment] = useState<Assignment | null>(null)
   const [checkingSessions, setCheckingSessions] = useState(true)
 
   useEffect(() => {
-    if (user?.role !== 'student' || !tutor.userId) {
+    if (user?.role !== 'student') {
       setCheckingSessions(false)
       return
     }
-    getMySessions().then(sessions => {
-      const hasCompleted = sessions.some(s => s.tutorId === tutor.userId && s.status === 'completed')
-      setCanRate(hasCompleted)
-    }).catch(() => {}).finally(() => setCheckingSessions(false))
-  }, [user, tutor.userId])
+    let alive = true
+    getCurrentAssignment()
+      .then(assignment => {
+        if (!alive) return
+        // Feedback is keyed on the assignment, not the session, and the backend
+        // only accepts it once the assignment itself is completed.
+        setRatableAssignment(
+          assignment?.status === 'completed' && assignment.tutorId === tutor.tutorId
+            ? assignment
+            : null,
+        )
+      })
+      .catch(() => {})
+      .finally(() => { if (alive) setCheckingSessions(false) })
+    return () => { alive = false }
+  }, [user, tutor.tutorId])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -50,20 +62,14 @@ export function TutorProfileModal({ tutor, onClose, onBook, onMessage }: TutorPr
   }, [onClose])
 
   async function handleSubmitRating() {
-    if (userRating < 1 || userRating > 5) return
+    if (userRating < 1 || userRating > 5 || !ratableAssignment) return
     setSubmitting(true)
     try {
-      const sessions = await getMySessions()
-      const completedSession = sessions.find(s => s.tutorId === tutor.userId && s.status === 'completed')
-      if (!completedSession) {
-        addToast('Complete a session before rating this tutor.', 'error')
-        return
-      }
-      await submitFeedback(completedSession.id, { rating: userRating })
+      await submitFeedback(ratableAssignment.id, { rating: userRating })
       setSubmitted(true)
-      addToast('Rating submitted!', 'success')
-    } catch (err: any) {
-      addToast(err?.response?.data?.message ?? 'Could not submit rating.', 'error')
+      addToast('Rating submitted', 'success')
+    } catch (err) {
+      addToast(apiErrorText(err), 'error')
     } finally {
       setSubmitting(false)
     }
@@ -177,7 +183,7 @@ export function TutorProfileModal({ tutor, onClose, onBook, onMessage }: TutorPr
                   <div className="h-4 w-4 animate-spin rounded-full border-2" style={{ borderColor: 'var(--text-muted)', borderTopColor: 'transparent' }} />
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Checking eligibility...</span>
                 </div>
-              ) : canRate ? (
+              ) : ratableAssignment ? (
                 <div className="flex items-center gap-3">
                   <StarRating interactive size="lg" onRate={setUserRating} />
                   <Button size="sm" onClick={handleSubmitRating} disabled={userRating < 1 || submitting}>
@@ -187,7 +193,7 @@ export function TutorProfileModal({ tutor, onClose, onBook, onMessage }: TutorPr
               ) : (
                 <p className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                   <Clock className="h-3.5 w-3.5" />
-                  Complete a session to rate this tutor
+                  Complete your sessions with this tutor to leave a rating
                 </p>
               )}
             </div>

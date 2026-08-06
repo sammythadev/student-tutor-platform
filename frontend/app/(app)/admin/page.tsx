@@ -1,106 +1,154 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card } from '@/components/Badge'
+import { motion, useReducedMotion } from 'motion/react'
 import { Badge } from '@/components/Badge'
-import { Button } from '@/components/Button'
 import { getAdminMetrics, type AdminMetrics } from '@/lib/api/dashboard'
-import { AlertCircle, CheckCircle2, ChevronRight, MoreHorizontal, TrendingUp, Users, Zap } from 'lucide-react'
+import { apiErrorText } from '@/lib/api/errors'
+import { accentBg, accentFg, stagger, type Accent } from '@/lib/ui'
+import { AlertCircle, CalendarClock, Star, Users } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
+const EASE = [0.16, 1, 0.3, 1] as const
+
+interface MetricCard {
+  label: string
+  value: string
+  caption: string
+  icon: typeof Users
+  accent: Accent
+}
+
 export default function AdminPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const reduce = useReducedMotion()
 
   useEffect(() => {
-    getAdminMetrics()
-      .then(setMetrics)
-      .catch((err: any) => setError(err?.response?.data?.message ?? 'Could not load admin metrics.'))
+    let alive = true
+    async function load() {
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await getAdminMetrics()
+        if (alive) setMetrics(data)
+      } catch (err) {
+        if (alive) setError(apiErrorText(err))
+      } finally {
+        if (alive) setLoading(false)
+      }
+    }
+    load()
+    return () => { alive = false }
   }, [])
 
-  const cards = [
-    { label: 'Total Users', value: metrics?.totalUsers?.toLocaleString() ?? '-', icon: Users, color: 'lavender', trend: 'Live', isUp: true },
-    { label: 'Active Sessions', value: metrics?.activeSessions?.toLocaleString() ?? '-', icon: Zap, color: 'mint', trend: 'Live', isUp: true },
-    { label: 'Avg Rating', value: metrics?.avgRating ? `${metrics.avgRating}/5` : 'N/A', icon: TrendingUp, color: 'sky', trend: 'Live', isUp: true },
-    { label: 'Open Issues', value: metrics?.openIssues?.toLocaleString() ?? '0', icon: AlertCircle, color: 'coral', trend: 'Live', isUp: false },
+  const cards: MetricCard[] = [
+    {
+      label: 'Active users',
+      value: metrics ? metrics.totalUsers.toLocaleString('en-NG') : '—',
+      caption: 'Accounts with status “active”',
+      icon: Users,
+      accent: 'lavender',
+    },
+    {
+      label: 'Live sessions',
+      value: metrics ? metrics.activeSessions.toLocaleString('en-NG') : '—',
+      caption: 'Scheduled or starting soon',
+      icon: CalendarClock,
+      accent: 'mint',
+    },
+    {
+      label: 'Platform rating',
+      value: metrics?.avgRating ? `${metrics.avgRating}/5` : '—',
+      caption: metrics?.avgRating ? 'Mean tutor rating' : 'No ratings recorded yet',
+      icon: Star,
+      accent: 'sun',
+    },
   ]
 
   return (
     <div className="space-y-8 py-3">
-      <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight text-text-primary">Admin Dashboard</h1>
-        <p className="mt-1 text-sm text-text-secondary">Platform overview and management tools</p>
+      <header>
+        <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+          Administration
+        </p>
+        <h1
+          className="font-heading mt-1 text-2xl font-semibold tracking-tight sm:text-3xl"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          Platform Overview
+        </h1>
+        <p className="mt-1.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Aggregate figures read live from the matchmaking database.
+        </p>
+      </header>
+
+      {error && (
+        <div
+          className="flex items-start gap-3 rounded-2xl p-4 text-sm"
+          style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}
+          role="alert"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <span className="leading-relaxed">{error}</span>
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {loading
+          ? Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={`admin-skeleton-${i}`}
+              className="h-[168px] animate-pulse rounded-2xl"
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+            />
+          ))
+          : cards.map((card, index) => (
+            <motion.article
+              key={card.label}
+              className="rounded-2xl p-5 sm:p-6"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-rest)' }}
+              initial={reduce ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: stagger(index), ease: EASE }}
+            >
+              <div
+                className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: accentBg(card.accent), color: accentFg(card.accent) }}
+              >
+                <card.icon className="h-5 w-5" />
+              </div>
+              <p className="font-heading text-3xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                {card.value}
+              </p>
+              <p className="mt-1.5 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{card.label}</p>
+              <p className="mt-3 text-xs" style={{ color: 'var(--text-muted)' }}>{card.caption}</p>
+            </motion.article>
+          ))}
       </div>
 
-      {error && <div className="surface-card p-4 text-sm text-accent-coral-fg">{error}</div>}
-
-      <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-        {cards.map(metric => {
-          const Icon = metric.icon
-          return (
-            <Card key={metric.label} hover className="p-5">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: `var(--accent-${metric.color}-bg)`, color: `var(--accent-${metric.color}-fg)` }}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <p className="font-heading text-3xl font-bold text-text-primary">{metric.value}</p>
-              <div className="mt-2 flex items-center justify-between">
-                <p className="text-sm font-semibold text-text-secondary">{metric.label}</p>
-                <p className="text-xs font-bold" style={{ color: metric.isUp ? 'var(--accent-mint-fg)' : 'var(--text-muted)' }}>{metric.trend}</p>
-              </div>
-            </Card>
-          )
-        })}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <h2 className="font-heading text-xl font-bold text-text-primary">Recent Users</h2>
-            <Button variant="secondary" size="sm">View All</Button>
+      <section
+        className="rounded-2xl p-5 sm:p-6"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-rest)' }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-base font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              User Directory
+            </h2>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Per-user administration is out of scope for this build.
+            </p>
           </div>
-          <Card className="overflow-hidden p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-surface-2" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <tr>
-                    {['Name', 'Role', 'Status', 'Joined', ''].map(header => <th key={header} className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-text-muted">{header}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { name: 'Live user list endpoint pending', role: 'Admin', status: 'active', joined: 'N/A' },
-                  ].map(user => (
-                    <tr key={user.name} className="border-b hover:bg-surface-2" style={{ borderColor: 'var(--border)' }}>
-                      <td className="px-5 py-3.5"><p className="font-semibold text-text-primary">{user.name}</p></td>
-                      <td className="px-5 py-3.5"><Badge color="lavender" size="sm">{user.role}</Badge></td>
-                      <td className="px-5 py-3.5"><span className="flex items-center gap-1.5 font-semibold text-accent-mint-fg"><CheckCircle2 className="h-3.5 w-3.5" />{user.status}</span></td>
-                      <td className="px-5 py-3.5 text-text-secondary">{user.joined}</td>
-                      <td className="px-5 py-3.5 text-right"><MoreHorizontal className="inline h-4 w-4 text-text-muted" /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          <Badge color="sun" size="sm">Endpoint not implemented</Badge>
         </div>
-
-        <div className="space-y-4">
-          <h2 className="font-heading text-xl font-bold text-text-primary">Quick Actions</h2>
-          {['View Reports', 'Manage Tutors', 'View Analytics', 'System Settings'].map((label, index) => {
-            const color = ['lavender', 'sky', 'mint', 'sun'][index]
-            return (
-              <Card key={label} hover className="flex cursor-pointer items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}><Zap className="h-4 w-4" /></div>
-                  <span className="text-sm font-semibold text-text-primary">{label}</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-text-muted" />
-              </Card>
-            )
-          })}
-        </div>
-      </div>
+        <p className="mt-4 max-w-[70ch] text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          The dashboard module exposes aggregate counts only (<code>/dashboard/admin-metrics</code>). A listing view will
+          require a paginated users endpoint with an admin guard before it can show anything real.
+        </p>
+      </section>
     </div>
   )
 }
