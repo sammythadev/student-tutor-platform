@@ -1165,8 +1165,8 @@
     "semantic_hash": ""
   },
   "frontend/components/DashboardHero.tsx": {
-    "mtime": 1786029808.384518,
-    "ast_hash": "8468f6e9ecf6e989b442767c3b39e7c7",
+    "mtime": 1786037942.3080466,
+    "ast_hash": "dbb6b1dc5c4d190054f7c82c0376807c",
     "semantic_hash": ""
   },
   "frontend/components/Dropdown.tsx": {
