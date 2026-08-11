@@ -57,6 +57,13 @@
       "when": 1782580611432,
       "tag": "0007_kind_lightspeed",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786462085187,
+      "tag": "0008_cynical_nick_fury",
+      "breakpoints": true
     }
   ]
 }

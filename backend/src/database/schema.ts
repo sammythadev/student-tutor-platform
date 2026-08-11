@@ -31,6 +31,7 @@ export const learningStyleEnum = pgEnum('learning_style', [
   'mixed',
 ]);
 export const teachingStyleEnum = pgEnum('teaching_style', ['interactive', 'lecture']);
+export const learningPaceEnum = pgEnum('learning_pace', ['fast', 'moderate', 'steady']);
 export const scheduleSlotStatusEnum = pgEnum('schedule_slot_status', [
   'available',
   'booked',
@@ -124,6 +125,7 @@ export const studentProfiles = pgTable(
     deliveryPreference: deliveryModeEnum('delivery_preference'),
     formatPreference: formatPreferenceEnum('format_preference'),
     learningStylePreference: learningStyleEnum('learning_style_preference'),
+    learningPace: learningPaceEnum('learning_pace'),
     languages: text('languages')
       .array()
       .notNull()
@@ -174,6 +176,7 @@ export const tutorProfiles = pgTable(
       .default(sql`ARRAY[]::text[]`),
     region: text('region'),
     teachingStyle: teachingStyleEnum('teaching_style'),
+    teachingPace: learningPaceEnum('teaching_pace'),
     deliveryStyle: deliveryModeEnum('delivery_style'),
     formatStyle: formatPreferenceEnum('format_style'),
     avgRating: numeric('avg_rating', { precision: 3, scale: 2, mode: 'number' }),

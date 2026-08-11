@@ -5,6 +5,7 @@ import { Card } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { Input, Select } from '@/components/Input'
 import { logout } from '@/lib/api/auth'
+import type { DeliveryMode, FormatPreference, LearningPace, TeachingStyle } from '@/lib/api/auth'
 import { getMe, updateMe, type UpdateMePayload } from '@/lib/api/users'
 import { apiErrorText } from '@/lib/api/errors'
 import { useAuthStore } from '@/lib/store/authStore'
@@ -34,7 +35,7 @@ export default function SettingsPage() {
     region: authUser?.region ?? '',
     timezone: authUser?.timezone ?? 'Africa/Lagos',
     language: authUser?.language ?? 'English',
-    theme: authUser?.theme ?? 'dark',
+    theme: authUser?.theme ?? 'light',
     accentColor: authUser?.accentColor ?? 'lavender',
     notificationPrefs: authUser?.notificationPrefs ?? {
       sessionReminders: true,
@@ -51,6 +52,11 @@ export default function SettingsPage() {
     learningGoals: studentProfile?.learningGoals ?? '',
     budget: studentProfile?.budget ?? '',
     subjects: studentProfile?.subjects?.join(', ') ?? '',
+    learningStylePreference: studentProfile?.learningStylePreference ?? '',
+    learningPace: studentProfile?.learningPace ?? '',
+    deliveryPreference: studentProfile?.deliveryPreference ?? '',
+    formatPreference: studentProfile?.formatPreference ?? '',
+    languages: studentProfile?.languages?.join(', ') ?? '',
   })
 
   // Tutor State
@@ -58,6 +64,11 @@ export default function SettingsPage() {
     bio: tutorProfile?.bio ?? '',
     hourlyRate: tutorProfile?.hourlyRate ?? '',
     subjectsTaught: tutorProfile?.subjectsTaught?.join(', ') ?? '',
+    teachingStyle: tutorProfile?.teachingStyle ?? '',
+    teachingPace: tutorProfile?.teachingPace ?? '',
+    deliveryStyle: tutorProfile?.deliveryStyle ?? '',
+    formatStyle: tutorProfile?.formatStyle ?? '',
+    languages: tutorProfile?.languages?.join(', ') ?? '',
   })
 
   useEffect(() => {
@@ -71,7 +82,7 @@ export default function SettingsPage() {
         region: user.region ?? '',
         timezone: user.timezone ?? 'Africa/Lagos',
         language: user.language ?? 'English',
-        theme: user.theme ?? 'dark',
+        theme: user.theme ?? 'light',
         accentColor: user.accentColor ?? 'lavender',
         notificationPrefs: user.notificationPrefs ?? prev.notificationPrefs,
       }))
@@ -81,6 +92,11 @@ export default function SettingsPage() {
           learningGoals: data.studentProfile.learningGoals ?? '',
           budget: data.studentProfile.budget ?? '',
           subjects: data.studentProfile.subjects?.join(', ') ?? '',
+          learningStylePreference: data.studentProfile.learningStylePreference ?? '',
+          learningPace: data.studentProfile.learningPace ?? '',
+          deliveryPreference: data.studentProfile.deliveryPreference ?? '',
+          formatPreference: data.studentProfile.formatPreference ?? '',
+          languages: data.studentProfile.languages?.join(', ') ?? '',
         })
       }
       if (data.tutorProfile) {
@@ -88,6 +104,11 @@ export default function SettingsPage() {
           bio: data.tutorProfile.bio ?? '',
           hourlyRate: data.tutorProfile.hourlyRate ?? '',
           subjectsTaught: data.tutorProfile.subjectsTaught?.join(', ') ?? '',
+          teachingStyle: data.tutorProfile.teachingStyle ?? '',
+          teachingPace: data.tutorProfile.teachingPace ?? '',
+          deliveryStyle: data.tutorProfile.deliveryStyle ?? '',
+          formatStyle: data.tutorProfile.formatStyle ?? '',
+          languages: data.tutorProfile.languages?.join(', ') ?? '',
         })
       }
     }).catch(() => undefined)
@@ -124,12 +145,26 @@ export default function SettingsPage() {
           learningGoals: studentFormData.learningGoals,
           budget: studentFormData.budget ? Number(studentFormData.budget) : undefined,
           subjects: studentFormData.subjects.split(',').map(s => s.trim()).filter(Boolean),
+          learningStylePreference: studentFormData.learningStylePreference || undefined,
+          learningPace: (studentFormData.learningPace || undefined) as LearningPace | undefined,
+          deliveryPreference: (studentFormData.deliveryPreference || undefined) as DeliveryMode | undefined,
+          formatPreference: (studentFormData.formatPreference || undefined) as FormatPreference | undefined,
+          languages: studentFormData.languages.trim()
+            ? studentFormData.languages.split(',').map(s => s.trim()).filter(Boolean)
+            : undefined,
         })
       } else if (activeTab === 'tutor-prefs') {
         const { updateTutorPreferences } = await import('@/lib/api/users')
         await updateTutorPreferences({
           bio: tutorFormData.bio,
           subjectsTaught: tutorFormData.subjectsTaught.split(',').map(s => s.trim()).filter(Boolean),
+          teachingStyle: (tutorFormData.teachingStyle || undefined) as TeachingStyle | undefined,
+          teachingPace: (tutorFormData.teachingPace || undefined) as LearningPace | undefined,
+          deliveryStyle: (tutorFormData.deliveryStyle || undefined) as DeliveryMode | undefined,
+          formatStyle: (tutorFormData.formatStyle || undefined) as FormatPreference | undefined,
+          languages: tutorFormData.languages.trim()
+            ? tutorFormData.languages.split(',').map(s => s.trim()).filter(Boolean)
+            : undefined,
         })
       }
       setMessage('Settings saved.')
@@ -194,6 +229,27 @@ export default function SettingsPage() {
               <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Student Preferences</h2>
               <div className="max-w-xl space-y-5">
                 <Input label="Subjects (comma separated)" name="subjects" value={studentFormData.subjects} onChange={event => setStudentFormData(prev => ({ ...prev, subjects: event.target.value }))} />
+                <Input label="Languages (comma separated)" name="languages" value={studentFormData.languages} onChange={event => setStudentFormData(prev => ({ ...prev, languages: event.target.value }))} />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Select label="Learning style" name="learningStylePreference" value={studentFormData.learningStylePreference} onChange={event => setStudentFormData(prev => ({ ...prev, learningStylePreference: event.target.value }))} placeholder="Select style" options={[
+                    { value: 'visual', label: 'Visual (diagrams, videos)' },
+                    { value: 'auditory', label: 'Auditory (discussion, lectures)' },
+                    { value: 'kinesthetic', label: 'Kinesthetic (hands-on practice)' },
+                  ]} />
+                  <Select label="Learning pace" name="learningPace" value={studentFormData.learningPace} onChange={event => setStudentFormData(prev => ({ ...prev, learningPace: event.target.value }))} placeholder="Select pace" options={[
+                    { value: 'fast', label: 'Fast (move quickly)' },
+                    { value: 'moderate', label: 'Moderate (balanced)' },
+                    { value: 'steady', label: 'Steady (take my time)' },
+                  ]} />
+                  <Select label="Delivery" name="deliveryPreference" value={studentFormData.deliveryPreference} onChange={event => setStudentFormData(prev => ({ ...prev, deliveryPreference: event.target.value }))} placeholder="Online or in person?" options={[
+                    { value: 'online', label: 'Online' },
+                    { value: 'in-person', label: 'In person' },
+                  ]} />
+                  <Select label="Format" name="formatPreference" value={studentFormData.formatPreference} onChange={event => setStudentFormData(prev => ({ ...prev, formatPreference: event.target.value }))} placeholder="Session format" options={[
+                    { value: 'one-on-one', label: 'One-on-one' },
+                    { value: 'group', label: 'Group' },
+                  ]} />
+                </div>
                 <Input label="Bio" name="bio" value={studentFormData.bio} onChange={event => setStudentFormData(prev => ({ ...prev, bio: event.target.value }))} />
                 <Input label="Learning Goals" name="learningGoals" value={studentFormData.learningGoals} onChange={event => setStudentFormData(prev => ({ ...prev, learningGoals: event.target.value }))} />
                 <Input label="Budget (₦)" type="number" name="budget" value={studentFormData.budget} onChange={event => setStudentFormData(prev => ({ ...prev, budget: event.target.value }))} />
@@ -207,6 +263,26 @@ export default function SettingsPage() {
               <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Tutor Preferences</h2>
               <div className="max-w-xl space-y-5">
                 <Input label="Subjects Taught (comma separated)" name="subjectsTaught" value={tutorFormData.subjectsTaught} onChange={event => setTutorFormData(prev => ({ ...prev, subjectsTaught: event.target.value }))} />
+                <Input label="Languages (comma separated)" name="languages" value={tutorFormData.languages} onChange={event => setTutorFormData(prev => ({ ...prev, languages: event.target.value }))} />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Select label="Teaching style" name="teachingStyle" value={tutorFormData.teachingStyle} onChange={event => setTutorFormData(prev => ({ ...prev, teachingStyle: event.target.value }))} placeholder="Select style" options={[
+                    { value: 'interactive', label: 'Interactive (discussion-based)' },
+                    { value: 'lecture', label: 'Lecture (structured delivery)' },
+                  ]} />
+                  <Select label="Teaching pace" name="teachingPace" value={tutorFormData.teachingPace} onChange={event => setTutorFormData(prev => ({ ...prev, teachingPace: event.target.value }))} placeholder="Select pace" options={[
+                    { value: 'fast', label: 'Fast (move quickly)' },
+                    { value: 'moderate', label: 'Moderate (balanced)' },
+                    { value: 'steady', label: 'Steady (thorough, unrushed)' },
+                  ]} />
+                  <Select label="Delivery" name="deliveryStyle" value={tutorFormData.deliveryStyle} onChange={event => setTutorFormData(prev => ({ ...prev, deliveryStyle: event.target.value }))} placeholder="How do you teach?" options={[
+                    { value: 'online', label: 'Online' },
+                    { value: 'in-person', label: 'In person' },
+                  ]} />
+                  <Select label="Format" name="formatStyle" value={tutorFormData.formatStyle} onChange={event => setTutorFormData(prev => ({ ...prev, formatStyle: event.target.value }))} placeholder="Session format" options={[
+                    { value: 'one-on-one', label: 'One-on-one' },
+                    { value: 'group', label: 'Group' },
+                  ]} />
+                </div>
                 <Input label="Bio" name="bio" value={tutorFormData.bio} onChange={event => setTutorFormData(prev => ({ ...prev, bio: event.target.value }))} />
                 <Input label="Hourly Rate (₦) - Updating not supported via this form yet" name="hourlyRate" value={tutorFormData.hourlyRate} disabled />
                 <Button onClick={save} loading={saving}>Save Tutor Preferences</Button>

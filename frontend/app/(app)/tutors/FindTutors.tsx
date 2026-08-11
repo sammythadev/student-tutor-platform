@@ -414,7 +414,7 @@ export function FindTutors() {
               {/* Score + actions */}
               <div className="flex flex-shrink-0 items-center gap-5 md:flex-col md:items-stretch md:gap-4">
                 <div className="flex items-center gap-3 md:justify-center">
-                  <MatchRing pct={matchPct} accent={strength.accent} size={64} stroke={5} />
+                  <MatchRing pct={matchPct} accent={strength.accent} size={64} stroke={5} onDark />
                   <div className="md:hidden">
                     <p className="text-sm font-bold" style={{ color: '#F4F0E8' }}>{strength.label}</p>
                     <p className="text-xs" style={{ color: '#AEB6AA' }}>fit for your profile</p>

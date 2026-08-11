@@ -54,6 +54,7 @@ export class UsersRepository {
           deliveryPreference: dto.studentProfile.deliveryPreference,
           formatPreference: dto.studentProfile.formatPreference,
           learningStylePreference: dto.studentProfile.learningStylePreference,
+          learningPace: dto.studentProfile.learningPace,
           languages: dto.studentProfile.languages ?? [],
           subjectSpecialization: dto.studentProfile.subjectSpecialization,
           region: dto.studentProfile.region ?? dto.region,
@@ -74,6 +75,7 @@ export class UsersRepository {
           teachingStyle: dto.tutorProfile.teachingStyle,
           deliveryStyle: dto.tutorProfile.deliveryStyle,
           formatStyle: dto.tutorProfile.formatStyle,
+          teachingPace: dto.tutorProfile.teachingPace,
           hourlyRate: dto.tutorProfile.hourlyRate,
           capacity: dto.tutorProfile.capacity,
         });
@@ -124,6 +126,7 @@ export class UsersRepository {
           deliveryPreference: sp.deliveryPreference,
           formatPreference: sp.formatPreference,
           learningStylePreference: sp.learningStylePreference,
+          learningPace: sp.learningPace,
           subjectSpecialization: sp.subjectSpecialization,
           region: sp.region,
         });
@@ -159,6 +162,7 @@ export class UsersRepository {
           teachingStyle: tp.teachingStyle,
           deliveryStyle: tp.deliveryStyle,
           formatStyle: tp.formatStyle,
+          teachingPace: tp.teachingPace,
           // IMPORTANT: default capacity to 5 so new tutors are always eligible in matchmaking
           capacity: tp.capacity ?? 5,
         });
@@ -210,6 +214,7 @@ export class UsersRepository {
     if (dto.formatPreference !== undefined) updatePayload.formatPreference = dto.formatPreference;
     if (dto.learningStylePreference !== undefined)
       updatePayload.learningStylePreference = dto.learningStylePreference;
+    if (dto.learningPace !== undefined) updatePayload.learningPace = dto.learningPace;
     if (dto.languages !== undefined) updatePayload.languages = dto.languages;
     if (dto.subjectSpecialization !== undefined)
       updatePayload.subjectSpecialization = dto.subjectSpecialization;
@@ -241,6 +246,7 @@ export class UsersRepository {
     if (dto.experienceYears !== undefined) updatePayload.experienceYears = dto.experienceYears;
     if (dto.languages !== undefined) updatePayload.languages = dto.languages;
     if (dto.teachingStyle !== undefined) updatePayload.teachingStyle = dto.teachingStyle;
+    if (dto.teachingPace !== undefined) updatePayload.teachingPace = dto.teachingPace;
     if (dto.deliveryStyle !== undefined) updatePayload.deliveryStyle = dto.deliveryStyle;
     if (dto.formatStyle !== undefined) updatePayload.formatStyle = dto.formatStyle;
     if (dto.capacity !== undefined) updatePayload.capacity = dto.capacity;

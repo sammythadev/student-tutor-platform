@@ -1,5 +1,6 @@
 import api from '@/lib/axios'
 import { useAuthStore } from '@/lib/store/authStore'
+import type { DeliveryMode, FormatPreference, LearningPace, TeachingStyle } from '@/lib/api/auth'
 
 export async function getMe() {
   const user = useAuthStore.getState().user
@@ -97,6 +98,11 @@ export interface StudentPreferencesPayload {
   learningGoals?: string
   budget?: number
   region?: string
+  learningStylePreference?: string
+  learningPace?: LearningPace
+  deliveryPreference?: DeliveryMode
+  formatPreference?: FormatPreference
+  languages?: string[]
 }
 
 export interface TutorPreferencesPayload {
@@ -108,6 +114,11 @@ export interface TutorPreferencesPayload {
   capacity?: number
   bio?: string
   region?: string
+  teachingStyle?: TeachingStyle
+  teachingPace?: LearningPace
+  deliveryStyle?: DeliveryMode
+  formatStyle?: FormatPreference
+  languages?: string[]
 }
 
 /** Mirrors backend CandidateTutorDto. Do not add fields the backend does not send. */

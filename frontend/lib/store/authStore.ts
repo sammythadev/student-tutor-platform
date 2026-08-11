@@ -1,6 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+// Preference unions — mirror the same-named types in lib/api/auth.ts. Declared
+// locally to keep the store free of an import cycle (auth.ts imports this store).
+type LearningPace = 'fast' | 'moderate' | 'steady'
+type TeachingStyle = 'interactive' | 'lecture'
+type DeliveryMode = 'online' | 'in-person'
+type FormatPreference = 'one-on-one' | 'group'
+
 export interface UserProfile {
   id: string
   email: string
@@ -37,6 +44,11 @@ export interface StudentProfile {
   streakDays: number
   budget: string | null
   region: string | null
+  learningStylePreference?: string | null
+  learningPace?: LearningPace | null
+  deliveryPreference?: DeliveryMode | null
+  formatPreference?: FormatPreference | null
+  languages?: string[] | null
 }
 
 export interface TutorProfile {
@@ -53,6 +65,11 @@ export interface TutorProfile {
   studentsCount: number
   bio: string | null
   region: string | null
+  teachingStyle?: TeachingStyle | null
+  teachingPace?: LearningPace | null
+  deliveryStyle?: DeliveryMode | null
+  formatStyle?: FormatPreference | null
+  languages?: string[] | null
 }
 
 interface AuthState {

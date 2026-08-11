@@ -13,7 +13,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { DeliveryMode, FormatPreference, TeachingStyle } from '@core/enums';
+import { DeliveryMode, FormatPreference, LearningPace, TeachingStyle } from '@core/enums';
 import { learningStyleEnum } from '@database';
 import { UserRole } from '@modules/users/dtos/create-user.dto';
 
@@ -102,6 +102,11 @@ export class OnboardStudentDto {
   @IsIn(learningStyleEnum.enumValues)
   learningStylePreference?: LearningStylePreference;
 
+  @ApiPropertyOptional({ example: 'fast', enum: LearningPace })
+  @IsOptional()
+  @IsEnum(LearningPace)
+  learningPace?: LearningPace;
+
   @ApiPropertyOptional({ example: 'algebra' })
   @IsOptional()
   @IsString()
@@ -171,6 +176,11 @@ export class OnboardTutorDto {
   @IsOptional()
   @IsEnum(TeachingStyle)
   teachingStyle?: TeachingStyle;
+
+  @ApiPropertyOptional({ example: 'fast', enum: LearningPace })
+  @IsOptional()
+  @IsEnum(LearningPace)
+  teachingPace?: LearningPace;
 
   @ApiPropertyOptional({ example: 'online', enum: DeliveryMode })
   @IsOptional()

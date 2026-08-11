@@ -3,13 +3,15 @@
 import Waves from '@/components/reactbits/Waves'
 
 /**
- * HeroFilaments — the bespoke ambient layer for the dashboard hero.
+ * HeroFilaments — the ambient wave layer for the dashboard hero.
  *
- * Two stacked React Bits <Waves> fields (canvas line-work) woven at different
- * gaps and speeds for parallax depth — a slow "engraved current" reminiscent of
- * the guilloché line-work on certificates and banknotes, tuned to the Scholarly
- * Ivy palette. Decorative only, never blocks interaction, and fully static under
- * reduced motion (the hero already carries a dot-grid + grain for that case).
+ * Two stacked React Bits <Waves> fields (canvas line-work) tuned to the React
+ * Bits demo: a dense base line-field flowing on perlin noise with live cursor
+ * spring interaction (move the mouse and the lines bend toward it), plus a
+ * sparser highlight woven behind it for parallax depth. Colours follow the
+ * Scholarly Ivy palette so it reads on the always-dark hero band. Decorative
+ * only, never blocks interaction, and fully static under reduced motion (the
+ * hero already carries a dot-grid + grain for that case).
  */
 
 interface WaveLayer {
@@ -22,17 +24,19 @@ interface WaveLayer {
   waveAmpY: number
 }
 
-// Per tone: a denser base line-field + a sparser highlight for depth.
+// Per tone: a dense React-Bits-style base field + a sparser highlight for depth.
+// Base gaps/speed/amp track the React Bits defaults (xGap 10, yGap 32,
+// waveSpeedX 0.0125, waveAmpX 32) so it flows like the demo, not an engraving.
 const LAYERS: Record<'primary' | 'accent', [WaveLayer, WaveLayer]> = {
-  // Pine hero → warm brass engraving threaded with a soft mint highlight.
+  // Pine hero → warm brass line-field threaded with a soft mint highlight.
   primary: [
-    { lineColor: 'rgba(201,162,75,0.30)', xGap: 24, yGap: 34, waveSpeedX: 0.009, waveSpeedY: 0.0035, waveAmpX: 40, waveAmpY: 20 },
-    { lineColor: 'rgba(150,210,180,0.16)', xGap: 46, yGap: 40, waveSpeedX: 0.006, waveSpeedY: 0.0025, waveAmpX: 30, waveAmpY: 14 },
+    { lineColor: 'rgba(201,162,75,0.30)', xGap: 12, yGap: 32, waveSpeedX: 0.0125, waveSpeedY: 0.005, waveAmpX: 32, waveAmpY: 16 },
+    { lineColor: 'rgba(150,210,180,0.14)', xGap: 30, yGap: 38, waveSpeedX: 0.008, waveSpeedY: 0.0035, waveAmpX: 26, waveAmpY: 13 },
   ],
-  // Brass hero → ivory engraving threaded with a brighter brass highlight.
+  // Brass hero → ivory line-field threaded with a brighter brass highlight.
   accent: [
-    { lineColor: 'rgba(244,240,232,0.22)', xGap: 24, yGap: 34, waveSpeedX: 0.009, waveSpeedY: 0.0035, waveAmpX: 40, waveAmpY: 20 },
-    { lineColor: 'rgba(230,200,126,0.20)', xGap: 46, yGap: 40, waveSpeedX: 0.006, waveSpeedY: 0.0025, waveAmpX: 30, waveAmpY: 14 },
+    { lineColor: 'rgba(244,240,232,0.22)', xGap: 12, yGap: 32, waveSpeedX: 0.0125, waveSpeedY: 0.005, waveAmpX: 32, waveAmpY: 16 },
+    { lineColor: 'rgba(230,200,126,0.18)', xGap: 30, yGap: 38, waveSpeedX: 0.008, waveSpeedY: 0.0035, waveAmpX: 26, waveAmpY: 13 },
   ],
 }
 
@@ -41,8 +45,8 @@ export function HeroFilaments({ tone, reduce }: { tone: 'primary' | 'accent'; re
   const [base, highlight] = LAYERS[tone]
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      <Waves {...base} backgroundColor="transparent" style={{ maskImage: 'linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent)' }} />
-      <Waves {...highlight} backgroundColor="transparent" style={{ maskImage: 'linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent)' }} />
+      <Waves {...highlight} backgroundColor="transparent" style={{ maskImage: 'linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent)' }} />
+      <Waves {...base} backgroundColor="transparent" style={{ maskImage: 'linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)' }} />
     </div>
   )
 }

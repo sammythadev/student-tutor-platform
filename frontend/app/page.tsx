@@ -22,12 +22,12 @@ gsap.registerPlugin(ScrollTrigger)
    Theme Toggle
 ────────────────────────────────────────────────────────── */
 function ThemeToggle() {
-  const [isDark, setIsDark] = useState(true)
+  const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('tutorly-theme')
-    const prefersDark = globalThis.matchMedia('(prefers-color-scheme: dark)').matches
-    const dark = saved ? saved === 'dark' : prefersDark
+    // Light is the default; only go dark when explicitly saved.
+    const dark = saved === 'dark'
     setIsDark(dark)
     document.documentElement.classList.toggle('dark-mode', dark)
     document.documentElement.classList.toggle('light-mode', !dark)

@@ -11,7 +11,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
+import { DeliveryMode, FormatPreference, LearningPace, LearningStyle, TeachingStyle } from '@core/enums';
 import { PreferenceWeightsDto } from './create-user.dto';
 
 export class NotificationPrefsDto {
@@ -110,6 +110,11 @@ export class UpdateStudentPreferencesDto {
   @IsEnum(LearningStyle)
   learningStylePreference?: LearningStyle;
 
+  @ApiPropertyOptional({ enum: LearningPace })
+  @IsOptional()
+  @IsEnum(LearningPace)
+  learningPace?: LearningPace;
+
   @ApiPropertyOptional({ example: ['english'] })
   @IsOptional()
   @IsArray()
@@ -167,6 +172,11 @@ export class UpdateTutorPreferencesDto {
   @IsOptional()
   @IsEnum(TeachingStyle)
   teachingStyle?: TeachingStyle;
+
+  @ApiPropertyOptional({ enum: LearningPace })
+  @IsOptional()
+  @IsEnum(LearningPace)
+  teachingPace?: LearningPace;
 
   @ApiPropertyOptional({ enum: DeliveryMode })
   @IsOptional()

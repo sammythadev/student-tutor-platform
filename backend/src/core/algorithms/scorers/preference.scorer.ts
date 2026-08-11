@@ -1,4 +1,4 @@
-import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
+import { DeliveryMode, FormatPreference, LearningPace, LearningStyle, TeachingStyle } from '@core/enums';
 import type { AlgorithmWeights, Student, Tutor } from '@core/entities';
 import { cosineSimilarity, oneHot } from '../utils/vector-math';
 
@@ -70,6 +70,8 @@ export class PreferenceScorer {
       ...oneHot(student.deliveryPreference, Object.values(DeliveryMode)),
       ...oneHot(student.formatPreference, Object.values(FormatPreference)),
       ...oneHot(student.learningStylePreference, Object.values(LearningStyle)),
+      // Pace is matched directly (same enum both sides) — no teaching→learning translation.
+      ...oneHot(student.learningPace, Object.values(LearningPace)),
     ];
   }
 
@@ -78,6 +80,8 @@ export class PreferenceScorer {
       ...oneHot(tutor.deliveryStyle, Object.values(DeliveryMode)),
       ...oneHot(tutor.formatStyle, Object.values(FormatPreference)),
       ...oneHot(this.teachingToLearningStyle(tutor.teachingStyle), Object.values(LearningStyle)),
+      // Positions align with studentVector's pace block (both iterate Object.values(LearningPace)).
+      ...oneHot(tutor.teachingPace, Object.values(LearningPace)),
     ];
   }
 

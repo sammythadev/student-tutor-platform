@@ -59,17 +59,18 @@ export function Modal({ isOpen, title, children, onClose, actions, size = 'md' }
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
         <div
           className={`
-            glass-card-strong w-full ${sizeClasses[size]} p-6
+            glass-card-strong w-full ${sizeClasses[size]} my-auto
+            flex max-h-[calc(100dvh-2rem)] flex-col
             transition-all duration-200
             ${isExiting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
           `}
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between shrink-0 p-6 pb-4">
             <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-900)' }}>
               {title}
             </h2>
@@ -82,13 +83,13 @@ export function Modal({ isOpen, title, children, onClose, actions, size = 'md' }
           </div>
 
           {/* Content */}
-          <div className="mb-6">
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
             {children}
           </div>
 
           {/* Actions */}
           {actions && (
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center justify-end gap-3 shrink-0 border-t px-6 py-4" style={{ borderColor: 'var(--border)' }}>
               {actions}
             </div>
           )}

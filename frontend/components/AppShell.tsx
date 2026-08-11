@@ -102,7 +102,7 @@ function PageTransition({ children, pageKey }: { children: ReactNode; pageKey: s
 export function AppShell({ children, currentPage, userRole = 'student' }: AppShellProps) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false)
   const [sidebarCollapsed,  setSidebarCollapsed]  = useState(false)
-  const [themeMode,         setThemeMode]         = useState<ThemeMode>('system')
+  const [themeMode,         setThemeMode]         = useState<ThemeMode>('light')
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [moreOpen,          setMoreOpen]          = useState(false)
   const [unreadCount,       setUnreadCount]       = useState(0)
@@ -122,7 +122,8 @@ export function AppShell({ children, currentPage, userRole = 'student' }: AppShe
   /* Theme init */
   useEffect(() => {
     const saved = localStorage.getItem('tutorly-theme') as ThemeMode | null
-    const mode: ThemeMode = (saved === 'dark' || saved === 'light' || saved === 'system') ? saved : 'system'
+    // Light is the default when the user hasn't chosen; dark/system stay opt-in.
+    const mode: ThemeMode = (saved === 'dark' || saved === 'light' || saved === 'system') ? saved : 'light'
     setThemeMode(mode)
     applyTheme(mode)
     const mq = window.matchMedia('(prefers-color-scheme: dark)')

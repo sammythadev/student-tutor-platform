@@ -13,7 +13,7 @@ import {
   GreedyAssignmentEngine,
   TopKRanker,
 } from '@core/algorithms';
-import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
+import { DeliveryMode, FormatPreference, LearningPace, LearningStyle, TeachingStyle } from '@core/enums';
 import { AvailabilitySlot, type Student, type Tutor } from '@core/entities';
 import type { AuthenticatedUser } from '@common/auth';
 import {
@@ -485,6 +485,7 @@ export class MatchmakingService {
       deliveryPreference: row.profile.deliveryPreference as DeliveryMode | undefined,
       formatPreference: row.profile.formatPreference as FormatPreference | undefined,
       learningStylePreference: row.profile.learningStylePreference as LearningStyle | undefined,
+      learningPace: row.profile.learningPace as LearningPace | undefined,
       languages: row.profile.languages,
       subjectSpecialization: row.profile.subjectSpecialization ?? undefined,
       region: row.profile.region ?? row.user.region ?? undefined,
@@ -503,6 +504,7 @@ export class MatchmakingService {
       experienceYears: row.profile.experienceYears,
       languages: row.profile.languages,
       teachingStyle: row.profile.teachingStyle as TeachingStyle | undefined,
+      teachingPace: row.profile.teachingPace as LearningPace | undefined,
       deliveryStyle: row.profile.deliveryStyle as DeliveryMode | undefined,
       formatStyle: row.profile.formatStyle as FormatPreference | undefined,
       avgRating: row.profile.avgRating === null ? null : Number(row.profile.avgRating),

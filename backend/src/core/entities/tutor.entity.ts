@@ -1,4 +1,4 @@
-import type { DeliveryMode, FormatPreference, TeachingStyle } from '@core/enums';
+import type { DeliveryMode, FormatPreference, LearningPace, TeachingStyle } from '@core/enums';
 import type { AvailabilitySlot } from './availability-slot.vo';
 
 export interface Tutor {
@@ -10,6 +10,8 @@ export interface Tutor {
   experienceYears: number;
   languages: string[];
   teachingStyle?: TeachingStyle;
+  /** How fast the tutor paces material — matched directly to a student's learningPace. */
+  teachingPace?: LearningPace;
   deliveryStyle?: DeliveryMode;
   formatStyle?: FormatPreference;
   avgRating: number | null;

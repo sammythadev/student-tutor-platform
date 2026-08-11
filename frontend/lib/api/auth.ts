@@ -9,6 +9,8 @@ export interface SignupPayload { email: string; password: string; firstName: str
 export type TeachingStyle = 'interactive' | 'lecture'
 export type DeliveryMode = 'online' | 'in-person'
 export type FormatPreference = 'one-on-one' | 'group'
+// How fast a person learns/teaches. Same values both sides — matched directly (Algorithm.md §2.1).
+export type LearningPace = 'fast' | 'moderate' | 'steady'
 
 export interface AvailabilitySlot { start: string; end: string }
 
@@ -19,6 +21,7 @@ export interface StudentOnboardPayload {
   requestedAvailability: AvailabilitySlot[]
   budget?: number
   learningStylePreference?: string
+  learningPace?: LearningPace
   deliveryPreference?: DeliveryMode
   formatPreference?: FormatPreference
   languages?: string[]
@@ -40,6 +43,7 @@ export interface TutorOnboardPayload {
   experienceYears?: number
   languages?: string[]
   teachingStyle?: TeachingStyle
+  teachingPace?: LearningPace
   deliveryStyle?: DeliveryMode
   formatStyle?: FormatPreference
   capacity?: number

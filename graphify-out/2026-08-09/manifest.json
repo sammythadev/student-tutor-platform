@@ -1165,8 +1165,8 @@
     "semantic_hash": ""
   },
   "frontend/components/DashboardHero.tsx": {
-    "mtime": 1786038452.0042713,
-    "ast_hash": "8b14c5a4c29923cdf9a02212df50341f",
+    "mtime": 1786037942.3080466,
+    "ast_hash": "dbb6b1dc5c4d190054f7c82c0376807c",
     "semantic_hash": ""
   },
   "frontend/components/Dropdown.tsx": {
@@ -1997,16 +1997,6 @@
   "frontend/public/signin-hero.jpg": {
     "mtime": 1786034230.0049558,
     "ast_hash": "1ea2905a3e09ab234ab3ac739ca03c30",
-    "semantic_hash": ""
-  },
-  "frontend/components/HeroFilaments.tsx": {
-    "mtime": 1786259470.262632,
-    "ast_hash": "ad013b17dca773dc8e9e3c55baadb826",
-    "semantic_hash": ""
-  },
-  "frontend/components/reactbits/Waves.tsx": {
-    "mtime": 1786259446.8243217,
-    "ast_hash": "c0284335008e34616b08578970d1a7a7",
     "semantic_hash": ""
   }
 }

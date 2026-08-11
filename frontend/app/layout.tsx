@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'dark light',
+  colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: dark)',  color: '#07090F' },
     { media: '(prefers-color-scheme: light)', color: '#F8FAFC' },
+    { media: '(prefers-color-scheme: dark)',  color: '#07090F' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="font-sans"
+      className="font-sans light-mode"
       suppressHydrationWarning
     >
       <body className="font-sans antialiased bg-canvas text-text-primary transition-colors duration-200">

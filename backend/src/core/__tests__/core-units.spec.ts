@@ -11,7 +11,7 @@ import {
   oneHot,
 } from '@core/algorithms';
 import { AlgorithmWeights, AvailabilitySlot, type Student, type Tutor } from '@core/entities';
-import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
+import { DeliveryMode, FormatPreference, LearningPace, LearningStyle, TeachingStyle } from '@core/enums';
 
 const defaultWeights = AlgorithmWeights.defaults();
 
@@ -95,6 +95,27 @@ describe('PreferenceScorer', () => {
       }),
     );
     expect(s).toBeCloseTo(2 / 3);
+  });
+
+  it('pace: a matching pace preserves style, a mismatch lowers it, both-unset is unchanged', () => {
+    // Factory students/tutors leave pace unset → all-zero pace block on both sides.
+    const bothUnset = scorer.styleSimilarity(student(), tutor());
+    const matchedPace = scorer.styleSimilarity(
+      student({ learningPace: LearningPace.FAST }),
+      tutor({ teachingPace: LearningPace.FAST }),
+    );
+    const mismatchedPace = scorer.styleSimilarity(
+      student({ learningPace: LearningPace.FAST }),
+      tutor({ teachingPace: LearningPace.STEADY }),
+    );
+
+    // All other style dims already match, so a matching pace stays at full similarity...
+    expect(matchedPace).toBeCloseTo(1);
+    // ...and equals the both-unset baseline: an all-zero pace block changes nothing.
+    expect(matchedPace).toBeCloseTo(bothUnset);
+    // A mismatched pace is a real, lower signal (dot=3, |s|=|t|=2 → 0.75).
+    expect(mismatchedPace).toBeLessThan(matchedPace);
+    expect(mismatchedPace).toBeCloseTo(0.75);
   });
 
   it('returns budget=1 when hourly rate is within budget', () => {

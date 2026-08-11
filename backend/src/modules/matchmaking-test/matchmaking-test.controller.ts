@@ -3,7 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { eq, inArray } from 'drizzle-orm';
 import { GreedyAssignmentEngine } from '@core/algorithms';
 import { AvailabilitySlot, type Student, type Tutor } from '@core/entities';
-import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
+import { DeliveryMode, FormatPreference, LearningPace, LearningStyle, TeachingStyle } from '@core/enums';
 import {
   DATABASE,
   type AppDatabase,
@@ -123,6 +123,7 @@ export class MatchmakingTestController {
       deliveryPreference: DeliveryMode.ONLINE,
       formatPreference: FormatPreference.ONE_ON_ONE,
       learningStylePreference: LearningStyle.AUDITORY,
+      learningPace: LearningPace.FAST,
       languages: ['english'],
       subjectSpecialization: 'algebra',
       region: 'Lagos',
@@ -139,6 +140,7 @@ export class MatchmakingTestController {
       experienceYears: 8,
       languages: ['english'],
       teachingStyle: TeachingStyle.LECTURE,
+      teachingPace: LearningPace.FAST,
       deliveryStyle: DeliveryMode.ONLINE,
       formatStyle: FormatPreference.ONE_ON_ONE,
       avgRating: 0.8,
@@ -178,6 +180,7 @@ export class MatchmakingTestController {
       deliveryPreference: profile.deliveryPreference as DeliveryMode | undefined,
       formatPreference: profile.formatPreference as FormatPreference | undefined,
       learningStylePreference: profile.learningStylePreference as LearningStyle | undefined,
+      learningPace: profile.learningPace as LearningPace | undefined,
       languages: profile.languages,
       subjectSpecialization: profile.subjectSpecialization ?? undefined,
       region: profile.region ?? userRegion ?? undefined,
@@ -201,6 +204,7 @@ export class MatchmakingTestController {
       experienceYears: profile.experienceYears,
       languages: profile.languages,
       teachingStyle: profile.teachingStyle as TeachingStyle | undefined,
+      teachingPace: profile.teachingPace as LearningPace | undefined,
       deliveryStyle: profile.deliveryStyle as DeliveryMode | undefined,
       formatStyle: profile.formatStyle as FormatPreference | undefined,
       avgRating: profile.avgRating === null ? null : Number(profile.avgRating),

@@ -1,4 +1,4 @@
-import type { DeliveryMode, FormatPreference, LearningStyle } from '@core/enums';
+import type { DeliveryMode, FormatPreference, LearningPace, LearningStyle } from '@core/enums';
 import type { AvailabilitySlot } from './availability-slot.vo';
 import type { CriterionWeightsInput } from './criterion-weights.vo';
 
@@ -17,6 +17,8 @@ export interface Student {
   deliveryPreference?: DeliveryMode;
   formatPreference?: FormatPreference;
   learningStylePreference?: LearningStyle;
+  /** How fast the student prefers to learn/assimilate — matched directly to a tutor's teachingPace. */
+  learningPace?: LearningPace;
   languages?: string[];
   subjectSpecialization?: string;
   region?: string;

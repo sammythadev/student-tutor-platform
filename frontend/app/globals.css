@@ -436,6 +436,22 @@
    ───────────────────────────────────────── */
 @layer components {
 
+  /* === Thin scrollbar (chip / filter rows) ===
+     Used under the search field on the find-students/tutors pages so the
+     horizontal overflow reads as a finished control, not a raw browser bar.
+     Palette mirrors the global scrollbar (border-strong thumb, muted hover). */
+  .scrollbar-thin {
+    scrollbar-width: thin;                                  /* Firefox */
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { height: 6px; width: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
   /* === Glass Cards === */
   .glass-card {
     border-radius: 16px;

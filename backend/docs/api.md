@@ -47,7 +47,7 @@ Exchanges a refresh token for a new access/refresh token pair.
 Completes profile onboarding for the currently authenticated student or tutor.
 
 - Auth: `Authorization: Bearer <accessToken>`.
-- Body: `role`, plus the required profile details. Tutors must supply `subjectsTaught`, `gradeLevelsSupported`, `examTypesSupported`, `availability`, and `hourlyRate`. Students must supply `requiredSubject`, `gradeLevel`, `examType`, and `requestedAvailability`.
+- Body: `role`, plus the required profile details. Tutors must supply `subjectsTaught`, `gradeLevelsSupported`, `examTypesSupported`, `availability`, and `hourlyRate`. Students must supply `requiredSubject`, `gradeLevel`, `examType`, and `requestedAvailability`. Optional preference fields include the learning/teaching pace (`learningPace` for students, `teachingPace` for tutors — one of `fast`, `moderate`, `steady`).
 - Errors: `400` for invalid payloads or role mismatch, `401` for a missing or invalid bearer token, `409` if the user is already onboarded.
 
 ## Users
@@ -82,7 +82,7 @@ Updates optional preferences for an onboarded student.
 
 - Auth: `Authorization: Bearer <accessToken>`.
 - Role: `student`.
-- Body: Optional `budget`, `deliveryPreference`, `formatPreference`, `learningStylePreference`, `languages`, `subjectSpecialization`, `preferenceWeights`.
+- Body: Optional `budget`, `deliveryPreference`, `formatPreference`, `learningStylePreference`, `learningPace` (`fast`|`moderate`|`steady`), `languages`, `subjectSpecialization`, `preferenceWeights`.
 - Errors: `400` if not onboarded as a student, `401` for a missing or invalid bearer token, `403` for non-student roles.
 
 ### `PATCH /users/me/tutor-preferences`
@@ -91,7 +91,7 @@ Updates optional preferences for an onboarded tutor.
 
 - Auth: `Authorization: Bearer <accessToken>`.
 - Role: `tutor`.
-- Body: Optional `specializations`, `experienceYears`, `languages`, `teachingStyle`, `deliveryStyle`, `formatStyle`, `capacity`.
+- Body: Optional `specializations`, `experienceYears`, `languages`, `teachingStyle`, `teachingPace` (`fast`|`moderate`|`steady`), `deliveryStyle`, `formatStyle`, `capacity`.
 - Errors: `400` if not onboarded as a tutor, `401` for a missing or invalid bearer token, `403` for non-tutor roles.
 
 ## Matchmaking Test

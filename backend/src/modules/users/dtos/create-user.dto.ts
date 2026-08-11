@@ -13,7 +13,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { DeliveryMode, FormatPreference, LearningStyle, TeachingStyle } from '@core/enums';
+import { DeliveryMode, FormatPreference, LearningPace, LearningStyle, TeachingStyle } from '@core/enums';
 import type { AccountRole } from '@common/auth';
 
 export enum UserRole {
@@ -120,6 +120,11 @@ export class CreateStudentProfileDto {
   @IsEnum(LearningStyle)
   learningStylePreference?: LearningStyle;
 
+  @ApiPropertyOptional({ enum: LearningPace })
+  @IsOptional()
+  @IsEnum(LearningPace)
+  learningPace?: LearningPace;
+
   @ApiPropertyOptional({ example: ['english'] })
   @IsOptional()
   @IsArray()
@@ -183,6 +188,11 @@ export class CreateTutorProfileDto {
   @IsOptional()
   @IsEnum(TeachingStyle)
   teachingStyle?: TeachingStyle;
+
+  @ApiPropertyOptional({ enum: LearningPace })
+  @IsOptional()
+  @IsEnum(LearningPace)
+  teachingPace?: LearningPace;
 
   @ApiPropertyOptional({ enum: DeliveryMode })
   @IsOptional()

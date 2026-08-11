@@ -80,12 +80,24 @@ Computed only for `t` where `Eligible(s,t)` is true.
 
 ### 2.1 Style Vector Encoding — **[gap: original never defines how ps, pt are built]**
 `research.txt` names the categorical dimensions (online/in-person, interactive/lecture,
-visual/auditory/kinesthetic). Encode each as one-hot, concatenate into a single vector:
+visual/auditory/kinesthetic). Encode each as one-hot, concatenate into a single vector.
+A fourth dimension — **learning/teaching pace** (fast/moderate/steady) — is appended so
+that pace becomes part of the same similarity term (no new weight; see the note below):
 ```
-ps = concat(oneHot(deliveryPref), oneHot(formatPref), oneHot(learningStylePref))
-pt = concat(oneHot(deliveryStyle), oneHot(formatStyle), oneHot(teachingStylePref))
+ps = concat(oneHot(deliveryPref), oneHot(formatPref), oneHot(learningStylePref), oneHot(learningPace))
+pt = concat(oneHot(deliveryStyle), oneHot(formatStyle), oneHot(teachingStylePref), oneHot(teachingPace))
 ```
 Both non-negative by construction, so cosine similarity lands in `[0,1]`, not `[-1,1]`.
+
+**Pace is matched directly** — unlike `teachingStyle`, which is translated to a learning
+style before comparison, both parties choose from the *same* pace set (fast/moderate/steady),
+so the blocks align positionally and a shared pace (fast↔fast) raises the score while a
+mismatch lowers it. When **both** parties leave pace unset, both blocks are all-zero and the
+cosine reduces exactly to the pre-pace three-block form, so existing profiles score unchanged.
+A one-sided pace (declared by one party, unset by the other) contributes 0 to the dot product
+but lengthens the declaring party's vector, so it lowers similarity — the same way any other
+declared-but-unmatched style dimension does. Pace introduces **no new weight** — it rides the
+existing `w4·Style` term in §2.6, so `α/β/γ/δ` and `w4/w5/w6` are untouched.
 
 ### 2.2 Style Similarity — **[correction: zero-vector division]**
 ```
@@ -359,6 +371,7 @@ view); use the heap for any "show top 5 tutors" student-facing feature.
 | Subject match was a soft weighted term — non-matching tutors could still rank | Promoted to hard eligibility filter; freed weight reused as optional graded SubDepth |
 | Cosine similarity undefined for zero-norm vectors | Defined neutral fallback `Style = 0.5` |
 | No defined encoding for style/learning preference vectors | Defined one-hot concatenation scheme |
+| Learning/teaching pace not modelled — no signal for how fast a learner assimilates | Added as a direct-match (same enum both sides) one-hot block inside the Style vector (§2.1); unset = neutral zero block; no weight-scheme change |
 | Budget formula divides by Bs with no zero guard | Explicit `Bs = 0` case defined |
 | Schedule score divides by \|Hs\| with no guard | Treated as incomplete-profile precondition, not 0/0 |
 | Dynamic weight adaptation breaks Σw=1 (only 2 of 4 weights updated) | Proportional renormalization of all remaining weights |

@@ -26,6 +26,7 @@ Use this file to keep substantial tasks planned, tracked, and closed out.
 
 ## Current Task
 
+- [completed] Add learning/teaching pace (fast/moderate/steady) preference for students and tutors — new `LearningPace` core enum + DB pgEnum, `student_profiles.learning_pace` / `tutor_profiles.teaching_pace` columns (generated migration), appended as a direct-match one-hot block in `preference.scorer` (rides the existing Style term, no new weight; Algorithm.md §2.1/§10), threaded through onboard/update/create DTOs + repository + matchmaking mapping, plus the onboarding UI.
 - [completed] Scrutinize revised matchmaking/feedback plan and keep assignments as sessions for this phase.
 - [completed] Strengthen core schedule, fairness, and tie-breaker algorithms.
 - [completed] Add authenticated matchmaking endpoints for batch, candidates, manual selection, assignments, status updates, and feedback.
