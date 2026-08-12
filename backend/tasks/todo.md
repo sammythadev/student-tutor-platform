@@ -56,6 +56,24 @@ Use this file to keep substantial tasks planned, tracked, and closed out.
 
 ---
 
+## Task: Eval TUI help UI
+
+- Date: 2026-08-12
+- Request: Add a help UI to the eval TUI, in addition to the menu's CLI-flags panel.
+- Plan:
+  - [x] `tui/help-data.ts`: pure keybinding + CLI-flag reference data (ink-free so jest can test it)
+  - [x] `tui/help.tsx`: `HelpContent` panel — two-column key sections (Global / Menu / Run / Browser / Notes) + full-width CLI flags
+  - [x] Wire `?` into Menu / Run / Browser; `Ctrl+O` in Notes (keeps `?` typable in the editor)
+  - [x] Fix pre-existing crash: a bare `{' '}` string child of `<Box>` in MenuScreen throws ink's reconciler — bare `pnpm run tui` would have crashed on the menu
+  - [x] Render probe (`scripts/render-probe-help.tsx`) pushes `?` via fake stdin and captures the panel; probes now cover the menu itself (earlier probes used `initial=<suite>` and skipped it)
+  - [x] Unit tests for the help data (3) · README (root + backend) + CLAUDE.md updated
+- Verification:
+  - typecheck (both tsconfigs) ✓ · jest 101/101 ✓ · eslint clean ✓ · code review ✓
+- Result:
+  - `?` (or `Ctrl+O` in notes) opens a full help reference from any screen; the CLI flags reference is folded into it; the menu no longer crashes on bare launch.
+
+---
+
 ## Task: HTTP Logging + Global Exception Filter + Env-Driven Log Config
 
 - Date: 2026-06-19

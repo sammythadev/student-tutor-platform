@@ -21,7 +21,7 @@ project/
 │   │   │   │   └── adaptation/  #     WeightAdaptation (proportional renormalization)
 │   │   │   ├── engine/          #   MatchingEngine (facade over the assignment units)
 │   │   │   ├── evaluation/      #   EvaluationHarness, OptimalBaseline (min-cost max-flow), BaselineComparison
-│   │   │   └── __tests__/       #   15 integration tests for core engine
+│   │   │   └── __tests__/       #   23 integration tests for core engine
 │   │   ├── modules/             # NestJS feature modules (auth, users, matchmaking, scheduling, etc.)
 │   │   ├── database/            # Drizzle schema + seeds + module
 │   │   ├── common/              # Shared backend layer
@@ -229,6 +229,31 @@ Rendering adapts to context: an aligned table on an interactive terminal, raw CS
 | `pairsScored` | Total (student × tutor) pairs evaluated |
 | `peakHeapEntries` | Max heap size during run |
 
+### Eval TUI
+
+`pnpm run tui` (from `backend/`) launches an interactive terminal UI over the
+same suites — live per-scenario progress, highlighted results tables, a
+saved-results browser, and a notes scratchpad. Jump straight into a screen with
+an argument:
+
+```bash
+pnpm run tui                          # menu
+pnpm run tui -- eval                  # full harness
+pnpm run tui -- gap                   # optimality gap
+pnpm run tui -- baselines             # baseline comparison
+pnpm run tui -- all                   # eval + topk + gap + baselines
+pnpm run tui -- browser               # browse saved CSVs
+pnpm run tui -- notes                 # notes scratchpad
+pnpm run tui -- eval --no-timing      # zero timing columns from launch
+```
+
+Press `?` from the menu, run, or browser view for a full help reference covering
+every screen's keys plus the CLI flags; the notes editor uses `Ctrl+O` instead
+so `?` stays typable. In the run view, `t` toggles timing-column stripping in
+both the displayed table and the saved CSV (same effect as `--no-timing`).
+Suites auto-save their CSVs to `backend/docs/benchmarks/`. The full key
+reference is in `backend/README.md`.
+
 ---
 
 ## Tests
@@ -236,8 +261,8 @@ Rendering adapts to context: an aligned table on an interactive terminal, raw CS
 Run from `backend/`:
 
 ```bash
-pnpm run test              # All unit tests (17 tests across 3 files)
-pnpm run test:core         # Core engine tests only (15 tests)
+pnpm run test              # All unit tests (101 tests across 4 files)
+pnpm run test:core         # Core matchmaking units only (55 tests)
 pnpm run test:e2e          # E2E tests (1 smoke test)
 pnpm run test:coverage     # With coverage report
 pnpm run test:watch        # Watch mode
@@ -247,7 +272,9 @@ pnpm jest -t "test name"           # By test name
 
 | Test File | Tests | Scope |
 |---|---|---|
-| `src/core/__tests__/core-engine.spec.ts` | 15 | Scorers, assignment engine, lifecycle, ranking, adaptation, benchmark |
+| `src/core/__tests__/core-engine.spec.ts` | 23 | Scorers, assignment engine, lifecycle, ranking, adaptation, benchmark |
+| `src/core/__tests__/core-units.spec.ts` | 55 | Core matchmaking units (filters, scorers, assignment, ranking, feedback, adaptation) |
+| `src/core/__tests__/evaluation-tui.spec.ts` | 22 | Eval harness configs, gap/baselines helpers, CSV/table helpers, TUI suite registry + help data |
 | `src/app/controller/app.controller.spec.ts` | 1 | Backend health endpoint smoke test |
 | `test/app.e2e-spec.ts` | 1 | Full HTTP stack smoke test |
 
@@ -330,6 +357,7 @@ pnpm run build:minified     # SWC minified production build
 pnpm run lint / lint:fix    # ESLint
 pnpm run typecheck          # tsc --noEmit
 pnpm run format             # Prettier
+pnpm run tui                # Interactive eval TUI (? opens help)
 pnpm run jwt:generate       # Generate JWT signing keys
 pnpm run jwt:apply          # Apply JWT keys to .env
 ```

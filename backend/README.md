@@ -85,7 +85,6 @@ launch (quality metrics stay exact; timing is noisy across runs):
 ```bash
 pnpm run tui -- eval --no-timing
 ```
-```
 
 ### Controls
 
@@ -107,7 +106,8 @@ pnpm run tui -- eval --no-timing
 ### Screens
 
 - **Menu** — pick a suite or "Browse saved results". `?` opens a full help
-  panel covering every screen's keys plus the CLI flags.
+  panel covering every screen's keys plus the CLI flags (from the run and
+  browser views too; the notes editor uses `Ctrl+O` so `?` stays typable).
 - **Run** — live progress (spinner, progress bar, current scenario, completed
   ticks), then a results table with the best value in each highlighted column
   tinted green (highest average score, lowest unassigned %, best fairness, ...).
