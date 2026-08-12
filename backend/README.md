@@ -74,7 +74,7 @@ pnpm run tui -- eval        # full harness (realistic + moderate + stress)
 pnpm run tui -- topk        # top-k sweep
 pnpm run tui -- moderate    # moderate-load band
 pnpm run tui -- gap         # optimality gap (greedy vs min-cost max-flow)
-pnpm run tui -- baselines   # baseline comparison (FCFS vs greedy engine)
+pnpm run tui -- baselines   # baseline comparison (FCFS / deferred-acceptance vs greedy)
 pnpm run tui -- all         # eval + topk + gap + baselines, each its own CSV
 pnpm run tui -- browser     # browse saved results
 pnpm run tui -- notes       # open the notes / scratchpad editor

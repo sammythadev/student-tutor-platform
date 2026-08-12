@@ -133,7 +133,7 @@ pnpm run eval:topk
 # Optimality gap — greedy vs min-cost max-flow optimum (sizes 10–100)
 pnpm run eval:gap
 
-# Baseline comparison — greedy vs FCFS strategies (RQ6)
+# Baseline comparison — greedy vs FCFS / deferred-acceptance strategies (RQ6)
 pnpm run eval:baselines
 
 # Run everything
@@ -158,12 +158,13 @@ pnpm run eval:gap --sizes 10,50,200      # custom sizes
 
 ### Baseline comparison (`eval:baselines`)
 
-Runs three assignment strategies over identical fixtures, so any difference comes from the strategy alone.
+Runs four assignment strategies over identical fixtures, so any difference comes from the strategy alone.
 
 | Strategy | Behaviour |
 |---|---|
 | `fcfs-filter` | First-come-first-served, first eligible tutor with capacity — no scoring |
 | `fcfs-best` | First-come-first-served self-selection — each student picks their own best tutor |
+| `da-stable` | Student-proposing deferred acceptance (Gale-Shapley) — both sides rank by the *static* composite score (fairness excluded from ranking, so utilities are load-independent); optimizes stability rather than total score |
 | `greedy-engine` | The proposed engine — global score-ordered heap with lazy fairness recompute |
 
 ```bash

@@ -39,6 +39,23 @@ Use this file to keep substantial tasks planned, tracked, and closed out.
 
 ---
 
+## Task: Honest eval fixtures + Gale-Shapley baseline
+
+- Date: 2026-08-12
+- Request: Audit whether the eval numbers were trustworthy; fix the fixture bias; decide whether adding more comparison algorithms to the eval was wise; re-run all suites.
+- Plan:
+  - [x] Audit fixtures: found students and tutors were generated from the same `index % N` patterns, aligning every student with a "twin" tutor (same subject, identical availability, matching budget/rate) → inflated absolute scores (~0.81) and compressed strategy differences
+  - [x] Rewrite `fixtures.ts` with a seeded mulberry32 PRNG (seed = role+count only, so load-factor sweeps still compare identical populations); decouple student/tutor streams; add `learningPace`/`teachingPace` (the headline feature was absent from eval data); add specialization pools, regions, varied delivery/format/style
+  - [x] Add `da-stable` strategy to `baseline-comparison.ts`: student-proposing deferred acceptance (Gale-Shapley with tutor capacities, symmetric static-score utilities, guard for capacity-0 tutors) — a distinct objective (stability) rather than a tuning variant
+  - [x] Update docs/tests: README (root + backend), CLAUDE.md script comment, TUI suite label, strategy-list spec test (3 → 4)
+- Verification:
+  - typecheck (both tsconfig projects) ✓ · jest 96/96 ✓ · eslint clean on changed files ✓ · code review ✓
+  - `pnpm run eval:baselines` / `eval:gap` / `eval` re-run with honest fixtures ✓
+- Result:
+  - Honest numbers: absolute scores dropped to ~0.52–0.71; greedy's margin over fcfs-best at stress-10to1 widened to ~0.71 vs 0.58; `da-stable` ≈ greedy (both optimize the same utilities); optimality ratio now informative (0.9998 at size 50 → 0.9434 at size 100, greedy serves 59/64 vs flow optimum). Core algorithm untouched.
+
+---
+
 ## Task: HTTP Logging + Global Exception Filter + Env-Driven Log Config
 
 - Date: 2026-06-19

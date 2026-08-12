@@ -25,7 +25,7 @@ pnpm run test:core          # only core matchmaking unit tests (jest core-units)
 pnpm run test:e2e           # e2e tests (test/, *.e2e-spec.ts)
 pnpm run eval               # matchmaking evaluation harness (src/core/evaluation)
 pnpm run eval:gap           # greedy vs min-cost max-flow optimum
-pnpm run eval:baselines     # greedy vs FCFS baseline strategies
+pnpm run eval:baselines     # greedy vs FCFS / deferred-acceptance baselines
 pnpm jest path/to/file.spec.ts        # run a single test file
 pnpm jest -t "test name"              # run tests matching a name
 ```

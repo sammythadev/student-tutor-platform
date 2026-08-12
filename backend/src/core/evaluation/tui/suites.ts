@@ -223,7 +223,7 @@ export const gapSuite: Suite = {
 export const baselinesSuite: Suite = {
   id: 'baselines',
   label: 'Baseline comparison',
-  description: 'FCFS-filter / FCFS-best vs the greedy engine (RQ6)',
+  description: 'FCFS / deferred-acceptance vs the greedy engine (RQ6)',
   highlights: [
     { column: 'averageScore', mode: 'max' },
     { column: 'unassignedPercent', mode: 'min' },

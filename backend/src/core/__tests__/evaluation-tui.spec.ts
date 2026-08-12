@@ -53,9 +53,14 @@ describe('optimality gap helpers', () => {
 });
 
 describe('baseline cell runner', () => {
-  it('runs all three strategies per scenario', () => {
+  it('runs all four strategies per scenario', () => {
     const rows = runBaselineCell(SCENARIOS[0]);
-    expect(rows.map((row) => row.strategy)).toEqual(['fcfs-filter', 'fcfs-best', 'greedy-engine']);
+    expect(rows.map((row) => row.strategy)).toEqual([
+      'fcfs-filter',
+      'fcfs-best',
+      'da-stable',
+      'greedy-engine',
+    ]);
   });
 });
 
