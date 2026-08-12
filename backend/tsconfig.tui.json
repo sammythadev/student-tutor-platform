@@ -9,12 +9,13 @@
   },
   // The base config excludes the TUI folder (main typecheck uses node10
   // resolution, which cannot resolve ESM-only ink types); this project exists
-  // precisely to typecheck those files, so re-include them. The render probe
-  // imports ink + the TUI App, so it typechecks here too, not in the main config.
+  // precisely to typecheck those files, so re-include them. The render probes
+  // import ink + the TUI App, so they typecheck here too, not in the main config.
   "exclude": [],
   "include": [
     "src/core/evaluation/tui/**/*.ts",
     "src/core/evaluation/tui/**/*.tsx",
-    "scripts/render-probe.tsx"
+    "scripts/render-probe.tsx",
+    "scripts/render-probe-baselines.tsx"
   ]
 }

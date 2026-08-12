@@ -97,24 +97,35 @@ function DataTable({
   const fit = (value: string, width: number): string =>
     value.length <= width ? value : `${value.slice(0, Math.max(width - 1, 1))}…`;
 
+  // The gap width is part of the scaling math above, so it must actually be
+  // rendered between cells — otherwise columns whose width exactly equals their
+  // longest content merge together (e.g. `studentstutors`).
+  const gap = <Box width={columnGap} />;
+
   return (
     <Box flexDirection="column">
       <Box>
         {header.map((column, i) => (
-          <Box key={column} width={widths[i]}>
-            <Text bold color="cyan">
-              {fit(column, widths[i])}
-            </Text>
+          <Box key={column} flexDirection="row">
+            <Box width={widths[i]}>
+              <Text bold color="cyan">
+                {fit(column, widths[i])}
+              </Text>
+            </Box>
+            {i < header.length - 1 && gap}
           </Box>
         ))}
       </Box>
       {rows.map((row, rowIndex) => (
         <Box key={`row-${rowIndex}`}>
           {row.map((value, columnIndex) => (
-            <Box key={`${rowIndex}-${columnIndex}`} width={widths[columnIndex] ?? 6}>
-              <Text color={bestCells.has(`${columnIndex}:${rowIndex}`) ? 'green' : undefined}>
-                {fit(value, widths[columnIndex] ?? 6)}
-              </Text>
+            <Box key={`${rowIndex}-${columnIndex}`} flexDirection="row">
+              <Box width={widths[columnIndex] ?? 6}>
+                <Text color={bestCells.has(`${columnIndex}:${rowIndex}`) ? 'green' : undefined}>
+                  {fit(value, widths[columnIndex] ?? 6)}
+                </Text>
+              </Box>
+              {columnIndex < row.length - 1 && gap}
             </Box>
           ))}
         </Box>
