@@ -1,16 +1,16 @@
 # Graph Report - project  (2026-08-12)
 
 ## Corpus Check
-- 406 files · ~346,230 words
+- 407 files · ~346,485 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2340 nodes · 3860 edges · 238 communities (148 shown, 90 thin omitted)
+- 2345 nodes · 3864 edges · 240 communities (148 shown, 92 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 24 edges (avg confidence: 0.59)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `bb515d0d`
+- Built from commit: `cb5d0771`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -247,6 +247,8 @@
 - lenis
 - StudentList.tsx
 - auth.module.ts
+- render-probe.tsx
+- lib
 
 ## God Nodes (most connected - your core abstractions)
 1. `AuthenticatedUser` - 69 edges
@@ -270,12 +272,12 @@
 - `NotificationsPanel()` --calls--> `apiErrorText()`  [EXTRACTED]
   frontend/components/NotificationsPanel.tsx → frontend/lib/api/errors.ts
 - `AuthenticatedRequest` --references--> `AuthenticatedUser`  [EXTRACTED]
-  backend/src/common/auth/current-user.decorator.ts → backend/src/common/auth/auth.types.ts
+  backend/src/common/interceptors/http-logging.interceptor.ts → backend/src/common/auth/auth.types.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (238 total, 90 thin omitted)
+## Communities (240 total, 92 thin omitted)
 
 ### Community 0 - "scripts"
 Cohesion: 0.05
@@ -307,7 +309,7 @@ Nodes (3): axios, axios, axios
 
 ### Community 7 - "body-parser"
 Cohesion: 0.12
-Nodes (8): AuthService, Injectable, Inject, Injectable, UsersRepository, Injectable, UsersService, toPublicUserWithProfiles()
+Nodes (10): AuthService, Injectable, AuthLoginDto, ApiProperty, IsEmail, IsString, MinLength, Injectable (+2 more)
 
 ### Community 9 - "class-transformer"
 Cohesion: 0.06
@@ -323,15 +325,15 @@ Nodes (14): ACCENT_SET, CapacityPanel(), EASE, formatDayTime(), formatShortDate(
 
 ### Community 14 - "crypto-js"
 Cohesion: 0.18
-Nodes (16): ProfilePage(), ProfileResponse, notificationRows, SettingsPage(), CandidatePageResponse, CandidateQuery, FeedbackPayload, FeedbackResult (+8 more)
+Nodes (15): ProfilePage(), ProfileResponse, notificationRows, SettingsPage(), CandidatePageResponse, CandidateQuery, FeedbackPayload, FeedbackResult (+7 more)
 
 ### Community 28 - "swagger-ui-express"
 Cohesion: 0.07
 Nodes (43): Roles(), student(), AssignmentPageDto, AssignmentResponseDto, AssignmentUpdateStatus, BatchMatchmakingResponseDto, CandidatePageDto, CandidateStudentDto (+35 more)
 
 ### Community 33 - "eslint-config-prettier"
-Cohesion: 0.04
-Nodes (48): compilerOptions, allowSyntheticDefaultImports, baseUrl, declaration, emitDecoratorMetadata, esModuleInterop, experimentalDecorators, forceConsistentCasingInFileNames (+40 more)
+Cohesion: 0.08
+Nodes (26): compilerOptions, allowSyntheticDefaultImports, baseUrl, declaration, emitDecoratorMetadata, esModuleInterop, experimentalDecorators, forceConsistentCasingInFileNames (+18 more)
 
 ### Community 36 - "globals"
 Cohesion: 0.11
@@ -346,8 +348,8 @@ Cohesion: 0.06
 Nodes (34): 10. DEVICE MOCKUP FRAME RULE, 11. ONBOARDING FLOW RULE, 12. FIRST SCREEN CLEANLINESS RULE, 13. SAFE AREA AND SYSTEM REGION RULE, 14. NAVIGATION RULE, 15. CLEAN LAYOUT RULE, 16. CREATIVE IMAGE DIRECTION RULE, 17. BACKGROUND TEXTURE AND SURFACE RULE (+26 more)
 
 ### Community 41 - "@nestjs/schematics"
-Cohesion: 0.14
-Nodes (11): AccountRole, AuthTokenPair, AuthenticatedRequest, JwtAccessStrategy, Injectable, RefreshAuthGuard, Injectable, AuthenticatedRequest (+3 more)
+Cohesion: 0.12
+Nodes (17): AuthenticatedRequest, AccountRole, AuthenticatedUser, AuthenticatedRequest, JwtAccessStrategy, Injectable, fromRefreshTokenBody(), JwtRefreshStrategy (+9 more)
 
 ### Community 48 - "@swc/core"
 Cohesion: 0.12
@@ -366,23 +368,23 @@ Cohesion: 0.17
 Nodes (6): Config, Grad, Mouse, Noise, Point, WavesProps
 
 ### Community 55 - "tsconfig-paths"
-Cohesion: 0.20
-Nodes (21): AvailabilitySlotDto, CreateStudentProfileDto, CreateTutorProfileDto, CreateUserDto, PreferenceWeightsDto, StudentProfileResponseDto, ApiProperty, ApiPropertyOptional (+13 more)
+Cohesion: 0.17
+Nodes (25): AvailabilitySlotDto, CreateStudentProfileDto, CreateTutorProfileDto, CreateUserDto, PreferenceWeightsDto, _roleParity, StudentProfileResponseDto, ApiProperty (+17 more)
 
 ### Community 57 - "@types/jsonwebtoken"
-Cohesion: 0.26
-Nodes (17): CurrentUser, SessionParamDto, SessionResponseDto, SessionsController, ApiBearerAuth, ApiBody, ApiOperation, ApiParam (+9 more)
+Cohesion: 0.15
+Nodes (29): CurrentUser, BookSessionDto, ProposeSessionDto, SessionParamDto, SessionResponseDto, SessionStatus, TransferSessionDto, ApiProperty (+21 more)
 
 ### Community 60 - "typescript"
 Cohesion: 0.14
-Nodes (29): NEST_TO_WINSTON, PinoFactory, stringifyMeta(), AppEnvironment, ENVIRONMENT_FILES, getAdminSignupCode(), getAppEnvironment(), getAppName() (+21 more)
+Nodes (30): NEST_TO_WINSTON, PinoFactory, stringifyMeta(), AppEnvironment, ENVIRONMENT_FILES, getAdminSignupCode(), getAppEnvironment(), getAppName() (+22 more)
 
 ### Community 61 - "typescript-eslint"
-Cohesion: 0.17
-Nodes (20): StudentProfileRecord, TutorProfileRecord, UserRecord, ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse (+12 more)
+Cohesion: 0.23
+Nodes (15): ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags, Body, Controller (+7 more)
 
 ### Community 62 - "AuthService"
-Cohesion: 0.13
+Cohesion: 0.12
 Nodes (9): NewNotificationRecord, NotificationRecord, notifications, NotificationsRepository, Inject, Injectable, NotificationsService, NotificationType (+1 more)
 
 ### Community 63 - "FeedQueryDto"
@@ -406,7 +408,7 @@ Cohesion: 0.06
 Nodes (30): 0. Notation, 10. Corrections Log — what was fixed and why, 1.1 Subject Eligibility — **[correction: hard filter, not weighted term]**, 1.2 Subject Depth (optional, replaces the old Sub weight), 1.3 Level Compatibility — **[correction: unbounded without clamping]**, 1.4 Experience & Quality — **[correction: same unbounded issue, plus missing cold start]**, 1.5 Combined Academic Score, 1. Algorithm 1 — Academic Compatibility (+22 more)
 
 ### Community 68 - "MessagesController"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (22): GetConversationDto, MessageResponseDto, SendMessageDto, ApiProperty, ApiPropertyOptional, IsString, IsUUID, MessagesController (+14 more)
 
 ### Community 69 - "index.ts"
@@ -414,12 +416,12 @@ Cohesion: 0.24
 Nodes (19): AdminPage(), KpiCard(), MatchStatusCard(), PanelHeading(), SessionRow(), TutorRow(), KpiCard(), Panel() (+11 more)
 
 ### Community 70 - "schema.ts"
-Cohesion: 0.05
-Nodes (45): getDatabaseUrl(), assignments, assignmentStatusEnum, deliveryModeEnum, formatPreferenceEnum, learningPaceEnum, learningStyleEnum, MessageRecord (+37 more)
+Cohesion: 0.06
+Nodes (37): assignments, assignmentStatusEnum, deliveryModeEnum, formatPreferenceEnum, learningPaceEnum, learningStyleEnum, MessageRecord, NewMessageRecord (+29 more)
 
 ### Community 71 - "AppDatabase"
-Cohesion: 0.18
-Nodes (5): AppDatabase, AppTransaction, MatchmakingRepository, Inject, Injectable
+Cohesion: 0.09
+Nodes (12): AppDatabase, AppTransaction, messages, FeedRepository, Inject, Injectable, MatchmakingRepository, Inject (+4 more)
 
 ### Community 72 - "Student Tutor Matchmaking Platform"
 Cohesion: 0.09
@@ -430,8 +432,8 @@ Cohesion: 0.17
 Nodes (12): computeOptimal(), computeOptimalityGapRow(), DEFAULT_GAP_SIZES, Edge, greedyStaticTotal(), HEADER, MinCostMaxFlow, OptimalityGapRow (+4 more)
 
 ### Community 74 - "OnboardStudentDto"
-Cohesion: 0.22
-Nodes (18): AvailabilitySlotDto, OnboardStudentDto, OnboardTutorDto, OnboardUserDto, ApiProperty, ApiPropertyOptional, ArrayNotEmpty, IsArray (+10 more)
+Cohesion: 0.23
+Nodes (16): AvailabilitySlotDto, OnboardStudentDto, OnboardTutorDto, ApiProperty, ApiPropertyOptional, ArrayNotEmpty, IsArray, IsEnum (+8 more)
 
 ### Community 75 - "MatchmakingTestController"
 Cohesion: 0.22
@@ -442,16 +444,16 @@ Cohesion: 0.07
 Nodes (25): Aggressive Escalation Triggers, Guidelines, Operating Posture, Part 1 — Findings table (REQUIRED), Part 2 — Verdict (REQUIRED), Remedial Preference Hierarchy, Required Output Format, Reviewing Animations (+17 more)
 
 ### Community 77 - "matchmaking.repository.ts"
-Cohesion: 0.30
-Nodes (11): AuthController, ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags, Body, Controller (+3 more)
+Cohesion: 0.21
+Nodes (14): AuthController, ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags, Body, Controller (+6 more)
 
 ### Community 78 - "greedy-assignment.engine.ts"
-Cohesion: 0.23
-Nodes (4): EligibilityFilter, EligibilityResult, RankedTutor, TopKRanker
+Cohesion: 0.36
+Nodes (3): EligibilityResult, RankedTutor, TopKRanker
 
 ### Community 80 - "feed.repository.ts"
-Cohesion: 0.22
-Nodes (4): posts, FeedRepository, Inject, Injectable
+Cohesion: 0.11
+Nodes (18): paths, @app/*, @common/*, @config, @configs/*, @core/*, @database, @modules/* (+10 more)
 
 ### Community 81 - "apply-jwt-keys.js"
 Cohesion: 0.17
@@ -468,6 +470,10 @@ Nodes (15): Appendix B - Canonical Sources (read these before reinventing), Appl
 ### Community 84 - "index.ts"
 Cohesion: 0.24
 Nodes (5): IncompleteProfileException, TutorCapacityExceededException, slot(), student(), tutor()
+
+### Community 85 - "PreferenceScorer"
+Cohesion: 0.24
+Nodes (9): subjects, tutorSubjects, FIRST_NAMES, LAST_NAMES, pickSpecializations(), REGIONS, SECONDARY_SUBJECTS, seed() (+1 more)
 
 ### Community 86 - "MessagesRepository"
 Cohesion: 0.10
@@ -486,8 +492,8 @@ Cohesion: 0.22
 Nodes (9): moduleNameMapper, ^@app/(.*)$, ^@common/(.*)$, ^@config$, ^@configs/(.*)$, ^@core/(.*)$, ^@database$, ^@modules/(.*)$ (+1 more)
 
 ### Community 90 - "EligibilityFilter"
-Cohesion: 0.15
-Nodes (12): compilerOptions, declaration, incremental, module, moduleResolution, noEmit, exclude, extends (+4 more)
+Cohesion: 0.14
+Nodes (13): compilerOptions, declaration, incremental, module, moduleResolution, noEmit, exclude, extends (+5 more)
 
 ### Community 91 - "CLAUDE.md"
 Cohesion: 0.25
@@ -502,11 +508,11 @@ Cohesion: 0.38
 Nodes (4): Assignment, MatchScore, MatchScoreBreakdown, MatchSubBreakdown
 
 ### Community 96 - "core-units.spec.ts"
-Cohesion: 0.24
-Nodes (5): PreferenceScore, Student, Tutor, LearningPace, defaultWeights
+Cohesion: 0.16
+Nodes (6): PreferenceScore, PreferenceScorer, Student, Tutor, LearningPace, defaultWeights
 
 ### Community 97 - "docx"
-Cohesion: 0.16
+Cohesion: 0.15
 Nodes (5): SessionsRepository, Inject, Injectable, SessionsService, Injectable
 
 ### Community 100 - "@commitlint/config-conventional"
@@ -517,17 +523,13 @@ Nodes (13): @base-ui/react, dependencies, @base-ui/react, gsap, tailwind-merge, 
 Cohesion: 0.11
 Nodes (19): @types/node, @types/react, dotenv-cli, devDependencies, dotenv-cli, postcss, shadcn, tailwindcss (+11 more)
 
-### Community 103 - "@types/pg"
-Cohesion: 0.24
-Nodes (10): LearningStylePreference, _roleParity, UserIdParamDto, UserRole, UserWithProfilesResponseDto, IMPORTANT: default capacity to 5 so new tutors are always eligible in matchmakin, StudentProfileUpdate, TutorProfileUpdate (+2 more)
-
 ### Community 105 - "tutor.entity.ts"
 Cohesion: 0.09
 Nodes (21): 1. Purpose & frequency, 2. Easing & duration, 3. Physicality & origin, 4. Interruptibility, 5. Performance, 6. Accessibility, 7. Cohesion & tokens, 8. Missed opportunities (+13 more)
 
 ### Community 110 - "AppLoggerService"
 Cohesion: 0.26
-Nodes (4): HttpLoggingInterceptor, Injectable, AppLoggerService, Injectable
+Nodes (4): CommonExceptionFilter, AppLoggerService, Injectable, Catch
 
 ### Community 111 - "Agent Skill: Principal UI/UX Architect & Motion Choreographer (Awwwards-Tier)"
 Cohesion: 0.11
@@ -550,15 +552,15 @@ Cohesion: 0.13
 Nodes (21): LANGUAGES, OnboardingPage(), Role, Screen, Stage, STUDENT_STAGES, SUBJECTS, TUTOR_STAGES (+13 more)
 
 ### Community 116 - "AuthTokenClaims"
-Cohesion: 0.14
-Nodes (11): AuthenticatedRequest, AuthGuard, Injectable, AuthTokenService, Injectable, AuthenticatedUser, AuthTokenClaims, TokenUse (+3 more)
+Cohesion: 0.19
+Nodes (7): AuthGuard, Injectable, AuthTokenService, Injectable, AuthTokenClaims, AuthTokenPair, TokenUse
 
 ### Community 117 - "auth.service.ts"
-Cohesion: 0.09
-Nodes (21): AdminSignupDto, ApiProperty, ApiPropertyOptional, IsEmail, IsOptional, IsString, MinLength, AuthLoginDto (+13 more)
+Cohesion: 0.10
+Nodes (24): AdminSignupDto, ApiProperty, ApiPropertyOptional, IsEmail, IsOptional, IsString, MinLength, AuthSignupDto (+16 more)
 
 ### Community 118 - "UpdateStudentPreferencesDto"
-Cohesion: 0.17
+Cohesion: 0.16
 Nodes (15): NotificationPrefsDto, ApiPropertyOptional, IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString (+7 more)
 
 ### Community 119 - "StudentList.tsx"
@@ -714,8 +716,8 @@ Cohesion: 0.83
 Nodes (3): injectCSS(), mountScrollWorld(), seedParticles()
 
 ### Community 160 - "lenis"
-Cohesion: 0.15
-Nodes (12): EASE, FindTutors(), matchReasons(), EASE, StudentList(), studentReasons(), EASE, MatchRing() (+4 more)
+Cohesion: 0.24
+Nodes (7): EASE, FindTutors(), matchReasons(), EASE, MatchRing(), MatchRingProps, getTutorCandidates()
 
 ### Community 165 - "@nestjs/schematics"
 Cohesion: 0.13
@@ -726,8 +728,8 @@ Cohesion: 0.28
 Nodes (8): CORE_DIR, findFile(), isTypeScriptPath(), load(), PROJECT_ROOT, resolve(), SOURCE_SUFFIXES, SWC_CONFIG
 
 ### Community 173 - "gsap"
-Cohesion: 0.28
-Nodes (12): BookSessionDto, ProposeSessionDto, SessionStatus, TransferSessionDto, ApiProperty, ApiPropertyOptional, IsEnum, IsOptional (+4 more)
+Cohesion: 0.36
+Nodes (6): EASE, StudentList(), studentReasons(), getStudentCandidates(), StudentCandidate, useAuthStore
 
 ### Community 178 - "@vercel/analytics"
 Cohesion: 0.17
@@ -742,8 +744,8 @@ Cohesion: 0.15
 Nodes (12): container, DashboardHero(), DashboardHeroProps, EASE, headline, HeroAction, HeroStat, passThrough (+4 more)
 
 ### Community 181 - "JwtRefreshStrategy"
-Cohesion: 0.40
-Nodes (3): fromRefreshTokenBody(), JwtRefreshStrategy, Injectable
+Cohesion: 0.53
+Nodes (5): StudentProfileRecord, TutorProfileRecord, UserRecord, PublicUserRecord, UserWithProfilesRecord
 
 ### Community 182 - "baseline-comparison.ts"
 Cohesion: 0.13
@@ -758,8 +760,8 @@ Cohesion: 0.22
 Nodes (8): AuthState, DeliveryMode, FormatPreference, LearningPace, StudentProfile, TeachingStyle, TutorProfile, UserProfile
 
 ### Community 185 - "http-exception.filter.ts"
-Cohesion: 0.24
-Nodes (5): AuthenticatedRequest, CommonExceptionFilter, ErrorResponseBody, isLoggingEnabled(), Catch
+Cohesion: 0.28
+Nodes (4): AuthenticatedRequest, HttpLoggingInterceptor, Injectable, isLoggingEnabled()
 
 ### Community 186 - "Component Building Principles"
 Cohesion: 0.25
@@ -829,10 +831,6 @@ Nodes (3): react, react, react
 Cohesion: 0.43
 Nodes (6): capacityForIndex(), CapacityStrategy, generateStudents(), generateTutors(), makeSlot(), SUBJECTS
 
-### Community 221 - "app.tsx"
-Cohesion: 0.24
-Nodes (4): messages, MessagesRepository, Inject, Injectable
-
 ### Community 222 - "UserWithProfiles"
 Cohesion: 0.22
 Nodes (6): inputErrorStyle, inputFocusStyle, InputProps, inputStyle, SelectProps, TextareaProps
@@ -841,29 +839,33 @@ Nodes (6): inputErrorStyle, inputFocusStyle, InputProps, inputStyle, SelectProps
 Cohesion: 0.33
 Nodes (5): Eval TUI architecture (2026-08), Findings, ink v4 gotchas, Suite registry, TUI v2: banner + scratchpad (2026-08)
 
+### Community 236 - "StudentList.tsx"
+Cohesion: 0.50
+Nodes (3): exclude, scripts/render-probe.tsx, src/core/evaluation/tui
+
 ### Community 237 - "auth.module.ts"
 Cohesion: 0.40
 Nodes (4): CommonModule, Module, AuthModule, Module
 
 ## Knowledge Gaps
-- **947 isolated node(s):** `Eval TUI architecture (2026-08)`, `Suite registry`, `ink v4 gotchas`, `TUI v2: banner + scratchpad (2026-08)`, `SPINNER_FRAMES` (+942 more)
+- **950 isolated node(s):** `Lessons`, `fakeStdin`, `SPINNER_FRAMES`, `DataTableProps`, `NO_HIGHLIGHTS` (+945 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **90 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **92 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `AuthenticatedUser` connect `AuthTokenClaims` to `.getTutorSlots`, `Roles`, `MessagesController`, `@types/pg`, `body-parser`, `@nestjs/schematics`, `matchmaking.repository.ts`, `swagger-ui-express`, `gsap`, `@types/jsonwebtoken`, `0. BRIEF INFERENCE (Read the Room Before Anything Else)`, `auth.service.ts`, `JwtRefreshStrategy`, `http-exception.filter.ts`, `typescript`, `typescript-eslint`, `AuthService`, `FeedQueryDto`?**
-  _High betweenness centrality (0.051) - this node is a cross-community bridge._
-- **Why does `CurrentUser` connect `@types/jsonwebtoken` to `.getTutorSlots`, `Roles`, `MessagesController`, `@types/pg`, `@nestjs/schematics`, `matchmaking.repository.ts`, `gsap`, `0. BRIEF INFERENCE (Read the Room Before Anything Else)`, `AuthTokenClaims`, `auth.service.ts`, `swagger-ui-express`, `typescript-eslint`, `AuthService`, `FeedQueryDto`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `AppDatabase` connect `AppDatabase` to `docx`, `Roles`, `schema.ts`, `StudentList.tsx`, `gsap`, `feed.repository.ts`, `@vercel/analytics`, `app.tsx`, `AuthService`?**
-  _High betweenness centrality (0.012) - this node is a cross-community bridge._
-- **What connects `Eval TUI architecture (2026-08)`, `Suite registry`, `ink v4 gotchas` to the rest of the system?**
-  _947 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `AuthenticatedUser` connect `@nestjs/schematics` to `.getTutorSlots`, `Roles`, `MessagesController`, `body-parser`, `matchmaking.repository.ts`, `swagger-ui-express`, `@types/jsonwebtoken`, `@vercel/analytics`, `0. BRIEF INFERENCE (Read the Room Before Anything Else)`, `AuthTokenClaims`, `auth.service.ts`, `tsconfig-paths`, `http-exception.filter.ts`, `typescript`, `typescript-eslint`, `FeedQueryDto`?**
+  _High betweenness centrality (0.043) - this node is a cross-community bridge._
+- **Why does `AppDatabase` connect `AppDatabase` to `docx`, `Roles`, `MessagesController`, `schema.ts`, `@vercel/analytics`, `AuthService`?**
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+- **Why does `IncompleteProfileException` connect `index.ts` to `@nestjs/schematics`, `composite.scorer.ts`?**
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+- **What connects `Lessons`, `fakeStdin`, `SPINNER_FRAMES` to the rest of the system?**
+  _950 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `scripts` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
 - **Should `body-parser` be split into smaller, more focused modules?**
-  _Cohesion score 0.11931818181818182 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11576354679802955 - nodes in this community are weakly interconnected._
 - **Should `class-transformer` be split into smaller, more focused modules?**
   _Cohesion score 0.0625 - nodes in this community are weakly interconnected._

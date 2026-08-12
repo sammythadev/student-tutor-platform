@@ -1755,8 +1755,8 @@
     "semantic_hash": ""
   },
   "backend/agent-docs/lessons.md": {
-    "mtime": 1786543493.9212246,
-    "ast_hash": "2ad86c48ce381f77139af79d8ecc5eb3",
+    "mtime": 1786545206.8026795,
+    "ast_hash": "a10abb5f09d99ec52db88d85220de649",
     "semantic_hash": ""
   },
   "backend/agent-docs/project-structure.md": {
@@ -2115,8 +2115,8 @@
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/views.tsx": {
-    "mtime": 1786544957.873865,
-    "ast_hash": "eb6219d14937eacc1fa16cce75e96057",
+    "mtime": 1786545139.091134,
+    "ast_hash": "e54615a894ef521f99d12c17e734e209",
     "semantic_hash": ""
   },
   "backend/tsconfig.tui.json": {
@@ -2125,23 +2125,13 @@
     "semantic_hash": ""
   },
   "backend/agent-docs/findings.md": {
-    "mtime": 1786543493.8740773,
-    "ast_hash": "dd839a8669b02fc42fd12e5540ff86ad",
+    "mtime": 1786545192.8290725,
+    "ast_hash": "5ba7bb301269541dd9b8f61445db8c02",
     "semantic_hash": ""
   },
   "frontend/landing-page-mockups.html": {
     "mtime": 1786540308.621783,
     "ast_hash": "5ef99467256e1e29069aa5c80e799b4c",
-    "semantic_hash": ""
-  },
-  "backend/scripts/render-probe.tsx": {
-    "mtime": 1786545051.523071,
-    "ast_hash": "f588db37ef9b66245f0aff6c97714411",
-    "semantic_hash": ""
-  },
-  "backend/docs/notes/my-notes.txt": {
-    "mtime": 1786545072.528684,
-    "ast_hash": "5eb63bbbe01eeed093cb22bb8f5acdc3",
     "semantic_hash": ""
   }
 }
