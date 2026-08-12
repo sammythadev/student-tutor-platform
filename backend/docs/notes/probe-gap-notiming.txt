@@ -1,0 +1,49 @@
+
+ Optimality gap — Greedy vs min-cost max-flow optimum at small sizes
+
+ ⠋ Running…
+
+ q back to menu
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G
+ Optimality gap — Greedy vs min-cost max-flow optimum at small sizes
+
+ ⠋ Running…
+
+ ████████████░░░░░░░░░░░░ 2/4
+
+ size=25
+ ✓ 10
+ ✓ 25
+
+ q back to menu
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G
+ Optimality gap — Greedy vs min-cost max-flow optimum at small sizes
+
+ ⠋ Running…
+
+ ████████████████████████ 4/4
+
+ size=100
+ ✓ 25
+ ✓ 50
+ ✓ 100
+
+ q back to menu
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G
+ Optimality gap — Greedy vs min-cost max-flow optimum at small sizes
+
+ ✓ Completed in 0.1s
+
+ size  students  tutors  greedyAssigned  optimalAssigned  greedyStaticTotal  optimalStaticTotal  scoreRatio  greedyMs  optimalMs
+ 10    10        3       2               2                0.934500           0.934500            1.000000    0         0
+ 25    25        8       10              10               4.994716           4.998755            0.999192    0         0
+ 50    50        16      25              25               12.975307          12.977508           0.999830    0         0
+ 100   100       33      59              64               33.408870          35.411389           0.943450    0         0
+
+ Saved 4 row(s) to:
+ C:\Users\USER\Desktop\Final Year
+ r rerun · s save as · t timing off · m menu · q quit
+ rks\optimality-gap-results.csv

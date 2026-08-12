@@ -1,5 +1,10 @@
 import { existsSync, readFileSync, rmSync } from 'fs';
-import { columnWidths, parseCsv, toCsv } from '../evaluation/cli-output';
+import {
+  columnWidths,
+  parseCsv,
+  stripTimingColumns,
+  toCsv,
+} from '../evaluation/cli-output';
 import { defaultNoteName, NOTES_DIR, saveNoteFile } from '../evaluation/tui/files';
 import { cursorPosition, indexFromPosition, wrapText } from '../evaluation/tui/text-utils';
 import {
@@ -99,6 +104,26 @@ describe('shared CSV/table helpers', () => {
         ],
       ),
     ).toEqual([8, 5]);
+  });
+
+  it('stripTimingColumns zeroes only known timing columns', () => {
+    const header = ['scenario', 'averageScore', 'elapsedMeanMs', 'greedyMs', 'optimalMs'];
+    const rows = [
+      ['moderate-2to1', '0.620784', '12.4', '3', '4'],
+      ['stress-10to1', '0.712391', '72.0', '55', '90'],
+    ];
+
+    expect(stripTimingColumns(header, rows)).toEqual([
+      ['moderate-2to1', '0.620784', '0', '0', '0'],
+      ['stress-10to1', '0.712391', '0', '0', '0'],
+    ]);
+  });
+
+  it('stripTimingColumns leaves rows without timing columns untouched (same reference)', () => {
+    const header = ['scenario', 'averageScore'];
+    const rows = [['stress-10to1', '0.712391']];
+
+    expect(stripTimingColumns(header, rows)).toBe(rows);
   });
 });
 

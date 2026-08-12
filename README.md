@@ -186,6 +186,7 @@ Available on every eval command:
 | `--no-file` | Print only; skip writing the CSV |
 | `--table` | Force the aligned table |
 | `--csv` | Force raw CSV |
+| `--no-timing` | Zero the wall-clock timing columns (`elapsedMinMs/MeanMs/MaxMs`, `greedyMs/optimalMs`) in the saved CSV — quality metrics are deterministic, timing is not, so use this when you want benchmark files to change only when results actually change |
 
 Script-specific: `--moderate`, `--topk-sweep` (harness), `--sizes` (gap), `--scenario`, `--strategy` (baselines).
 

@@ -145,6 +145,35 @@ export function writeCsvOutput(defaultName: string, csv: string): string {
 }
 
 /**
+ * Column names that report wall-clock timing (noisy across runs) rather than
+ * deterministic quality metrics. `--no-timing` / the TUI timing toggle zeroes
+ * these so benchmark CSVs only change when the actual results change.
+ */
+export const TIMING_COLUMNS: ReadonlySet<string> = new Set([
+  'elapsedMinMs',
+  'elapsedMeanMs',
+  'elapsedMaxMs',
+  'greedyMs',
+  'optimalMs',
+]);
+
+/**
+ * Returns the rows with every timing column zeroed out. Non-timing rows are
+ * returned unchanged (same array identity) so callers can skip rewriting.
+ */
+export function stripTimingColumns(header: string[], rows: string[][]): string[][] {
+  const timingIndexes = header
+    .map((column, index) => (TIMING_COLUMNS.has(column) ? index : -1))
+    .filter((index) => index !== -1);
+
+  if (timingIndexes.length === 0) {
+    return rows;
+  }
+
+  return rows.map((row) => row.map((cell, index) => (timingIndexes.includes(index) ? '0' : cell)));
+}
+
+/**
  * Runs a script's entry point, reporting a bad-flag failure as a one-line message
  * instead of a stack trace (these are user input errors, not bugs).
  */
@@ -178,9 +207,11 @@ export function emitResults({ defaultName, header, rows }: EmitOptions): void {
   const forceCsv = process.argv.includes('--csv');
   const forceTable = process.argv.includes('--table');
   const useTable = forceTable || (process.stdout.isTTY === true && !forceCsv);
-  const csv = toCsv(header, rows);
+  const noTiming = process.argv.includes('--no-timing');
+  const outputRows = noTiming ? stripTimingColumns(header, rows) : rows;
+  const csv = toCsv(header, outputRows);
 
-  console.log(useTable ? formatTable(header, rows) : csv);
+  console.log(useTable ? formatTable(header, outputRows) : csv);
 
   if (process.argv.includes('--no-file')) {
     return;

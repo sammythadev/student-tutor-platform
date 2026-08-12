@@ -2,7 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import figlet from 'figlet';
 import { readFileSync } from 'fs';
-import { columnWidths, parseCsv, toCsv, writeCsvOutput } from '@core/evaluation/cli-output';
+import {
+  columnWidths,
+  parseCsv,
+  stripTimingColumns,
+  toCsv,
+  writeCsvOutput,
+} from '@core/evaluation/cli-output';
 import { defaultNoteName, listSavedCsvs, saveNoteFile, type CsvFileInfo } from './files';
 import { cursorPosition, indexFromPosition, visualSpans } from './text-utils';
 import { SUITES, type Suite, type SuiteResult, type SuiteRunState } from './suites';
@@ -211,6 +217,7 @@ export function MenuScreen({
 }): React.JSX.Element {
   const { stdout } = useStdout();
   const [selected, setSelected] = useState(0);
+  const [showFlags, setShowFlags] = useState(false);
   const itemCount = SUITES.length + 2; // suites + "browse" + "notes"
 
   const banner = useMemo(
@@ -236,6 +243,8 @@ export function MenuScreen({
       onBrowse();
     } else if (input === 'n') {
       onNotes();
+    } else if (input === '?') {
+      setShowFlags((value) => !value);
     } else if (input === 'q' || key.escape) {
       onQuit();
     }
@@ -264,7 +273,6 @@ export function MenuScreen({
           Latest run: {latest.name} · {latest.dataRows} rows · {latest.modified.toLocaleString()}
         </Text>
       )}
-
       <Box flexDirection="column" marginTop={1} marginLeft={1}>
         <Text bold underline>
           Pick a suite (↑/↓ or j/k · Enter to run)
@@ -294,11 +302,33 @@ export function MenuScreen({
             {selected === SUITES.length + 1 ? ' ❯ ' : '   '}Notes / scratchpad
           </Text>
         </Box>
-      </Box>
-
+      </Box>{' '}
+      {showFlags && (
+        <Box
+          marginTop={1}
+          flexDirection="column"
+          borderStyle="round"
+          borderColor="gray"
+          paddingX={1}
+        >
+          <Text bold color="cyan">
+            CLI flags (used by pnpm run eval*) · TUI accepts --no-timing and a suite id
+          </Text>
+          <Text>
+            {'--no-timing    zero wall-clock timing columns in saved CSVs (t in run view)'}
+          </Text>
+          <Text>{'--name <file>  custom filename for the saved CSV (docs/benchmarks/)'}</Text>
+          <Text>{'--out <path>   explicit output path, ignoring docs/benchmarks/'}</Text>
+          <Text>{'--no-file      print only; do not write the CSV'}</Text>
+          <Text>{'--table / --csv    force aligned-table or raw-CSV output'}</Text>
+          <Text>{'--moderate / --topk-sweep   narrow the eval harness (CLI only)'}</Text>
+          <Text>{'--sizes <10,25,50,100>   optimality-gap sizes (CLI only)'}</Text>
+          <Text>{'--scenario / --strategy   narrow baselines runs (CLI only)'}</Text>
+        </Box>
+      )}
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          b browse · n notes · q quit
+          b browse · n notes · ? flags · q quit
         </Text>
       </Box>
     </Box>
@@ -310,9 +340,14 @@ export function MenuScreen({
 export function RunScreen({
   suite,
   onBack,
+  noTiming,
+  onToggleNoTiming,
 }: {
   suite: Suite;
   onBack: () => void;
+  /** Zero the wall-clock timing columns in the table and the saved CSV. */
+  noTiming: boolean;
+  onToggleNoTiming: () => void;
 }): React.JSX.Element {
   const [runId, setRunId] = useState(0);
   const [state, setState] = useState<SuiteRunState | null>(null);
@@ -341,15 +376,9 @@ export function RunScreen({
             setState({ ...progress });
           }
         });
-        if (cancelled) {
-          return;
+        if (!cancelled) {
+          setResults(suiteResults);
         }
-        const paths = suiteResults.map((result) => {
-          const csv = toCsv(result.header, result.rows);
-          return writeCsvOutput(result.defaultName, csv);
-        });
-        setResults(suiteResults);
-        setSavedPaths(paths);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : String(err));
@@ -363,6 +392,23 @@ export function RunScreen({
     };
   }, [suite, runId]);
 
+  // Save whenever results or the timing toggle changes, so the CSV on disk
+  // always matches what is displayed (timing columns zeroed when noTiming).
+  useEffect(() => {
+    if (results === null) {
+      return;
+    }
+    try {
+      const paths = results.map((result) => {
+        const rows = noTiming ? stripTimingColumns(result.header, result.rows) : result.rows;
+        return writeCsvOutput(result.defaultName, toCsv(result.header, rows));
+      });
+      setSavedPaths(paths);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }, [results, noTiming]);
+
   useInput((input, key) => {
     if (saveAs) {
       return; // TextInput handles the keys
@@ -375,6 +421,8 @@ export function RunScreen({
       setSaveAs(true);
       setSaveAsName('');
       setSaveAsError(null);
+    } else if (input === 't') {
+      onToggleNoTiming();
     }
   });
 
@@ -447,13 +495,16 @@ export function RunScreen({
           <Box marginTop={1} flexDirection="column">
             <DataTable
               header={results[0].header}
-              rows={results[0].rows}
+              rows={
+                noTiming ? stripTimingColumns(results[0].header, results[0].rows) : results[0].rows
+              }
               highlights={suite.highlights}
             />
           </Box>
           <Box marginTop={1}>
             <Text color="green">
-              Saved {results[0].rows.length} row(s) to: {savedPaths[0]}
+              Saved {results[0].rows.length} row(s) to: {savedPaths[0] ?? '…'}
+              {noTiming ? ' (timing stripped)' : ''}
             </Text>
           </Box>
         </>
@@ -480,7 +531,10 @@ export function RunScreen({
                 const result = results[0];
                 const typed = saveAsName.trim() === '' ? result.defaultName : saveAsName;
                 const name = typed.toLowerCase().endsWith('.csv') ? typed : `${typed}.csv`;
-                const path = writeCsvOutput(name, toCsv(result.header, result.rows));
+                const rows = noTiming
+                  ? stripTimingColumns(result.header, result.rows)
+                  : result.rows;
+                const path = writeCsvOutput(name, toCsv(result.header, rows));
                 setExtraSaved(path);
                 setSaveAs(false);
               } catch (err) {
@@ -511,7 +565,7 @@ export function RunScreen({
 
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          r rerun · s save as · m menu · q quit
+          r rerun · s save as · t timing {noTiming ? 'off' : 'on'} · m menu · q quit
         </Text>
       </Box>
     </Box>

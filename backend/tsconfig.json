@@ -39,5 +39,10 @@
     "resolveJsonModule": true,
     "noUnusedLocals": false
   },
-  "exclude": ["src/core/evaluation/tui", "scripts/render-probe.tsx", "scripts/render-probe-baselines.tsx"]
+  "exclude": [
+    "src/core/evaluation/tui",
+    "scripts/render-probe.tsx",
+    "scripts/render-probe-baselines.tsx",
+    "scripts/render-probe-gap.tsx"
+  ]
 }

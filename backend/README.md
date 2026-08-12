@@ -78,6 +78,13 @@ pnpm run tui -- baselines   # baseline comparison (FCFS / deferred-acceptance vs
 pnpm run tui -- all         # eval + topk + gap + baselines, each its own CSV
 pnpm run tui -- browser     # browse saved results
 pnpm run tui -- notes       # open the notes / scratchpad editor
+
+Pass `--no-timing` to zero the wall-clock timing columns in saved CSVs from
+launch (quality metrics stay exact; timing is noisy across runs):
+
+```bash
+pnpm run tui -- eval --no-timing
+```
 ```
 
 ### Controls
@@ -88,6 +95,8 @@ pnpm run tui -- notes       # open the notes / scratchpad editor
 | `Enter`            | run the selected suite / open a CSV            |
 | `r`                | rerun the suite / refresh the results list     |
 | `s`                | save the results under a custom filename (run) |
+| `t`                | toggle timing columns in the table + saved CSV (run) |
+| `?`                | show/hide the CLI flags reference (menu)       |
 | `Ctrl+S`           | save the scratchpad to a file (notes)          |
 | `b`                | open the results browser                       |
 | `n`                | open the notes / scratchpad                    |
@@ -100,6 +109,9 @@ pnpm run tui -- notes       # open the notes / scratchpad editor
 - **Run** — live progress (spinner, progress bar, current scenario, completed
   ticks), then a results table with the best value in each highlighted column
   tinted green (highest average score, lowest unassigned %, best fairness, ...).
+  Press `t` to zero the wall-clock timing columns in both the displayed table
+  and the saved CSV — quality metrics are deterministic, so this keeps the
+  benchmark files stable across runs that differ only in machine noise.
 - **Browser** — every CSV in `docs/benchmarks/` with row count, size, and
   modified date; `Enter` opens one as a table.
 - **Notes** — a multi-line scratchpad (arrow keys, backspace, delete, wrapping

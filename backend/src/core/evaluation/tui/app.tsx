@@ -11,10 +11,18 @@ type Screen =
 
 /**
  * Root of the eval TUI. `initial` lets `pnpm run tui -- <suiteId|browser|notes>`
- * skip the menu and jump straight into a screen.
+ * skip the menu and jump straight into a screen; `initialNoTiming` turns the
+ * timing-column stripping on from launch (mirrors `--no-timing` on the CLI).
  */
-export function App({ initial }: { initial?: string }): React.JSX.Element {
+export function App({
+  initial,
+  initialNoTiming = false,
+}: {
+  initial?: string;
+  initialNoTiming?: boolean;
+}): React.JSX.Element {
   const { exit } = useApp();
+  const [noTiming, setNoTiming] = useState(initialNoTiming);
   const [screen, setScreen] = useState<Screen>(() => {
     if (initial === 'browser' || initial === 'results') {
       return { name: 'browser' };
@@ -44,7 +52,14 @@ export function App({ initial }: { initial?: string }): React.JSX.Element {
     if (suite === undefined) {
       return <Text color="red">Unknown suite: {screen.suiteId}</Text>;
     }
-    return <RunScreen suite={suite} onBack={() => setScreen({ name: 'menu' })} />;
+    return (
+      <RunScreen
+        suite={suite}
+        onBack={() => setScreen({ name: 'menu' })}
+        noTiming={noTiming}
+        onToggleNoTiming={() => setNoTiming((value) => !value)}
+      />
+    );
   }
 
   if (screen.name === 'notes') {

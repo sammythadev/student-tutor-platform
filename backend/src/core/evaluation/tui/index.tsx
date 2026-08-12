@@ -25,5 +25,5 @@ if (isDirectRun) {
     process.exit(1);
   }
 
-  render(<App initial={process.argv[2]} />);
+  render(<App initial={process.argv[2]} initialNoTiming={process.argv.includes('--no-timing')} />);
 }
