@@ -77,18 +77,22 @@ pnpm run tui -- gap         # optimality gap (greedy vs min-cost max-flow)
 pnpm run tui -- baselines   # baseline comparison (FCFS vs greedy engine)
 pnpm run tui -- all         # eval + topk + gap + baselines, each its own CSV
 pnpm run tui -- browser     # browse saved results
+pnpm run tui -- notes       # open the notes / scratchpad editor
 ```
 
 ### Controls
 
-| Key                | Action                                     |
-| ------------------ | ------------------------------------------ |
-| `↑`/`↓` or `j`/`k` | move the selection                         |
-| `Enter`            | run the selected suite / open a CSV        |
-| `r`                | rerun the suite / refresh the results list |
-| `b`                | open the results browser                   |
-| `m` / `Esc`        | back (menu or results list)                |
-| `q`                | back / quit                                |
+| Key                | Action                                         |
+| ------------------ | ---------------------------------------------- |
+| `↑`/`↓` or `j`/`k` | move the selection                             |
+| `Enter`            | run the selected suite / open a CSV            |
+| `r`                | rerun the suite / refresh the results list     |
+| `s`                | save the results under a custom filename (run) |
+| `Ctrl+S`           | save the scratchpad to a file (notes)          |
+| `b`                | open the results browser                       |
+| `n`                | open the notes / scratchpad                    |
+| `m` / `Esc`        | back (menu, results list, or scratchpad)       |
+| `q`                | back / quit                                    |
 
 ### Screens
 
@@ -98,11 +102,16 @@ pnpm run tui -- browser     # browse saved results
   tinted green (highest average score, lowest unassigned %, best fairness, ...).
 - **Browser** — every CSV in `docs/benchmarks/` with row count, size, and
   modified date; `Enter` opens one as a table.
+- **Notes** — a multi-line scratchpad (arrow keys, backspace, delete, wrapping
+  cursor) for jotting observations next to your runs. `Ctrl+S` prompts for a
+  filename, then saves the text to `docs/notes/<name>.txt`.
 
 ### Output
 
 Each run auto-saves its CSV to `docs/benchmarks/`, so results land in the same
-files the `pnpm run eval*` scripts write:
+files the `pnpm run eval*` scripts write. On the results screen, `s` lets you
+re-save the current table under a custom filename, and the notes scratchpad
+saves free text to `docs/notes/`:
 
 | Suite     | File                              |
 | --------- | --------------------------------- |
@@ -111,6 +120,7 @@ files the `pnpm run eval*` scripts write:
 | moderate  | `moderate-results.csv`            |
 | gap       | `optimality-gap-results.csv`      |
 | baselines | `baseline-comparison-results.csv` |
+| notes     | `docs/notes/<name>.txt`           |
 
 ## Notes
 

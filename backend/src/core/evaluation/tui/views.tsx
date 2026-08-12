@@ -1,14 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
-import { readdirSync, readFileSync, statSync } from 'fs';
-import { join } from 'path';
-import {
-  columnWidths,
-  DEFAULT_OUTPUT_DIR,
-  parseCsv,
-  toCsv,
-  writeCsvOutput,
-} from '@core/evaluation/cli-output';
+import figlet from 'figlet';
+import { readFileSync } from 'fs';
+import { columnWidths, parseCsv, toCsv, writeCsvOutput } from '@core/evaluation/cli-output';
+import { defaultNoteName, listSavedCsvs, saveNoteFile, type CsvFileInfo } from './files';
+import { cursorPosition, indexFromPosition, visualSpans } from './text-utils';
 import { SUITES, type Suite, type SuiteResult, type SuiteRunState } from './suites';
 
 /** ── shared building blocks ─────────────────────────────────────────────── */
@@ -127,19 +123,90 @@ function DataTable({
   );
 }
 
+/** Single-line text input with a block cursor; used for filename prompts. */
+function TextInput({
+  label,
+  value,
+  onChange,
+  onSubmit,
+  onCancel,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (next: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  placeholder?: string;
+}): React.JSX.Element {
+  useInput((input, key) => {
+    if (key.escape) {
+      onCancel();
+    } else if (key.return) {
+      onSubmit();
+    } else if (key.backspace) {
+      onChange(value.slice(0, -1));
+    } else if (input && !key.ctrl) {
+      onChange(value + input);
+    }
+  });
+
+  return (
+    <Box>
+      <Text color="cyan">{label}</Text>
+      <Text> </Text>
+      {value === '' && placeholder !== undefined ? (
+        <Text color="gray" dimColor>
+          {placeholder}
+        </Text>
+      ) : (
+        <Text>{value}</Text>
+      )}
+      <Text inverse> </Text>
+    </Box>
+  );
+}
+
 /** ── main menu ──────────────────────────────────────────────────────────── */
+
+const BANNER_FONTS = ['ANSI Shadow', 'Standard', 'Small'];
+
+/** Claude-style figlet banner, choosing the widest font that fits the screen. */
+function renderBanner(text: string, availableWidth: number): string[] {
+  for (const font of BANNER_FONTS) {
+    try {
+      const art = figlet.textSync(text, { font: font as figlet.Fonts });
+      const lines = art.replace(/\n$/, '').split('\n');
+      if (Math.max(...lines.map((line) => line.length)) <= availableWidth) {
+        return lines;
+      }
+    } catch {
+      // try the next font
+    }
+  }
+  return [text];
+}
 
 export function MenuScreen({
   onRun,
   onBrowse,
+  onNotes,
   onQuit,
 }: {
   onRun: (suiteId: string) => void;
   onBrowse: () => void;
+  onNotes: () => void;
   onQuit: () => void;
 }): React.JSX.Element {
+  const { stdout } = useStdout();
   const [selected, setSelected] = useState(0);
-  const itemCount = SUITES.length + 1;
+  const itemCount = SUITES.length + 2; // suites + "browse" + "notes"
+
+  const banner = useMemo(
+    () => renderBanner('EVAL RUNNER', Math.max(40, (stdout.columns ?? 100) - 2)),
+    [stdout.columns],
+  );
+  const latest = useMemo(() => listSavedCsvs()[0], []);
 
   useInput((input, key) => {
     if (key.upArrow || input === 'k') {
@@ -149,30 +216,43 @@ export function MenuScreen({
     } else if (key.return || input === ' ') {
       if (selected < SUITES.length) {
         onRun(SUITES[selected].id);
-      } else {
+      } else if (selected === SUITES.length) {
         onBrowse();
+      } else {
+        onNotes();
       }
     } else if (input === 'b') {
       onBrowse();
+    } else if (input === 'n') {
+      onNotes();
     } else if (input === 'q' || key.escape) {
       onQuit();
     }
   });
 
+  const showBanner = (stdout.rows ?? 40) >= 28;
+
   return (
     <Box flexDirection="column" padding={1}>
-      <Box
-        borderStyle="round"
-        borderColor="magenta"
-        flexDirection="column"
-        paddingX={2}
-        paddingY={1}
-      >
-        <Text bold color="white">
-          🎓 Tutor Matchmaking — Evaluation Runner
+      {showBanner &&
+        banner.map((line) => (
+          <Text key={line} color="magenta">
+            {line}
+          </Text>
+        ))}
+      {!showBanner && (
+        <Text bold color="magenta">
+          🎓 EVAL RUNNER
         </Text>
-        <Text color="gray">In-process eval runner · results saved to docs/benchmarks/</Text>
-      </Box>
+      )}
+      <Text color="gray" dimColor>
+        Tutor matchmaking · in-process eval runner · results → docs/benchmarks/
+      </Text>
+      {latest !== undefined && (
+        <Text color="green">
+          Latest run: {latest.name} · {latest.dataRows} rows · {latest.modified.toLocaleString()}
+        </Text>
+      )}
 
       <Box flexDirection="column" marginTop={1} marginLeft={1}>
         <Text bold underline>
@@ -195,11 +275,19 @@ export function MenuScreen({
             {selected === SUITES.length ? ' ❯ ' : '   '}Browse saved results
           </Text>
         </Box>
+        <Box>
+          <Text
+            color={selected === SUITES.length + 1 ? 'cyan' : 'white'}
+            bold={selected === SUITES.length + 1}
+          >
+            {selected === SUITES.length + 1 ? ' ❯ ' : '   '}Notes / scratchpad
+          </Text>
+        </Box>
       </Box>
 
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          b browse · q quit
+          b browse · n notes · q quit
         </Text>
       </Box>
     </Box>
@@ -220,6 +308,9 @@ export function RunScreen({
   const [results, setResults] = useState<SuiteResult[] | null>(null);
   const [savedPaths, setSavedPaths] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [saveAs, setSaveAs] = useState(false);
+  const [saveAsName, setSaveAsName] = useState('');
+  const [extraSaved, setExtraSaved] = useState<string | null>(null);
   const startRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -228,6 +319,7 @@ export function RunScreen({
     setResults(null);
     setSavedPaths([]);
     setError(null);
+    setExtraSaved(null);
     startRef.current = Date.now();
 
     const run = async (): Promise<void> => {
@@ -260,10 +352,16 @@ export function RunScreen({
   }, [suite, runId]);
 
   useInput((input, key) => {
+    if (saveAs) {
+      return; // TextInput handles the keys
+    }
     if (input === 'q' || key.escape || input === 'm') {
       onBack();
     } else if (input === 'r' && results !== null) {
       setRunId((id) => id + 1);
+    } else if (input === 's' && results !== null && results.length === 1) {
+      setSaveAs(true);
+      setSaveAsName('');
     }
   });
 
@@ -356,9 +454,42 @@ export function RunScreen({
         </Box>
       )}
 
+      {saveAs && results.length === 1 && (
+        <Box marginTop={1} flexDirection="column">
+          <Text color="yellow">Save results as (docs/benchmarks/)</Text>
+          <TextInput
+            label="Name:"
+            value={saveAsName}
+            onChange={setSaveAsName}
+            placeholder={results[0].defaultName}
+            onSubmit={() => {
+              try {
+                const result = results[0];
+                const name = saveAsName.trim() === '' ? result.defaultName : saveAsName;
+                const path = writeCsvOutput(name, toCsv(result.header, result.rows));
+                setExtraSaved(path);
+                setSaveAs(false);
+              } catch (err) {
+                setError(err instanceof Error ? err.message : String(err));
+              }
+            }}
+            onCancel={() => setSaveAs(false)}
+          />
+          <Text color="gray" dimColor>
+            Enter save · Esc cancel
+          </Text>
+        </Box>
+      )}
+
+      {extraSaved !== null && !saveAs && (
+        <Box marginTop={1}>
+          <Text color="green">✓ Also saved to: {extraSaved}</Text>
+        </Box>
+      )}
+
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          r rerun · m menu · q quit
+          r rerun · s save as · m menu · q quit
         </Text>
       </Box>
     </Box>
@@ -366,36 +497,6 @@ export function RunScreen({
 }
 
 /** ── results browser ────────────────────────────────────────────────────── */
-
-interface CsvFileInfo {
-  name: string;
-  path: string;
-  dataRows: number;
-  bytes: number;
-  modified: Date;
-}
-
-function listSavedCsvs(): CsvFileInfo[] {
-  try {
-    return readdirSync(DEFAULT_OUTPUT_DIR)
-      .filter((name) => name.toLowerCase().endsWith('.csv'))
-      .map((name) => {
-        const path = join(DEFAULT_OUTPUT_DIR, name);
-        const stats = statSync(path);
-        const content = readFileSync(path, 'utf8');
-        return {
-          name,
-          path,
-          dataRows: Math.max(0, parseCsv(content).length - 1),
-          bytes: stats.size,
-          modified: stats.mtime,
-        };
-      })
-      .sort((a, b) => b.modified.getTime() - a.modified.getTime());
-  } catch {
-    return [];
-  }
-}
 
 export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Element {
   const [files, setFiles] = useState<CsvFileInfo[]>(() => listSavedCsvs());
@@ -502,6 +603,161 @@ export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
           ↑/↓ browse · Enter view · r refresh · m/q back to menu
         </Text>
       </Box>
+    </Box>
+  );
+}
+
+/** ── notes / scratchpad ─────────────────────────────────────────────────── */
+
+export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Element {
+  const [text, setText] = useState('');
+  const [cursor, setCursor] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [fileName, setFileName] = useState(() => defaultNoteName());
+  const [savedPath, setSavedPath] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const { stdout } = useStdout();
+
+  const editorWidth = Math.max(20, (stdout.columns ?? 80) - 2);
+  const viewportHeight = Math.max(5, (stdout.rows ?? 24) - 8);
+
+  const spans = useMemo(() => visualSpans(text, editorWidth), [text, editorWidth]);
+  const pos = useMemo(() => cursorPosition(text, cursor, editorWidth), [text, cursor, editorWidth]);
+  const scrollTop = Math.min(
+    Math.max(pos.row - (viewportHeight - 1), 0),
+    Math.max(0, spans.length - viewportHeight),
+  );
+
+  const insert = (fragment: string): void => {
+    setText(text.slice(0, cursor) + fragment + text.slice(cursor));
+    setCursor(cursor + fragment.length);
+  };
+
+  useInput((input, key) => {
+    if (saving) {
+      return; // TextInput handles the keys
+    }
+    if (savedPath !== null || saveError !== null) {
+      setSavedPath(null);
+      setSaveError(null);
+    }
+    if (key.escape) {
+      onBack();
+      return;
+    }
+    if (key.ctrl && input === 's') {
+      setFileName('');
+      setSaving(true);
+      return;
+    }
+    if (key.return) {
+      insert('\n');
+      return;
+    }
+    if (key.backspace && cursor > 0) {
+      setText(text.slice(0, cursor - 1) + text.slice(cursor));
+      setCursor(cursor - 1);
+      return;
+    }
+    if (key.delete && cursor < text.length) {
+      setText(text.slice(0, cursor) + text.slice(cursor + 1));
+      return;
+    }
+    if (key.leftArrow && cursor > 0) {
+      setCursor(cursor - 1);
+      return;
+    }
+    if (key.rightArrow && cursor < text.length) {
+      setCursor(cursor + 1);
+      return;
+    }
+    if (key.upArrow) {
+      setCursor(indexFromPosition(text, pos.row - 1, pos.col, editorWidth));
+      return;
+    }
+    if (key.downArrow) {
+      setCursor(indexFromPosition(text, pos.row + 1, pos.col, editorWidth));
+      return;
+    }
+    if (input && !key.ctrl) {
+      insert(input);
+    }
+  });
+
+  const save = (): void => {
+    try {
+      const name = fileName.trim() === '' ? defaultNoteName() : fileName;
+      const path = saveNoteFile(name, text);
+      setSavedPath(path);
+      setSaving(false);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Box>
+        <Text bold color="cyan">
+          Notes / scratchpad
+        </Text>
+        <Text color="gray"> — type freely, Ctrl+S to save to a file</Text>
+      </Box>
+
+      <Box marginTop={1} flexDirection="column" borderStyle="round" borderColor="gray" paddingX={1}>
+        {spans.slice(scrollTop, scrollTop + viewportHeight).map((span, i) => {
+          const rowIndex = scrollTop + i;
+          const line = text.slice(span.start, span.start + span.len);
+          if (rowIndex === pos.row) {
+            const before = line.slice(0, pos.col);
+            const at = line[pos.col] ?? ' ';
+            const after = line.slice(pos.col + 1);
+            return (
+              <Text key={rowIndex}>
+                {before}
+                <Text inverse>{at}</Text>
+                {after}
+              </Text>
+            );
+          }
+          return <Text key={rowIndex}>{line}</Text>;
+        })}
+      </Box>
+
+      <Box marginTop={1}>
+        <Text color="gray" dimColor>
+          {text.length} chars · row {pos.row + 1}, col {pos.col + 1} · Ctrl+S save · Esc back
+        </Text>
+      </Box>
+
+      {saving && (
+        <Box marginTop={1} flexDirection="column">
+          <Text color="yellow">Save note to docs/notes/</Text>
+          <TextInput
+            label="Name:"
+            value={fileName}
+            onChange={setFileName}
+            onSubmit={save}
+            onCancel={() => setSaving(false)}
+            placeholder={defaultNoteName()}
+          />
+          <Text color="gray" dimColor>
+            Enter save · Esc cancel
+          </Text>
+        </Box>
+      )}
+
+      {savedPath !== null && !saving && (
+        <Box marginTop={1}>
+          <Text color="green">✓ Saved to {savedPath}</Text>
+        </Box>
+      )}
+
+      {saveError !== null && !saving && (
+        <Box marginTop={1}>
+          <Text color="red">✗ {saveError}</Text>
+        </Box>
+      )}
     </Box>
   );
 }

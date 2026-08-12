@@ -1,4 +1,7 @@
+import { existsSync, readFileSync, rmSync } from 'fs';
 import { columnWidths, parseCsv, toCsv } from '../evaluation/cli-output';
+import { defaultNoteName, NOTES_DIR, saveNoteFile } from '../evaluation/tui/files';
+import { cursorPosition, indexFromPosition, wrapText } from '../evaluation/tui/text-utils';
 import {
   buildEvaluationConfigs,
   buildModerateConfigs,
@@ -99,5 +102,51 @@ describe('tui suite registry', () => {
     for (const suite of SUITES) {
       expect(getSuite(suite.id)).toBe(suite);
     }
+  });
+});
+
+describe('note pad text utils', () => {
+  it('wraps long lines at the given width', () => {
+    expect(wrapText('abcdefgh', 4)).toEqual(['abcd', 'efgh']);
+    expect(wrapText('a\nb', 10)).toEqual(['a', 'b']);
+    expect(wrapText('', 10)).toEqual(['']);
+  });
+
+  it('maps a buffer index to a visual position', () => {
+    expect(cursorPosition('abcdefgh', 0, 4)).toEqual({ row: 0, col: 0 });
+    expect(cursorPosition('abcdefgh', 4, 4)).toEqual({ row: 0, col: 4 });
+    expect(cursorPosition('abcdefgh', 5, 4)).toEqual({ row: 1, col: 1 });
+    expect(cursorPosition('hello\nworld', 6, 5)).toEqual({ row: 1, col: 0 });
+  });
+
+  it('maps a visual position back to a buffer index', () => {
+    expect(indexFromPosition('abcdefgh', 1, 0, 4)).toBe(4);
+    expect(indexFromPosition('abcdefgh', 0, 2, 4)).toBe(2);
+    expect(indexFromPosition('abcdefgh', 1, 9, 4)).toBe(8); // clamped to line end
+    expect(indexFromPosition('hello\nworld', 0, 0, 5)).toBe(0);
+  });
+
+  it('up/down movement keeps the column', () => {
+    const text = 'hello\nworld';
+    const width = 5;
+    const pos = cursorPosition(text, 6, width); // cursor at start of 'world'
+    expect(pos).toEqual({ row: 1, col: 0 });
+    expect(indexFromPosition(text, pos.row - 1, pos.col, width)).toBe(0);
+  });
+});
+
+describe('note files', () => {
+  it('builds a timestamped default filename', () => {
+    expect(defaultNoteName(new Date(2026, 7, 12, 15, 4, 3))).toBe('note-20260812-150403.txt');
+  });
+
+  it('writes a note file and returns its path', () => {
+    const name = `test-${Date.now()}`;
+    const path = saveNoteFile(name, 'hello notes');
+    expect(existsSync(path)).toBe(true);
+    expect(readFileSync(path, 'utf8')).toBe('hello notes');
+    expect(path.startsWith(NOTES_DIR)).toBe(true);
+    expect(path.endsWith('.txt')).toBe(true);
+    rmSync(path); // keep the repo clean
   });
 });
