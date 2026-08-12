@@ -235,8 +235,8 @@ export function MenuScreen({
   return (
     <Box flexDirection="column" padding={1}>
       {showBanner &&
-        banner.map((line) => (
-          <Text key={line} color="magenta">
+        banner.map((line, i) => (
+          <Text key={`banner-${i}`} color="magenta">
             {line}
           </Text>
         ))}
@@ -310,6 +310,7 @@ export function RunScreen({
   const [error, setError] = useState<string | null>(null);
   const [saveAs, setSaveAs] = useState(false);
   const [saveAsName, setSaveAsName] = useState('');
+  const [saveAsError, setSaveAsError] = useState<string | null>(null);
   const [extraSaved, setExtraSaved] = useState<string | null>(null);
   const startRef = useRef<number | null>(null);
 
@@ -362,6 +363,7 @@ export function RunScreen({
     } else if (input === 's' && results !== null && results.length === 1) {
       setSaveAs(true);
       setSaveAsName('');
+      setSaveAsError(null);
     }
   });
 
@@ -471,14 +473,22 @@ export function RunScreen({
                 setExtraSaved(path);
                 setSaveAs(false);
               } catch (err) {
-                setError(err instanceof Error ? err.message : String(err));
+                setSaveAsError(err instanceof Error ? err.message : String(err));
               }
             }}
-            onCancel={() => setSaveAs(false)}
+            onCancel={() => {
+              setSaveAs(false);
+              setSaveAsError(null);
+            }}
           />
           <Text color="gray" dimColor>
             Enter save · Esc cancel
           </Text>
+          {saveAsError !== null && (
+            <Box marginTop={1}>
+              <Text color="red">✗ {saveAsError}</Text>
+            </Box>
+          )}
         </Box>
       )}
 
@@ -624,14 +634,23 @@ export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
 
   const spans = useMemo(() => visualSpans(text, editorWidth), [text, editorWidth]);
   const pos = useMemo(() => cursorPosition(text, cursor, editorWidth), [text, cursor, editorWidth]);
+  // When the cursor sits exactly at the end of a full-width wrapped line, show
+  // the block at the start of the next line instead of overflowing the border.
+  const shifted =
+    pos.col === spans[pos.row]?.len &&
+    spans[pos.row]?.len === editorWidth &&
+    pos.row + 1 < spans.length;
+  const cursorRow = shifted ? pos.row + 1 : pos.row;
+  const cursorCol = shifted ? 0 : pos.col;
   const scrollTop = Math.min(
-    Math.max(pos.row - (viewportHeight - 1), 0),
+    Math.max(cursorRow - (viewportHeight - 1), 0),
     Math.max(0, spans.length - viewportHeight),
   );
 
   const insert = (fragment: string): void => {
-    setText(text.slice(0, cursor) + fragment + text.slice(cursor));
-    setCursor(cursor + fragment.length);
+    const cleaned = fragment.replace(/\r/g, ''); // strip CR from pasted Windows text
+    setText(text.slice(0, cursor) + cleaned + text.slice(cursor));
+    setCursor(cursor + cleaned.length);
   };
 
   useInput((input, key) => {
@@ -709,10 +728,10 @@ export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
         {spans.slice(scrollTop, scrollTop + viewportHeight).map((span, i) => {
           const rowIndex = scrollTop + i;
           const line = text.slice(span.start, span.start + span.len);
-          if (rowIndex === pos.row) {
-            const before = line.slice(0, pos.col);
-            const at = line[pos.col] ?? ' ';
-            const after = line.slice(pos.col + 1);
+          if (rowIndex === cursorRow) {
+            const before = line.slice(0, cursorCol);
+            const at = line[cursorCol] ?? ' ';
+            const after = line.slice(cursorCol + 1);
             return (
               <Text key={rowIndex}>
                 {before}
@@ -727,7 +746,7 @@ export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
 
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          {text.length} chars · row {pos.row + 1}, col {pos.col + 1} · Ctrl+S save · Esc back
+          {text.length} chars · row {cursorRow + 1}, col {cursorCol + 1} · Ctrl+S save · Esc back
         </Text>
       </Box>
 

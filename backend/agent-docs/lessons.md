@@ -25,3 +25,5 @@
 - `require.main === module` never fires under ESM; detect direct runs with `import.meta.url === pathToFileURL(process.argv[1]).href` (guarded by `typeof require !== 'undefined'` for CJS reuse).
 - `$?` after a pipe reports the LAST command (e.g. `head`), not the first — capture exit codes before piping or check PIPESTATUS.
 - Packages that ship types only via the `exports` field (ESM-era) need a sidecar tsconfig with `moduleResolution: bundler`; exclude those files from the main tsconfig so the node10 build stays untouched.
+- ink v4 consumes stdin via the `readable` stream protocol (`stdin.read()`), not `data` events — a fake-TTY test stdin must be a real `Readable` whose `push()` feeds keypresses.
+- `resolveOutputPath` only appends `.csv` on the `--name` flag path; callers passing a custom name must normalize the extension themselves.
