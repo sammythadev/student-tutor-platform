@@ -50,3 +50,25 @@ Durable discoveries, decisions, and repo facts worth preserving.
   friendly message when `process.stdin.isTTY` is false.
 - `render()` to a non-TTY stdout still emits a static frame (usable for capture
   probes); live cursor control simply doesn't apply.
+- ink v4 reads input via the **`readable` stream protocol** (`stdin.read()`), not
+  `data` events. A fake TTY stdin for testing must be a real `Readable` (with
+  `isTTY: true`, no-op `setRawMode`/`ref`/`unref`) so `push()` drives keypresses.
+  `useInput` parses each chunk through `parse-keypress`; multi-char chunks arrive
+  as a single paste.
+
+## TUI v2: banner + scratchpad (2026-08)
+
+- The menu shows a **figlet banner** (`figlet` + `@types/figlet` devDeps). Font is
+  picked at render time: widest of `ANSI Shadow` / `Standard` / `Small` that fits
+  the terminal width; the banner is hidden below 28 terminal rows.
+- **Note pad** (`NotePadScreen`) is a character-wrapped multi-line editor;
+  `text-utils.ts` keeps cursor ↔ visual position mapping exact (wrap is
+  character-based, not word-based, so arrow keys are precise). `Ctrl+S` prompts
+  for a filename (default shown as placeholder, used when empty) and writes to
+  `docs/notes/` via `saveNoteFile` (`files.ts`).
+- The run view has **save-as**: `s` opens a filename prompt (default = the suite's
+  normal CSV name), then `writeCsvOutput` writes the extra file. The `.csv`
+  extension is appended manually — `resolveOutputPath` only appends it on the
+  `--name` flag path.
+- `files.ts` (fs helpers) and `text-utils.ts` (wrap/cursor math) stay free of ink
+  so jest can unit-test them (ink is ESM-only and can't be required from CJS).

@@ -465,7 +465,8 @@ export function RunScreen({
             onSubmit={() => {
               try {
                 const result = results[0];
-                const name = saveAsName.trim() === '' ? result.defaultName : saveAsName;
+                const typed = saveAsName.trim() === '' ? result.defaultName : saveAsName;
+                const name = typed.toLowerCase().endsWith('.csv') ? typed : `${typed}.csv`;
                 const path = writeCsvOutput(name, toCsv(result.header, result.rows));
                 setExtraSaved(path);
                 setSaveAs(false);
