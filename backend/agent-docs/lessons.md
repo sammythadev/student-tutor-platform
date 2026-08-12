@@ -17,3 +17,11 @@
 - Treat active assignments as sessions until product requirements justify a separate sessions table; this keeps lifecycle updates and feedback tied to one persisted record.
 - Core tie-breakers should be deterministic without being lexical, otherwise IDs can encode systematic tutor ordering bias.
 - Do not put non-injectable helper instances in Nest service constructor parameters, even with default values. Nest still treats them as DI dependencies at runtime; use private class fields instead.
+- ink v4+ is ESM-only: never import it from CJS ts-node scripts (require(esm) fails), and don't expect its types under `moduleResolution: node`. Run ESM TUI entries through a custom loader chain instead.
+- ts-node's `ts-node/esm` loader is broken on Node 24 (ERR_REQUIRE_CYCLE_MODULE for any .tsx entry importing a package). Don't burn time fighting it — replace with a small SWC-based ESM loader (SWC is already a devDep here).
+- Use `module.register()` in an `--import` bootstrap for loader chains (Node ≥ 20.6); `--loader` is deprecated and its composition order is easy to get wrong.
+- An ESM resolver's file lookup must reject directories (`statSync().isFile()`) or bare alias specifiers like `@core/algorithms` resolve to a directory URL → EISDIR.
+- Files named `*.vo.ts` (pseudo-extension in the name) break naive `extname() === ''` extensionless detection. Resolve relative imports as: exact file match first, then append `.ts/.tsx` suffixes.
+- `require.main === module` never fires under ESM; detect direct runs with `import.meta.url === pathToFileURL(process.argv[1]).href` (guarded by `typeof require !== 'undefined'` for CJS reuse).
+- `$?` after a pipe reports the LAST command (e.g. `head`), not the first — capture exit codes before piping or check PIPESTATUS.
+- Packages that ship types only via the `exports` field (ESM-era) need a sidecar tsconfig with `moduleResolution: bundler`; exclude those files from the main tsconfig so the node10 build stays untouched.

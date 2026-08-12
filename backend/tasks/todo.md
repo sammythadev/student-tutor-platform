@@ -72,6 +72,31 @@ Use this file to keep substantial tasks planned, tracked, and closed out.
 
 ---
 
+## Task: Interactive eval TUI (Ink)
+
+- Date: 2026-08-12
+- Request: Build a TUI to run the eval suites (`eval`, `topk`, `moderate`, `gap`, `baselines`, `all`) with live progress, plus a saved-results browser.
+- Plan:
+  - [x] Add devDeps: ink@^4.4.1, react@^18.3.1, @types/react@^18 (ink v4+ is ESM-only → dedicated ESM runtime)
+  - [x] Eval modules: export config builders / per-row helpers (additive only, CLI unchanged)
+  - [x] cli-output.ts: ESM-safe DEFAULT_OUTPUT_DIR; add columnWidths + parseCsv
+  - [x] tsconfig.tui.json (module esnext / bundler) + exclude TUI from main tsconfig; typecheck runs both
+  - [x] Custom SWC ESM loader (scripts/tui-loader.mjs + register-tui.mjs) — ts-node/esm is broken on Node 24
+  - [x] TUI module: suites.ts (registry), app.tsx (screen machine), views.tsx (Menu / Run / Browser), index.tsx (entry)
+  - [x] pnpm run tui script (+ direct-suite arg: `pnpm run tui -- gap`)
+  - [x] Unit tests (config builders, gap row, baseline cell, parseCsv, suite registry) — 10 passing
+- Progress:
+  - ink v5 → v4 downgrade after discovering ink v4+ is ESM-only (require(esm) fails under CJS ts-node)
+  - Replaced ts-node/esm with a custom SWC ESM loader after ERR_REQUIRE_CYCLE_MODULE on Node 24
+- Verification:
+  - typecheck (both tsconfig projects) ✓ · jest 10/10 ✓ · eslint clean on all changed files ✓
+  - `pnpm run eval:gap` CLI regression ✓ (unchanged output)
+  - UI smoke-tested via render probe: menu, live progress (bar + scenario labels + ✓ ticks), completed tables with best-value highlights, CSV save paths, results browser all render correctly
+- Result:
+  - `pnpm run tui` (or `pnpm run tui -- gap|topk|moderate|eval|baselines|all|browser`) runs any suite in-process with per-scenario live progress, renders a highlighted results table, auto-saves CSVs to docs/benchmarks/, and browses past results.
+
+---
+
 ## Task: Refactor Signup, Onboarding and Profile Updates
 
 - Date: 2026-06-19

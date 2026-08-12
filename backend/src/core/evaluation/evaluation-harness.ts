@@ -3,7 +3,7 @@ import type { AssignmentStats } from '@core/algorithms';
 import { emitResults, runCli } from './cli-output';
 import { type CapacityStrategy, generateStudents, generateTutors } from './fixtures';
 
-interface EvaluationConfig {
+export interface EvaluationConfig {
   scenario: string;
   students: number;
   tutors: number;
@@ -12,7 +12,7 @@ interface EvaluationConfig {
   topK?: number;
 }
 
-interface EvaluationRow {
+export interface EvaluationRow {
   scenario: string;
   students: number;
   tutors: number;
@@ -85,9 +85,10 @@ export function evaluate(config: EvaluationConfig): EvaluationRow {
   };
 }
 
-export function runEvaluation(): EvaluationRow[] {
+/** Stress-sweep configs: 4 sizes × {load-factor on, off} — used by `eval` and the TUI. */
+export function buildEvaluationConfigs(): EvaluationConfig[] {
   const sizes = [50, 200, 1000, 5000];
-  const ratios: EvaluationConfig[] = sizes.flatMap((size) => [
+  return sizes.flatMap((size) => [
     {
       scenario: 'stress-sweep',
       students: size,
@@ -103,34 +104,30 @@ export function runEvaluation(): EvaluationRow[] {
       capacityStrategy: 'synthetic',
     },
   ]);
-
-  return ratios.map(evaluate);
 }
 
 // Top-k sweep: measures the quality/speed/memory tradeoff of capping each
 // student's candidate list. k=Infinity (no cap) is the quality ceiling; smaller
 // k trades a small quality/coverage loss for large heap-memory savings.
-export function runTopKSweep(): EvaluationRow[] {
+export function buildTopKSweepConfigs(): EvaluationConfig[] {
   const kValues = [10, 20, 50, Infinity];
   const sizes = [1000, 5000];
   return sizes.flatMap((size) =>
-    kValues.map((k) =>
-      evaluate({
-        scenario: `topk-sweep-k${k === Infinity ? 'inf' : k}`,
-        students: size,
-        tutors: Math.max(5, Math.floor(size / 10)),
-        loadFactorWeight: 0.05,
-        capacityStrategy: 'synthetic',
-        topK: k,
-      }),
-    ),
+    kValues.map((k) => ({
+      scenario: `topk-sweep-k${k === Infinity ? 'inf' : k}`,
+      students: size,
+      tutors: Math.max(5, Math.floor(size / 10)),
+      loadFactorWeight: 0.05,
+      capacityStrategy: 'synthetic',
+      topK: k,
+    })),
   );
 }
 
 // Realistic scenario: mirrors the nigerian-secondary seed — 1:1 student:tutor
 // ratio at the platform's ~50-user demo scale, with seed capacity 2 + (index % 3).
-export function runRealisticEvaluation(): EvaluationRow[] {
-  const configs: EvaluationConfig[] = [
+export function buildRealisticConfigs(): EvaluationConfig[] {
+  return [
     {
       scenario: 'realistic-seed',
       students: 50,
@@ -146,15 +143,13 @@ export function runRealisticEvaluation(): EvaluationRow[] {
       capacityStrategy: 'seed',
     },
   ];
-
-  return configs.map(evaluate);
 }
 
 // Moderate-load band: ratios between the 1:1 realistic seed (self-saturating)
 // and the 3:1+ capacity-bound regime, where the load-factor term has the most
 // room to affect aggregate outcomes. Uses seed capacities (2 + index % 3) to
 // mirror the platform's real supply distribution.
-export function runModerateEvaluation(): EvaluationRow[] {
+export function buildModerateConfigs(): EvaluationConfig[] {
   const bands = [
     { scenario: 'moderate-1.5to1', students: 150, tutors: 100 },
     { scenario: 'moderate-2to1', students: 150, tutors: 75 },
@@ -163,16 +158,30 @@ export function runModerateEvaluation(): EvaluationRow[] {
   ];
 
   return bands.flatMap((band) =>
-    [0.05, 0].map((loadFactorWeight) =>
-      evaluate({
-        ...band,
-        loadFactorWeight,
-        capacityStrategy: 'seed',
-      }),
-    ),
+    [0.05, 0].map((loadFactorWeight) => ({
+      ...band,
+      loadFactorWeight,
+      capacityStrategy: 'seed',
+    })),
   );
 }
-const HEADER = [
+
+export function runEvaluation(): EvaluationRow[] {
+  return buildEvaluationConfigs().map(evaluate);
+}
+
+export function runTopKSweep(): EvaluationRow[] {
+  return buildTopKSweepConfigs().map(evaluate);
+}
+
+export function runRealisticEvaluation(): EvaluationRow[] {
+  return buildRealisticConfigs().map(evaluate);
+}
+
+export function runModerateEvaluation(): EvaluationRow[] {
+  return buildModerateConfigs().map(evaluate);
+}
+export const HEADER = [
   'scenario',
   'students',
   'tutors',
@@ -188,7 +197,7 @@ const HEADER = [
   'peakHeapEntries',
 ];
 
-const toRow = (row: EvaluationRow): string[] => [
+export const toRow = (row: EvaluationRow): string[] => [
   row.scenario,
   String(row.students),
   String(row.tutors),
@@ -204,7 +213,7 @@ const toRow = (row: EvaluationRow): string[] => [
   String(row.peakHeapEntries),
 ];
 
-if (require.main === module) {
+if (typeof require !== 'undefined' && require.main === module) {
   runCli(() => {
     if (process.argv.includes('--optimality-gap')) {
       throw new Error('The optimality gap moved to its own script. Run: pnpm run eval:gap');

@@ -45,10 +45,72 @@ pnpm run format:check
 pnpm run typecheck
 pnpm run test
 pnpm run test:e2e
+pnpm run tui
 pnpm run db:generate
 pnpm run db:migrate
 pnpm run db:studio
 ```
+
+## Eval TUI
+
+`pnpm run tui` launches an interactive terminal UI for the evaluation suites in
+`src/core/evaluation`. Pick a suite, watch per-scenario live progress, review the
+highlighted results table, and browse previously saved CSVs. It runs in an
+interactive terminal (TTY); piped output falls back to the plain `pnpm run eval*`
+scripts.
+
+### Launch
+
+Run from the project root:
+
+```bash
+pnpm run tui
+```
+
+Jump straight into a screen with an argument:
+
+```bash
+pnpm run tui -- eval        # full harness (realistic + moderate + stress)
+pnpm run tui -- topk        # top-k sweep
+pnpm run tui -- moderate    # moderate-load band
+pnpm run tui -- gap         # optimality gap (greedy vs min-cost max-flow)
+pnpm run tui -- baselines   # baseline comparison (FCFS vs greedy engine)
+pnpm run tui -- all         # eval + topk + gap + baselines, each its own CSV
+pnpm run tui -- browser     # browse saved results
+```
+
+### Controls
+
+| Key                | Action                                     |
+| ------------------ | ------------------------------------------ |
+| `↑`/`↓` or `j`/`k` | move the selection                         |
+| `Enter`            | run the selected suite / open a CSV        |
+| `r`                | rerun the suite / refresh the results list |
+| `b`                | open the results browser                   |
+| `m` / `Esc`        | back (menu or results list)                |
+| `q`                | back / quit                                |
+
+### Screens
+
+- **Menu** — pick a suite or "Browse saved results".
+- **Run** — live progress (spinner, progress bar, current scenario, completed
+  ticks), then a results table with the best value in each highlighted column
+  tinted green (highest average score, lowest unassigned %, best fairness, ...).
+- **Browser** — every CSV in `docs/benchmarks/` with row count, size, and
+  modified date; `Enter` opens one as a table.
+
+### Output
+
+Each run auto-saves its CSV to `docs/benchmarks/`, so results land in the same
+files the `pnpm run eval*` scripts write:
+
+| Suite     | File                              |
+| --------- | --------------------------------- |
+| eval      | `evaluation-results.csv`          |
+| topk      | `topk-sweep-results.csv`          |
+| moderate  | `moderate-results.csv`            |
+| gap       | `optimality-gap-results.csv`      |
+| baselines | `baseline-comparison-results.csv` |
 
 ## Notes
 

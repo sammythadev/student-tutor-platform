@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "declaration": false,
+    "incremental": false
+  },
+  // The base config excludes the TUI folder (main typecheck uses node10
+  // resolution, which cannot resolve ESM-only ink types); this project exists
+  // precisely to typecheck those files, so re-include them.
+  "exclude": [],
+  "include": ["src/core/evaluation/tui/**/*.ts", "src/core/evaluation/tui/**/*.tsx"]
+}

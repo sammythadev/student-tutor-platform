@@ -194,7 +194,41 @@ function greedyStaticTotal(
   return total;
 }
 
-const DEFAULT_GAP_SIZES = [10, 25, 50, 100];
+export const DEFAULT_GAP_SIZES = [10, 25, 50, 100];
+
+/** Greedy vs. min-cost max-flow optimum for one scale — exported so the TUI can
+ *  report per-size progress instead of waiting for the whole sweep. */
+export function computeOptimalityGapRow(size: number): OptimalityGapRow {
+  const tutorCount = Math.max(3, Math.floor(size / 3));
+  const students = generateStudents(size, 0.05);
+  const buildTutors = () => generateTutors(tutorCount, 'synthetic');
+
+  const greedyTutors = buildTutors();
+  const tutorsById = new Map(greedyTutors.map((tutor) => [tutor.id, tutor]));
+  const studentsById = new Map(students.map((student) => [student.id, student]));
+  const greedyStart = Date.now();
+  const greedy = new GreedyAssignmentEngine().assignBatch(students, greedyTutors);
+  const greedyMs = Date.now() - greedyStart;
+  const greedyStatic = greedyStaticTotal(greedy.assignments, studentsById, tutorsById);
+
+  const optimalTutors = buildTutors();
+  const optimalStart = Date.now();
+  const optimal = computeOptimal(students, optimalTutors);
+  const optimalMs = Date.now() - optimalStart;
+
+  return {
+    size,
+    students: size,
+    tutors: tutorCount,
+    greedyAssigned: greedy.assignments.length,
+    optimalAssigned: optimal.assignedCount,
+    greedyStaticTotal: greedyStatic,
+    optimalStaticTotal: optimal.totalScore,
+    scoreRatio: optimal.totalScore === 0 ? 1 : greedyStatic / optimal.totalScore,
+    greedyMs,
+    optimalMs,
+  };
+}
 
 /**
  * Optimality gap: greedy is a ½-approximation for weighted matching in the worst
@@ -203,37 +237,7 @@ const DEFAULT_GAP_SIZES = [10, 25, 50, 100];
  * tradeoff that justifies greedy at production scale.
  */
 export function runOptimalityGap(sizes: number[] = DEFAULT_GAP_SIZES): OptimalityGapRow[] {
-  return sizes.map((size) => {
-    const tutorCount = Math.max(3, Math.floor(size / 3));
-    const students = generateStudents(size, 0.05);
-    const buildTutors = () => generateTutors(tutorCount, 'synthetic');
-
-    const greedyTutors = buildTutors();
-    const tutorsById = new Map(greedyTutors.map((tutor) => [tutor.id, tutor]));
-    const studentsById = new Map(students.map((student) => [student.id, student]));
-    const greedyStart = Date.now();
-    const greedy = new GreedyAssignmentEngine().assignBatch(students, greedyTutors);
-    const greedyMs = Date.now() - greedyStart;
-    const greedyStatic = greedyStaticTotal(greedy.assignments, studentsById, tutorsById);
-
-    const optimalTutors = buildTutors();
-    const optimalStart = Date.now();
-    const optimal = computeOptimal(students, optimalTutors);
-    const optimalMs = Date.now() - optimalStart;
-
-    return {
-      size,
-      students: size,
-      tutors: tutorCount,
-      greedyAssigned: greedy.assignments.length,
-      optimalAssigned: optimal.assignedCount,
-      greedyStaticTotal: greedyStatic,
-      optimalStaticTotal: optimal.totalScore,
-      scoreRatio: optimal.totalScore === 0 ? 1 : greedyStatic / optimal.totalScore,
-      greedyMs,
-      optimalMs,
-    };
-  });
+  return sizes.map(computeOptimalityGapRow);
 }
 
 /** Parses `--sizes 10,25,50`; falls back to the default sweep when absent or unusable. */
@@ -253,7 +257,7 @@ function parseSizes(): number[] {
   return sizes;
 }
 
-const HEADER = [
+export const HEADER = [
   'size',
   'students',
   'tutors',
@@ -266,7 +270,7 @@ const HEADER = [
   'optimalMs',
 ];
 
-const toRow = (row: OptimalityGapRow): string[] => [
+export const toRow = (row: OptimalityGapRow): string[] => [
   String(row.size),
   String(row.students),
   String(row.tutors),
@@ -279,7 +283,7 @@ const toRow = (row: OptimalityGapRow): string[] => [
   String(row.optimalMs),
 ];
 
-if (require.main === module) {
+if (typeof require !== 'undefined' && require.main === module) {
   runCli(() =>
     emitResults({
       defaultName: 'optimality-gap-results.csv',

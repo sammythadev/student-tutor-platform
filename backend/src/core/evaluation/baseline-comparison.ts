@@ -105,7 +105,7 @@ function runEngine(
   };
 }
 
-const SCENARIOS: Array<{
+export const SCENARIOS: Array<{
   scenario: string;
   students: number;
   tutors: number;
@@ -127,29 +127,44 @@ const STRATEGIES: Array<{
   { strategy: 'greedy-engine', run: runEngine },
 ];
 
-export function runBaselineComparison(
-  scenarios: typeof SCENARIOS = SCENARIOS,
-  strategies: typeof STRATEGIES = STRATEGIES,
-): BaselineRow[] {
+export type BaselineScenario = (typeof SCENARIOS)[number];
+
+/** Runs all strategies against ONE scenario — exported so the TUI can report
+ *  per-scenario progress instead of waiting for the whole comparison. */
+export function runBaselineCell(scenario: BaselineScenario): BaselineRow[] {
   const rows: BaselineRow[] = [];
-  for (const scenario of scenarios) {
-    for (const { strategy, run } of strategies) {
-      // Fresh fixtures per strategy: the runs mutate tutor.assignedCount.
-      const students = generateStudents(scenario.students, 0.05);
-      const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy);
-      const { scores, unassigned, loads } = run(students, tutors);
-      rows.push({
-        scenario: scenario.scenario,
-        strategy,
-        students: scenario.students,
-        tutors: scenario.tutors,
-        averageScore: scores.length === 0 ? 0 : scores.reduce((a, b) => a + b, 0) / scores.length,
-        unassignedPercent: (unassigned / scenario.students) * 100,
-        jainFairnessIndex: jain(loads),
-      });
-    }
+  for (const { strategy, run } of STRATEGIES) {
+    // Fresh fixtures per strategy: the runs mutate tutor.assignedCount.
+    const students = generateStudents(scenario.students, 0.05);
+    const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy);
+    const { scores, unassigned, loads } = run(students, tutors);
+    rows.push({
+      scenario: scenario.scenario,
+      strategy,
+      students: scenario.students,
+      tutors: scenario.tutors,
+      averageScore: scores.length === 0 ? 0 : scores.reduce((a, b) => a + b, 0) / scores.length,
+      unassignedPercent: (unassigned / scenario.students) * 100,
+      jainFairnessIndex: jain(loads),
+    });
   }
   return rows;
+}
+
+/**
+ * Runs the given scenarios (all built-in strategies per scenario, filtered by
+ * `strategies`). Note: `runBaselineCell` always executes the three built-in
+ * strategies; the `strategies` parameter only narrows which rows are returned,
+ * so passing a custom strategy object yields no rows for it.
+ */
+export function runBaselineComparison(
+  scenarios: BaselineScenario[] = SCENARIOS,
+  strategies: typeof STRATEGIES = STRATEGIES,
+): BaselineRow[] {
+  const allowed = new Set(strategies.map((strategy) => strategy.strategy));
+  return scenarios.flatMap((scenario) =>
+    runBaselineCell(scenario).filter((row) => allowed.has(row.strategy)),
+  );
 }
 
 /** `--scenario <substring>` narrows the run to matching scenarios (e.g. `moderate`). */
@@ -184,7 +199,7 @@ function selectStrategies(): typeof STRATEGIES {
   return selected;
 }
 
-const HEADER = [
+export const HEADER = [
   'scenario',
   'strategy',
   'students',
@@ -194,7 +209,7 @@ const HEADER = [
   'jainFairnessIndex',
 ];
 
-const toRow = (row: BaselineRow): string[] => [
+export const toRow = (row: BaselineRow): string[] => [
   row.scenario,
   row.strategy,
   String(row.students),
@@ -204,7 +219,7 @@ const toRow = (row: BaselineRow): string[] => [
   row.jainFairnessIndex.toFixed(6),
 ];
 
-if (require.main === module) {
+if (typeof require !== 'undefined' && require.main === module) {
   runCli(() =>
     emitResults({
       defaultName: 'baseline-comparison-results.csv',

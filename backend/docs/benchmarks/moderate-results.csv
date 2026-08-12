@@ -1,0 +1,9 @@
+scenario,students,tutors,loadFactorWeight,topK,averageScore,unassignedPercent,jainFairnessIndex,elapsedMinMs,elapsedMeanMs,elapsedMaxMs,pairsScored,peakHeapEntries
+moderate-1.5to1,150,100,0.05,inf,0.812278,0.00,0.878906,14,24.0,48,1252,1252
+moderate-1.5to1,150,100,0,inf,0.810154,0.00,0.852273,29,34.6,43,1252,1252
+moderate-2to1,150,75,0.05,inf,0.799991,0.67,0.933796,9,19.6,25,939,939
+moderate-2to1,150,75,0,inf,0.801194,0.67,0.922160,15,21.8,33,939,939
+moderate-3to1,150,50,0.05,inf,0.777133,11.33,0.938408,7,8.8,13,626,626
+moderate-3to1,150,50,0,inf,0.782149,11.33,0.938408,4,4.6,6,626,626
+moderate-4to1,200,50,0.05,inf,0.782293,25.50,0.930860,7,10.0,13,834,834
+moderate-4to1,200,50,0,inf,0.789880,25.50,0.930860,5,6.8,9,834,834

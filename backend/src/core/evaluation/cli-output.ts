@@ -10,7 +10,19 @@ import { join, resolve } from 'path';
  * Flags: --csv, --table, --name <file>, --out <path>, --no-file
  */
 
-const DEFAULT_OUTPUT_DIR = join(__dirname, '..', '..', '..', 'docs', 'benchmarks');
+/**
+ * Resolves docs/benchmarks: from the source tree in CJS (ts-node CLI scripts),
+ * and from the repo root (working directory) when this module is loaded as ESM
+ * by the TUI, where `__dirname` does not exist.
+ */
+function defaultBenchmarksDir(): string {
+  if (typeof __dirname === 'string') {
+    return join(__dirname, '..', '..', '..', 'docs', 'benchmarks');
+  }
+  return join(process.cwd(), 'docs', 'benchmarks');
+}
+
+export const DEFAULT_OUTPUT_DIR = defaultBenchmarksDir();
 
 /**
  * Value of `--flag <value>` on argv, or undefined if the flag is absent.
@@ -52,10 +64,15 @@ export function toCsv(header: string[], rows: string[][]): string {
   return [header.join(','), ...rows.map((row) => row.join(','))].join('\n');
 }
 
-export function formatTable(header: string[], rows: string[][]): string {
-  const widths = header.map((cell, column) =>
-    Math.max(cell.length, ...rows.map((row) => row[column].length)),
+/** Per-column display widths, shared by the CLI table and the TUI table view. */
+export function columnWidths(header: string[], rows: string[][]): number[] {
+  return header.map((cell, column) =>
+    Math.max(cell.length, ...rows.map((row) => row[column]?.length ?? 0)),
   );
+}
+
+export function formatTable(header: string[], rows: string[][]): string {
+  const widths = columnWidths(header, rows);
   const pad = (cell: string, column: number): string => cell.padStart(widths[column]);
   const line = (left: string, mid: string, right: string): string =>
     left + widths.map((width) => '─'.repeat(width + 2)).join(mid) + right;
@@ -68,6 +85,55 @@ export function formatTable(header: string[], rows: string[][]): string {
     ...rows.map(renderRow),
     line('└', '┴', '┘'),
   ].join('\n');
+}
+
+/**
+ * Minimal CSV parser supporting double-quoted fields and CRLF line endings.
+ * Inverse of `toCsv`; used by the TUI results browser to re-render saved CSVs.
+ */
+export function parseCsv(csv: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < csv.length; i += 1) {
+    const char = csv[i];
+    if (inQuotes) {
+      if (char === '"') {
+        if (csv[i + 1] === '"') {
+          field += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += char;
+      }
+    } else if (char === '"') {
+      inQuotes = true;
+    } else if (char === ',') {
+      row.push(field);
+      field = '';
+    } else if (char === '\r') {
+      // ignore CR; handle CRLF line endings
+    } else if (char === '\n') {
+      row.push(field);
+      field = '';
+      if (row.length > 1 || row[0] !== '') {
+        rows.push(row);
+      }
+      row = [];
+    } else {
+      field += char;
+    }
+  }
+
+  if (field !== '' || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows;
 }
 
 /** Writes CSV content to the resolved output path, creating the directory if missing. */

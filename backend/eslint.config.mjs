@@ -27,7 +27,10 @@ export default defineConfig([
         ...globals.jest,
       },
       parserOptions: {
-        projectService: true,
+        // The eval TUI is excluded from the main tsconfig (it needs bundler
+        // module resolution for the ESM-only ink package), so it typechecks
+        // under tsconfig.tui.json. List both projects explicitly.
+        project: ['./tsconfig.json', './tsconfig.tui.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
