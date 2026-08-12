@@ -995,8 +995,8 @@
     "semantic_hash": ""
   },
   "backend/tsconfig.json": {
-    "mtime": 1786546462.269009,
-    "ast_hash": "5f530240fdcfb3afd5e3fc427b8f32e9",
+    "mtime": 1786552260.9634793,
+    "ast_hash": "9b06483443f70b45b05082f99c37b471",
     "semantic_hash": ""
   },
   "frontend/.agent/skills/ui-ux-pro-max/scripts/core.py": {
@@ -1720,13 +1720,13 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785514542.9247727,
-    "ast_hash": "cd5454e2e4730ddfd35d25ffa5c11b95",
+    "mtime": 1786547914.9049263,
+    "ast_hash": "0239f18b83cad1905a4a6f6a81885e4a",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1785514554.7987423,
-    "ast_hash": "c41e5114415f48c9e6dc0e37c1b34730",
+    "mtime": 1786551697.5426362,
+    "ast_hash": "190b8c5d09d531dfabc00a6753efb8c8",
     "semantic_hash": ""
   },
   "TEST_SUITE_REPORT.md": {
@@ -1740,8 +1740,8 @@
     "semantic_hash": ""
   },
   "backend/README.md": {
-    "mtime": 1786544824.696004,
-    "ast_hash": "1110ce5620f43515f8165eee045ea4c9",
+    "mtime": 1786551708.605951,
+    "ast_hash": "5481b2e9b73701d75a3066202ddc4e02",
     "semantic_hash": ""
   },
   "backend/agent-docs/database.md": {
@@ -1755,8 +1755,8 @@
     "semantic_hash": ""
   },
   "backend/agent-docs/lessons.md": {
-    "mtime": 1786545206.8026795,
-    "ast_hash": "a10abb5f09d99ec52db88d85220de649",
+    "mtime": 1786548971.149013,
+    "ast_hash": "f6c1fb05a759f403e67e80c8e04acdbe",
     "semantic_hash": ""
   },
   "backend/agent-docs/project-structure.md": {
@@ -1810,8 +1810,8 @@
     "semantic_hash": ""
   },
   "backend/tasks/todo.md": {
-    "mtime": 1786543507.007599,
-    "ast_hash": "612bb1b6f07c56354b1bc881b83c4bd5",
+    "mtime": 1786548963.789178,
+    "ast_hash": "7c597744e9edea206064970a0e65e8af",
     "semantic_hash": ""
   },
   "backend/test-output.txt": {
@@ -1880,18 +1880,18 @@
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/baseline-comparison.ts": {
-    "mtime": 1786543639.4970598,
-    "ast_hash": "62d61d0c3ec46fba311105b412c51e8d",
+    "mtime": 1786547901.8567896,
+    "ast_hash": "e79d3e004bbfacef5b9ac0682a37ef50",
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/cli-output.ts": {
-    "mtime": 1786542373.9740005,
-    "ast_hash": "b5b5d9b652ff1c1656e9073fb12d2a3c",
+    "mtime": 1786551502.5680995,
+    "ast_hash": "57e56fd858938e4f62183de7de30850f",
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/fixtures.ts": {
-    "mtime": 1785409431.0669777,
-    "ast_hash": "a89a783cce772f842696242aca3c668e",
+    "mtime": 1786547604.088601,
+    "ast_hash": "4b754bb8b0829966af90b44b785abd14",
     "semantic_hash": ""
   },
   "backend/src/core/exceptions/tutor-capacity-exceeded.exception.ts": {
@@ -2085,13 +2085,13 @@
     "semantic_hash": ""
   },
   "backend/src/core/__tests__/evaluation-tui.spec.ts": {
-    "mtime": 1786544923.952689,
-    "ast_hash": "8e60d39fda37bb90fb142cfe2610a562",
+    "mtime": 1786551682.7764478,
+    "ast_hash": "6811c5fc8f38b510f183f4c63226bd03",
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/app.tsx": {
-    "mtime": 1786544750.9515738,
-    "ast_hash": "399df88d53ddf0bdb336383ba5b1c151",
+    "mtime": 1786551513.990228,
+    "ast_hash": "ac1107891bd0bc3e207088c593d3d071",
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/files.ts": {
@@ -2100,13 +2100,13 @@
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/index.tsx": {
-    "mtime": 1786543011.5858662,
-    "ast_hash": "dd023de6922df8db4dc402ec8a8ba0fc",
+    "mtime": 1786551875.7863011,
+    "ast_hash": "dee9ed0bca1c865a7fb5f6d28c2e7dfe",
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/suites.ts": {
-    "mtime": 1786543621.7749293,
-    "ast_hash": "13706d0c5303bca21048bfc12a1d0170",
+    "mtime": 1786547692.0395386,
+    "ast_hash": "4eafa4cc4acbb2c8f86e9d17bf2876d9",
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/text-utils.ts": {
@@ -2115,13 +2115,13 @@
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/views.tsx": {
-    "mtime": 1786545393.2691379,
-    "ast_hash": "7210b955dd76e9f29a7d548280f41e35",
+    "mtime": 1786552337.6837714,
+    "ast_hash": "f43b803ed7f78f7cf1c3905a3a674572",
     "semantic_hash": ""
   },
   "backend/tsconfig.tui.json": {
-    "mtime": 1786546462.2846372,
-    "ast_hash": "e2f475b613760ae39f5abb641db03a5c",
+    "mtime": 1786552260.9791036,
+    "ast_hash": "cadad6b557d7c8b29d83ee7202d67da3",
     "semantic_hash": ""
   },
   "backend/agent-docs/findings.md": {
@@ -2142,6 +2142,26 @@
   "backend/docs/notes/probe-final.txt": {
     "mtime": 1786546518.343556,
     "ast_hash": "2931c16e0f3159c80af31387003563e6",
+    "semantic_hash": ""
+  },
+  "backend/scripts/render-probe-baselines.tsx": {
+    "mtime": 1786549590.1207097,
+    "ast_hash": "3f1cfaf9491d255452345b744d81e174",
+    "semantic_hash": ""
+  },
+  "backend/docs/notes/probe-baselines.txt": {
+    "mtime": 1786549914.592453,
+    "ast_hash": "d987177db1cf450924182e7062548b59",
+    "semantic_hash": ""
+  },
+  "backend/scripts/render-probe-gap.tsx": {
+    "mtime": 1786551935.8408628,
+    "ast_hash": "ec5520a9d43dbf3676697d548ec561e4",
+    "semantic_hash": ""
+  },
+  "backend/docs/notes/probe-gap-notiming.txt": {
+    "mtime": 1786552007.6096413,
+    "ast_hash": "19ef0d6276a4c37d22afc19a76bc67dd",
     "semantic_hash": ""
   }
 }

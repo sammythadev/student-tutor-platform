@@ -11,6 +11,7 @@ import {
 } from '@core/evaluation/cli-output';
 import { defaultNoteName, listSavedCsvs, saveNoteFile, type CsvFileInfo } from './files';
 import { cursorPosition, indexFromPosition, visualSpans } from './text-utils';
+import { HelpContent } from './help';
 import { SUITES, type Suite, type SuiteResult, type SuiteRunState } from './suites';
 
 /** ── shared building blocks ─────────────────────────────────────────────── */
@@ -217,7 +218,7 @@ export function MenuScreen({
 }): React.JSX.Element {
   const { stdout } = useStdout();
   const [selected, setSelected] = useState(0);
-  const [showFlags, setShowFlags] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const itemCount = SUITES.length + 2; // suites + "browse" + "notes"
 
   const banner = useMemo(
@@ -244,7 +245,7 @@ export function MenuScreen({
     } else if (input === 'n') {
       onNotes();
     } else if (input === '?') {
-      setShowFlags((value) => !value);
+      setShowHelp((value) => !value);
     } else if (input === 'q' || key.escape) {
       onQuit();
     }
@@ -302,33 +303,11 @@ export function MenuScreen({
             {selected === SUITES.length + 1 ? ' ❯ ' : '   '}Notes / scratchpad
           </Text>
         </Box>
-      </Box>{' '}
-      {showFlags && (
-        <Box
-          marginTop={1}
-          flexDirection="column"
-          borderStyle="round"
-          borderColor="gray"
-          paddingX={1}
-        >
-          <Text bold color="cyan">
-            CLI flags (used by pnpm run eval*) · TUI accepts --no-timing and a suite id
-          </Text>
-          <Text>
-            {'--no-timing    zero wall-clock timing columns in saved CSVs (t in run view)'}
-          </Text>
-          <Text>{'--name <file>  custom filename for the saved CSV (docs/benchmarks/)'}</Text>
-          <Text>{'--out <path>   explicit output path, ignoring docs/benchmarks/'}</Text>
-          <Text>{'--no-file      print only; do not write the CSV'}</Text>
-          <Text>{'--table / --csv    force aligned-table or raw-CSV output'}</Text>
-          <Text>{'--moderate / --topk-sweep   narrow the eval harness (CLI only)'}</Text>
-          <Text>{'--sizes <10,25,50,100>   optimality-gap sizes (CLI only)'}</Text>
-          <Text>{'--scenario / --strategy   narrow baselines runs (CLI only)'}</Text>
-        </Box>
-      )}
+      </Box>
+      {showHelp && <HelpContent />}
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          b browse · n notes · ? flags · q quit
+          b browse · n notes · ? help · q quit
         </Text>
       </Box>
     </Box>
@@ -358,6 +337,7 @@ export function RunScreen({
   const [saveAsName, setSaveAsName] = useState('');
   const [saveAsError, setSaveAsError] = useState<string | null>(null);
   const [extraSaved, setExtraSaved] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
   const startRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -367,6 +347,7 @@ export function RunScreen({
     setSavedPaths([]);
     setError(null);
     setExtraSaved(null);
+    setShowHelp(false);
     startRef.current = Date.now();
 
     const run = async (): Promise<void> => {
@@ -423,6 +404,8 @@ export function RunScreen({
       setSaveAsError(null);
     } else if (input === 't') {
       onToggleNoTiming();
+    } else if (input === '?' && results !== null) {
+      setShowHelp((value) => !value);
     }
   });
 
@@ -565,9 +548,11 @@ export function RunScreen({
 
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          r rerun · s save as · t timing {noTiming ? 'off' : 'on'} · m menu · q quit
+          r rerun · s save as · t timing {noTiming ? 'off' : 'on'} · ? help · m menu · q quit
         </Text>
       </Box>
+
+      {showHelp && <HelpContent />}
     </Box>
   );
 }
@@ -579,6 +564,7 @@ export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
   const [selected, setSelected] = useState(0);
   const [openFile, setOpenFile] = useState<CsvFileInfo | null>(null);
   const [table, setTable] = useState<string[][] | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const refresh = (): void => {
     const next = listSavedCsvs();
@@ -587,6 +573,10 @@ export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
   };
 
   useInput((input, key) => {
+    if (input === '?') {
+      setShowHelp((value) => !value);
+      return;
+    }
     if (openFile !== null) {
       if (input === 'm' || input === 'q' || key.escape || key.backspace) {
         setOpenFile(null);
@@ -621,9 +611,10 @@ export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
           </Box>
           <Box marginTop={1}>
             <Text color="gray" dimColor>
-              m back to list · q back to menu
+              ? help · m back to list · q back to menu
             </Text>
           </Box>
+          {showHelp && <HelpContent />}
         </Box>
       );
     }
@@ -641,9 +632,10 @@ export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
         </Box>
         <Box marginTop={1}>
           <Text color="gray" dimColor>
-            m back to list · q back to menu
+            ? help · m back to list · q back to menu
           </Text>
         </Box>
+        {showHelp && <HelpContent />}
       </Box>
     );
   }
@@ -676,9 +668,10 @@ export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
       )}
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          ↑/↓ browse · Enter view · r refresh · m/q back to menu
+          ↑/↓ browse · Enter view · r refresh · ? help · m/q back to menu
         </Text>
       </Box>
+      {showHelp && <HelpContent />}
     </Box>
   );
 }
@@ -692,6 +685,7 @@ export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
   const [fileName, setFileName] = useState(() => defaultNoteName());
   const [savedPath, setSavedPath] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
   const { stdout } = useStdout();
 
   const editorWidth = Math.max(20, (stdout.columns ?? 80) - 2);
@@ -721,6 +715,10 @@ export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
   useInput((input, key) => {
     if (saving) {
       return; // TextInput handles the keys
+    }
+    if (key.ctrl && input === 'o') {
+      setShowHelp((value) => !value);
+      return;
     }
     if (savedPath !== null || saveError !== null) {
       setSavedPath(null);
@@ -811,7 +809,8 @@ export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
 
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          {text.length} chars · row {cursorRow + 1}, col {cursorCol + 1} · Ctrl+S save · Esc back
+          {text.length} chars · row {cursorRow + 1}, col {cursorCol + 1} · Ctrl+S save · Ctrl+O help
+          · Esc back
         </Text>
       </Box>
 
@@ -843,6 +842,8 @@ export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
           <Text color="red">✗ {saveError}</Text>
         </Box>
       )}
+
+      {showHelp && <HelpContent closeKeys="Ctrl+O" />}
     </Box>
   );
 }

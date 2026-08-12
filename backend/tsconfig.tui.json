@@ -17,6 +17,7 @@
     "src/core/evaluation/tui/**/*.tsx",
     "scripts/render-probe.tsx",
     "scripts/render-probe-baselines.tsx",
-    "scripts/render-probe-gap.tsx"
+    "scripts/render-probe-gap.tsx",
+    "scripts/render-probe-help.tsx"
   ]
 }

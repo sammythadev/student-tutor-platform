@@ -21,6 +21,7 @@ import {
 import { computeOptimalityGapRow, DEFAULT_GAP_SIZES } from '../evaluation/optimal-baseline';
 import { runBaselineCell, SCENARIOS } from '../evaluation/baseline-comparison';
 import { getSuite, SUITES } from '../evaluation/tui/suites';
+import { CLI_FLAG_ROWS, HELP_SECTIONS } from '../evaluation/tui/help-data';
 
 describe('evaluation harness config builders', () => {
   it('export the expected scenario counts', () => {
@@ -132,6 +133,43 @@ describe('tui suite registry', () => {
     for (const suite of SUITES) {
       expect(getSuite(suite.id)).toBe(suite);
     }
+  });
+});
+
+describe('tui help content', () => {
+  it('documents the global ? help key and the notes Ctrl+O chord', () => {
+    const global = HELP_SECTIONS.find((section) => section.title === 'Global');
+    expect(global?.rows.some((row) => row.keys === '?' && row.action.includes('help'))).toBe(true);
+
+    const notes = HELP_SECTIONS.find((section) => section.title === 'Notes');
+    expect(notes?.rows.some((row) => row.keys === 'Ctrl+O' && row.action.includes('help'))).toBe(
+      true,
+    );
+  });
+
+  it('covers every interactive screen with non-empty key/action rows', () => {
+    expect(HELP_SECTIONS.map((section) => section.title)).toEqual([
+      'Global',
+      'Menu',
+      'Run',
+      'Results browser',
+      'Notes',
+    ]);
+    for (const section of HELP_SECTIONS) {
+      expect(section.rows.length).toBeGreaterThan(0);
+      for (const row of section.rows) {
+        expect(row.keys.length).toBeGreaterThan(0);
+        expect(row.action.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('documents the CLI flags, including --no-timing', () => {
+    const keys = CLI_FLAG_ROWS.map((row) => row.keys);
+    expect(keys.some((key) => key.startsWith('--no-timing'))).toBe(true);
+    expect(keys.some((key) => key.includes('--name'))).toBe(true);
+    expect(keys.some((key) => key.includes('--out'))).toBe(true);
+    expect(keys.some((key) => key.includes('--no-file'))).toBe(true);
   });
 });
 

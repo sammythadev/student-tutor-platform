@@ -96,7 +96,8 @@ pnpm run tui -- eval --no-timing
 | `r`                | rerun the suite / refresh the results list     |
 | `s`                | save the results under a custom filename (run) |
 | `t`                | toggle timing columns in the table + saved CSV (run) |
-| `?`                | show/hide the CLI flags reference (menu)       |
+| `?`                | open/close the full help reference (menu, run, browser) |
+| `Ctrl+O`           | open/close the help reference (notes; `?` stays typable) |
 | `Ctrl+S`           | save the scratchpad to a file (notes)          |
 | `b`                | open the results browser                       |
 | `n`                | open the notes / scratchpad                    |
@@ -105,7 +106,8 @@ pnpm run tui -- eval --no-timing
 
 ### Screens
 
-- **Menu** — pick a suite or "Browse saved results".
+- **Menu** — pick a suite or "Browse saved results". `?` opens a full help
+  panel covering every screen's keys plus the CLI flags.
 - **Run** — live progress (spinner, progress bar, current scenario, completed
   ticks), then a results table with the best value in each highlighted column
   tinted green (highest average score, lowest unassigned %, best fairness, ...).
