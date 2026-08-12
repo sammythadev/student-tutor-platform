@@ -1720,8 +1720,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1786553253.6749992,
-    "ast_hash": "247d48353b349ea21dff993d2a829a15",
+    "mtime": 1786553294.4715323,
+    "ast_hash": "a44aa947470e2a9aaf18d6e8622e4386",
     "semantic_hash": ""
   },
   "README.md": {
@@ -1740,8 +1740,8 @@
     "semantic_hash": ""
   },
   "backend/README.md": {
-    "mtime": 1786553253.7374983,
-    "ast_hash": "dd22c551c0267d64fa925d4b765788c5",
+    "mtime": 1786553294.4715323,
+    "ast_hash": "54603b47764e17577c1ce6a8f96e0b4c",
     "semantic_hash": ""
   },
   "backend/agent-docs/database.md": {
@@ -1810,8 +1810,8 @@
     "semantic_hash": ""
   },
   "backend/tasks/todo.md": {
-    "mtime": 1786553253.8624969,
-    "ast_hash": "363cad0dad48b6cf0c333c108be6ee35",
+    "mtime": 1786553294.4871516,
+    "ast_hash": "e4c418cec08d63da4dcc0582b1ff718a",
     "semantic_hash": ""
   },
   "backend/test-output.txt": {
