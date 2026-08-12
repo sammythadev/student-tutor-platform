@@ -97,6 +97,7 @@ pnpm run tui -- eval --no-timing
 | `t`                | toggle timing columns in the table + saved CSV (run) |
 | `?`                | open/close the full help reference (menu, run, browser) |
 | `Ctrl+O`           | open/close the help reference (notes; `?` stays typable) |
+| `j`/`k` or `↑`/`↓` | scroll the help panel on short terminals (help) |
 | `Ctrl+S`           | save the scratchpad to a file (notes)          |
 | `b`                | open the results browser                       |
 | `n`                | open the notes / scratchpad                    |
@@ -105,9 +106,12 @@ pnpm run tui -- eval --no-timing
 
 ### Screens
 
-- **Menu** — pick a suite or "Browse saved results". `?` opens a full help
-  panel covering every screen's keys plus the CLI flags (from the run and
-  browser views too; the notes editor uses `Ctrl+O` so `?` stays typable).
+- **Menu** — pick a suite or "Browse saved results". `?` opens the full help
+  reference — keys for every screen plus the CLI flags — as a modal,
+  full-screen panel (run and browser views too; the notes editor uses `Ctrl+O`
+  so `?` stays typable). The panel replaces the screen while open (state is
+  preserved) and is capped to the terminal height, scrolling with `j`/`k` or
+  `↑`/`↓` on short terminals; `?`, `Esc`, `q`, `m` or `Ctrl+O` closes it.
 - **Run** — live progress (spinner, progress bar, current scenario, completed
   ticks), then a results table with the best value in each highlighted column
   tinted green (highest average score, lowest unassigned %, best fairness, ...).

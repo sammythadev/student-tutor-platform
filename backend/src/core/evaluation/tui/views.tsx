@@ -227,31 +227,39 @@ export function MenuScreen({
   );
   const latest = useMemo(() => listSavedCsvs()[0], []);
 
-  useInput((input, key) => {
-    if (key.upArrow || input === 'k') {
-      setSelected((i) => (i - 1 + itemCount) % itemCount);
-    } else if (key.downArrow || input === 'j') {
-      setSelected((i) => (i + 1) % itemCount);
-    } else if (key.return || input === ' ') {
-      if (selected < SUITES.length) {
-        onRun(SUITES[selected].id);
-      } else if (selected === SUITES.length) {
+  // While help is open it is modal: the panel owns all keys (`isHelpCloseChord`).
+  useInput(
+    (input, key) => {
+      if (key.upArrow || input === 'k') {
+        setSelected((i) => (i - 1 + itemCount) % itemCount);
+      } else if (key.downArrow || input === 'j') {
+        setSelected((i) => (i + 1) % itemCount);
+      } else if (key.return || input === ' ') {
+        if (selected < SUITES.length) {
+          onRun(SUITES[selected].id);
+        } else if (selected === SUITES.length) {
+          onBrowse();
+        } else {
+          onNotes();
+        }
+      } else if (input === 'b') {
         onBrowse();
-      } else {
+      } else if (input === 'n') {
         onNotes();
+      } else if (input === '?') {
+        setShowHelp((value) => !value);
+      } else if (input === 'q' || key.escape) {
+        onQuit();
       }
-    } else if (input === 'b') {
-      onBrowse();
-    } else if (input === 'n') {
-      onNotes();
-    } else if (input === '?') {
-      setShowHelp((value) => !value);
-    } else if (input === 'q' || key.escape) {
-      onQuit();
-    }
-  });
+    },
+    { isActive: !showHelp },
+  );
 
   const showBanner = (stdout.rows ?? 40) >= 28;
+
+  if (showHelp) {
+    return <HelpContent onClose={() => setShowHelp(false)} />;
+  }
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -304,7 +312,6 @@ export function MenuScreen({
           </Text>
         </Box>
       </Box>
-      {showHelp && <HelpContent />}
       <Box marginTop={1}>
         <Text color="gray" dimColor>
           b browse · n notes · ? help · q quit
@@ -390,24 +397,28 @@ export function RunScreen({
     }
   }, [results, noTiming]);
 
-  useInput((input, key) => {
-    if (saveAs) {
-      return; // TextInput handles the keys
-    }
-    if (input === 'q' || key.escape || input === 'm') {
-      onBack();
-    } else if (input === 'r' && results !== null) {
-      setRunId((id) => id + 1);
-    } else if (input === 's' && results !== null && results.length === 1) {
-      setSaveAs(true);
-      setSaveAsName('');
-      setSaveAsError(null);
-    } else if (input === 't') {
-      onToggleNoTiming();
-    } else if (input === '?' && results !== null) {
-      setShowHelp((value) => !value);
-    }
-  });
+  // While help is open it is modal: the panel owns all keys (`isHelpCloseChord`).
+  useInput(
+    (input, key) => {
+      if (saveAs) {
+        return; // TextInput handles the keys
+      }
+      if (input === 'q' || key.escape || input === 'm') {
+        onBack();
+      } else if (input === 'r' && results !== null) {
+        setRunId((id) => id + 1);
+      } else if (input === 's' && results !== null && results.length === 1) {
+        setSaveAs(true);
+        setSaveAsName('');
+        setSaveAsError(null);
+      } else if (input === 't') {
+        onToggleNoTiming();
+      } else if (input === '?' && results !== null) {
+        setShowHelp((value) => !value);
+      }
+    },
+    { isActive: !showHelp },
+  );
 
   const elapsed =
     startRef.current === null ? '' : `${((Date.now() - startRef.current) / 1000).toFixed(1)}s`;
@@ -420,6 +431,10 @@ export function RunScreen({
       <Text color="gray"> — {suite.description}</Text>
     </Box>
   );
+
+  if (showHelp) {
+    return <HelpContent onClose={() => setShowHelp(false)} />;
+  }
 
   if (error !== null) {
     return (
@@ -551,8 +566,6 @@ export function RunScreen({
           r rerun · s save as · t timing {noTiming ? 'off' : 'on'} · ? help · m menu · q quit
         </Text>
       </Box>
-
-      {showHelp && <HelpContent />}
     </Box>
   );
 }
@@ -572,32 +585,40 @@ export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
     setSelected((i) => Math.min(i, Math.max(next.length - 1, 0)));
   };
 
-  useInput((input, key) => {
-    if (input === '?') {
-      setShowHelp((value) => !value);
-      return;
-    }
-    if (openFile !== null) {
-      if (input === 'm' || input === 'q' || key.escape || key.backspace) {
-        setOpenFile(null);
-        setTable(null);
+  // While help is open it is modal: the panel owns all keys (`isHelpCloseChord`).
+  useInput(
+    (input, key) => {
+      if (input === '?') {
+        setShowHelp((value) => !value);
+        return;
       }
-      return;
-    }
-    if (key.upArrow || input === 'k') {
-      setSelected((i) => (i - 1 + Math.max(files.length, 1)) % Math.max(files.length, 1));
-    } else if (key.downArrow || input === 'j') {
-      setSelected((i) => (i + 1) % Math.max(files.length, 1));
-    } else if (key.return && files.length > 0) {
-      const file = files[selected];
-      setOpenFile(file);
-      setTable(parseCsv(readFileSync(file.path, 'utf8')));
-    } else if (input === 'r') {
-      refresh();
-    } else if (input === 'q' || key.escape || input === 'm') {
-      onBack();
-    }
-  });
+      if (openFile !== null) {
+        if (input === 'm' || input === 'q' || key.escape || key.backspace) {
+          setOpenFile(null);
+          setTable(null);
+        }
+        return;
+      }
+      if (key.upArrow || input === 'k') {
+        setSelected((i) => (i - 1 + Math.max(files.length, 1)) % Math.max(files.length, 1));
+      } else if (key.downArrow || input === 'j') {
+        setSelected((i) => (i + 1) % Math.max(files.length, 1));
+      } else if (key.return && files.length > 0) {
+        const file = files[selected];
+        setOpenFile(file);
+        setTable(parseCsv(readFileSync(file.path, 'utf8')));
+      } else if (input === 'r') {
+        refresh();
+      } else if (input === 'q' || key.escape || input === 'm') {
+        onBack();
+      }
+    },
+    { isActive: !showHelp },
+  );
+
+  if (showHelp) {
+    return <HelpContent onClose={() => setShowHelp(false)} />;
+  }
 
   if (openFile !== null && table !== null) {
     if (table.length === 0) {
@@ -614,7 +635,6 @@ export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
               ? help · m back to list · q back to menu
             </Text>
           </Box>
-          {showHelp && <HelpContent />}
         </Box>
       );
     }
@@ -635,7 +655,6 @@ export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
             ? help · m back to list · q back to menu
           </Text>
         </Box>
-        {showHelp && <HelpContent />}
       </Box>
     );
   }
@@ -671,7 +690,6 @@ export function BrowserScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
           ↑/↓ browse · Enter view · r refresh · ? help · m/q back to menu
         </Text>
       </Box>
-      {showHelp && <HelpContent />}
     </Box>
   );
 }
@@ -712,61 +730,66 @@ export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
     setCursor(cursor + cleaned.length);
   };
 
-  useInput((input, key) => {
-    if (saving) {
-      return; // TextInput handles the keys
-    }
-    if (key.ctrl && input === 'o') {
-      setShowHelp((value) => !value);
-      return;
-    }
-    if (savedPath !== null || saveError !== null) {
-      setSavedPath(null);
-      setSaveError(null);
-    }
-    if (key.escape) {
-      onBack();
-      return;
-    }
-    if (key.ctrl && input === 's') {
-      setFileName('');
-      setSaving(true);
-      return;
-    }
-    if (key.return) {
-      insert('\n');
-      return;
-    }
-    if (key.backspace && cursor > 0) {
-      setText(text.slice(0, cursor - 1) + text.slice(cursor));
-      setCursor(cursor - 1);
-      return;
-    }
-    if (key.delete && cursor < text.length) {
-      setText(text.slice(0, cursor) + text.slice(cursor + 1));
-      return;
-    }
-    if (key.leftArrow && cursor > 0) {
-      setCursor(cursor - 1);
-      return;
-    }
-    if (key.rightArrow && cursor < text.length) {
-      setCursor(cursor + 1);
-      return;
-    }
-    if (key.upArrow) {
-      setCursor(indexFromPosition(text, pos.row - 1, pos.col, editorWidth));
-      return;
-    }
-    if (key.downArrow) {
-      setCursor(indexFromPosition(text, pos.row + 1, pos.col, editorWidth));
-      return;
-    }
-    if (input && !key.ctrl) {
-      insert(input);
-    }
-  });
+  // While help is open it is modal: the panel owns all keys (`isHelpCloseChord`).
+  useInput(
+    (input, key) => {
+      if (saving) {
+        return; // TextInput handles the keys
+      }
+      if (key.ctrl && input === 'o') {
+        setShowHelp((value) => !value);
+        return;
+      }
+      if (savedPath !== null || saveError !== null) {
+        setSavedPath(null);
+        setSaveError(null);
+      }
+      if (key.escape) {
+        onBack();
+        return;
+      }
+      if (key.ctrl && input === 's') {
+        setFileName('');
+        setSaving(true);
+        return;
+      }
+      if (key.return) {
+        insert('\n');
+        return;
+      }
+      if (key.backspace && cursor > 0) {
+        setText(text.slice(0, cursor - 1) + text.slice(cursor));
+        setCursor(cursor - 1);
+        return;
+      }
+      if (key.delete && cursor < text.length) {
+        setText(text.slice(0, cursor) + text.slice(cursor + 1));
+        return;
+      }
+      if (key.leftArrow && cursor > 0) {
+        setCursor(cursor - 1);
+        return;
+      }
+      if (key.rightArrow && cursor < text.length) {
+        setCursor(cursor + 1);
+        return;
+      }
+      if (key.upArrow) {
+        setCursor(indexFromPosition(text, pos.row - 1, pos.col, editorWidth));
+        return;
+      }
+      if (key.downArrow) {
+        setCursor(indexFromPosition(text, pos.row + 1, pos.col, editorWidth));
+        return;
+      }
+      if (input && !key.ctrl) {
+        insert(input);
+      }
+    },
+    { isActive: !showHelp },
+  );
 
+  // Defined before the early help return so future hooks can't slip in between.
   const save = (): void => {
     try {
       const name = fileName.trim() === '' ? defaultNoteName() : fileName;
@@ -777,6 +800,10 @@ export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
       setSaveError(err instanceof Error ? err.message : String(err));
     }
   };
+
+  if (showHelp) {
+    return <HelpContent closeKeys="Ctrl+O" onClose={() => setShowHelp(false)} />;
+  }
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -842,8 +869,6 @@ export function NotePadScreen({ onBack }: { onBack: () => void }): React.JSX.Ele
           <Text color="red">✗ {saveError}</Text>
         </Box>
       )}
-
-      {showHelp && <HelpContent closeKeys="Ctrl+O" />}
     </Box>
   );
 }

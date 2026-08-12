@@ -1,0 +1,14 @@
+open: clearOps=0 eraseOps=20
+close: clearOps=0 eraseOps=24 opened=false stillOpenAfterClose=false
+open: clearOps=0 eraseOps=26
+close: clearOps=0 eraseOps=40 opened=true stillOpenAfterClose=false
+open: clearOps=0 eraseOps=20
+close: clearOps=0 eraseOps=23 opened=true stillOpenAfterClose=false
+open: clearOps=0 eraseOps=20
+close: clearOps=0 eraseOps=23 opened=true stillOpenAfterClose=false scrolledToFlags=false
+open: clearOps=0 eraseOps=20
+close: clearOps=0 eraseOps=63 opened=true stillOpenAfterClose=false scrolledToFlags=true
+open: clearOps=0 eraseOps=20
+close: clearOps=0 eraseOps=63 opened=true stillOpenAfterClose=false scrolledToFlags=true
+open: clearOps=0 eraseOps=20
+close: clearOps=0 eraseOps=63 opened=true stillOpenAfterClose=false scrolledToFlags=true

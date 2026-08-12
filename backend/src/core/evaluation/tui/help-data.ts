@@ -23,10 +23,27 @@ export const GLOBAL_KEYS: HelpSection = {
   rows: [
     { keys: '?', action: 'open / close help' },
     { keys: 'Esc', action: 'close help · back one level' },
-    { keys: 'm', action: 'back to menu' },
-    { keys: 'q', action: 'back · quit from menu' },
+    { keys: 'q / m', action: 'close help first · then back / quit' },
   ],
 };
+
+/**
+ * Keys that dismiss the help panel while it is open. The panel is modal: while
+ * it renders, the hosting screen's own `useInput` is gated off (via
+ * `isActive: !showHelp`), so these are the only live keys.
+ */
+export function isHelpCloseChord(
+  input: string,
+  key: { escape?: boolean; ctrl?: boolean },
+): boolean {
+  return (
+    input === '?' ||
+    input === 'q' ||
+    input === 'm' ||
+    key.escape === true ||
+    (key.ctrl === true && input === 'o')
+  );
+}
 
 export const MENU_KEYS: HelpSection = {
   title: 'Menu',

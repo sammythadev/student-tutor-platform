@@ -21,7 +21,7 @@ import {
 import { computeOptimalityGapRow, DEFAULT_GAP_SIZES } from '../evaluation/optimal-baseline';
 import { runBaselineCell, SCENARIOS } from '../evaluation/baseline-comparison';
 import { getSuite, SUITES } from '../evaluation/tui/suites';
-import { CLI_FLAG_ROWS, HELP_SECTIONS } from '../evaluation/tui/help-data';
+import { CLI_FLAG_ROWS, HELP_SECTIONS, isHelpCloseChord } from '../evaluation/tui/help-data';
 
 describe('evaluation harness config builders', () => {
   it('export the expected scenario counts', () => {
@@ -170,6 +170,19 @@ describe('tui help content', () => {
     expect(keys.some((key) => key.includes('--name'))).toBe(true);
     expect(keys.some((key) => key.includes('--out'))).toBe(true);
     expect(keys.some((key) => key.includes('--no-file'))).toBe(true);
+  });
+
+  it('isHelpCloseChord closes on ?, Esc, q, m and Ctrl+O only', () => {
+    expect(isHelpCloseChord('?', {})).toBe(true);
+    expect(isHelpCloseChord('q', {})).toBe(true);
+    expect(isHelpCloseChord('m', {})).toBe(true);
+    expect(isHelpCloseChord('', { escape: true })).toBe(true);
+    expect(isHelpCloseChord('o', { ctrl: true })).toBe(true);
+
+    // Regular typing keys must not dismiss help (notes editor keeps them).
+    expect(isHelpCloseChord('a', {})).toBe(false);
+    expect(isHelpCloseChord('o', {})).toBe(false);
+    expect(isHelpCloseChord('', {})).toBe(false);
   });
 });
 

@@ -74,6 +74,35 @@ Use this file to keep substantial tasks planned, tracked, and closed out.
 
 ---
 
+## Task: Fix help panel not closing (stale rows stuck on screen)
+
+- Date: 2026-08-12
+- Request: "? to close help isn't closing" — the help panel stayed on screen after pressing `?`.
+- Root cause:
+  - The state toggle always worked; the repaint broke. When the menu + help output exceeded the
+    terminal height (~47 rows on short Windows terminals), ink's `onRender` switched to its
+    `clearTerminal` branch (`outputHeight >= stdout.rows`), which bypasses log-update. log-update's
+    internal row counter went stale, so closing help erased only ~6 rows and left the whole panel
+    visually stuck on screen.
+- Fix:
+  - Help is now a modal, full-screen panel that REPLACES the host screen while open (host stays
+    mounted, state preserved) and is capped to `rows - 2` with deterministic row slicing
+    (NotePadScreen-style viewport, `j`/`k`/arrows/PageUp/PageDown scroll) instead of
+    `overflowY: hidden` (which corrupted the render). Output never exceeds the terminal, so ink
+    stays on the consistent render path and closing erases fully.
+  - HelpContent now owns its close keys (`?`, Esc, q, m, Ctrl+O — pure `isHelpCloseChord` in
+    help-data.ts) and host screens gate their `useInput` with `isActive: !showHelp`, so help is
+    truly modal and `Esc`/`q` close it instead of quitting/backing out.
+- Verification:
+  - Render probe on a 24-row terminal: help opens with all sections intact, `j`-scroll reveals the
+    CLI flags, close erases the full panel height (63 erase ops vs ~6 before) with zero stale rows;
+    typecheck ✓ · jest 102/102 ✓ · eslint clean ✓
+- Result:
+  - `?` closes help reliably on any terminal size; bonus: `Esc`/`q` no longer quit the app while
+    help is open.
+
+---
+
 ## Task: HTTP Logging + Global Exception Filter + Env-Driven Log Config
 
 - Date: 2026-06-19
