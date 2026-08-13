@@ -2188,5 +2188,35 @@
     "mtime": 1786555722.646482,
     "ast_hash": "72d4b4de73ae27c9f7c3ae3b7642651e",
     "semantic_hash": ""
+  },
+  "backend/docs/benchmarks/EVALUATION_FINDINGS.md": {
+    "mtime": 1786614924.0407486,
+    "ast_hash": "86e532504d6c6a03a4eb5ef7752c57a0",
+    "semantic_hash": ""
+  },
+  "graphify-out/converted/PROJECT REPORT1_0cd44154.md": {
+    "mtime": 1786615983.2493777,
+    "ast_hash": "dbbd2a8a9351281beecd29f320fdcab5",
+    "semantic_hash": ""
+  },
+  "diagrams/activity.png": {
+    "mtime": 1786615656.8484964,
+    "ast_hash": "08283b02025d6f4320851235c61a831f",
+    "semantic_hash": ""
+  },
+  "diagrams/class.png": {
+    "mtime": 1786615654.8977487,
+    "ast_hash": "54119ad7ab200c6d994bd68460cc731d",
+    "semantic_hash": ""
+  },
+  "diagrams/sequence.png": {
+    "mtime": 1786615655.4567156,
+    "ast_hash": "b304e8c1a4bd64514f7815d516c0ba1f",
+    "semantic_hash": ""
+  },
+  "diagrams/use-case.png": {
+    "mtime": 1786615654.0678816,
+    "ast_hash": "83106e37ab84f03b48db92cda7c861df",
+    "semantic_hash": ""
   }
 }

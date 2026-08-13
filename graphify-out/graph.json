@@ -4,15 +4,752 @@
   "graph": {},
   "nodes": [
     {
+      "label": "PROJECT REPORT1_0cd44154.md",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "project report1_0cd44154.md"
+    },
+    {
+      "label": "ABSTRACT",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_abstract",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "abstract"
+    },
+    {
+      "label": "CHAPTER ONE",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_chapter_one",
+      "community": 247,
+      "community_name": "CHAPTER ONE",
+      "norm_label": "chapter one"
+    },
+    {
+      "label": "1.1 Background to the Study",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_1_1_background_to_the_study",
+      "community": 247,
+      "community_name": "CHAPTER ONE",
+      "norm_label": "1.1 background to the study"
+    },
+    {
+      "label": "1.2 Statement of Problem",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L29",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_1_2_statement_of_problem",
+      "community": 247,
+      "community_name": "CHAPTER ONE",
+      "norm_label": "1.2 statement of problem"
+    },
+    {
+      "label": "1.3 Objectives of the Study",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L37",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_1_3_objectives_of_the_study",
+      "community": 247,
+      "community_name": "CHAPTER ONE",
+      "norm_label": "1.3 objectives of the study"
+    },
+    {
+      "label": "1.4 Research Questions",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L48",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_1_4_research_questions",
+      "community": 247,
+      "community_name": "CHAPTER ONE",
+      "norm_label": "1.4 research questions"
+    },
+    {
+      "label": "1.5 Scope of the Study",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L49",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_1_5_scope_of_the_study",
+      "community": 247,
+      "community_name": "CHAPTER ONE",
+      "norm_label": "1.5 scope of the study"
+    },
+    {
+      "label": "1.6 Limitations of the Study",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L52",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_1_6_limitations_of_the_study",
+      "community": 247,
+      "community_name": "CHAPTER ONE",
+      "norm_label": "1.6 limitations of the study"
+    },
+    {
+      "label": "1.7 Significance of the Study",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L58",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_1_7_significance_of_the_study",
+      "community": 247,
+      "community_name": "CHAPTER ONE",
+      "norm_label": "1.7 significance of the study"
+    },
+    {
+      "label": "1.8 Definition of Terms",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L61",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_1_8_definition_of_terms",
+      "community": 247,
+      "community_name": "CHAPTER ONE",
+      "norm_label": "1.8 definition of terms"
+    },
+    {
+      "label": "CHAPTER TWO",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L62",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_chapter_two",
+      "community": 249,
+      "community_name": "CHAPTER TWO",
+      "norm_label": "chapter two"
+    },
+    {
+      "label": "2.1 Conceptual Framework",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L64",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_2_1_conceptual_framework",
+      "community": 249,
+      "community_name": "CHAPTER TWO",
+      "norm_label": "2.1 conceptual framework"
+    },
+    {
+      "label": "2.2 Theoretical Framework",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L71",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_2_2_theoretical_framework",
+      "community": 249,
+      "community_name": "CHAPTER TWO",
+      "norm_label": "2.2 theoretical framework"
+    },
+    {
+      "label": "2.3 Empirical Framework",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L77",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_2_3_empirical_framework",
+      "community": 249,
+      "community_name": "CHAPTER TWO",
+      "norm_label": "2.3 empirical framework"
+    },
+    {
+      "label": "Research Gap",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L80",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_research_gap",
+      "community": 249,
+      "community_name": "CHAPTER TWO",
+      "norm_label": "research gap"
+    },
+    {
+      "label": "2.4 Summary of Literature Review",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L83",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_2_4_summary_of_literature_review",
+      "community": 249,
+      "community_name": "CHAPTER TWO",
+      "norm_label": "2.4 summary of literature review"
+    },
+    {
+      "label": "CHAPTER THREE",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L85",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_chapter_three",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "chapter three"
+    },
+    {
+      "label": "3.1 Requirements Gathering",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L98",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_3_1_requirements_gathering",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "3.1 requirements gathering"
+    },
+    {
+      "label": "3.2 Developing an Algorithm to Match Students with Tutors Based on Established Criteria",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L104",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_3_2_developing_an_algorithm_to_match_students_with_tutors_based_on_established_criteria",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "3.2 developing an algorithm to match students with tutors based on established criteria"
+    },
+    {
+      "label": "3.3 Implementation Plan",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L117",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_3_3_implementation_plan",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "3.3 implementation plan"
+    },
+    {
+      "label": "CHAPTER FOUR",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L129",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "chapter four"
+    },
+    {
+      "label": "4.1 Analysis of Data Collection",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L131",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_1_analysis_of_data_collection",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.1 analysis of data collection"
+    },
+    {
+      "label": "4.1.1 Hardware and Software Stack",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L134",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_1_1_hardware_and_software_stack",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.1.1 hardware and software stack"
+    },
+    {
+      "label": "4.2 System Architecture",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L137",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_2_system_architecture",
+      "community": 253,
+      "community_name": "4.2 System Architecture",
+      "norm_label": "4.2 system architecture"
+    },
+    {
+      "label": "4.2.1 Three-Tier Architecture",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L142",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_2_1_three_tier_architecture",
+      "community": 253,
+      "community_name": "4.2 System Architecture",
+      "norm_label": "4.2.1 three-tier architecture"
+    },
+    {
+      "label": "4.2.2 Core Algorithm Architecture (Domain Layer)",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L147",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_2_2_core_algorithm_architecture_domain_layer",
+      "community": 253,
+      "community_name": "4.2 System Architecture",
+      "norm_label": "4.2.2 core algorithm architecture (domain layer)"
+    },
+    {
+      "label": "4.3 Database Design",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L165",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_3_database_design",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.3 database design"
+    },
+    {
+      "label": "4.3.1 Schema Design",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L166",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_3_1_schema_design",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.3.1 schema design"
+    },
+    {
+      "label": "4.4 Module Design",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L171",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_4_module_design",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.4 module design"
+    },
+    {
+      "label": "4.4.1 Backend Module Architecture",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L172",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_4_1_backend_module_architecture",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.4.1 backend module architecture"
+    },
+    {
+      "label": "4.4.2 Consumption of the Matching Endpoint",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L176",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_4_2_consumption_of_the_matching_endpoint",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.4.2 consumption of the matching endpoint"
+    },
+    {
+      "label": "4.5 Algorithm Design and Complexity Analysis",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L178",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_5_algorithm_design_and_complexity_analysis",
+      "community": 250,
+      "community_name": "4.5 Algorithm Design and Complexity Analysis",
+      "norm_label": "4.5 algorithm design and complexity analysis"
+    },
+    {
+      "label": "4.5.1 Composite Scoring Model",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L179",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_5_1_composite_scoring_model",
+      "community": 250,
+      "community_name": "4.5 Algorithm Design and Complexity Analysis",
+      "norm_label": "4.5.1 composite scoring model"
+    },
+    {
+      "label": "4.5.2 Priority-Queue Greedy Assignment Algorithm",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L199",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_5_2_priority_queue_greedy_assignment_algorithm",
+      "community": 250,
+      "community_name": "4.5 Algorithm Design and Complexity Analysis",
+      "norm_label": "4.5.2 priority-queue greedy assignment algorithm"
+    },
+    {
+      "label": "4.5.3 Time Complexity Analysis",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L217",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_5_3_time_complexity_analysis",
+      "community": 250,
+      "community_name": "4.5 Algorithm Design and Complexity Analysis",
+      "norm_label": "4.5.3 time complexity analysis"
+    },
+    {
+      "label": "4.5.4 Space Complexity Analysis",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L225",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_5_4_space_complexity_analysis",
+      "community": 250,
+      "community_name": "4.5 Algorithm Design and Complexity Analysis",
+      "norm_label": "4.5.4 space complexity analysis"
+    },
+    {
+      "label": "4.5.5 Empirical Validation Against the True Optimum",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L226",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_5_5_empirical_validation_against_the_true_optimum",
+      "community": 250,
+      "community_name": "4.5 Algorithm Design and Complexity Analysis",
+      "norm_label": "4.5.5 empirical validation against the true optimum"
+    },
+    {
+      "label": "4.6 Key Edge Cases and Their Handling",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L230",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_6_key_edge_cases_and_their_handling",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.6 key edge cases and their handling"
+    },
+    {
+      "label": "4.7 Implementation",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L232",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_7_implementation",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.7 implementation"
+    },
+    {
+      "label": "4.7.1 Core Algorithm Implementation",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L234",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_7_1_core_algorithm_implementation",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.7.1 core algorithm implementation"
+    },
+    {
+      "label": "4.7.2 Key Code Snippets",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L242",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_7_2_key_code_snippets",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.7.2 key code snippets"
+    },
+    {
+      "label": "4.8 Module Implementation",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L250",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_8_module_implementation",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.8 module implementation"
+    },
+    {
+      "label": "4.8.1 Matchmaking Flow (End-to-End)",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L251",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_8_1_matchmaking_flow_end_to_end",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.8.1 matchmaking flow (end-to-end)"
+    },
+    {
+      "label": "4.9 Testing Strategy",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L268",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_9_testing_strategy",
+      "community": 252,
+      "community_name": "4.9 Testing Strategy",
+      "norm_label": "4.9 testing strategy"
+    },
+    {
+      "label": "4.9.1 Unit Testing Approach",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L269",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_9_1_unit_testing_approach",
+      "community": 252,
+      "community_name": "4.9 Testing Strategy",
+      "norm_label": "4.9.1 unit testing approach"
+    },
+    {
+      "label": "4.9.2 Edge Case Verification",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L274",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_9_2_edge_case_verification",
+      "community": 252,
+      "community_name": "4.9 Testing Strategy",
+      "norm_label": "4.9.2 edge case verification"
+    },
+    {
+      "label": "4.9.3 Test Execution",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L278",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_9_3_test_execution",
+      "community": 252,
+      "community_name": "4.9 Testing Strategy",
+      "norm_label": "4.9.3 test execution"
+    },
+    {
+      "label": "4.10 Results and Evaluation",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L280",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_10_results_and_evaluation",
+      "community": 248,
+      "community_name": "4.10 Results and Evaluation",
+      "norm_label": "4.10 results and evaluation"
+    },
+    {
+      "label": "4.10.1 Evaluation Harness",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L281",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_10_1_evaluation_harness",
+      "community": 248,
+      "community_name": "4.10 Results and Evaluation",
+      "norm_label": "4.10.1 evaluation harness"
+    },
+    {
+      "label": "4.10.2 Match Quality and Fairness",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L284",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_10_2_match_quality_and_fairness",
+      "community": 248,
+      "community_name": "4.10 Results and Evaluation",
+      "norm_label": "4.10.2 match quality and fairness"
+    },
+    {
+      "label": "4.10.3 Effect of the Fairness Weight",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L291",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_10_3_effect_of_the_fairness_weight",
+      "community": 248,
+      "community_name": "4.10 Results and Evaluation",
+      "norm_label": "4.10.3 effect of the fairness weight"
+    },
+    {
+      "label": "4.10.4 Performance Benchmarking",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L296",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_10_4_performance_benchmarking",
+      "community": 248,
+      "community_name": "4.10 Results and Evaluation",
+      "norm_label": "4.10.4 performance benchmarking"
+    },
+    {
+      "label": "4.10.5 Comparison with Baseline Assignment Strategies",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L300",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_10_5_comparison_with_baseline_assignment_strategies",
+      "community": 248,
+      "community_name": "4.10 Results and Evaluation",
+      "norm_label": "4.10.5 comparison with baseline assignment strategies"
+    },
+    {
+      "label": "4.10.6 Explainability",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L306",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_10_6_explainability",
+      "community": 248,
+      "community_name": "4.10 Results and Evaluation",
+      "norm_label": "4.10.6 explainability"
+    },
+    {
+      "label": "4.11 Discussion",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L310",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_4_11_discussion",
+      "community": 78,
+      "community_name": "greedy-assignment.engine.ts",
+      "norm_label": "4.11 discussion"
+    },
+    {
+      "label": "CHAPTER FIVE",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L316",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_chapter_five",
+      "community": 251,
+      "community_name": "CHAPTER FIVE",
+      "norm_label": "chapter five"
+    },
+    {
+      "label": "5.1 Summary of Findings",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L318",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_5_1_summary_of_findings",
+      "community": 251,
+      "community_name": "CHAPTER FIVE",
+      "norm_label": "5.1 summary of findings"
+    },
+    {
+      "label": "5.2 Conclusions",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L324",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_5_2_conclusions",
+      "community": 251,
+      "community_name": "CHAPTER FIVE",
+      "norm_label": "5.2 conclusions"
+    },
+    {
+      "label": "5.3 Recommendations",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L335",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_5_3_recommendations",
+      "community": 251,
+      "community_name": "CHAPTER FIVE",
+      "norm_label": "5.3 recommendations"
+    },
+    {
+      "label": "5.4 Contribution to Knowledge",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L340",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_5_4_contribution_to_knowledge",
+      "community": 251,
+      "community_name": "CHAPTER FIVE",
+      "norm_label": "5.4 contribution to knowledge"
+    },
+    {
+      "label": "5.5 Future Work",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L346",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_5_5_future_work",
+      "community": 251,
+      "community_name": "CHAPTER FIVE",
+      "norm_label": "5.5 future work"
+    },
+    {
+      "label": "REFERENCES",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L353",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_references",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "references"
+    },
+    {
+      "label": "APPENDIX",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L384",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_appendix",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "appendix"
+    },
+    {
+      "label": "Appendix A: Source Code",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L385",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_appendix_a_source_code",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "appendix a: source code"
+    },
+    {
+      "label": "Appendix B: Corrections Log \u2014 Seminar Proposal to Implemented System",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L394",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_appendix_b_corrections_log_seminar_proposal_to_implemented_system",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "appendix b: corrections log \u2014 seminar proposal to implemented system"
+    },
+    {
+      "label": "Appendix C: Provenance of the Test Suite and Evaluation Figures",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L398",
+      "_origin": "ast",
+      "id": "graphify_out_converted_project_report1_0cd44154_appendix_c_provenance_of_the_test_suite_and_evaluation_figures",
+      "community": 85,
+      "community_name": "PreferenceScorer",
+      "norm_label": "appendix c: provenance of the test suite and evaluation figures"
+    },
+    {
       "label": "EVALUATION_FINDINGS.md",
       "file_type": "document",
       "source_file": "backend/docs/benchmarks/EVALUATION_FINDINGS.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "backend_docs_benchmarks_evaluation_findings",
       "community": 245,
       "community_name": "Evaluation Findings \u2014 Final Authoritative Run",
-      "norm_label": "evaluation_findings.md"
+      "norm_label": "evaluation_findings.md",
+      "id": "backend_docs_benchmarks_evaluation_findings"
     },
     {
       "label": "Evaluation Findings \u2014 Final Authoritative Run",
@@ -20,10 +757,10 @@
       "source_file": "backend/docs/benchmarks/EVALUATION_FINDINGS.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "backend_docs_benchmarks_evaluation_findings_evaluation_findings_final_authoritative_run",
       "community": 245,
       "community_name": "Evaluation Findings \u2014 Final Authoritative Run",
-      "norm_label": "evaluation findings \u2014 final authoritative run"
+      "norm_label": "evaluation findings \u2014 final authoritative run",
+      "id": "backend_docs_benchmarks_evaluation_findings_evaluation_findings_final_authoritative_run"
     },
     {
       "label": "1. Test suite",
@@ -31,10 +768,10 @@
       "source_file": "backend/docs/benchmarks/EVALUATION_FINDINGS.md",
       "source_location": "L14",
       "_origin": "ast",
-      "id": "backend_docs_benchmarks_evaluation_findings_1_test_suite",
       "community": 245,
       "community_name": "Evaluation Findings \u2014 Final Authoritative Run",
-      "norm_label": "1. test suite"
+      "norm_label": "1. test suite",
+      "id": "backend_docs_benchmarks_evaluation_findings_1_test_suite"
     },
     {
       "label": "2. Match quality and fairness (Table 4.4 of the report)",
@@ -42,10 +779,10 @@
       "source_file": "backend/docs/benchmarks/EVALUATION_FINDINGS.md",
       "source_location": "L28",
       "_origin": "ast",
-      "id": "backend_docs_benchmarks_evaluation_findings_2_match_quality_and_fairness_table_4_4_of_the_report",
       "community": 245,
       "community_name": "Evaluation Findings \u2014 Final Authoritative Run",
-      "norm_label": "2. match quality and fairness (table 4.4 of the report)"
+      "norm_label": "2. match quality and fairness (table 4.4 of the report)",
+      "id": "backend_docs_benchmarks_evaluation_findings_2_match_quality_and_fairness_table_4_4_of_the_report"
     },
     {
       "label": "3. Effect of the fairness weight (Table 4.5 of the report)",
@@ -53,10 +790,10 @@
       "source_file": "backend/docs/benchmarks/EVALUATION_FINDINGS.md",
       "source_location": "L51",
       "_origin": "ast",
-      "id": "backend_docs_benchmarks_evaluation_findings_3_effect_of_the_fairness_weight_table_4_5_of_the_report",
       "community": 245,
       "community_name": "Evaluation Findings \u2014 Final Authoritative Run",
-      "norm_label": "3. effect of the fairness weight (table 4.5 of the report)"
+      "norm_label": "3. effect of the fairness weight (table 4.5 of the report)",
+      "id": "backend_docs_benchmarks_evaluation_findings_3_effect_of_the_fairness_weight_table_4_5_of_the_report"
     },
     {
       "label": "4. Performance benchmarking (Table 4.6 of the report)",
@@ -64,10 +801,10 @@
       "source_file": "backend/docs/benchmarks/EVALUATION_FINDINGS.md",
       "source_location": "L72",
       "_origin": "ast",
-      "id": "backend_docs_benchmarks_evaluation_findings_4_performance_benchmarking_table_4_6_of_the_report",
       "community": 245,
       "community_name": "Evaluation Findings \u2014 Final Authoritative Run",
-      "norm_label": "4. performance benchmarking (table 4.6 of the report)"
+      "norm_label": "4. performance benchmarking (table 4.6 of the report)",
+      "id": "backend_docs_benchmarks_evaluation_findings_4_performance_benchmarking_table_4_6_of_the_report"
     },
     {
       "label": "5. Comparison with baseline assignment (Table 4.7 of the report)",
@@ -75,10 +812,10 @@
       "source_file": "backend/docs/benchmarks/EVALUATION_FINDINGS.md",
       "source_location": "L90",
       "_origin": "ast",
-      "id": "backend_docs_benchmarks_evaluation_findings_5_comparison_with_baseline_assignment_table_4_7_of_the_report",
       "community": 245,
       "community_name": "Evaluation Findings \u2014 Final Authoritative Run",
-      "norm_label": "5. comparison with baseline assignment (table 4.7 of the report)"
+      "norm_label": "5. comparison with baseline assignment (table 4.7 of the report)",
+      "id": "backend_docs_benchmarks_evaluation_findings_5_comparison_with_baseline_assignment_table_4_7_of_the_report"
     },
     {
       "label": "6. Optimality gap (Section 4.5.5 of the report)",
@@ -86,10 +823,10 @@
       "source_file": "backend/docs/benchmarks/EVALUATION_FINDINGS.md",
       "source_location": "L125",
       "_origin": "ast",
-      "id": "backend_docs_benchmarks_evaluation_findings_6_optimality_gap_section_4_5_5_of_the_report",
       "community": 245,
       "community_name": "Evaluation Findings \u2014 Final Authoritative Run",
-      "norm_label": "6. optimality gap (section 4.5.5 of the report)"
+      "norm_label": "6. optimality gap (section 4.5.5 of the report)",
+      "id": "backend_docs_benchmarks_evaluation_findings_6_optimality_gap_section_4_5_5_of_the_report"
     },
     {
       "label": "core-explanation_2c443f75.md",
@@ -97,10 +834,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "core-explanation_2c443f75.md"
+      "norm_label": "core-explanation_2c443f75.md",
+      "id": "graphify_out_converted_core_explanation_2c443f75"
     },
     {
       "label": "Table of Contents",
@@ -108,10 +845,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L10",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_table_of_contents",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "table of contents"
+      "norm_label": "table of contents",
+      "id": "graphify_out_converted_core_explanation_2c443f75_table_of_contents"
     },
     {
       "label": "What Is the Core Folder?",
@@ -119,10 +856,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L27",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_what_is_the_core_folder",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "what is the core folder?"
+      "norm_label": "what is the core folder?",
+      "id": "graphify_out_converted_core_explanation_2c443f75_what_is_the_core_folder"
     },
     {
       "label": "Folder Map",
@@ -130,10 +867,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L30",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_folder_map",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "folder map"
+      "norm_label": "folder map",
+      "id": "graphify_out_converted_core_explanation_2c443f75_folder_map"
     },
     {
       "label": "Part 1: The Building Blocks",
@@ -141,10 +878,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L32",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_part_1_the_building_blocks",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "part 1: the building blocks"
+      "norm_label": "part 1: the building blocks",
+      "id": "graphify_out_converted_core_explanation_2c443f75_part_1_the_building_blocks"
     },
     {
       "label": "Entities (\u2022core/entities/) \u2014 The Dictionary",
@@ -152,10 +889,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L34",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_entities_core_entities_the_dictionary",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "entities (\u2022core/entities/) \u2014 the dictionary"
+      "norm_label": "entities (\u2022core/entities/) \u2014 the dictionary",
+      "id": "graphify_out_converted_core_explanation_2c443f75_entities_core_entities_the_dictionary"
     },
     {
       "label": "Enums (\u2022core/enums/) \u2014 The Checkbox List",
@@ -163,10 +900,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L36",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_enums_core_enums_the_checkbox_list",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "enums (\u2022core/enums/) \u2014 the checkbox list"
+      "norm_label": "enums (\u2022core/enums/) \u2014 the checkbox list",
+      "id": "graphify_out_converted_core_explanation_2c443f75_enums_core_enums_the_checkbox_list"
     },
     {
       "label": "Exceptions (\u2022core/exceptions/) \u2014 The Alarm Bells",
@@ -174,10 +911,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L38",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_exceptions_core_exceptions_the_alarm_bells",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "exceptions (\u2022core/exceptions/) \u2014 the alarm bells"
+      "norm_label": "exceptions (\u2022core/exceptions/) \u2014 the alarm bells",
+      "id": "graphify_out_converted_core_explanation_2c443f75_exceptions_core_exceptions_the_alarm_bells"
     },
     {
       "label": "Constants (\u2022core/constants/) \u2014 The Rulebook Numbers",
@@ -185,10 +922,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L41",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_constants_core_constants_the_rulebook_numbers",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "constants (\u2022core/constants/) \u2014 the rulebook numbers"
+      "norm_label": "constants (\u2022core/constants/) \u2014 the rulebook numbers",
+      "id": "graphify_out_converted_core_explanation_2c443f75_constants_core_constants_the_rulebook_numbers"
     },
     {
       "label": "Part 2: The Algorithms \u2014 The Brain",
@@ -196,10 +933,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L44",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "part 2: the algorithms \u2014 the brain"
+      "norm_label": "part 2: the algorithms \u2014 the brain",
+      "id": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain"
     },
     {
       "label": "2a. Eligibility Filter \u2014 The Bouncer",
@@ -207,10 +944,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L46",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_2a_eligibility_filter_the_bouncer",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "2a. eligibility filter \u2014 the bouncer"
+      "norm_label": "2a. eligibility filter \u2014 the bouncer",
+      "id": "graphify_out_converted_core_explanation_2c443f75_2a_eligibility_filter_the_bouncer"
     },
     {
       "label": "2b. Scorers \u2014 The Judge",
@@ -218,10 +955,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L49",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_2b_scorers_the_judge",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "2b. scorers \u2014 the judge"
+      "norm_label": "2b. scorers \u2014 the judge",
+      "id": "graphify_out_converted_core_explanation_2c443f75_2b_scorers_the_judge"
     },
     {
       "label": "Academic Scorer",
@@ -229,10 +966,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L52",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_academic_scorer",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "academic scorer"
+      "norm_label": "academic scorer",
+      "id": "graphify_out_converted_core_explanation_2c443f75_academic_scorer"
     },
     {
       "label": "Preference Scorer",
@@ -240,10 +977,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L58",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_preference_scorer",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "preference scorer"
+      "norm_label": "preference scorer",
+      "id": "graphify_out_converted_core_explanation_2c443f75_preference_scorer"
     },
     {
       "label": "Schedule Scorer",
@@ -251,10 +988,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L63",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_schedule_scorer",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "schedule scorer"
+      "norm_label": "schedule scorer",
+      "id": "graphify_out_converted_core_explanation_2c443f75_schedule_scorer"
     },
     {
       "label": "Fairness Scorer",
@@ -262,10 +999,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L66",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_fairness_scorer",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "fairness scorer"
+      "norm_label": "fairness scorer",
+      "id": "graphify_out_converted_core_explanation_2c443f75_fairness_scorer"
     },
     {
       "label": "Composite Scorer",
@@ -273,10 +1010,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L69",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_composite_scorer",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "composite scorer"
+      "norm_label": "composite scorer",
+      "id": "graphify_out_converted_core_explanation_2c443f75_composite_scorer"
     },
     {
       "label": "2c. Top-K Ranker \u2014 The Sorter",
@@ -284,10 +1021,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L72",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_2c_top_k_ranker_the_sorter",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "2c. top-k ranker \u2014 the sorter"
+      "norm_label": "2c. top-k ranker \u2014 the sorter",
+      "id": "graphify_out_converted_core_explanation_2c443f75_2c_top_k_ranker_the_sorter"
     },
     {
       "label": "2d. Greedy Assignment Engine \u2014 The Matchmaker",
@@ -295,10 +1032,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L75",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_2d_greedy_assignment_engine_the_matchmaker",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "2d. greedy assignment engine \u2014 the matchmaker"
+      "norm_label": "2d. greedy assignment engine \u2014 the matchmaker",
+      "id": "graphify_out_converted_core_explanation_2c443f75_2d_greedy_assignment_engine_the_matchmaker"
     },
     {
       "label": "How It Works (Step by Step)",
@@ -306,10 +1043,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L78",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_how_it_works_step_by_step",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "how it works (step by step)"
+      "norm_label": "how it works (step by step)",
+      "id": "graphify_out_converted_core_explanation_2c443f75_how_it_works_step_by_step"
     },
     {
       "label": "Assignment Lifecycle",
@@ -317,10 +1054,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L86",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_assignment_lifecycle",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "assignment lifecycle"
+      "norm_label": "assignment lifecycle",
+      "id": "graphify_out_converted_core_explanation_2c443f75_assignment_lifecycle"
     },
     {
       "label": "2e. Feedback Updater \u2014 The Learner",
@@ -328,10 +1065,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L92",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_2e_feedback_updater_the_learner",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "2e. feedback updater \u2014 the learner"
+      "norm_label": "2e. feedback updater \u2014 the learner",
+      "id": "graphify_out_converted_core_explanation_2c443f75_2e_feedback_updater_the_learner"
     },
     {
       "label": "2f. Weight Adaptation \u2014 The Tuner",
@@ -339,10 +1076,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L95",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_2f_weight_adaptation_the_tuner",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "2f. weight adaptation \u2014 the tuner"
+      "norm_label": "2f. weight adaptation \u2014 the tuner",
+      "id": "graphify_out_converted_core_explanation_2c443f75_2f_weight_adaptation_the_tuner"
     },
     {
       "label": "2g. Utilities \u2014 The Toolkit",
@@ -350,10 +1087,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L98",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_2g_utilities_the_toolkit",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "2g. utilities \u2014 the toolkit"
+      "norm_label": "2g. utilities \u2014 the toolkit",
+      "id": "graphify_out_converted_core_explanation_2c443f75_2g_utilities_the_toolkit"
     },
     {
       "label": "Vector Math",
@@ -361,10 +1098,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L99",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_vector_math",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "vector math"
+      "norm_label": "vector math",
+      "id": "graphify_out_converted_core_explanation_2c443f75_vector_math"
     },
     {
       "label": "Max Heap",
@@ -372,10 +1109,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L102",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_max_heap",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "max heap"
+      "norm_label": "max heap",
+      "id": "graphify_out_converted_core_explanation_2c443f75_max_heap"
     },
     {
       "label": "Part 3: The Engine \u2014 The Conductor",
@@ -383,10 +1120,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L106",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_part_3_the_engine_the_conductor",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "part 3: the engine \u2014 the conductor"
+      "norm_label": "part 3: the engine \u2014 the conductor",
+      "id": "graphify_out_converted_core_explanation_2c443f75_part_3_the_engine_the_conductor"
     },
     {
       "label": "Part 4: The Evaluation Lab \u2014 The Testing Arena",
@@ -394,10 +1131,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L111",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_part_4_the_evaluation_lab_the_testing_arena",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "part 4: the evaluation lab \u2014 the testing arena"
+      "norm_label": "part 4: the evaluation lab \u2014 the testing arena",
+      "id": "graphify_out_converted_core_explanation_2c443f75_part_4_the_evaluation_lab_the_testing_arena"
     },
     {
       "label": "Fixtures (fixtures.ts) \u2014 The Fake Data Factory",
@@ -405,10 +1142,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L114",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_fixtures_fixtures_ts_the_fake_data_factory",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "fixtures (fixtures.ts) \u2014 the fake data factory"
+      "norm_label": "fixtures (fixtures.ts) \u2014 the fake data factory",
+      "id": "graphify_out_converted_core_explanation_2c443f75_fixtures_fixtures_ts_the_fake_data_factory"
     },
     {
       "label": "Evaluation Harness (evaluation-harness.ts) \u2014 The Performance Lab",
@@ -416,10 +1153,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L116",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_evaluation_harness_evaluation_harness_ts_the_performance_lab",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "evaluation harness (evaluation-harness.ts) \u2014 the performance lab"
+      "norm_label": "evaluation harness (evaluation-harness.ts) \u2014 the performance lab",
+      "id": "graphify_out_converted_core_explanation_2c443f75_evaluation_harness_evaluation_harness_ts_the_performance_lab"
     },
     {
       "label": "Optimal Baseline (optimal-baseline.ts) \u2014 The Perfection Benchmark",
@@ -427,10 +1164,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L122",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_optimal_baseline_optimal_baseline_ts_the_perfection_benchmark",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "optimal baseline (optimal-baseline.ts) \u2014 the perfection benchmark"
+      "norm_label": "optimal baseline (optimal-baseline.ts) \u2014 the perfection benchmark",
+      "id": "graphify_out_converted_core_explanation_2c443f75_optimal_baseline_optimal_baseline_ts_the_perfection_benchmark"
     },
     {
       "label": "Baseline Comparison (baseline-comparison.ts) \u2014 The Reality Check",
@@ -438,10 +1175,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L124",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_baseline_comparison_baseline_comparison_ts_the_reality_check",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "baseline comparison (baseline-comparison.ts) \u2014 the reality check"
+      "norm_label": "baseline comparison (baseline-comparison.ts) \u2014 the reality check",
+      "id": "graphify_out_converted_core_explanation_2c443f75_baseline_comparison_baseline_comparison_ts_the_reality_check"
     },
     {
       "label": "CLI Output (cli-output.ts) \u2014 The Reporter",
@@ -449,10 +1186,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L130",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_cli_output_cli_output_ts_the_reporter",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "cli output (cli-output.ts) \u2014 the reporter"
+      "norm_label": "cli output (cli-output.ts) \u2014 the reporter",
+      "id": "graphify_out_converted_core_explanation_2c443f75_cli_output_cli_output_ts_the_reporter"
     },
     {
       "label": "Part 5: The Contracts (Interfaces)",
@@ -460,10 +1197,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L133",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_part_5_the_contracts_interfaces",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "part 5: the contracts (interfaces)"
+      "norm_label": "part 5: the contracts (interfaces)",
+      "id": "graphify_out_converted_core_explanation_2c443f75_part_5_the_contracts_interfaces"
     },
     {
       "label": "Part 6: How It All Fits Together",
@@ -471,10 +1208,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L138",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_part_6_how_it_all_fits_together",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "part 6: how it all fits together"
+      "norm_label": "part 6: how it all fits together",
+      "id": "graphify_out_converted_core_explanation_2c443f75_part_6_how_it_all_fits_together"
     },
     {
       "label": "Scenario: A batch of students needs tutors",
@@ -482,10 +1219,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L140",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_scenario_a_batch_of_students_needs_tutors",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "scenario: a batch of students needs tutors"
+      "norm_label": "scenario: a batch of students needs tutors",
+      "id": "graphify_out_converted_core_explanation_2c443f75_scenario_a_batch_of_students_needs_tutors"
     },
     {
       "label": "Scenario: A rating comes in",
@@ -493,10 +1230,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L151",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_scenario_a_rating_comes_in",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "scenario: a rating comes in"
+      "norm_label": "scenario: a rating comes in",
+      "id": "graphify_out_converted_core_explanation_2c443f75_scenario_a_rating_comes_in"
     },
     {
       "label": "Scenario: A session is cancelled",
@@ -504,10 +1241,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L154",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_scenario_a_session_is_cancelled",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "scenario: a session is cancelled"
+      "norm_label": "scenario: a session is cancelled",
+      "id": "graphify_out_converted_core_explanation_2c443f75_scenario_a_session_is_cancelled"
     },
     {
       "label": "Part 7: How To Use It (Quick Start)",
@@ -515,10 +1252,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L158",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_part_7_how_to_use_it_quick_start",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "part 7: how to use it (quick start)"
+      "norm_label": "part 7: how to use it (quick start)",
+      "id": "graphify_out_converted_core_explanation_2c443f75_part_7_how_to_use_it_quick_start"
     },
     {
       "label": "1. Instantiate the Engine",
@@ -526,10 +1263,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L160",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_1_instantiate_the_engine",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "1. instantiate the engine"
+      "norm_label": "1. instantiate the engine",
+      "id": "graphify_out_converted_core_explanation_2c443f75_1_instantiate_the_engine"
     },
     {
       "label": "2. Match a Batch of Students",
@@ -537,10 +1274,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L163",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_2_match_a_batch_of_students",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "2. match a batch of students"
+      "norm_label": "2. match a batch of students",
+      "id": "graphify_out_converted_core_explanation_2c443f75_2_match_a_batch_of_students"
     },
     {
       "label": "3. Match One Student",
@@ -548,10 +1285,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L168",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_3_match_one_student",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "3. match one student"
+      "norm_label": "3. match one student",
+      "id": "graphify_out_converted_core_explanation_2c443f75_3_match_one_student"
     },
     {
       "label": "4. Complete / Cancel",
@@ -559,10 +1296,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L171",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_4_complete_cancel",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "4. complete / cancel"
+      "norm_label": "4. complete / cancel",
+      "id": "graphify_out_converted_core_explanation_2c443f75_4_complete_cancel"
     },
     {
       "label": "5. Run Evaluation",
@@ -570,10 +1307,10 @@
       "source_file": "graphify-out/converted/core-explanation_2c443f75.md",
       "source_location": "L175",
       "_origin": "ast",
-      "id": "graphify_out_converted_core_explanation_2c443f75_5_run_evaluation",
       "community": 173,
       "community_name": "gsap",
-      "norm_label": "5. run evaluation"
+      "norm_label": "5. run evaluation",
+      "id": "graphify_out_converted_core_explanation_2c443f75_5_run_evaluation"
     },
     {
       "label": "README.md",
@@ -7588,8 +8325,8 @@
       "source_file": "backend/src/database/schema.ts",
       "source_location": "L81",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "subjects",
       "id": "backend_src_database_schema_subjects"
     },
@@ -7621,8 +8358,8 @@
       "source_file": "backend/src/database/schema.ts",
       "source_location": "L212",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "tutorsubjects",
       "id": "backend_src_database_schema_tutorsubjects"
     },
@@ -7632,8 +8369,8 @@
       "source_file": "backend/src/database/schema.ts",
       "source_location": "L229",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "scheduleslots",
       "id": "backend_src_database_schema_scheduleslots"
     },
@@ -7665,8 +8402,8 @@
       "source_file": "backend/src/database/schema.ts",
       "source_location": "L301",
       "_origin": "ast",
-      "community": 240,
-      "community_name": "index.ts",
+      "community": 57,
+      "community_name": "@types/jsonwebtoken",
       "norm_label": "sessions",
       "id": "backend_src_database_schema_sessions"
     },
@@ -11889,8 +12626,8 @@
       "source_file": "frontend/lib/api/auth.ts",
       "source_location": "L52",
       "_origin": "ast",
-      "community": 115,
-      "community_name": "auth.ts",
+      "community": 48,
+      "community_name": "@swc/core",
       "norm_label": "mapsession()",
       "id": "frontend_lib_api_auth_mapsession"
     },
@@ -16586,8 +17323,8 @@
       "source_file": "frontend/app/(app)/admin/page.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 132,
-      "community_name": "CalendarGrid.tsx",
+      "community": 69,
+      "community_name": "index.ts",
       "norm_label": "page.tsx",
       "id": "frontend_app_app_admin_page"
     },
@@ -16597,8 +17334,8 @@
       "source_file": "frontend/app/(app)/admin/page.tsx",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 132,
-      "community_name": "CalendarGrid.tsx",
+      "community": 69,
+      "community_name": "index.ts",
       "norm_label": "ease",
       "id": "frontend_app_app_admin_page_ease"
     },
@@ -17708,8 +18445,8 @@
       "source_file": "frontend/components/Input.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 78,
-      "community_name": "greedy-assignment.engine.ts",
+      "community": 48,
+      "community_name": "@swc/core",
       "norm_label": "input.tsx",
       "id": "frontend_components_input"
     },
@@ -17719,8 +18456,8 @@
       "source_file": "frontend/components/Input.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 78,
-      "community_name": "greedy-assignment.engine.ts",
+      "community": 48,
+      "community_name": "@swc/core",
       "norm_label": "inputstyle",
       "id": "frontend_components_input_inputstyle"
     },
@@ -17730,8 +18467,8 @@
       "source_file": "frontend/components/Input.tsx",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 78,
-      "community_name": "greedy-assignment.engine.ts",
+      "community": 48,
+      "community_name": "@swc/core",
       "norm_label": "inputfocusstyle",
       "id": "frontend_components_input_inputfocusstyle"
     },
@@ -17741,8 +18478,8 @@
       "source_file": "frontend/components/Input.tsx",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 78,
-      "community_name": "greedy-assignment.engine.ts",
+      "community": 48,
+      "community_name": "@swc/core",
       "norm_label": "inputerrorstyle",
       "id": "frontend_components_input_inputerrorstyle"
     },
@@ -17752,8 +18489,8 @@
       "source_file": "frontend/components/Input.tsx",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 78,
-      "community_name": "greedy-assignment.engine.ts",
+      "community": 48,
+      "community_name": "@swc/core",
       "norm_label": "inputprops",
       "id": "frontend_components_input_inputprops"
     },
@@ -17774,8 +18511,8 @@
       "source_file": "frontend/components/Input.tsx",
       "source_location": "L115",
       "_origin": "ast",
-      "community": 78,
-      "community_name": "greedy-assignment.engine.ts",
+      "community": 48,
+      "community_name": "@swc/core",
       "norm_label": "selectprops",
       "id": "frontend_components_input_selectprops"
     },
@@ -17785,8 +18522,8 @@
       "source_file": "frontend/components/Input.tsx",
       "source_location": "L126",
       "_origin": "ast",
-      "community": 78,
-      "community_name": "greedy-assignment.engine.ts",
+      "community": 48,
+      "community_name": "@swc/core",
       "norm_label": "select()",
       "id": "frontend_components_input_select"
     },
@@ -17796,8 +18533,8 @@
       "source_file": "frontend/components/Input.tsx",
       "source_location": "L152",
       "_origin": "ast",
-      "community": 78,
-      "community_name": "greedy-assignment.engine.ts",
+      "community": 48,
+      "community_name": "@swc/core",
       "norm_label": "textareaprops",
       "id": "frontend_components_input_textareaprops"
     },
@@ -17807,8 +18544,8 @@
       "source_file": "frontend/components/Input.tsx",
       "source_location": "L159",
       "_origin": "ast",
-      "community": 78,
-      "community_name": "greedy-assignment.engine.ts",
+      "community": 48,
+      "community_name": "@swc/core",
       "norm_label": "textarea()",
       "id": "frontend_components_input_textarea"
     },
@@ -21976,8 +22713,8 @@
       "source_file": "backend/src/database/seeds/nigerian-secondary.seed.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "nigerian-secondary.seed.ts",
       "id": "backend_src_database_seeds_nigerian_secondary_seed"
     },
@@ -21987,8 +22724,8 @@
       "source_file": "backend/src/database/seeds/nigerian-secondary.seed.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "secondary_subjects",
       "id": "backend_src_database_seeds_nigerian_secondary_seed_secondary_subjects"
     },
@@ -21998,8 +22735,8 @@
       "source_file": "backend/src/database/seeds/nigerian-secondary.seed.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "regions",
       "id": "backend_src_database_seeds_nigerian_secondary_seed_regions"
     },
@@ -22009,8 +22746,8 @@
       "source_file": "backend/src/database/seeds/nigerian-secondary.seed.ts",
       "source_location": "L29",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "first_names",
       "id": "backend_src_database_seeds_nigerian_secondary_seed_first_names"
     },
@@ -22020,8 +22757,8 @@
       "source_file": "backend/src/database/seeds/nigerian-secondary.seed.ts",
       "source_location": "L41",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "last_names",
       "id": "backend_src_database_seeds_nigerian_secondary_seed_last_names"
     },
@@ -22031,8 +22768,8 @@
       "source_file": "backend/src/database/seeds/nigerian-secondary.seed.ts",
       "source_location": "L54",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "slot()",
       "id": "backend_src_database_seeds_nigerian_secondary_seed_slot"
     },
@@ -22042,8 +22779,8 @@
       "source_file": "backend/src/database/seeds/nigerian-secondary.seed.ts",
       "source_location": "L65",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "pickspecializations()",
       "id": "backend_src_database_seeds_nigerian_secondary_seed_pickspecializations"
     },
@@ -22053,8 +22790,8 @@
       "source_file": "backend/src/database/seeds/nigerian-secondary.seed.ts",
       "source_location": "L70",
       "_origin": "ast",
-      "community": 85,
-      "community_name": "PreferenceScorer",
+      "community": 240,
+      "community_name": "index.ts",
       "norm_label": "seed()",
       "id": "backend_src_database_seeds_nigerian_secondary_seed_seed"
     },
@@ -22812,8 +23549,8 @@
       "source_file": "backend/src/modules/dashboard/dashboard.controller.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": "dashboardcontroller",
       "id": "backend_src_modules_dashboard_dashboard_controller_dashboardcontroller"
     },
@@ -22823,8 +23560,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": "controller",
       "id": "backend_src_modules_dashboard_dashboard_controller_ts_controller"
     },
@@ -22834,8 +23571,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": "apitags",
       "id": "backend_src_modules_dashboard_dashboard_controller_ts_apitags"
     },
@@ -22845,8 +23582,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": "apibearerauth",
       "id": "backend_src_modules_dashboard_dashboard_controller_ts_apibearerauth"
     },
@@ -22856,8 +23593,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": "useguards",
       "id": "backend_src_modules_dashboard_dashboard_controller_ts_useguards"
     },
@@ -22867,8 +23604,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": "get",
       "id": "backend_src_modules_dashboard_dashboard_controller_ts_get"
     },
@@ -22878,8 +23615,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": "apioperation",
       "id": "backend_src_modules_dashboard_dashboard_controller_ts_apioperation"
     },
@@ -22889,8 +23626,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": "apiresponse",
       "id": "backend_src_modules_dashboard_dashboard_controller_ts_apiresponse"
     },
@@ -22900,8 +23637,8 @@
       "source_file": "backend/src/modules/dashboard/dashboard.controller.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": ".constructor()",
       "id": "backend_src_modules_dashboard_dashboard_controller_dashboardcontroller_constructor"
     },
@@ -22911,8 +23648,8 @@
       "source_file": "backend/src/modules/dashboard/dashboard.controller.ts",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": ".getstudentmetrics()",
       "id": "backend_src_modules_dashboard_dashboard_controller_dashboardcontroller_getstudentmetrics"
     },
@@ -22922,8 +23659,8 @@
       "source_file": "backend/src/modules/dashboard/dashboard.controller.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": ".gettutormetrics()",
       "id": "backend_src_modules_dashboard_dashboard_controller_dashboardcontroller_gettutormetrics"
     },
@@ -22933,8 +23670,8 @@
       "source_file": "backend/src/modules/dashboard/dashboard.controller.ts",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "Roles",
+      "community": 28,
+      "community_name": "swagger-ui-express",
       "norm_label": ".getadminmetrics()",
       "id": "backend_src_modules_dashboard_dashboard_controller_dashboardcontroller_getadminmetrics"
     },
@@ -25243,8 +25980,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 62,
-      "community_name": "AuthService",
+      "community": 71,
+      "community_name": "AppDatabase",
       "norm_label": "inject",
       "id": "backend_src_modules_notifications_notifications_repository_ts_inject"
     },
@@ -25254,8 +25991,8 @@
       "source_file": "backend/src/modules/notifications/notifications.repository.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 62,
-      "community_name": "AuthService",
+      "community": 71,
+      "community_name": "AppDatabase",
       "norm_label": ".constructor()",
       "id": "backend_src_modules_notifications_notifications_repository_notificationsrepository_constructor"
     },
@@ -26222,8 +26959,8 @@
       "source_file": "backend/src/modules/sessions/sessions.controller.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 14,
-      "community_name": "crypto-js",
+      "community": 57,
+      "community_name": "@types/jsonwebtoken",
       "norm_label": ".constructor()",
       "id": "backend_src_modules_sessions_sessions_controller_sessionscontroller_constructor"
     },
@@ -26255,8 +26992,8 @@
       "source_file": "backend/src/modules/sessions/sessions.controller.ts",
       "source_location": "L62",
       "_origin": "ast",
-      "community": 241,
-      "community_name": "sessions.controller.ts",
+      "community": 14,
+      "community_name": "crypto-js",
       "norm_label": ".proposenewtime()",
       "id": "backend_src_modules_sessions_sessions_controller_sessionscontroller_proposenewtime"
     },
@@ -26354,8 +27091,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 57,
-      "community_name": "@types/jsonwebtoken",
+      "community": 71,
+      "community_name": "AppDatabase",
       "norm_label": "inject",
       "id": "backend_src_modules_sessions_sessions_repository_ts_inject"
     },
@@ -26365,8 +27102,8 @@
       "source_file": "backend/src/modules/sessions/sessions.repository.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 57,
-      "community_name": "@types/jsonwebtoken",
+      "community": 71,
+      "community_name": "AppDatabase",
       "norm_label": ".constructor()",
       "id": "backend_src_modules_sessions_sessions_repository_sessionsrepository_constructor"
     },
@@ -26431,8 +27168,8 @@
       "source_file": "backend/src/modules/sessions/sessions.repository.ts",
       "source_location": "L86",
       "_origin": "ast",
-      "community": 57,
-      "community_name": "@types/jsonwebtoken",
+      "community": 71,
+      "community_name": "AppDatabase",
       "norm_label": ".findstudentsubjects()",
       "id": "backend_src_modules_sessions_sessions_repository_sessionsrepository_findstudentsubjects"
     },
@@ -26453,8 +27190,8 @@
       "source_file": "backend/src/modules/sessions/sessions.repository.ts",
       "source_location": "L107",
       "_origin": "ast",
-      "community": 57,
-      "community_name": "@types/jsonwebtoken",
+      "community": 14,
+      "community_name": "crypto-js",
       "norm_label": ".updateproposedtime()",
       "id": "backend_src_modules_sessions_sessions_repository_sessionsrepository_updateproposedtime"
     },
@@ -26486,8 +27223,8 @@
       "source_file": "backend/src/modules/sessions/sessions.repository.ts",
       "source_location": "L161",
       "_origin": "ast",
-      "community": 240,
-      "community_name": "index.ts",
+      "community": 57,
+      "community_name": "@types/jsonwebtoken",
       "norm_label": ".enrichsession()",
       "id": "backend_src_modules_sessions_sessions_repository_sessionsrepository_enrichsession"
     },
@@ -26530,8 +27267,8 @@
       "source_file": "backend/src/modules/sessions/sessions.service.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 57,
-      "community_name": "@types/jsonwebtoken",
+      "community": 62,
+      "community_name": "AuthService",
       "norm_label": ".constructor()",
       "id": "backend_src_modules_sessions_sessions_service_sessionsservice_constructor"
     },
@@ -26574,8 +27311,8 @@
       "source_file": "backend/src/modules/sessions/sessions.service.ts",
       "source_location": "L144",
       "_origin": "ast",
-      "community": 57,
-      "community_name": "@types/jsonwebtoken",
+      "community": 14,
+      "community_name": "crypto-js",
       "norm_label": ".proposenewtime()",
       "id": "backend_src_modules_sessions_sessions_service_sessionsservice_proposenewtime"
     },
@@ -27057,13 +27794,739 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154",
+      "target": "graphify_out_converted_project_report1_0cd44154_abstract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L384",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154",
+      "target": "graphify_out_converted_project_report1_0cd44154_appendix",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L316",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154",
+      "target": "graphify_out_converted_project_report1_0cd44154_chapter_five",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L129",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154",
+      "target": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154",
+      "target": "graphify_out_converted_project_report1_0cd44154_chapter_one",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L85",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154",
+      "target": "graphify_out_converted_project_report1_0cd44154_chapter_three",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L62",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154",
+      "target": "graphify_out_converted_project_report1_0cd44154_chapter_two",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L353",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154",
+      "target": "graphify_out_converted_project_report1_0cd44154_references",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L24",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_one",
+      "target": "graphify_out_converted_project_report1_0cd44154_1_1_background_to_the_study",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L29",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_one",
+      "target": "graphify_out_converted_project_report1_0cd44154_1_2_statement_of_problem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L37",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_one",
+      "target": "graphify_out_converted_project_report1_0cd44154_1_3_objectives_of_the_study",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L48",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_one",
+      "target": "graphify_out_converted_project_report1_0cd44154_1_4_research_questions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L49",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_one",
+      "target": "graphify_out_converted_project_report1_0cd44154_1_5_scope_of_the_study",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_one",
+      "target": "graphify_out_converted_project_report1_0cd44154_1_6_limitations_of_the_study",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L58",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_one",
+      "target": "graphify_out_converted_project_report1_0cd44154_1_7_significance_of_the_study",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L61",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_one",
+      "target": "graphify_out_converted_project_report1_0cd44154_1_8_definition_of_terms",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L64",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_two",
+      "target": "graphify_out_converted_project_report1_0cd44154_2_1_conceptual_framework",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L71",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_two",
+      "target": "graphify_out_converted_project_report1_0cd44154_2_2_theoretical_framework",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L77",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_two",
+      "target": "graphify_out_converted_project_report1_0cd44154_2_3_empirical_framework",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L83",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_two",
+      "target": "graphify_out_converted_project_report1_0cd44154_2_4_summary_of_literature_review",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L80",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_2_3_empirical_framework",
+      "target": "graphify_out_converted_project_report1_0cd44154_research_gap",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L98",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_three",
+      "target": "graphify_out_converted_project_report1_0cd44154_3_1_requirements_gathering",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L104",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_three",
+      "target": "graphify_out_converted_project_report1_0cd44154_3_2_developing_an_algorithm_to_match_students_with_tutors_based_on_established_criteria",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L117",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_three",
+      "target": "graphify_out_converted_project_report1_0cd44154_3_3_implementation_plan",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L280",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_10_results_and_evaluation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L310",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_11_discussion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L131",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_1_analysis_of_data_collection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L137",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_2_system_architecture",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L165",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_3_database_design",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L171",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_4_module_design",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L178",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_5_algorithm_design_and_complexity_analysis",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L230",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_6_key_edge_cases_and_their_handling",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L232",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_7_implementation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L250",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_8_module_implementation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L268",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_four",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_9_testing_strategy",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L134",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_1_analysis_of_data_collection",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_1_1_hardware_and_software_stack",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L142",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_2_system_architecture",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_2_1_three_tier_architecture",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L147",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_2_system_architecture",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_2_2_core_algorithm_architecture_domain_layer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L166",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_3_database_design",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_3_1_schema_design",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L172",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_4_module_design",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_4_1_backend_module_architecture",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L176",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_4_module_design",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_4_2_consumption_of_the_matching_endpoint",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L179",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_5_algorithm_design_and_complexity_analysis",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_5_1_composite_scoring_model",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L199",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_5_algorithm_design_and_complexity_analysis",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_5_2_priority_queue_greedy_assignment_algorithm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L217",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_5_algorithm_design_and_complexity_analysis",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_5_3_time_complexity_analysis",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L225",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_5_algorithm_design_and_complexity_analysis",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_5_4_space_complexity_analysis",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L226",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_5_algorithm_design_and_complexity_analysis",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_5_5_empirical_validation_against_the_true_optimum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L234",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_7_implementation",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_7_1_core_algorithm_implementation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L242",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_7_implementation",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_7_2_key_code_snippets",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L251",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_8_module_implementation",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_8_1_matchmaking_flow_end_to_end",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L269",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_9_testing_strategy",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_9_1_unit_testing_approach",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L274",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_9_testing_strategy",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_9_2_edge_case_verification",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L278",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_9_testing_strategy",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_9_3_test_execution",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L281",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_10_results_and_evaluation",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_10_1_evaluation_harness",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L284",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_10_results_and_evaluation",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_10_2_match_quality_and_fairness",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L291",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_10_results_and_evaluation",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_10_3_effect_of_the_fairness_weight",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L296",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_10_results_and_evaluation",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_10_4_performance_benchmarking",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L300",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_10_results_and_evaluation",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_10_5_comparison_with_baseline_assignment_strategies",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L306",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_4_10_results_and_evaluation",
+      "target": "graphify_out_converted_project_report1_0cd44154_4_10_6_explainability",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L318",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_five",
+      "target": "graphify_out_converted_project_report1_0cd44154_5_1_summary_of_findings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L324",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_five",
+      "target": "graphify_out_converted_project_report1_0cd44154_5_2_conclusions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L335",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_five",
+      "target": "graphify_out_converted_project_report1_0cd44154_5_3_recommendations",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L340",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_five",
+      "target": "graphify_out_converted_project_report1_0cd44154_5_4_contribution_to_knowledge",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L346",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_chapter_five",
+      "target": "graphify_out_converted_project_report1_0cd44154_5_5_future_work",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L385",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_appendix",
+      "target": "graphify_out_converted_project_report1_0cd44154_appendix_a_source_code",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L394",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_appendix",
+      "target": "graphify_out_converted_project_report1_0cd44154_appendix_b_corrections_log_seminar_proposal_to_implemented_system",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/converted/PROJECT REPORT1_0cd44154.md",
+      "source_location": "L398",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "graphify_out_converted_project_report1_0cd44154_appendix",
+      "target": "graphify_out_converted_project_report1_0cd44154_appendix_c_provenance_of_the_test_suite_and_evaluation_figures",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "backend/docs/benchmarks/EVALUATION_FINDINGS.md",
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "backend_docs_benchmarks_evaluation_findings",
-      "target": "backend_docs_benchmarks_evaluation_findings_evaluation_findings_final_authoritative_run",
-      "confidence_score": 1.0
+      "target": "backend_docs_benchmarks_evaluation_findings_evaluation_findings_final_authoritative_run"
     },
     {
       "relation": "contains",
@@ -27072,9 +28535,9 @@
       "source_location": "L14",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "backend_docs_benchmarks_evaluation_findings_evaluation_findings_final_authoritative_run",
-      "target": "backend_docs_benchmarks_evaluation_findings_1_test_suite",
-      "confidence_score": 1.0
+      "target": "backend_docs_benchmarks_evaluation_findings_1_test_suite"
     },
     {
       "relation": "contains",
@@ -27083,9 +28546,9 @@
       "source_location": "L28",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "backend_docs_benchmarks_evaluation_findings_evaluation_findings_final_authoritative_run",
-      "target": "backend_docs_benchmarks_evaluation_findings_2_match_quality_and_fairness_table_4_4_of_the_report",
-      "confidence_score": 1.0
+      "target": "backend_docs_benchmarks_evaluation_findings_2_match_quality_and_fairness_table_4_4_of_the_report"
     },
     {
       "relation": "contains",
@@ -27094,9 +28557,9 @@
       "source_location": "L51",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "backend_docs_benchmarks_evaluation_findings_evaluation_findings_final_authoritative_run",
-      "target": "backend_docs_benchmarks_evaluation_findings_3_effect_of_the_fairness_weight_table_4_5_of_the_report",
-      "confidence_score": 1.0
+      "target": "backend_docs_benchmarks_evaluation_findings_3_effect_of_the_fairness_weight_table_4_5_of_the_report"
     },
     {
       "relation": "contains",
@@ -27105,9 +28568,9 @@
       "source_location": "L72",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "backend_docs_benchmarks_evaluation_findings_evaluation_findings_final_authoritative_run",
-      "target": "backend_docs_benchmarks_evaluation_findings_4_performance_benchmarking_table_4_6_of_the_report",
-      "confidence_score": 1.0
+      "target": "backend_docs_benchmarks_evaluation_findings_4_performance_benchmarking_table_4_6_of_the_report"
     },
     {
       "relation": "contains",
@@ -27116,9 +28579,9 @@
       "source_location": "L90",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "backend_docs_benchmarks_evaluation_findings_evaluation_findings_final_authoritative_run",
-      "target": "backend_docs_benchmarks_evaluation_findings_5_comparison_with_baseline_assignment_table_4_7_of_the_report",
-      "confidence_score": 1.0
+      "target": "backend_docs_benchmarks_evaluation_findings_5_comparison_with_baseline_assignment_table_4_7_of_the_report"
     },
     {
       "relation": "contains",
@@ -27127,9 +28590,9 @@
       "source_location": "L125",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "backend_docs_benchmarks_evaluation_findings_evaluation_findings_final_authoritative_run",
-      "target": "backend_docs_benchmarks_evaluation_findings_6_optimality_gap_section_4_5_5_of_the_report",
-      "confidence_score": 1.0
+      "target": "backend_docs_benchmarks_evaluation_findings_6_optimality_gap_section_4_5_5_of_the_report"
     },
     {
       "relation": "contains",
@@ -27138,9 +28601,9 @@
       "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75",
-      "target": "graphify_out_converted_core_explanation_2c443f75_part_1_the_building_blocks",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_part_1_the_building_blocks"
     },
     {
       "relation": "contains",
@@ -27149,9 +28612,9 @@
       "source_location": "L44",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75",
-      "target": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain"
     },
     {
       "relation": "contains",
@@ -27160,9 +28623,9 @@
       "source_location": "L106",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75",
-      "target": "graphify_out_converted_core_explanation_2c443f75_part_3_the_engine_the_conductor",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_part_3_the_engine_the_conductor"
     },
     {
       "relation": "contains",
@@ -27171,9 +28634,9 @@
       "source_location": "L111",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75",
-      "target": "graphify_out_converted_core_explanation_2c443f75_part_4_the_evaluation_lab_the_testing_arena",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_part_4_the_evaluation_lab_the_testing_arena"
     },
     {
       "relation": "contains",
@@ -27182,9 +28645,9 @@
       "source_location": "L133",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75",
-      "target": "graphify_out_converted_core_explanation_2c443f75_part_5_the_contracts_interfaces",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_part_5_the_contracts_interfaces"
     },
     {
       "relation": "contains",
@@ -27193,9 +28656,9 @@
       "source_location": "L138",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75",
-      "target": "graphify_out_converted_core_explanation_2c443f75_part_6_how_it_all_fits_together",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_part_6_how_it_all_fits_together"
     },
     {
       "relation": "contains",
@@ -27204,9 +28667,9 @@
       "source_location": "L158",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75",
-      "target": "graphify_out_converted_core_explanation_2c443f75_part_7_how_to_use_it_quick_start",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_part_7_how_to_use_it_quick_start"
     },
     {
       "relation": "contains",
@@ -27215,9 +28678,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75",
-      "target": "graphify_out_converted_core_explanation_2c443f75_table_of_contents",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_table_of_contents"
     },
     {
       "relation": "contains",
@@ -27226,9 +28689,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75",
-      "target": "graphify_out_converted_core_explanation_2c443f75_what_is_the_core_folder",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_what_is_the_core_folder"
     },
     {
       "relation": "contains",
@@ -27237,9 +28700,9 @@
       "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_what_is_the_core_folder",
-      "target": "graphify_out_converted_core_explanation_2c443f75_folder_map",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_folder_map"
     },
     {
       "relation": "contains",
@@ -27248,9 +28711,9 @@
       "source_location": "L41",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_1_the_building_blocks",
-      "target": "graphify_out_converted_core_explanation_2c443f75_constants_core_constants_the_rulebook_numbers",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_constants_core_constants_the_rulebook_numbers"
     },
     {
       "relation": "contains",
@@ -27259,9 +28722,9 @@
       "source_location": "L34",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_1_the_building_blocks",
-      "target": "graphify_out_converted_core_explanation_2c443f75_entities_core_entities_the_dictionary",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_entities_core_entities_the_dictionary"
     },
     {
       "relation": "contains",
@@ -27270,9 +28733,9 @@
       "source_location": "L36",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_1_the_building_blocks",
-      "target": "graphify_out_converted_core_explanation_2c443f75_enums_core_enums_the_checkbox_list",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_enums_core_enums_the_checkbox_list"
     },
     {
       "relation": "contains",
@@ -27281,9 +28744,9 @@
       "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_1_the_building_blocks",
-      "target": "graphify_out_converted_core_explanation_2c443f75_exceptions_core_exceptions_the_alarm_bells",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_exceptions_core_exceptions_the_alarm_bells"
     },
     {
       "relation": "contains",
@@ -27292,9 +28755,9 @@
       "source_location": "L46",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain",
-      "target": "graphify_out_converted_core_explanation_2c443f75_2a_eligibility_filter_the_bouncer",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_2a_eligibility_filter_the_bouncer"
     },
     {
       "relation": "contains",
@@ -27303,9 +28766,9 @@
       "source_location": "L49",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain",
-      "target": "graphify_out_converted_core_explanation_2c443f75_2b_scorers_the_judge",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_2b_scorers_the_judge"
     },
     {
       "relation": "contains",
@@ -27314,9 +28777,9 @@
       "source_location": "L72",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain",
-      "target": "graphify_out_converted_core_explanation_2c443f75_2c_top_k_ranker_the_sorter",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_2c_top_k_ranker_the_sorter"
     },
     {
       "relation": "contains",
@@ -27325,9 +28788,9 @@
       "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain",
-      "target": "graphify_out_converted_core_explanation_2c443f75_2d_greedy_assignment_engine_the_matchmaker",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_2d_greedy_assignment_engine_the_matchmaker"
     },
     {
       "relation": "contains",
@@ -27336,9 +28799,9 @@
       "source_location": "L92",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain",
-      "target": "graphify_out_converted_core_explanation_2c443f75_2e_feedback_updater_the_learner",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_2e_feedback_updater_the_learner"
     },
     {
       "relation": "contains",
@@ -27347,9 +28810,9 @@
       "source_location": "L95",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain",
-      "target": "graphify_out_converted_core_explanation_2c443f75_2f_weight_adaptation_the_tuner",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_2f_weight_adaptation_the_tuner"
     },
     {
       "relation": "contains",
@@ -27358,9 +28821,9 @@
       "source_location": "L98",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_2_the_algorithms_the_brain",
-      "target": "graphify_out_converted_core_explanation_2c443f75_2g_utilities_the_toolkit",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_2g_utilities_the_toolkit"
     },
     {
       "relation": "contains",
@@ -27369,9 +28832,9 @@
       "source_location": "L52",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_2b_scorers_the_judge",
-      "target": "graphify_out_converted_core_explanation_2c443f75_academic_scorer",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_academic_scorer"
     },
     {
       "relation": "contains",
@@ -27380,9 +28843,9 @@
       "source_location": "L69",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_2b_scorers_the_judge",
-      "target": "graphify_out_converted_core_explanation_2c443f75_composite_scorer",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_composite_scorer"
     },
     {
       "relation": "contains",
@@ -27391,9 +28854,9 @@
       "source_location": "L66",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_2b_scorers_the_judge",
-      "target": "graphify_out_converted_core_explanation_2c443f75_fairness_scorer",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_fairness_scorer"
     },
     {
       "relation": "contains",
@@ -27402,9 +28865,9 @@
       "source_location": "L58",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_2b_scorers_the_judge",
-      "target": "graphify_out_converted_core_explanation_2c443f75_preference_scorer",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_preference_scorer"
     },
     {
       "relation": "contains",
@@ -27413,9 +28876,9 @@
       "source_location": "L63",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_2b_scorers_the_judge",
-      "target": "graphify_out_converted_core_explanation_2c443f75_schedule_scorer",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_schedule_scorer"
     },
     {
       "relation": "contains",
@@ -27424,9 +28887,9 @@
       "source_location": "L86",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_2d_greedy_assignment_engine_the_matchmaker",
-      "target": "graphify_out_converted_core_explanation_2c443f75_assignment_lifecycle",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_assignment_lifecycle"
     },
     {
       "relation": "contains",
@@ -27435,9 +28898,9 @@
       "source_location": "L78",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_2d_greedy_assignment_engine_the_matchmaker",
-      "target": "graphify_out_converted_core_explanation_2c443f75_how_it_works_step_by_step",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_how_it_works_step_by_step"
     },
     {
       "relation": "contains",
@@ -27446,9 +28909,9 @@
       "source_location": "L102",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_2g_utilities_the_toolkit",
-      "target": "graphify_out_converted_core_explanation_2c443f75_max_heap",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_max_heap"
     },
     {
       "relation": "contains",
@@ -27457,9 +28920,9 @@
       "source_location": "L99",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_2g_utilities_the_toolkit",
-      "target": "graphify_out_converted_core_explanation_2c443f75_vector_math",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_vector_math"
     },
     {
       "relation": "contains",
@@ -27468,9 +28931,9 @@
       "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_4_the_evaluation_lab_the_testing_arena",
-      "target": "graphify_out_converted_core_explanation_2c443f75_baseline_comparison_baseline_comparison_ts_the_reality_check",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_baseline_comparison_baseline_comparison_ts_the_reality_check"
     },
     {
       "relation": "contains",
@@ -27479,9 +28942,9 @@
       "source_location": "L130",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_4_the_evaluation_lab_the_testing_arena",
-      "target": "graphify_out_converted_core_explanation_2c443f75_cli_output_cli_output_ts_the_reporter",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_cli_output_cli_output_ts_the_reporter"
     },
     {
       "relation": "contains",
@@ -27490,9 +28953,9 @@
       "source_location": "L116",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_4_the_evaluation_lab_the_testing_arena",
-      "target": "graphify_out_converted_core_explanation_2c443f75_evaluation_harness_evaluation_harness_ts_the_performance_lab",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_evaluation_harness_evaluation_harness_ts_the_performance_lab"
     },
     {
       "relation": "contains",
@@ -27501,9 +28964,9 @@
       "source_location": "L114",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_4_the_evaluation_lab_the_testing_arena",
-      "target": "graphify_out_converted_core_explanation_2c443f75_fixtures_fixtures_ts_the_fake_data_factory",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_fixtures_fixtures_ts_the_fake_data_factory"
     },
     {
       "relation": "contains",
@@ -27512,9 +28975,9 @@
       "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_4_the_evaluation_lab_the_testing_arena",
-      "target": "graphify_out_converted_core_explanation_2c443f75_optimal_baseline_optimal_baseline_ts_the_perfection_benchmark",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_optimal_baseline_optimal_baseline_ts_the_perfection_benchmark"
     },
     {
       "relation": "contains",
@@ -27523,9 +28986,9 @@
       "source_location": "L140",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_6_how_it_all_fits_together",
-      "target": "graphify_out_converted_core_explanation_2c443f75_scenario_a_batch_of_students_needs_tutors",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_scenario_a_batch_of_students_needs_tutors"
     },
     {
       "relation": "contains",
@@ -27534,9 +28997,9 @@
       "source_location": "L151",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_6_how_it_all_fits_together",
-      "target": "graphify_out_converted_core_explanation_2c443f75_scenario_a_rating_comes_in",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_scenario_a_rating_comes_in"
     },
     {
       "relation": "contains",
@@ -27545,9 +29008,9 @@
       "source_location": "L154",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_6_how_it_all_fits_together",
-      "target": "graphify_out_converted_core_explanation_2c443f75_scenario_a_session_is_cancelled",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_scenario_a_session_is_cancelled"
     },
     {
       "relation": "contains",
@@ -27556,9 +29019,9 @@
       "source_location": "L160",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_7_how_to_use_it_quick_start",
-      "target": "graphify_out_converted_core_explanation_2c443f75_1_instantiate_the_engine",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_1_instantiate_the_engine"
     },
     {
       "relation": "contains",
@@ -27567,9 +29030,9 @@
       "source_location": "L163",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_7_how_to_use_it_quick_start",
-      "target": "graphify_out_converted_core_explanation_2c443f75_2_match_a_batch_of_students",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_2_match_a_batch_of_students"
     },
     {
       "relation": "contains",
@@ -27578,9 +29041,9 @@
       "source_location": "L168",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_7_how_to_use_it_quick_start",
-      "target": "graphify_out_converted_core_explanation_2c443f75_3_match_one_student",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_3_match_one_student"
     },
     {
       "relation": "contains",
@@ -27589,9 +29052,9 @@
       "source_location": "L171",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_7_how_to_use_it_quick_start",
-      "target": "graphify_out_converted_core_explanation_2c443f75_4_complete_cancel",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_4_complete_cancel"
     },
     {
       "relation": "contains",
@@ -27600,9 +29063,9 @@
       "source_location": "L175",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "graphify_out_converted_core_explanation_2c443f75_part_7_how_to_use_it_quick_start",
-      "target": "graphify_out_converted_core_explanation_2c443f75_5_run_evaluation",
-      "confidence_score": 1.0
+      "target": "graphify_out_converted_core_explanation_2c443f75_5_run_evaluation"
     },
     {
       "relation": "contains",
@@ -72862,5 +74325,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "b48785b8c5e7ea23a2b216f19e01ff0fb520e51d"
+  "built_at_commit": "430a1dc5d205f9755be695fa34f7adc8acef23c5"
 }
