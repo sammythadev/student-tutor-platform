@@ -23,7 +23,7 @@ Keywords: student–tutor matching; multi-criteria decision-making; weighted sco
 INTRODUCTION
 ## 1.1 Background to the Study
 Online learning has now become mainstream. The online tutoring services market alone, for instance, was estimated at USD 10.4 billion in 2024 and is forecast to almost double, to reach USD 23.7 billion in 2030 (Grand View Research, 2025), with students at the primary and secondary levels contributing over half of that demand. The increased popularity of learning services is due to the rising adoption of a broader trend in learning personalization – learning tailored to the unique needs and learning styles of each individual learner. This trend has been widely recognized in studies of educational recommender systems and is directly correlated with higher levels of engagement and better educational outcomes (Deschenes, 2020; da Silva et al., 2023; Spivakovsky et al., 2025).
-The need for quality additional tutoring can be seen in the context of the West African secondary schools where the current research project is set up. According to WASSCE results of 2024, out of 1.8 million candidates, 72.12 percent scored credit passes in at least five subjects, including English Language and Mathematics, but this is a drop of 7.69 percentage points compared to the 2023 results (Vanguard, 2024). As a result, roughly half a million candidates failed to pass at least 5 core subjects with credit level. Many others are trying to improve their grades for competitive admission into universities. Thus, for many candidates, the hiring of private tutors for WAEC and NECO exams became a standard solution. However, this process is still largely informal, with most people relying on recommendations from others and online sources
+The need for quality additional tutoring can be seen in the context of the West African secondary schools where the current research project is set up. According to WASSCE results of 2024, out of 1.8 million candidates, 72.12 percent scored credit passes in at least five subjects, including English Language and Mathematics, but this is a drop of 7.69 percentage points compared to the 2023 results (Vanguard, 2024). As a result, roughly half a million candidates failed to pass at least 5 core subjects with credit level. Many others are trying to improve their grades for competitive admission into universities. Thus, for many candidates, the hiring of private tutors for WAEC and NECO exams became a standard solution. However, this process is still largely informal, with most people relying on recommendations from others and online sources.
 Even where tutoring websites are available, the process of matching students with tutors is done using very primitive techniques such as manual assignment, keyword filtering, or even rules based on subject and availability only (Taveekarn et al., 2014; Ramesh, 2020). While this may be easy to implement, it does not consider various aspects that make up the suitability of a match, which includes subject expertise and proficiency level, tutor experience, language, schedule fit, teaching style compatibility, cost, and history of the tutor. Unsuccessful matches end up wasting hours of contact and even money for the paying family.
 Besides this, there are issues of imbalances that occur within the platform since most of the tutors who are highly ranked have too many students to teach while the new tutors have none at all due to the ranking effect (Pitoura et al., 2022), and there are also clashes in schedules. Multi-criteria decision-making and combinatorial optimization provide an elegant solution to the two issues since they use the weighted scoring models to evaluate and solve conflicting constraints and even fairness constraints (Wang et al., 2023; Hien et al., 2025). This paper will use this approach to tackle the issue of matching of tutors and students in a system implemented using NestJS, React and PostgreSQL.
 ## 1.2 Statement of Problem
@@ -96,7 +96,7 @@ Iterative implementation, in which each algorithm component was built, tested ag
 Evaluation, comprising unit testing, edge-case verification, and empirical benchmarking of the implemented algorithm (Chapter Four).
 This combination — a design science frame for the overall research logic, with Agile iteration governing how the algorithm itself was refined — was chosen over a single-pass methodology such as SSADM because it tolerates design correction without discarding prior work, and over pure Prototyping because it keeps the algorithm’s formal properties (bounds, complexity, approximation guarantee) as first-class, testable requirements rather than an afterthought to the interface.
 ## 3.1 Requirements Gathering
-The first stage of the process established what the system had to do and the constraints under which it had to do it. Requirements were elicited from the written sources and comparable systems available to the study, using the elicitation techniques that fit that setting: document analysis and the study of existing systems (Sommerville, 2016; Nuseibeh & Easterbrook, 2000). Three sources were drawn on. The first was the survey of deployed tutor-matching platforms in Chapter Two, whose documented limitations (manual or filter-only matching, no fairness or load-balancing mechanism, opaque rankings) defined the problems the system had to address. The second was the research gap distilled from that literature (Section 2.4). The third was the original seminar proposal of February 2026 and the supervisor’s feedback on it, which supplied the intended scope, the matching criteria, and the weighting scheme the study set out to formalise.
+The first stage of the process established what the system had to do and the constraints under which it had to do it. Requirements were gathered through the channels actually available to the study — online sources, asking questions, and manual examination of existing practice — supported throughout by document analysis of the research literature (Sommerville, 2016; Nuseibeh & Easterbrook, 2000). Online sources were the starting point: the websites, product documentation and market reports reviewed in Chapters One and Two, including the FindMyTutor app (Taveekarn et al., 2014), Ramesh’s (2020) tutor-matching method, the market sizing of Grand View Research (2025) and the WASSCE statistics (Vanguard, 2024), were examined to see which criteria deployed platforms actually use to match students with tutors and where they fall short. Asking questions supplied what the written sources could not: the supervisor was consulted during the seminar proposal review of February 2026, and the feedback from that review fixed the intended scope, the matching criteria and the weighting scheme the study set out to formalise; informal questions were also put to fellow students who had arranged private tutoring, which clarified how families actually choose tutors. Manual examination completed the picture — the authors traced by hand how the traditional manual process (an administrator or agency matching students with tutors on subject and availability, as described in Sections 1.1 and 2.1) would assign a small group of students, and that exercise is where the fairness and scheduling problems in Section 1.2 first surfaced. Together these channels defined the problems the system had to address; the research gap distilled from the literature (Section 2.4) then turned them into a concrete specification.
 From these sources a set of functional requirements was distilled. The system must exclude tutors who cannot teach a student’s subject before any ranking is performed; score every remaining student–tutor pair on several weighted criteria rather than on subject and availability alone; respect each student’s own preference weights; treat timetable feasibility as a hard constraint; spread students across tutors so that highly rated tutors are not saturated while newer tutors sit idle; fold post-session feedback into a tutor’s standing; and expose the reason for every match rather than returning an opaque ranking.
 A parallel set of non-functional requirements followed from the academic aims of the study. Every sub-score had to be bounded to a known range so that the composite could be reasoned about and unit tested; the assignment had to run fast enough to be practical at platform scale, with a complexity bound that could be stated and checked; results had to be reproducible from a fixed random seed so that reported figures could be regenerated; and the matching logic had to be isolated from the web framework so that it could be tested independently of any HTTP or database concern. Table 3.1 collects the requirements gathered at this stage.
 Table 3.1: Requirements gathered and their sources
@@ -138,16 +138,15 @@ A browser-based client was also built to exercise the system end-to-end, but its
 Figure 4.1 shows the use case diagram: the actors who interact with the system (student, tutor, and administrator) and the principal functions each performs, from onboarding and requesting a match through to assignment and post-session feedback. The rest of this section describes how those use cases are realised.
 
 Figure 4.1: Use case diagram of the matchmaking system
-Table 4.8: Actors and use cases for the use case diagram (Figure 4.1)
 ### 4.2.1 Three-Tier Architecture
 The system follows a three-tier architecture with strict separation of concerns:
 Presentation Tier: Next.js React single-page application. Students, tutors, and administrators each have role-specific views including dashboards, tutor discovery, session management, and profile editing. Communication with the backend occurs exclusively through RESTful HTTP endpoints using Axios with automatic JWT token refresh.
 Application Tier: NestJS server with modular decomposition into ten domain modules: auth, users, matchmaking, scheduling, sessions, messages, notifications, feed, dashboard, and a standalone core algorithm layer. The core module is framework-independent and contains all domain entities, value objects, scoring algorithms, and the assignment engine. The matchmaking module bridges the core algorithms with NestJS controllers and repository persistence.
 Data Tier: PostgreSQL database with eight core tables. Drizzle ORM provides type-safe queries with compile-time validation. Migrations are auto-generated from schema definitions.
 ### 4.2.2 Core Algorithm Architecture (Domain Layer)
-The core algorithm is isolated as a framework-independent domain layer under src/core/. This design ensures the algorithm logic has zero coupling to NestJS, Express, database, or HTTP concerns, making it independently testable and reusable. The architecture follows a clean
+The core algorithm is isolated as a framework-independent domain layer under src/core/. This design ensures the algorithm logic has zero coupling to NestJS, Express, database, or HTTP concerns, making it independently testable and reusable. The architecture follows a clean architecture with dependency inversion at the repository boundary.
 architecture pattern, illustrated in Figure 4.2 below.
-Figure 4.2 :core UML package diagram
+Figure 4.2: Core UML package diagram
 Each package is described briefly below
 core/entities/ : holds the domain model — Student, Tutor, Assignment, and related value objects — along with their validation invariants.
 core/algorithms/: contains all scoring, filtering, ranking, and assignment logic, including the scorers, filters, ranker, assignment engine, feedback updater, and supporting data structures (MaxHeap, vector math).
@@ -161,7 +160,6 @@ core/exceptions/: defines domain-specific exceptions (IncompleteProfileException
 Where Figure 4.2 groups the domain into packages, Figure 4.3 gives the class-level design of the core: the principal entities (Student, Tutor, Assignment), the four scorers, the eligibility filter, the greedy assignment engine, and the feedback updater, together with the repository interfaces through which the outer layer supplies data — the relationship that realises the dependency inversion described above.
 
 Figure 4.3: Class diagram of the core domain
-Table 4.9: Core domain classes for the class diagram (Figure 4.3)
 ## 4.3 Database Design
 ### 4.3.1 Schema Design
 The database schema follows a normalized design with eight core tables organized around the user entity. The schema is defined in src/database/schema.ts using Drizzle ORM's schema definition syntax. Figure 4.4 shows the entity-relationship diagram for the seven tables that participate in the matching workflow; an eighth (notifications) supports the surrounding application only and is omitted from this discussion.
@@ -214,6 +212,11 @@ Output: Assignments A, Unassignable list U
 
 
 4. Students not assigned are marked unassignable with reason
+The two flowcharts below show the same procedure at two levels of detail. Figure 4.6 gives the simplified view of the assignment loop, and Figure 4.7 traces it in full, including the lazy fairness recomputation that re-pushes a stale pair with a fresh score. The numbered steps of Algorithm 4.1 map onto the boxes of both figures.
+
+Figure 4.6: Simplified flowchart of the priority-queue greedy assignment
+
+Figure 4.7: Detailed flowchart of the priority-queue greedy assignment
 ### 4.5.3 Time Complexity Analysis
 Let S = number of students, T = number of tutors, E = number of eligible (student, tutor) pairs after filtering (E <= S x T), C = tutor capacity, k = the top-K truncation cap, and P = the cost of one CompositeScorer.score() call. P is dominated by subject-set intersection and slot-overlap checks; with realistic profile sizes (at most 5 subjects, at most 10 availability slots per profile) P is a small constant, which is why the engine’s asymptotics below are expressed in S and T alone.
 This bound was independently verified against the running system: at five-fold increases in scale (200 to 1,000 to 5,000 students), the number of pairs actually scored grew 216 to 6,769 to 176,790 (a 31-fold and then a 26-fold increase at each step, close to the quadratic prediction), and mean elapsed time grew by roughly 17-fold and then 19-fold across the same steps \u2014 quadratic growth with a slowly growing log factor on top, consistent with the O(n^2 log n) claim (Section 4.10.4).
@@ -250,10 +253,9 @@ Snippet 4.4: FeedbackUpdater.updateQuality()
 ## 4.8 Module Implementation
 ### 4.8.1 Matchmaking Flow (End-to-End)
 The end-to-end matchmaking flow executes as follows:
-Figure 4.6 shows the same flow as a sequence diagram, tracing a single request from the student through the controller, service, core algorithm, and repository layers and back; the numbered steps below describe the same sequence in words.
+Figure 4.8 shows the same flow as a sequence diagram, tracing a single request from the student through the controller, service, core algorithm, and repository layers and back; the numbered steps below describe the same sequence in words.
 
-Figure 4.6: Sequence diagram of the end-to-end matchmaking flow
-Table 4.10: Participants and messages for the sequence diagram (Figure 4.6)
+Figure 4.8: Sequence diagram of the end-to-end matchmaking flow
 - Student registers and onboard using `POST /auth/onboard`, supplying the subject, grade level, availability, budget, and preference weights.
 - Student calls `GET /matchmaking/candidates` to find tutor candidates. The backend will read the student profile, all tutor profiles, and schedule slots.
 - TopKRanker ranks all possible student-tutor pairs based on the CompositeScorer, giving the ranking of tutors and score per criteria.
@@ -261,10 +263,9 @@ Table 4.10: Participants and messages for the sequence diagram (Figure 4.6)
 - Afterward, the student chooses one tutor by `POST /matchmaking/select` or by the admin calling `POST /matchmaking/batch`.
 - Then, GreedyAssignmentEngine makes the assignment, increments the assignedCount, and saves the match with score per criteria.
 - Finally, after the session, the student calls `POST /matchmaking/assignments/:id/feedback`, and the FeedbackUpdater will apply EMA to update the tutor's avgRating.
-Figure 4.7 shows the same flow as an activity diagram, making the decision points explicit: profile completeness, the presence of eligible tutors, and seat availability during assignment.
+Figure 4.9 shows the same flow as an activity diagram, making the decision points explicit: profile completeness, the presence of eligible tutors, and seat availability during assignment.
 
-Figure 4.7: Activity diagram of the end-to-end matchmaking flow
-Table 4.11: Activities and decision points for the activity diagram (Figure 4.7)
+Figure 4.9: Activity diagram of the end-to-end matchmaking flow
 ## 4.9 Testing Strategy
 ### 4.9.1 Unit Testing Approach
 Unit tests target the core algorithm layer in isolation, using Jest 30, across two files: core-engine.spec.ts (23 integration-style tests against the assignment engine as a whole, including top-K truncation behaviour) and core-units.spec.ts (55 focused tests per class, added specifically to close the coverage gaps identified during evaluation). Both run independently of the NestJS application, consistent with the framework-independent design described in Section 4.2.2.
@@ -402,7 +403,7 @@ Write unit tests for: AcademicScorer, PreferenceScorer, ScheduleScorer, Fairness
 Also write one dedicated test per edge case: zero eligible tutors after filtering, tutor at zero/full capacity, preference weights not summing to 1, student with zero availability slots, tied match scores, oversubscription, new tutor with null rating, tutor filled mid-batch, incremental request at capacity, and assignment cancellation — each asserting the specific documented behavior, not just “no crash.”
 After writing the tests, run pnpm test --coverage and give me back the actual terminal output (test counts, pass/fail, coverage %) verbatim, so I can transcribe the real numbers into Table 4.2 and Table 4.3 — do not summarize or round them.
 Separately, extend core/evaluation/ to run the greedy engine at (50,5), (200,20), (1000,100), and (5000,500) student/tutor scales, recording: average compatibility score, % unassigned, Jain’s fairness index, and wall-clock time. Run it once with the fairness weight (delta) at its designed value and once at delta = 0, and give me the raw numbers for both runs.
-Second, the generated suite and harness were executed against the repository and their output transcribed into Tables 4.2 through 4.7. The final authoritative run was performed on 13 August 2026: pnpm test:cov (78 of 78 core tests passing; per-class coverage in Table 4.2), the evaluation harness scenarios including the three-strategy baseline comparison (Tables 4.4, 4.5, and 4.7), and the optimal-baseline comparison (Section 4.5.5). The harness contains no un-seeded randomness, so the match-quality and fairness figures in Tables 4.4, 4.5, and 4.7 are exactly reproducible from the repository; the wall-clock timings in Table 4.6 vary with hardware and were
+Second, the generated suite and harness were executed against the repository and their output transcribed into Tables 4.2 through 4.7. The final authoritative run was performed on 13 August 2026: pnpm test:cov (78 of 78 core tests passing; per-class coverage in Table 4.2), the evaluation harness scenarios including the three-strategy baseline comparison (Tables 4.4, 4.5, and 4.7), and the optimal-baseline comparison (Section 4.5.5). The harness contains no un-seeded randomness, so the match-quality and fairness figures in Tables 4.4, 4.5, and 4.7 are exactly reproducible from the repository; the wall-clock timings in Table 4.6 vary with hardware and were therefore excluded from the reproducibility claim.
 Project Coordinator
 
 | No. | Research Question |
@@ -468,24 +469,6 @@ Project Coordinator
 | Authentication | Passport + JWT | — | Stateless authentication with access and refresh tokens |
 | Testing | Jest | 30.x | Unit and integration testing for the core algorithm layer |
 | Deployment | Render | — | Cloud platform-as-a-service with auto-deploy from GitHub |
-| Actor | Use cases |
-| --- | --- |
-| Student | Register and onboard; search for tutor candidates; view ranked candidates with scores and eligibility; select a tutor; manage availability and preferences; book and attend sessions; submit post-session feedback |
-| Tutor | Register and onboard; publish availability and session slots; view assigned students and sessions; accept or decline session proposals; receive ratings from sessions |
-| Administrator | Run batch assignment; manage users and assignments; release waitlisted students; monitor platform usage |
-| Class | Key attributes | Key responsibilities |
-| --- | --- | --- |
-| Student | requiredSubject, gradeLevel, examType, budget, languages[], deliveryPreference, formatPreference, learningStylePreference, region, preferenceWeights, availability slots | Supplies the profile against which tutors are scored |
-| Tutor | subjectsTaught[], gradeLevelsSupported[], examTypesSupported[], experienceYears, languages[], teachingStyle, deliveryStyle, formatStyle, avgRating, ratingCount, capacity, assignedCount | Supplies qualifications and load state; fairness is computed from assignedCount and capacity |
-| Assignment | studentId, tutorId, matchScore, scoreBreakdown, status, reason, assignedAt, completedAt, cancelledAt | Records a match with a full audit trail and the score breakdown that explains it |
-| MatchScore | total, breakdown (academic, preference, schedule, fairness), subBreakdown | Value object carrying the composite score and its per-criterion decomposition |
-| CriterionWeights / AlgorithmWeights | w1–w6 and α, β, γ, δ | Value objects holding the student’s preference weights and the aggregated four-bucket weights |
-| CompositeScorer | — | Coordinates the four sub-scorers and combines their outputs into a MatchScore |
-| AcademicScorer, PreferenceScorer, ScheduleScorer, FairnessScorer | — | Compute the four bounded sub-scores |
-| EligibilityFilter | — | Hard-gates pairs on subject, grade level, exam type, and capacity before scoring |
-| GreedyAssignmentEngine | — | Runs priority-queue greedy assignment with lazy fairness recompute; returns assignments and a waitlist |
-| TopKRanker | — | Produces per-student ranked candidate lists for display |
-| FeedbackUpdater | — | Applies the exponential moving average to the tutor’s avgRating after each session |
 | Table | Key Columns | Purpose |
 | --- | --- | --- |
 | users | id (uuid), email, passwordHash, role, status, firstName, lastName, region | Authentication and base identity |
@@ -608,32 +591,6 @@ Project Coordinator
     );
 } |
 | --- |
-| # | Message | Lifelines (from → to) |
-| --- | --- | --- |
-| 1 | POST /auth/onboard — register and supply subject, grade level, availability, budget, and preference weights | Student → Auth controller |
-| 2 | GET /matchmaking/candidates — request ranked tutor candidates | Student → Matchmaking controller |
-| 3 | Load the student profile, tutor profiles, and schedule slots | Matchmaking controller → Matchmaking service |
-| 4 | Score and rank eligible pairs via the CompositeScorer and TopKRanker | Matchmaking service → Core algorithm |
-| 5 | Return the ranked list with per-criterion scores, eligibility, and tier badges | Matchmaking service → Student |
-| 6 | POST /matchmaking/select (or the administrator runs POST /matchmaking/batch) | Student → Matchmaking controller |
-| 7 | assignBatch — global score-ordered heap with lazy fairness recompute | Matchmaking service → GreedyAssignmentEngine |
-| 8 | Persist the assignment with its score breakdown and increment tutor load | GreedyAssignmentEngine → Repositories → Database |
-| 9 | POST /matchmaking/assignments/:id/feedback — rate the session | Student → Matchmaking controller |
-| 10 | Apply the EMA to update the tutor’s avgRating | Matchmaking service → FeedbackUpdater |
-| Activity | Description | Decision point |
-| --- | --- | --- |
-| Register / onboard | Student submits subject, grade level, availability, budget, and preference weights | Profile complete? |
-| Request candidates | Student calls GET /matchmaking/candidates | — |
-| Filter eligibility | Exclude tutors who do not teach the subject, grade level, or exam type, or who lack capacity | Eligible tutors exist? |
-| Score and rank pairs | CompositeScorer produces the composite score for every eligible pair; TopKRanker orders them | — |
-| Present ranked list | Client renders scores, eligibility, and tier badges | Student selects a tutor? |
-| Select or batch assign | Student selects a tutor, or the administrator runs the batch | — |
-| Greedy assignment | Priority-queue greedy with lazy fairness recompute assigns seats | Seat free and pair still valid? |
-| Save assignment | Persist the match with its score breakdown; increment tutor load | — |
-| Conduct session | The scheduled tutoring session takes place | — |
-| Submit feedback | Student rates the tutor after the session | Rating received |
-| Update rating (EMA) | FeedbackUpdater refreshes the tutor’s avgRating | — |
-| Waitlist handling | Unmatched students are waitlisted with a reason; a freed seat promotes the longest-waiting eligible student | Seat freed? |
 | Class | Statement Coverage | Branch Coverage | Key Coverage |
 | --- | --- | --- | --- |
 | CompositeScorer | 100.00% | 100.00% | Weight normalization, score range |
