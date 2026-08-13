@@ -1740,8 +1740,8 @@
     "semantic_hash": ""
   },
   "backend/README.md": {
-    "mtime": 1786553294.4715323,
-    "ast_hash": "54603b47764e17577c1ce6a8f96e0b4c",
+    "mtime": 1786555385.8279793,
+    "ast_hash": "bff2a20943f23bf1f560f7f2eb220cfa",
     "semantic_hash": ""
   },
   "backend/agent-docs/database.md": {
@@ -1810,8 +1810,8 @@
     "semantic_hash": ""
   },
   "backend/tasks/todo.md": {
-    "mtime": 1786553294.4871516,
-    "ast_hash": "e4c418cec08d63da4dcc0582b1ff718a",
+    "mtime": 1786555385.8479788,
+    "ast_hash": "1818da88bddc9745144748d450a628fb",
     "semantic_hash": ""
   },
   "backend/test-output.txt": {
@@ -2085,8 +2085,8 @@
     "semantic_hash": ""
   },
   "backend/src/core/__tests__/evaluation-tui.spec.ts": {
-    "mtime": 1786552691.8551857,
-    "ast_hash": "212dbaef60cc6a03198267a1998c03a6",
+    "mtime": 1786554648.5189478,
+    "ast_hash": "9f8da481ca3aa08d7e4667e56a05526e",
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/app.tsx": {
@@ -2115,8 +2115,8 @@
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/views.tsx": {
-    "mtime": 1786552842.6979754,
-    "ast_hash": "fd68724212fc728193c17f6a8bee6e53",
+    "mtime": 1786555459.8199906,
+    "ast_hash": "c36c9eb6d5f51aaf817298e42421d484",
     "semantic_hash": ""
   },
   "backend/tsconfig.tui.json": {
@@ -2165,23 +2165,28 @@
     "semantic_hash": ""
   },
   "backend/scripts/render-probe-help.tsx": {
-    "mtime": 1786552699.652706,
-    "ast_hash": "aa4c0fa127e7e1f595c14a9150783398",
+    "mtime": 1786555322.6534257,
+    "ast_hash": "422d92f81189cbfe44ecbd3b9d4346c8",
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/help-data.ts": {
-    "mtime": 1786552937.7633207,
-    "ast_hash": "54d091b80c71f203ac82e95436706e6a",
+    "mtime": 1786555170.8223958,
+    "ast_hash": "56d2cc9806aec26735b586b4f5d589e6",
     "semantic_hash": ""
   },
   "backend/src/core/evaluation/tui/help.tsx": {
-    "mtime": 1786552842.6979754,
-    "ast_hash": "2039cd3babc1cf788eb35c9016d395fe",
+    "mtime": 1786555170.8223958,
+    "ast_hash": "52bccb91e080bea2da0deb8c57481155",
     "semantic_hash": ""
   },
-  "backend/docs/notes/probe-help.txt": {
-    "mtime": 1786552874.3180602,
-    "ast_hash": "c87d02480e6e0cf60e63b8b3677d9139",
+  "backend/docs/notes/probe-help-toggle.txt": {
+    "mtime": 1786555347.6703968,
+    "ast_hash": "2aa60e755ebb1ed24faf342304458ad3",
+    "semantic_hash": ""
+  },
+  "graphify-out/converted/core-explanation_2c443f75.md": {
+    "mtime": 1786555722.646482,
+    "ast_hash": "72d4b4de73ae27c9f7c3ae3b7642651e",
     "semantic_hash": ""
   }
 }

@@ -211,7 +211,6 @@
   "209": "motion",
   "210": "ogl",
   "211": "react",
-  "212": "AdminSignupDto",
   "213": "ApiOperation",
   "214": "ApiResponse",
   "215": "ApiTags",
@@ -239,6 +238,5 @@
   "237": "PinoLikeLogger",
   "238": "render-probe.tsx",
   "239": "lib",
-  "240": "index.ts",
-  "241": "JwtAccessStrategy"
+  "240": "index.ts"
 }

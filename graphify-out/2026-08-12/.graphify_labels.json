@@ -183,10 +183,12 @@
   "181": "TutorDashboard.tsx",
   "182": "baseline-comparison.ts",
   "183": "Design Engineering",
+  "184": "MessagesRepository",
   "185": "http-exception.filter.ts",
   "186": "Component Building Principles",
   "187": "Task Log",
   "188": "APPENDICES - Real Source-Backed Reference Material",
+  "189": "PreferenceScorer",
   "190": "The Animation Decision Framework",
   "191": "clip-path for Animation",
   "192": "Performance Rules",
@@ -219,6 +221,7 @@
   "219": "IsUUID",
   "220": "IsBoolean",
   "221": "NotificationsPanel.tsx",
+  "222": "jwt-refresh.strategy.ts",
   "223": "AssignmentLifecycle",
   "224": "Findings",
   "225": "lessons.md",
@@ -233,6 +236,9 @@
   "234": "lenis",
   "235": "register-tui.mjs",
   "236": "StudentList.tsx",
+  "237": "PinoLikeLogger",
   "238": "render-probe.tsx",
-  "239": "lib"
+  "239": "lib",
+  "240": "index.ts",
+  "241": "JwtAccessStrategy"
 }
