@@ -211,7 +211,6 @@
   "209": "motion",
   "210": "ogl",
   "211": "react",
-  "212": ".getTutorSlots",
   "213": "ApiOperation",
   "214": "ApiResponse",
   "215": "ApiTags",
@@ -239,11 +238,5 @@
   "237": "PinoLikeLogger",
   "238": "render-probe.tsx",
   "239": "lib",
-  "240": "index.ts",
-  "241": "sessions.controller.ts",
-  "242": "OnboardUserDto",
-  "243": "CurrentUser",
-  "244": "MatchmakingTestController",
-  "245": "Evaluation Findings — Final Authoritative Run",
-  "246": "getJwtAccessTokenPublicKey"
+  "240": "index.ts"
 }

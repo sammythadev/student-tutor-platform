@@ -2188,15 +2188,5 @@
     "mtime": 1786555722.646482,
     "ast_hash": "72d4b4de73ae27c9f7c3ae3b7642651e",
     "semantic_hash": ""
-  },
-  "backend/docs/benchmarks/EVALUATION_FINDINGS.md": {
-    "mtime": 1786614924.0407486,
-    "ast_hash": "86e532504d6c6a03a4eb5ef7752c57a0",
-    "semantic_hash": ""
-  },
-  "graphify-out/converted/PROJECT REPORT1_0cd44154.md": {
-    "mtime": 1786614976.3714733,
-    "ast_hash": "47d5a90a2d32807cea0a3e2f2cfbfa4a",
-    "semantic_hash": ""
   }
 }
