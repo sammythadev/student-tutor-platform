@@ -1,0 +1,41 @@
+@startuml
+' Sequence diagram - Figure 4.6 (Table 4.10)
+skinparam backgroundColor white
+skinparam sequence {
+  ArrowColor #2E3440
+  LifeLineBorderColor #268BD2
+  LifeLineBackgroundColor #F4FAFF
+  ParticipantBorderColor #268BD2
+  ParticipantBackgroundColor #F4FAFF
+  FontSize 10
+}
+skinparam actorStyle awesome
+
+actor "Student" as S
+participant "Auth\nController" as AC
+participant "Matchmaking\nController" as MC
+participant "Matchmaking\nService" as MS
+participant "Core\nAlgorithm" as CA
+participant "Greedy\nAssignment\nEngine" as GE
+participant "Repositories /\nDatabase" as DB
+participant "Feedback\nUpdater" as FU
+
+S -> AC : POST /auth/onboard\n(register, subject, grade level, availability, budget, preference weights)
+S -> MC : GET /matchmaking/candidates\n(request ranked candidates)
+MC -> MS : load student profile, tutor profiles, schedule slots
+MS -> CA : score and rank eligible pairs\n(CompositeScorer + TopKRanker)
+CA --> MS : ranked list with scores
+MS --> S : ranked candidates with per-criterion scores,\neligibility, tier badges
+S -> MC : POST /matchmaking/select\n(or admin runs POST /matchmaking/batch)
+MC -> MS : assignBatch()
+MS -> GE : assignBatch - global score-ordered heap\nwith lazy fairness recompute
+GE -> DB : persist assignment with score breakdown;\nincrement tutor load
+DB --> GE : saved assignment
+GE --> MS : assignments + waitlist
+MS --> S : confirmation
+S -> MC : POST /matchmaking/assignments/:id/feedback\n(rate the session)
+MC -> MS : submitFeedback()
+MS -> FU : applyEma(tutor, rating)
+FU --> MS : updated avgRating
+MS --> S : feedback recorded
+@enduml

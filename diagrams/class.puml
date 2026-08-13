@@ -1,0 +1,116 @@
+@startuml
+' Class diagram - Figure 4.3 (Table 4.9)
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam class {
+  BackgroundColor #F4FAFF
+  BorderColor #268BD2
+  FontSize 10
+  AttributeFontSize 9
+}
+skinparam arrow {
+  Color #2E3440
+  FontSize 9
+}
+
+class Student {
+  - requiredSubject : Subject
+  - gradeLevel : GradeLevel
+  - examType : ExamType
+  - budget : number
+  - languages : string[]
+  - deliveryPreference : string
+  - formatPreference : string
+  - learningStylePreference : string
+  - region : string
+  - availability : TimeSlot[]
+  + getPreferenceWeights() : CriterionWeights
+}
+
+class Tutor {
+  - subjectsTaught : Subject[]
+  - gradeLevelsSupported : GradeLevel[]
+  - examTypesSupported : ExamType[]
+  - experienceYears : number
+  - languages : string[]
+  - teachingStyle : string
+  - deliveryStyle : string
+  - formatStyle : string
+  - avgRating : number
+  - ratingCount : number
+  - capacity : number
+  - assignedCount : number
+  + hasCapacity() : boolean
+  + loadRatio() : number
+}
+
+class Assignment {
+  - studentId : Id
+  - tutorId : Id
+  - matchScore : number
+  - scoreBreakdown : Map
+  - status : AssignmentStatus
+  - reason : string
+  - assignedAt : DateTime
+  - completedAt : DateTime?
+  - cancelledAt : DateTime?
+}
+
+class MatchScore {
+  - total : number
+  - breakdown : Map
+  - subBreakdown : Map
+}
+
+class CriterionWeights {
+  - w1..w6 : number
+}
+
+class AlgorithmWeights {
+  - alpha, beta, gamma, delta : number
+}
+
+interface Scorer {
+  + score(student, tutor) : MatchScore
+}
+
+class CompositeScorer {
+  + score(student, tutor) : MatchScore
+}
+
+class AcademicScorer
+class PreferenceScorer
+class ScheduleScorer
+class FairnessScorer
+
+class EligibilityFilter {
+  + isEligible(student, tutor) : boolean
+}
+
+class GreedyAssignmentEngine {
+  + assignBatch(students, tutors) : Assignment[]
+}
+
+class TopKRanker {
+  + rank(student, tutors, k) : Candidate[]
+}
+
+class FeedbackUpdater {
+  + applyEma(tutor, rating) : number
+}
+
+Student "1" *-- "0..*" Assignment
+Tutor "1" *-- "0..*" Assignment
+Assignment *-- "1" MatchScore
+Student *-- "1" CriterionWeights
+Scorer <|.. AcademicScorer
+Scorer <|.. PreferenceScorer
+Scorer <|.. ScheduleScorer
+Scorer <|.. FairnessScorer
+CompositeScorer o-- "4" Scorer
+CompositeScorer --> AlgorithmWeights
+GreedyAssignmentEngine --> CompositeScorer
+GreedyAssignmentEngine --> EligibilityFilter
+TopKRanker --> CompositeScorer
+FeedbackUpdater --> Tutor : updates avgRating
+@enduml

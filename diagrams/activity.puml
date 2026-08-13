@@ -1,0 +1,98 @@
+@startuml
+' Activity diagram - Figure 4.7 (Table 4.11)
+skinparam backgroundColor white
+skinparam activity {
+  BackgroundColor #F4FAFF
+  BorderColor #268BD2
+  FontSize 10
+}
+skinparam activityDiamond {
+  BackgroundColor #FDF6E3
+  BorderColor #B58900
+  FontSize 10
+}
+skinparam partition {
+  BorderColor #2E3440
+  FontSize 11
+}
+skinparam arrow {
+  Color #2E3440
+}
+
+|Student|
+start
+:Register / onboard;
+if (Profile complete?) then (yes)
+else (no)
+  stop
+endif
+:Submit subject, grade level, availability,
+budget and preference weights;
+
+|System|
+:Request candidates
+(GET /matchmaking/candidates);
+:Filter eligibility
+(subject, grade level, exam type, capacity);
+if (Eligible tutors exist?) then (yes)
+  :Score and rank pairs
+  (CompositeScorer + TopKRanker);
+  :Present ranked list
+  (scores, eligibility, tier badges);
+  |Student|
+  if (Student selects a tutor?) then (yes)
+    :Select a tutor;
+  else (no)
+    :Continue browsing;
+    stop
+  endif
+  |System|
+  :Select or batch assign
+  (POST /matchmaking/select or /batch);
+  :Greedy assignment
+  (priority-queue with lazy fairness recompute);
+  if (Seat free and pair still valid?) then (yes)
+    :Save assignment
+    (persist match + score breakdown, increment load);
+    |Student|
+    :Conduct session;
+    :Submit feedback
+    (POST /matchmaking/assignments/:id/feedback);
+    if (Rating received?) then (yes)
+      |System|
+      :Update rating (EMA)
+      (FeedbackUpdater refreshes avgRating);
+      stop
+    else (no)
+      stop
+    endif
+  else (no)
+    |System|
+    :Waitlist handling
+    (student waitlisted with a reason);
+    if (Seat freed?) then (yes)
+      :Promote longest-waiting eligible student;
+      repeat
+      repeat while (Seat free and pair still valid?) is (no)
+      :Save assignment;
+    else (no)
+      stop
+    endif
+  endif
+else (no)
+  :Waitlist handling
+  (no eligible tutor available);
+  if (Seat freed?) then (yes)
+    :Re-score eligible pairs;
+    :Promote longest-waiting eligible student;
+    repeat
+    repeat while (Seat free and pair still valid?) is (no)
+    :Save assignment;
+    |Student|
+    :Conduct session;
+    stop
+  else (no)
+    stop
+  endif
+endif
+@enduml

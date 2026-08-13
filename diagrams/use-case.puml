@@ -1,0 +1,60 @@
+@startuml
+' Use case diagram - Figure 4.1 (Table 4.8)
+left to right direction
+skinparam backgroundColor white
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6E3
+  BorderColor #B58900
+  FontSize 11
+}
+skinparam actor {
+  FontSize 12
+}
+skinparam rectangle {
+  BorderColor #268BD2
+  BackgroundColor #F4FAFF
+}
+
+actor "Student" as S
+actor "Tutor" as T
+actor "Administrator" as A
+
+rectangle "Tutor Matchmaking Platform" {
+  usecase "Register and onboard" as UC1
+  usecase "Search for tutor candidates" as UC2
+  usecase "View ranked candidates with scores and eligibility" as UC3
+  usecase "Select a tutor" as UC4
+  usecase "Manage availability and preferences" as UC5
+  usecase "Book and attend sessions" as UC6
+  usecase "Submit post-session feedback" as UC7
+  usecase "Publish availability and session slots" as UC8
+  usecase "View assigned students and sessions" as UC9
+  usecase "Accept or decline session proposals" as UC10
+  usecase "Receive ratings from sessions" as UC11
+  usecase "Run batch assignment" as UC12
+  usecase "Manage users and assignments" as UC13
+  usecase "Release waitlisted students" as UC14
+  usecase "Monitor platform usage" as UC15
+}
+
+S --> UC1
+T --> UC1
+S --> UC2
+S --> UC3
+S --> UC4
+S --> UC5
+S --> UC6
+S --> UC7
+T --> UC8
+T --> UC9
+T --> UC10
+T --> UC11
+A --> UC12
+A --> UC13
+A --> UC14
+A --> UC15
+
+UC3 ..> UC2 : <<include>>
+UC4 ..> UC3 : <<include>>
+@enduml
