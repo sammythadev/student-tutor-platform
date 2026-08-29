@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from 'next'
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
 import { Providers } from '@/components/Providers'
 import './globals.css'
 
@@ -14,8 +16,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F8FAFC' },
-    { media: '(prefers-color-scheme: dark)',  color: '#07090F' },
+    { media: '(prefers-color-scheme: light)', color: '#FAFAFA' },
+    { media: '(prefers-color-scheme: dark)',  color: '#000000' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -30,10 +32,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="font-sans light-mode"
       suppressHydrationWarning
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
-      <body className="font-sans antialiased bg-canvas text-text-primary transition-colors duration-200">
+      <body className="font-sans antialiased bg-background text-foreground">
         <Providers>
           {children}
         </Providers>

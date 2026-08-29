@@ -1,6 +1,8 @@
 'use client'
 
 import { ReactNode } from 'react'
+import { Badge as UiBadge } from '@/components/ui/badge'
+import { Card as UiCard } from '@/components/ui/card'
 
 type AccentColor = 'lavender' | 'sky' | 'mint' | 'sun' | 'coral' | 'tangerine'
 
@@ -11,27 +13,25 @@ interface BadgeProps {
   size?: 'sm' | 'md'
 }
 
-const COLOR_VARS: Record<AccentColor, { bg: string; fg: string }> = {
-  lavender:   { bg: 'var(--accent-lavender-bg)',   fg: 'var(--accent-lavender-fg)'   },
-  sky:        { bg: 'var(--accent-sky-bg)',         fg: 'var(--accent-sky-fg)'         },
-  mint:       { bg: 'var(--accent-mint-bg)',        fg: 'var(--accent-mint-fg)'        },
-  sun:        { bg: 'var(--accent-sun-bg)',         fg: 'var(--accent-sun-fg)'         },
-  coral:      { bg: 'var(--accent-coral-bg)',       fg: 'var(--accent-coral-fg)'       },
-  tangerine:  { bg: 'var(--accent-tangerine-bg)',   fg: 'var(--accent-tangerine-fg)'   },
-}
-
+/** Legacy-compat Badge. Forwards to ui/badge with tinted accent classes. */
 export function Badge({ children, color = 'lavender', icon, size = 'md' }: BadgeProps) {
-  const { bg, fg } = COLOR_VARS[color]
-  const sizeClasses = size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-1.5 text-sm'
+  const tintMap: Record<AccentColor, string> = {
+    lavender: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+    sky: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',
+    mint: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+    sun: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    coral: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+    tangerine: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+  }
 
   return (
-    <div
-      className={`rounded-full font-semibold inline-flex items-center gap-1.5 ${sizeClasses}`}
-      style={{ background: bg, color: fg }}
+    <UiBadge
+      variant="outline"
+      className={`inline-flex items-center gap-1.5 font-semibold ${tintMap[color]} ${size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-1.5 text-sm'}`}
     >
-      {icon && <span className="w-3.5 h-3.5 flex-shrink-0">{icon}</span>}
+      {icon && <span className="size-3.5 shrink-0">{icon}</span>}
       {children}
-    </div>
+    </UiBadge>
   )
 }
 
@@ -43,17 +43,14 @@ interface CardProps {
   onClick?:   () => void
 }
 
-export function Card({ children, className = '', strong = false, hover = false, onClick }: CardProps) {
+/** Legacy-compat Card. Some pages import Card from this file (a bug). Forwards to ui/card. */
+export function Card({ children, className = '', hover = false, onClick }: CardProps) {
   return (
-    <div
+    <UiCard
+      className={`p-5 ${hover ? 'hover:-translate-y-0.5 transition-all duration-150 cursor-pointer' : ''} ${className}`}
       onClick={onClick}
-      className={`
-        ${strong ? 'glass-card-strong' : 'surface-card'}
-        ${hover ? 'hover:-translate-y-0.5 transition-all duration-150 cursor-pointer' : ''}
-        ${className}
-      `}
     >
       {children}
-    </div>
+    </UiCard>
   )
 }

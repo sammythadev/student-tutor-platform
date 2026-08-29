@@ -15,11 +15,79 @@ export class KpiDto {
 
   @ApiProperty()
   color!: string;
+
+  /** Week-over-week percentage change; null when there is no prior window to compare. */
+  @ApiPropertyOptional({ type: Number })
+  deltaPct!: number | null;
 }
 
 export class WeeklyBarDto {
   @ApiProperty()
   day!: string;
+
+  @ApiProperty()
+  hours!: number;
+}
+
+export class ChannelPointDto {
+  @ApiProperty()
+  day!: string;
+
+  @ApiProperty()
+  completed!: number;
+
+  @ApiProperty()
+  booked!: number;
+}
+
+export class EarningsPointDto {
+  @ApiProperty()
+  day!: string;
+
+  @ApiProperty()
+  amount!: number;
+}
+
+export class ActivityItemDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  title!: string;
+
+  @ApiProperty()
+  type!: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  createdAt!: string;
+}
+
+export class RecentSessionDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty()
+  subject!: string;
+
+  @ApiProperty()
+  counterpart!: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  startAt!: Date;
+
+  @ApiProperty()
+  status!: string;
+
+  @ApiProperty()
+  hours!: number;
+}
+
+export class SubjectDistributionDto {
+  @ApiProperty()
+  subject!: string;
+
+  @ApiProperty()
+  count!: number;
 
   @ApiProperty()
   hours!: number;
@@ -69,6 +137,18 @@ export class DashboardMetricsDto {
 
   @ApiProperty()
   totalHoursLearned!: string;
+
+  @ApiProperty({ type: [ChannelPointDto] })
+  channelSeries!: ChannelPointDto[];
+
+  @ApiProperty({ type: [ActivityItemDto] })
+  activity!: ActivityItemDto[];
+
+  @ApiProperty({ type: [RecentSessionDto] })
+  recentSessions!: RecentSessionDto[];
+
+  @ApiProperty({ type: [SubjectDistributionDto] })
+  subjectDistribution!: SubjectDistributionDto[];
 }
 
 export class TutorDashboardMetricsDto {
@@ -86,4 +166,19 @@ export class TutorDashboardMetricsDto {
 
   @ApiPropertyOptional()
   avgRating!: string | null;
+
+  @ApiProperty({ type: [ChannelPointDto] })
+  channelSeries!: ChannelPointDto[];
+
+  @ApiProperty({ type: [EarningsPointDto] })
+  earningsSeries!: EarningsPointDto[];
+
+  @ApiProperty({ type: [ActivityItemDto] })
+  activity!: ActivityItemDto[];
+
+  @ApiProperty({ type: [RecentSessionDto] })
+  recentSessions!: RecentSessionDto[];
+
+  @ApiProperty({ type: [SubjectDistributionDto] })
+  subjectDistribution!: SubjectDistributionDto[];
 }

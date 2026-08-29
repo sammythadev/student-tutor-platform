@@ -59,3 +59,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 #claude local variables 
 *settings.local.json
+
+.pnpm-store/

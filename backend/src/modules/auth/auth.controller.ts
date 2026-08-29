@@ -101,6 +101,7 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid refresh token payload.' })
   @ApiResponse({ status: 401, description: 'Missing or invalid refresh token.' })
   @ApiResponse({ status: 403, description: 'The account is disabled or the token is stale.' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error '})
   refresh(
     @Body() dto: RefreshTokenDto,
     @CurrentUser() currentUser: AuthenticatedUser,

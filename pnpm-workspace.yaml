@@ -1,3 +1,9 @@
 packages:
   - backend/
   - frontend/
+
+onlyBuiltDependencies:
+  - bcrypt
+  - '@swc/core'
+  - esbuild
+  - sharp

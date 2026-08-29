@@ -154,3 +154,26 @@ Student-only endpoint for submitting feedback after an assignment is completed.
 - Body: `rating` from `0` to `5`, optional `comment`.
 - Rating meaning: `0` unusable/failed session, `1` very poor, `2` poor, `3` acceptable, `4` good, `5` excellent.
 - The core feedback loop normalizes rating with `rating / 5` and updates `tutor_profiles.avg_rating` using EMA.
+
+## Dashboard
+
+All dashboard endpoints require `Authorization: Bearer <accessToken>` and are role-scoped.
+
+### `GET /dashboard/metrics`
+
+Student-only endpoint. Returns the student dashboard KPI cards, weekly learning hours, and upcoming sessions.
+
+- Response: `kpis` (array of KPI objects, each with `label`, `value`, `trend`, `isUp`, `color`, and `deltaPct`), `weeklyBars` (last 7 days by weekday), `upcomingSessions` (next scheduled sessions), `streakDays`, `totalHoursLearned`.
+- `deltaPct` is the week-over-week percentage change for the KPI, or `null` when there is no prior window to compare (e.g. first-time values, streaks, or average ratings).
+
+### `GET /dashboard/tutor-metrics`
+
+Tutor-only endpoint. Returns the tutor dashboard KPI cards, weekly teaching hours, and upcoming sessions.
+
+- Response: `kpis` (same KPI shape as student, with `deltaPct`), `weeklyBars`, `upcomingSessions`, `studentsCount`, `avgRating` (nullable, on a 0–5 scale).
+
+### `GET /dashboard/admin-metrics`
+
+Admin-only endpoint. Returns platform overview counts.
+
+- Response: `totalUsers`, `activeSessions`, `openIssues`, `avgRating` (nullable, 0–5).

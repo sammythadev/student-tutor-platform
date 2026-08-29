@@ -1,6 +1,6 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "base-nova",
+  "style": "new-york",
   "rsc": true,
   "tsx": true,
   "tailwind": {
@@ -19,6 +19,7 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@react-bits": "https://reactbits.dev/r/{name}.json"
+    "@react-bits": "https://reactbits.dev/r/{name}.json",
+    "@efferd": "https://efferd.com/r/{style}/{name}.json"
   }
 }

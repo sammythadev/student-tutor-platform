@@ -21,10 +21,44 @@ export interface KpiItem {
   trend: string
   isUp: boolean
   color: string
+  deltaPct: number | null
 }
 
 export interface WeeklyBar {
   day: string
+  hours: number
+}
+
+export interface ChannelPoint {
+  day: string
+  completed: number
+  booked: number
+}
+
+export interface EarningsPoint {
+  day: string
+  amount: number
+}
+
+export interface ActivityItem {
+  id: string
+  title: string
+  type: string
+  createdAt: string
+}
+
+export interface RecentSession {
+  id: string
+  subject: string
+  counterpart: string
+  startAt: string
+  status: string
+  hours: number
+}
+
+export interface SubjectDistribution {
+  subject: string
+  count: number
   hours: number
 }
 
@@ -46,6 +80,10 @@ export interface DashboardMetrics {
   upcomingSessions: UpcomingSession[]
   streakDays: number
   totalHoursLearned: string
+  channelSeries: ChannelPoint[]
+  activity: ActivityItem[]
+  recentSessions: RecentSession[]
+  subjectDistribution: SubjectDistribution[]
 }
 
 export interface TutorDashboardMetrics {
@@ -54,6 +92,11 @@ export interface TutorDashboardMetrics {
   upcomingSessions: UpcomingSession[]
   studentsCount: number
   avgRating: string | null
+  channelSeries: ChannelPoint[]
+  earningsSeries: EarningsPoint[]
+  activity: ActivityItem[]
+  recentSessions: RecentSession[]
+  subjectDistribution: SubjectDistribution[]
 }
 
 export interface AdminMetrics {

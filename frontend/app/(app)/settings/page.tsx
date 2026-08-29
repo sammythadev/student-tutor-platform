@@ -1,15 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card } from '@/components/Badge'
-import { Button } from '@/components/Button'
-import { Input, Select } from '@/components/Input'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { logout } from '@/lib/api/auth'
 import type { DeliveryMode, FormatPreference, LearningPace, TeachingStyle } from '@/lib/api/auth'
-import { getMe, updateMe, type UpdateMePayload } from '@/lib/api/users'
+import { getMe, updateMe, updateStudentPreferences, updateTutorPreferences, type UpdateMePayload } from '@/lib/api/users'
 import { apiErrorText } from '@/lib/api/errors'
 import { useAuthStore } from '@/lib/store/authStore'
-import { Bell, Lock, LogOut, Palette, User, Book } from 'lucide-react'
+import { Bell, Book, Lock, LogOut, Palette, User } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const notificationRows: Array<{ key: keyof NonNullable<UpdateMePayload['notificationPrefs']>; label: string; desc: string }> = [
   { key: 'sessionReminders', label: 'Session Reminders', desc: 'Get notified before sessions' },
@@ -19,6 +22,30 @@ const notificationRows: Array<{ key: keyof NonNullable<UpdateMePayload['notifica
   { key: 'weeklyReports', label: 'Weekly Reports', desc: 'Summary of your learning progress' },
 ]
 
+function SelectField({
+  label, value, onChange, options, placeholder,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  options: { value: string; label: string }[]
+  placeholder?: string
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="flex h-9 w-full cursor-pointer rounded-md border border-input bg-transparent px-3 py-1 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
+        {placeholder && !value && <option value="" disabled>{placeholder}</option>}
+        {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+      </select>
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const authUser = useAuthStore(s => s.user)
   const studentProfile = useAuthStore(s => s.studentProfile)
@@ -26,7 +53,7 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  
+
   // Base User State
   const [formData, setFormData] = useState({
     firstName: authUser?.firstName ?? '',
@@ -176,22 +203,32 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8 py-3">
+    <div className="space-y-6 py-3">
       <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight text-text-primary">Settings</h1>
-        <p className="mt-1 text-sm text-text-secondary">Manage your account and preferences</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Manage your account and preferences</p>
       </div>
 
-      {message && <div className="surface-card p-4 text-sm text-text-secondary">{message}</div>}
+      {message && (
+        <div className="rounded-lg border bg-muted p-4 text-sm text-muted-foreground">{message}</div>
+      )}
 
       <div className="flex flex-col gap-6 md:flex-row">
-        <nav className="md:w-56 flex-shrink-0 space-y-1">
+        <nav className="flex-shrink-0 space-y-1 md:w-56">
           {tabs.map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold" style={isActive ? { background: 'var(--primary-subtle)', color: 'var(--primary)' } : { color: 'var(--text-secondary)' }}>
-                <Icon className="h-5 w-5" /> {tab.label}
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  'flex w-full cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left text-sm font-semibold transition-colors',
+                  isActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Icon className="size-4" /> {tab.label}
               </button>
             )
           })}
@@ -199,147 +236,223 @@ export default function SettingsPage() {
 
         <div className="min-w-0 flex-1">
           {activeTab === 'profile' && (
-            <Card className="p-6 md:p-8">
-              <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Profile Information</h2>
-              <div className="max-w-xl space-y-5">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Input label="First Name" name="firstName" value={formData.firstName} onChange={event => setFormData(prev => ({ ...prev, firstName: event.target.value }))} />
-                  <Input label="Last Name" name="lastName" value={formData.lastName} onChange={event => setFormData(prev => ({ ...prev, lastName: event.target.value }))} />
+            <Card className="rounded-lg shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">Profile Information</CardTitle>
+                <CardDescription>Your basic account details.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="max-w-xl space-y-5">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input id="firstName" name="firstName" value={formData.firstName} onChange={event => setFormData(prev => ({ ...prev, firstName: event.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input id="lastName" name="lastName" value={formData.lastName} onChange={event => setFormData(prev => ({ ...prev, lastName: event.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input id="email" name="email" value={formData.email} type="email" disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="region">Region</Label>
+                    <Input id="region" name="region" value={formData.region} onChange={event => setFormData(prev => ({ ...prev, region: event.target.value }))} />
+                  </div>
+                  <SelectField label="Timezone" value={formData.timezone} onChange={value => setFormData(prev => ({ ...prev, timezone: value }))} options={[
+                    { value: 'Africa/Lagos', label: 'Africa/Lagos' },
+                    { value: 'UTC', label: 'UTC' },
+                    { value: 'America/New_York', label: 'America/New_York' },
+                    { value: 'America/Chicago', label: 'America/Chicago' },
+                  ]} />
+                  <SelectField label="Language" value={formData.language} onChange={value => setFormData(prev => ({ ...prev, language: value }))} options={[
+                    { value: 'English', label: 'English' },
+                    { value: 'Spanish', label: 'Spanish' },
+                    { value: 'French', label: 'French' },
+                  ]} />
+                  <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
                 </div>
-                <Input label="Email Address" name="email" value={formData.email} type="email" disabled />
-                <Input label="Region" name="region" value={formData.region} onChange={event => setFormData(prev => ({ ...prev, region: event.target.value }))} />
-                <Select label="Timezone" name="timezone" value={formData.timezone} onChange={event => setFormData(prev => ({ ...prev, timezone: event.target.value }))} options={[
-                  { value: 'Africa/Lagos', label: 'Africa/Lagos' },
-                  { value: 'UTC', label: 'UTC' },
-                  { value: 'America/New_York', label: 'America/New_York' },
-                  { value: 'America/Chicago', label: 'America/Chicago' },
-                ]} />
-                <Select label="Language" name="language" value={formData.language} onChange={event => setFormData(prev => ({ ...prev, language: event.target.value }))} options={[
-                  { value: 'English', label: 'English' },
-                  { value: 'Spanish', label: 'Spanish' },
-                  { value: 'French', label: 'French' },
-                ]} />
-                <Button onClick={save} loading={saving}>Save Changes</Button>
-              </div>
+              </CardContent>
             </Card>
           )}
 
           {activeTab === 'student-prefs' && (
-            <Card className="p-6 md:p-8">
-              <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Student Preferences</h2>
-              <div className="max-w-xl space-y-5">
-                <Input label="Subjects (comma separated)" name="subjects" value={studentFormData.subjects} onChange={event => setStudentFormData(prev => ({ ...prev, subjects: event.target.value }))} />
-                <Input label="Languages (comma separated)" name="languages" value={studentFormData.languages} onChange={event => setStudentFormData(prev => ({ ...prev, languages: event.target.value }))} />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Select label="Learning style" name="learningStylePreference" value={studentFormData.learningStylePreference} onChange={event => setStudentFormData(prev => ({ ...prev, learningStylePreference: event.target.value }))} placeholder="Select style" options={[
-                    { value: 'visual', label: 'Visual (diagrams, videos)' },
-                    { value: 'auditory', label: 'Auditory (discussion, lectures)' },
-                    { value: 'kinesthetic', label: 'Kinesthetic (hands-on practice)' },
-                  ]} />
-                  <Select label="Learning pace" name="learningPace" value={studentFormData.learningPace} onChange={event => setStudentFormData(prev => ({ ...prev, learningPace: event.target.value }))} placeholder="Select pace" options={[
-                    { value: 'fast', label: 'Fast (move quickly)' },
-                    { value: 'moderate', label: 'Moderate (balanced)' },
-                    { value: 'steady', label: 'Steady (take my time)' },
-                  ]} />
-                  <Select label="Delivery" name="deliveryPreference" value={studentFormData.deliveryPreference} onChange={event => setStudentFormData(prev => ({ ...prev, deliveryPreference: event.target.value }))} placeholder="Online or in person?" options={[
-                    { value: 'online', label: 'Online' },
-                    { value: 'in-person', label: 'In person' },
-                  ]} />
-                  <Select label="Format" name="formatPreference" value={studentFormData.formatPreference} onChange={event => setStudentFormData(prev => ({ ...prev, formatPreference: event.target.value }))} placeholder="Session format" options={[
-                    { value: 'one-on-one', label: 'One-on-one' },
-                    { value: 'group', label: 'Group' },
-                  ]} />
+            <Card className="rounded-lg shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">Student Preferences</CardTitle>
+                <CardDescription>What the matching engine uses.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="max-w-xl space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="subjects">Subjects (comma separated)</Label>
+                    <Input id="subjects" name="subjects" value={studentFormData.subjects} onChange={event => setStudentFormData(prev => ({ ...prev, subjects: event.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="languages">Languages (comma separated)</Label>
+                    <Input id="languages" name="languages" value={studentFormData.languages} onChange={event => setStudentFormData(prev => ({ ...prev, languages: event.target.value }))} />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <SelectField label="Learning style" value={studentFormData.learningStylePreference} onChange={value => setStudentFormData(prev => ({ ...prev, learningStylePreference: value }))} placeholder="Select style" options={[
+                      { value: 'visual', label: 'Visual (diagrams, videos)' },
+                      { value: 'auditory', label: 'Auditory (discussion, lectures)' },
+                      { value: 'kinesthetic', label: 'Kinesthetic (hands-on practice)' },
+                    ]} />
+                    <SelectField label="Learning pace" value={studentFormData.learningPace} onChange={value => setStudentFormData(prev => ({ ...prev, learningPace: value }))} placeholder="Select pace" options={[
+                      { value: 'fast', label: 'Fast (move quickly)' },
+                      { value: 'moderate', label: 'Moderate (balanced)' },
+                      { value: 'steady', label: 'Steady (take my time)' },
+                    ]} />
+                    <SelectField label="Delivery" value={studentFormData.deliveryPreference} onChange={value => setStudentFormData(prev => ({ ...prev, deliveryPreference: value }))} placeholder="Online or in person?" options={[
+                      { value: 'online', label: 'Online' },
+                      { value: 'in-person', label: 'In person' },
+                    ]} />
+                    <SelectField label="Format" value={studentFormData.formatPreference} onChange={value => setStudentFormData(prev => ({ ...prev, formatPreference: value }))} placeholder="Session format" options={[
+                      { value: 'one-on-one', label: 'One-on-one' },
+                      { value: 'group', label: 'Group' },
+                    ]} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Input id="bio" name="bio" value={studentFormData.bio} onChange={event => setStudentFormData(prev => ({ ...prev, bio: event.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="learningGoals">Learning Goals</Label>
+                    <Input id="learningGoals" name="learningGoals" value={studentFormData.learningGoals} onChange={event => setStudentFormData(prev => ({ ...prev, learningGoals: event.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="budget">Budget (₦)</Label>
+                    <Input id="budget" name="budget" type="number" value={studentFormData.budget} onChange={event => setStudentFormData(prev => ({ ...prev, budget: event.target.value }))} />
+                  </div>
+                  <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Student Preferences'}</Button>
                 </div>
-                <Input label="Bio" name="bio" value={studentFormData.bio} onChange={event => setStudentFormData(prev => ({ ...prev, bio: event.target.value }))} />
-                <Input label="Learning Goals" name="learningGoals" value={studentFormData.learningGoals} onChange={event => setStudentFormData(prev => ({ ...prev, learningGoals: event.target.value }))} />
-                <Input label="Budget (₦)" type="number" name="budget" value={studentFormData.budget} onChange={event => setStudentFormData(prev => ({ ...prev, budget: event.target.value }))} />
-                <Button onClick={save} loading={saving}>Save Student Preferences</Button>
-              </div>
+              </CardContent>
             </Card>
           )}
 
           {activeTab === 'tutor-prefs' && (
-            <Card className="p-6 md:p-8">
-              <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Tutor Preferences</h2>
-              <div className="max-w-xl space-y-5">
-                <Input label="Subjects Taught (comma separated)" name="subjectsTaught" value={tutorFormData.subjectsTaught} onChange={event => setTutorFormData(prev => ({ ...prev, subjectsTaught: event.target.value }))} />
-                <Input label="Languages (comma separated)" name="languages" value={tutorFormData.languages} onChange={event => setTutorFormData(prev => ({ ...prev, languages: event.target.value }))} />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Select label="Teaching style" name="teachingStyle" value={tutorFormData.teachingStyle} onChange={event => setTutorFormData(prev => ({ ...prev, teachingStyle: event.target.value }))} placeholder="Select style" options={[
-                    { value: 'interactive', label: 'Interactive (discussion-based)' },
-                    { value: 'lecture', label: 'Lecture (structured delivery)' },
-                  ]} />
-                  <Select label="Teaching pace" name="teachingPace" value={tutorFormData.teachingPace} onChange={event => setTutorFormData(prev => ({ ...prev, teachingPace: event.target.value }))} placeholder="Select pace" options={[
-                    { value: 'fast', label: 'Fast (move quickly)' },
-                    { value: 'moderate', label: 'Moderate (balanced)' },
-                    { value: 'steady', label: 'Steady (thorough, unrushed)' },
-                  ]} />
-                  <Select label="Delivery" name="deliveryStyle" value={tutorFormData.deliveryStyle} onChange={event => setTutorFormData(prev => ({ ...prev, deliveryStyle: event.target.value }))} placeholder="How do you teach?" options={[
-                    { value: 'online', label: 'Online' },
-                    { value: 'in-person', label: 'In person' },
-                  ]} />
-                  <Select label="Format" name="formatStyle" value={tutorFormData.formatStyle} onChange={event => setTutorFormData(prev => ({ ...prev, formatStyle: event.target.value }))} placeholder="Session format" options={[
-                    { value: 'one-on-one', label: 'One-on-one' },
-                    { value: 'group', label: 'Group' },
-                  ]} />
+            <Card className="rounded-lg shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">Tutor Preferences</CardTitle>
+                <CardDescription>How students find you.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="max-w-xl space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="subjectsTaught">Subjects Taught (comma separated)</Label>
+                    <Input id="subjectsTaught" name="subjectsTaught" value={tutorFormData.subjectsTaught} onChange={event => setTutorFormData(prev => ({ ...prev, subjectsTaught: event.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tLanguages">Languages (comma separated)</Label>
+                    <Input id="tLanguages" name="languages" value={tutorFormData.languages} onChange={event => setTutorFormData(prev => ({ ...prev, languages: event.target.value }))} />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <SelectField label="Teaching style" value={tutorFormData.teachingStyle} onChange={value => setTutorFormData(prev => ({ ...prev, teachingStyle: value }))} placeholder="Select style" options={[
+                      { value: 'interactive', label: 'Interactive (discussion-based)' },
+                      { value: 'lecture', label: 'Lecture (structured delivery)' },
+                    ]} />
+                    <SelectField label="Teaching pace" value={tutorFormData.teachingPace} onChange={value => setTutorFormData(prev => ({ ...prev, teachingPace: value }))} placeholder="Select pace" options={[
+                      { value: 'fast', label: 'Fast (move quickly)' },
+                      { value: 'moderate', label: 'Moderate (balanced)' },
+                      { value: 'steady', label: 'Steady (thorough, unrushed)' },
+                    ]} />
+                    <SelectField label="Delivery" value={tutorFormData.deliveryStyle} onChange={value => setTutorFormData(prev => ({ ...prev, deliveryStyle: value }))} placeholder="How do you teach?" options={[
+                      { value: 'online', label: 'Online' },
+                      { value: 'in-person', label: 'In person' },
+                    ]} />
+                    <SelectField label="Format" value={tutorFormData.formatStyle} onChange={value => setTutorFormData(prev => ({ ...prev, formatStyle: value }))} placeholder="Session format" options={[
+                      { value: 'one-on-one', label: 'One-on-one' },
+                      { value: 'group', label: 'Group' },
+                    ]} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tBio">Bio</Label>
+                    <Input id="tBio" name="bio" value={tutorFormData.bio} onChange={event => setTutorFormData(prev => ({ ...prev, bio: event.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="hourlyRate">Hourly Rate (₦) - Updating not supported via this form yet</Label>
+                    <Input id="hourlyRate" name="hourlyRate" value={tutorFormData.hourlyRate} disabled />
+                  </div>
+                  <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Tutor Preferences'}</Button>
                 </div>
-                <Input label="Bio" name="bio" value={tutorFormData.bio} onChange={event => setTutorFormData(prev => ({ ...prev, bio: event.target.value }))} />
-                <Input label="Hourly Rate (₦) - Updating not supported via this form yet" name="hourlyRate" value={tutorFormData.hourlyRate} disabled />
-                <Button onClick={save} loading={saving}>Save Tutor Preferences</Button>
-              </div>
+              </CardContent>
             </Card>
           )}
 
           {activeTab === 'notifications' && (
-            <Card className="p-6 md:p-8">
-              <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Notification Preferences</h2>
-              <div className="space-y-3">
-                {notificationRows.map(item => (
-                  <label key={item.key} className="flex cursor-pointer items-center justify-between rounded-xl bg-surface-2 p-4">
-                    <div>
-                      <p className="text-sm font-semibold text-text-primary">{item.label}</p>
-                      <p className="mt-1 text-xs text-text-secondary">{item.desc}</p>
+            <Card className="rounded-lg shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">Notification Preferences</CardTitle>
+                <CardDescription>Choose what you want to hear about.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {notificationRows.map(item => (
+                    <div key={item.key} className="flex items-center justify-between rounded-lg border p-4">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                      <Switch
+                        checked={!!formData.notificationPrefs?.[item.key]}
+                        onCheckedChange={checked => setFormData(prev => ({
+                          ...prev,
+                          notificationPrefs: { ...prev.notificationPrefs, [item.key]: checked },
+                        }))}
+                        aria-label={item.label}
+                      />
                     </div>
-                    <input type="checkbox" checked={!!formData.notificationPrefs?.[item.key]} onChange={event => setFormData(prev => ({ ...prev, notificationPrefs: { ...prev.notificationPrefs, [item.key]: event.target.checked } }))} className="h-5 w-5" style={{ accentColor: 'var(--primary)' }} />
-                  </label>
-                ))}
-                <Button onClick={save} loading={saving}>Save Notifications</Button>
-              </div>
+                  ))}
+                  <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Notifications'}</Button>
+                </div>
+              </CardContent>
             </Card>
           )}
 
           {activeTab === 'privacy' && (
-            <Card className="p-6 md:p-8">
-              <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Privacy & Security</h2>
-              <p className="text-sm text-text-secondary">Password and two-factor authentication endpoints are not implemented yet.</p>
+            <Card className="rounded-lg shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">Privacy & Security</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Password and two-factor authentication endpoints are not implemented yet.
+                </p>
+              </CardContent>
             </Card>
           )}
 
           {activeTab === 'appearance' && (
-            <Card className="p-6 md:p-8">
-              <h2 className="mb-6 font-heading text-xl font-bold text-text-primary">Appearance</h2>
-              <div className="space-y-6">
-                <Select label="Theme" name="theme" value={formData.theme} onChange={event => setFormData(prev => ({ ...prev, theme: event.target.value }))} options={[
-                  { value: 'light', label: 'Light' },
-                  { value: 'dark', label: 'Dark' },
-                  { value: 'auto', label: 'Auto' },
-                ]} />
-                <Select label="Accent Color" name="accentColor" value={formData.accentColor} onChange={event => setFormData(prev => ({ ...prev, accentColor: event.target.value }))} options={[
-                  { value: 'lavender', label: 'Lavender' },
-                  { value: 'sky', label: 'Sky' },
-                  { value: 'mint', label: 'Mint' },
-                  { value: 'sun', label: 'Sun' },
-                  { value: 'coral', label: 'Coral' },
-                ]} />
-                <Button onClick={save} loading={saving}>Save Appearance</Button>
-              </div>
+            <Card className="rounded-lg shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">Appearance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <SelectField label="Theme" value={formData.theme} onChange={value => setFormData(prev => ({ ...prev, theme: value }))} options={[
+                    { value: 'light', label: 'Light' },
+                    { value: 'dark', label: 'Dark' },
+                    { value: 'auto', label: 'Auto' },
+                  ]} />
+                  <SelectField label="Accent Color" value={formData.accentColor} onChange={value => setFormData(prev => ({ ...prev, accentColor: value }))} options={[
+                    { value: 'lavender', label: 'Lavender' },
+                    { value: 'sky', label: 'Sky' },
+                    { value: 'mint', label: 'Mint' },
+                    { value: 'sun', label: 'Sun' },
+                    { value: 'coral', label: 'Coral' },
+                  ]} />
+                  <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Appearance'}</Button>
+                </div>
+              </CardContent>
             </Card>
           )}
         </div>
       </div>
 
-      <div className="border-t pt-6" style={{ borderColor: 'var(--border)' }}>
-        <Button variant="secondary" onClick={logout}><LogOut className="h-4 w-4" /> Sign Out</Button>
+      <div className="border-t pt-6">
+        <Button variant="outline" onClick={logout}><LogOut className="size-4" /> Sign Out</Button>
       </div>
     </div>
   )

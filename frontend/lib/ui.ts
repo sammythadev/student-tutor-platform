@@ -24,6 +24,28 @@ export function accentFg(accent: Accent): string {
   return `var(--accent-${accent}-fg)`
 }
 
+/**
+ * Geist-token identity chips (soft tint + colored text) for people/entities.
+ * Single source of truth — catalog cards, lists and dashboards all use this.
+ */
+export const IDENTITY_BG: Record<Accent, string> = {
+  lavender: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+  sky: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',
+  mint: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  sun: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  coral: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+  tangerine: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+}
+
+/** Session status → colored dot (used by StatusPill and status badges). */
+export const STATUS_DOT: Record<SessionItem['status'], string> = {
+  pending: 'bg-amber-500',
+  upcoming: 'bg-sky-500',
+  'starting-soon': 'bg-emerald-500',
+  completed: 'bg-violet-500',
+  cancelled: 'bg-rose-500',
+}
+
 export function initials(firstName?: string, lastName?: string): string {
   return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase() || '?'
 }

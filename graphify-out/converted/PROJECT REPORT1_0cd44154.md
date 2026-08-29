@@ -58,6 +58,7 @@ The algorithm for allocation is guaranteed to obtain at least half of the optimu
 ## 1.7 Significance of the Study
 The significance of the research is that it combines technical optimality with practical educational needs. By making personalized matching efficient, it produces accurate, need-oriented matches while keeping tutor loads balanced and their evaluation objective.
 The study also contributes to the theory of multi-criteria optimization and explainable recommendation. Its complexity analysis, together with the discovery of the load regime in which the fairness weight is actually effective, speaks to matchmaking mechanisms in general, particularly those built on greedy queue-priority assignment and lazy fairness recompute.
+
 ## 1.8 Definition of Terms
 # CHAPTER TWO
 LITERATURE REVIEW
@@ -106,6 +107,9 @@ The elicitation also fixed the data the system would consume and the data the ev
 ## 3.2 Developing an Algorithm to Match Students with Tutors Based on Established Criteria
 With the requirements fixed, the second stage turned the matching problem into an explicit, computable model. The established criteria — the attributes on which a student and a tutor are judged compatible — were grouped into four buckets, each yielding a sub-score bounded to [0,1]: academic fit, preference fit, schedule fit, and fairness. Every student–tutor pair receives a single composite score as the weighted sum of the four, with the weights summing to one. The full equations for each criterion and for the composite are set out in Section 4.5.
 Academic fit combines subject depth — graded only after subject eligibility has already been enforced as a hard filter — with grade-level proximity and the tutor’s experience and accumulated rating. Preference fit combines teaching-style similarity, budget compatibility, and, for in-person sessions, regional proximity. Schedule fit is the proportion of a student’s requested time slots that a single tutor slot can cover. Fairness depends only on the tutor, favouring those carrying a lighter load so that assignment is spread rather than concentrated. The baseline weights were set from the relative importance the criteria were given during requirements gathering; a student may override them, after which the weights are re-normalised to sum to one. Table 3.2 lists the baseline criterion weights and the four-bucket weights they aggregate into.
+
+
+
 Table 3.2: Baseline criterion weights and the composite buckets they form
 The model was developed one component at a time, each expressed as an equation with an explicit output range so that it could be unit tested against hand-computed values before integration. Assignment across all students was then formulated as a bipartite b-matching problem and solved with a priority-queue greedy algorithm that recomputes each tutor’s fairness lazily as load accumulates during a run, so the fairness term never goes stale mid-batch. A tutor’s rating is updated after each session by an exponential moving average, closing the loop between feedback and later matches. The detailed pseudocode and the complexity analysis appear in Section 4.5; the listing below states the same procedure at the level of design.
 Algorithm 3.1: Criteria-based student–tutor matching (design overview)
@@ -115,6 +119,9 @@ Algorithm 3.1: Criteria-based student–tutor matching (design overview)
 - Repeatedly take the best pair; if it is still valid, assign it and increment the tutor’s load; if its fairness score has gone stale, re-push it with a fresh score instead of assigning.
 - Waitlist any student left unmatched, recording an explicit reason.
 - After a session completes, update the tutor’s rating and use it when scoring future matches.
+Figure 3.1 condenses Algorithm 3.1 into its main flow: eligible pairs are scored on the four bounded criteria, pushed onto a max-heap, and assigned from the highest score downward, with each accepted pair incrementing the tutor's load before the next is considered. It is the design-level view of the procedure; the full implementation detail, including lazy fairness recomputation, is presented in Section 4.5.2.
+
+Figure 3.1: Simplified flowchart of the criteria-based matching procedure (design overview)
 In parallel with the greedy engine, the study also formalised a stability-based alternative for comparison. Deferred acceptance, the student-proposing Gale-Shapley algorithm (Gale & Shapley, 1962; Roth, 2008) in its college-admissions form extended with tutor capacities, produces a stable matching in which no student–tutor pair would both prefer each other over their assigned partners. Stability is a different objective from total score, so it serves as a genuine competing baseline rather than a tuning variant of the greedy engine. Both strategies run on identical fixtures and are compared in Section 4.10.5, together with the first-come-first-served strategies that deployed platforms typically use.
 ## 3.3 Implementation Plan
 The third stage planned how the model would be built, in what order, and how it would be verified. The guiding decision was to implement the matching logic as a framework-independent TypeScript layer first, with no dependency on the web framework or the database, and only then to wrap it in the surrounding application. This ordering let the algorithm be tested against its specification before any HTTP or persistence code existed.
@@ -214,11 +221,9 @@ Output: Assignments A, Unassignable list U
 
 
 4. Students not assigned are marked unassignable with reason
-The two flowcharts below show the same procedure at two levels of detail. Figure 4.6 gives the simplified view of the assignment loop, and Figure 4.7 traces it in full, including the lazy fairness recomputation that re-pushes a stale pair with a fresh score. The numbered steps of Algorithm 4.1 map onto the boxes of both figures.
+Figure 4.6 traces the same assignment loop at full detail, showing the lazy fairness recomputation that re-pushes a stale pair with a fresh score; the simplified overview of the procedure was introduced earlier as Figure 3.1 in the methodology chapter. The numbered steps of Algorithm 4.1 map onto the boxes of the figure.
 
-Figure 4.6: Simplified flowchart of the priority-queue greedy assignment
-
-Figure 4.7: Detailed flowchart of the priority-queue greedy assignment
+Figure 4.6: Detailed flowchart of the priority-queue greedy assignment
 ### 4.5.3 Time Complexity Analysis
 Let S = number of students, T = number of tutors, E = number of eligible (student, tutor) pairs after filtering (E <= S x T), C = tutor capacity, k = the top-K truncation cap, and P = the cost of one CompositeScorer.score() call. P is dominated by subject-set intersection and slot-overlap checks; with realistic profile sizes (at most 5 subjects, at most 10 availability slots per profile) P is a small constant, which is why the engine’s asymptotics below are expressed in S and T alone.
 This bound was independently verified against the running system: at five-fold increases in scale (200 to 1,000 to 5,000 students), the number of pairs actually scored grew 216 to 6,769 to 176,790 (a 31-fold and then a 26-fold increase at each step, close to the quadratic prediction), and mean elapsed time grew by roughly 17-fold and then 19-fold across the same steps \u2014 quadratic growth with a slowly growing log factor on top, consistent with the O(n^2 log n) claim (Section 4.10.4).
@@ -255,9 +260,9 @@ Snippet 4.4: FeedbackUpdater.updateQuality()
 ## 4.8 Module Implementation
 ### 4.8.1 Matchmaking Flow (End-to-End)
 The end-to-end matchmaking flow executes as follows:
-Figure 4.8 shows the same flow as a sequence diagram, tracing a single request from the student through the controller, service, core algorithm, and repository layers and back; the numbered steps below describe the same sequence in words.
+Figure 4.7 shows the same flow as a sequence diagram, tracing a single request from the student through the controller, service, core algorithm, and repository layers and back; the numbered steps below describe the same sequence in words.
 
-Figure 4.8: Sequence diagram of the end-to-end matchmaking flow
+Figure 4.7: Sequence diagram of the end-to-end matchmaking flow
 - Student registers and onboard using `POST /auth/onboard`, supplying the subject, grade level, availability, budget, and preference weights.
 - Student calls `GET /matchmaking/candidates` to find tutor candidates. The backend will read the student profile, all tutor profiles, and schedule slots.
 - TopKRanker ranks all possible student-tutor pairs based on the CompositeScorer, giving the ranking of tutors and score per criteria.
@@ -265,9 +270,9 @@ Figure 4.8: Sequence diagram of the end-to-end matchmaking flow
 - Afterward, the student chooses one tutor by `POST /matchmaking/select` or by the admin calling `POST /matchmaking/batch`.
 - Then, GreedyAssignmentEngine makes the assignment, increments the assignedCount, and saves the match with score per criteria.
 - Finally, after the session, the student calls `POST /matchmaking/assignments/:id/feedback`, and the FeedbackUpdater will apply EMA to update the tutor's avgRating.
-Figure 4.9 shows the same flow as an activity diagram, making the decision points explicit: profile completeness, the presence of eligible tutors, and seat availability during assignment.
+Figure 4.8 shows the same flow as an activity diagram, making the decision points explicit: profile completeness, the presence of eligible tutors, and seat availability during assignment.
 
-Figure 4.9: Activity diagram of the end-to-end matchmaking flow
+Figure 4.8: Activity diagram of the end-to-end matchmaking flow
 ## 4.9 Testing Strategy
 ### 4.9.1 Unit Testing Approach
 Unit tests target the core algorithm layer in isolation, using Jest 30, across two files: core-engine.spec.ts (23 integration-style tests against the assignment engine as a whole, including top-K truncation behaviour) and core-units.spec.ts (55 focused tests per class, added specifically to close the coverage gaps identified during evaluation). Both run independently of the NestJS application, consistent with the framework-independent design described in Section 4.2.2.

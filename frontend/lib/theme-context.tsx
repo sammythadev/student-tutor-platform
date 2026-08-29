@@ -1,6 +1,21 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { ThemeProvider as NextThemeProvider, useTheme as useNextTheme } from 'next-themes'
+import type { ReactNode } from 'react'
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  return (
+    <NextThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange={false}
+    >
+      {children}
+    </NextThemeProvider>
+  )
+}
 
 type ThemeMode = 'light' | 'dark'
 
@@ -9,58 +24,24 @@ interface ThemeContextType {
   setTheme: (theme: ThemeMode) => void
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
-
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>('light')
+/**
+ * Compatibility wrapper over next-themes. Consumers get a resolved
+ * 'light' | 'dark' value and a two-way setter; "system" resolves before
+ * exposure so existing `theme === 'dark'` checks keep working.
+ */
+export function useTheme(): ThemeContextType {
+  const { resolvedTheme, setTheme } = useNextTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    // Load saved theme preference
-    const saved = localStorage.getItem('tutorly-theme') as ThemeMode | null
-    if (saved) {
-      setThemeState(saved)
-      applyTheme(saved)
-    } else {
-      // Light is the default; respect it regardless of system preference
-      // until the user explicitly toggles.
-      setThemeState('light')
-      applyTheme('light')
-    }
   }, [])
 
-  const applyTheme = (newTheme: ThemeMode) => {
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark-mode')
-      document.documentElement.classList.remove('light-mode')
-    } else {
-      document.documentElement.classList.add('light-mode')
-      document.documentElement.classList.remove('dark-mode')
-    }
-  }
+  const resolved: ThemeMode = resolvedTheme === 'light' ? 'light' : 'dark'
 
-  const handleSetTheme = (newTheme: ThemeMode) => {
-    setThemeState(newTheme)
-    localStorage.setItem('tutorly-theme', newTheme)
-    applyTheme(newTheme)
+  return {
+    // Before hydration, report dark (the brand-default rendering) to avoid flashes.
+    theme: mounted ? resolved : 'dark',
+    setTheme: (mode: ThemeMode) => setTheme(mode),
   }
-
-  if (!mounted) {
-    return <>{children}</>
-  }
-
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme: handleSetTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  )
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider')
-  }
-  return context
 }

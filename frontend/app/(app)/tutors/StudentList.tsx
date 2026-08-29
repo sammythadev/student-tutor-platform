@@ -1,68 +1,63 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'motion/react'
-import { Badge } from '@/components/Badge'
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
+import { Button } from '@/components/ui/button'
+import { CardContent } from '@/components/ui/card'
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty'
+import { PageHero } from '@/components/catalog/page-hero'
+import { FilterChip } from '@/components/catalog/filter-chip'
+import { CatalogCard } from '@/components/catalog/catalog-card'
 import { BookSessionModal } from '@/components/BookSessionModal'
 import { MessageModal } from '@/components/MessageModal'
 import { getStudentCandidates, type StudentCandidate } from '@/lib/api/users'
 import { apiErrorText } from '@/lib/api/errors'
-import { accentFor, matchStrength, formatNaira } from '@/lib/ui'
 import { useAuthStore } from '@/lib/store/authStore'
-import {
-  Heart, Search, MessageSquare, Calendar, CheckCircle2, Sparkles, X, AlertCircle,
-  GraduationCap, Wallet, MapPin, ArrowRight,
-} from 'lucide-react'
+import { AlertCircle, Calendar, MessageSquare, Search, X } from 'lucide-react'
 import { useToast } from '@/lib/toast-context'
 import { Pagination } from '@/components/Pagination'
-import { MatchRing } from '@/components/MatchRing'
+import { cn } from '@/lib/utils'
 
 const PER_PAGE = 12
-const EASE = [0.16, 1, 0.3, 1] as const
-
-// ─── Why this learner surfaced — the "why recommended" layer ───
-function studentReasons(s: StudentCandidate): string[] {
-  const reasons: string[] = []
-  if (s.requiredSubject) reasons.push(`Needs ${s.requiredSubject}`)
-  if (s.gradeLevel) reasons.push(`Grade ${s.gradeLevel}`)
-  if (s.budget !== null && s.budget !== undefined) reasons.push(`Budget ${formatNaira(s.budget)}`)
-  return reasons.slice(0, 3)
-}
 
 function SkeletonCard() {
   return (
-    <div className="rounded-3xl p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-      <div className="flex items-start gap-3">
-        <div className="h-14 w-14 rounded-2xl animate-pulse" style={{ background: 'var(--surface-2)' }} />
+    <div className="catalog-card min-h-48 animate-pulse">
+      <div className="flex items-start gap-3 p-4 pb-3">
+        <div className="size-14 rounded-lg bg-muted" />
         <div className="flex-1 space-y-2 pt-1">
-          <div className="h-3.5 w-24 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
-          <div className="h-3 w-16 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
+          <div className="h-4 w-24 rounded bg-muted" />
+          <div className="h-3 w-16 rounded bg-muted" />
         </div>
-        <div className="h-12 w-12 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
       </div>
-      <div className="space-y-2">
-        <div className="h-2.5 w-full rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
-        <div className="h-2.5 w-3/4 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
+      <div className="mt-auto flex items-center gap-2 px-4 pb-4 pt-3">
+        <div className="h-5 w-20 rounded bg-muted" />
+        <div className="ml-auto h-9 w-24 rounded-md bg-muted" />
       </div>
-      <div className="h-6 w-20 rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
-      <div className="h-px w-full" style={{ background: 'var(--border)' }} />
-      <div className="h-11 w-full rounded-full animate-pulse" style={{ background: 'var(--surface-2)' }} />
     </div>
   )
 }
 
 export function StudentList() {
+  const reduce = useReducedMotion()
   const user = useAuthStore(s => s.user)
   const tutorProfile = useAuthStore(s => s.tutorProfile)
-  const [candidates, setCandidates]   = useState<StudentCandidate[]>([])
-  const [liked, setLiked]             = useState<Set<string>>(new Set())
-  const [search, setSearch]           = useState('')
-  const [subject, setSubject]         = useState('All')
-  const [loading, setLoading]         = useState(true)
-  const [error, setError]             = useState<string | null>(null)
-  const [bookTarget, setBookTarget]   = useState<StudentCandidate | null>(null)
+  const [candidates, setCandidates] = useState<StudentCandidate[]>([])
+  const [liked, setLiked] = useState<Set<string>>(new Set())
+  const [search, setSearch] = useState('')
+  const [subject, setSubject] = useState('All')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [bookTarget, setBookTarget] = useState<StudentCandidate | null>(null)
   const [messageTarget, setMessageTarget] = useState<StudentCandidate | null>(null)
-  const [page, setPage]               = useState(1)
+  const [page, setPage] = useState(1)
   const { addToast } = useToast()
 
   useEffect(() => {
@@ -102,12 +97,10 @@ export function StudentList() {
   }, [candidates, search, subject])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
-  const safePage   = Math.min(page, totalPages)
-  const paginated  = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
-
+  const safePage = Math.min(page, totalPages)
+  const paginated = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
   useEffect(() => { setPage(1) }, [search, subject])
 
-  // Strongest candidate spotlighted so the primary action sits above the fold.
   const showFeatured = !loading && search === '' && subject === 'All' && filtered.length > 2
   const featured = showFeatured ? filtered[0] : null
   const gridItems = featured && safePage === 1
@@ -120,170 +113,88 @@ export function StudentList() {
     return next
   })
 
+  function clearFilters() { setSearch(''); setSubject('All') }
+
   return (
-    <div className="space-y-7 py-3">
-      {/* ── Header ── */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <span className="label-caps" style={{ color: 'var(--accent)' }}>Learners for you</span>
-          <h1 className="text-display text-4xl mt-1.5" style={{ color: 'var(--text-primary)' }}>
-            Find students
-          </h1>
-          <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {loading ? 'Matching students to your expertise…' : `${filtered.length} students looking for a tutor like you`}
-          </p>
-        </div>
+    <div className="space-y-6 py-3">
+      <PageHero
+        title="Find students"
+        description={loading ? 'Matching students to your expertise…' : `${filtered.length} students looking for a tutor like you`}
+      />
+
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center gap-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-600 dark:text-rose-400" role="alert"
+          >
+            <AlertCircle className="size-4 shrink-0" />
+            <span className="flex-1 leading-relaxed">{error}</span>
+            <button type="button" onClick={() => setError(null)} aria-label="Dismiss" className="cursor-pointer rounded-md p-1 hover:bg-rose-500/10"><X className="size-4" /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Search row */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search students or subjects…"
+          aria-label="Search students"
+          className="h-11 w-full rounded-lg border bg-background pl-11 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+        {search && (
+          <button type="button" onClick={() => setSearch('')} aria-label="Clear search" className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"><X className="size-4" /></button>
+        )}
       </div>
 
-      {error && (
-        <div className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm" style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)', border: '1px solid var(--accent-coral-bg)' }}>
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          <span className="flex-1">{error}</span>
-          <button onClick={() => setError(null)}><X className="h-4 w-4" /></button>
+      {/* Subject filter chips */}
+      {subjects.length > 1 && (
+        <div className="flex flex-wrap gap-1.5">
+          {subjects.map(option => (
+            <FilterChip key={option} active={subject === option} onClick={() => setSubject(option)}>
+              {option === 'All' ? 'All subjects' : option}
+            </FilterChip>
+          ))}
         </div>
       )}
 
-      {/* ── Search + subject chips ── */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: 'var(--text-muted)' }} strokeWidth={2} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search students or subjects…"
-            className="h-12 w-full rounded-2xl pl-11 pr-4 text-sm outline-none transition-all"
-            style={{ background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-            onFocus={e => e.currentTarget.style.borderColor = 'var(--primary)'}
-            onBlur={e => e.currentTarget.style.borderColor = 'var(--border)'}
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer" style={{ color: 'var(--text-muted)' }}>
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5 scrollbar-thin">
-          {subjects.map(option => (
-            <button
-              key={option}
-              onClick={() => setSubject(option)}
-              className="shrink-0 rounded-full px-4 py-2 text-xs font-semibold whitespace-nowrap transition-all cursor-pointer"
-              style={{
-                background: subject === option ? 'var(--primary)' : 'var(--surface)',
-                color: subject === option ? 'var(--primary-fg)' : 'var(--text-secondary)',
-                border: `1px solid ${subject === option ? 'var(--primary)' : 'var(--border)'}`,
-              }}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Featured recommendation — top learner, primary action above the fold ── */}
+      {/* Featured */}
       {featured && (() => {
-        const color = accentFor(featured.studentId)
         const matchPct = Math.round((featured.score ?? 0) * 100)
-        const strength = matchStrength(featured.score ?? 0)
-        const reasons = studentReasons(featured)
         const isEligible = featured.isEligible !== false
-        const fSubjects = [...new Set([...(featured.subjects ?? []), featured.requiredSubject].filter(Boolean))] as string[]
         return (
           <motion.section
-            initial={{ opacity: 0, y: 18 }}
+            initial={reduce ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: EASE }}
-            className="relative overflow-hidden rounded-3xl"
-            style={{ background: 'linear-gradient(150deg, #241C0C 0%, #1A1408 55%, #14100A 100%)', boxShadow: 'var(--shadow-lg)' }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="catalog-card overflow-hidden"
           >
-            {/* Ambient glows + grain to match the hero language */}
-            <div aria-hidden className="pointer-events-none absolute -top-24 -right-16 h-80 w-80 rounded-full"
-              style={{ background: 'radial-gradient(circle, rgba(201,162,75,0.24), transparent 65%)', filter: 'blur(20px)' }} />
-            <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-24 h-96 w-96 rounded-full"
-              style={{ background: 'radial-gradient(circle, rgba(47,122,99,0.22), transparent 65%)', filter: 'blur(20px)' }} />
-            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.04]"
-              style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
-            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(230,200,126,0.35), transparent)' }} />
-
-            <div className="relative z-10 flex flex-col gap-6 p-6 md:flex-row md:items-center md:gap-8 md:p-8">
-              {/* Identity */}
-              <div className="flex items-start gap-4 md:min-w-0 md:flex-1">
-                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl text-xl font-bold md:h-[72px] md:w-[72px]"
-                  style={{ background: 'rgba(242,237,227,0.08)', color: '#F4F0E8', border: '1px solid rgba(242,237,227,0.16)' }}>
+            <div className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:gap-8 md:p-8">
+              <div className="flex min-w-0 flex-1 items-start gap-4">
+                <div className="flex size-16 shrink-0 items-center justify-center rounded-lg text-xl font-semibold bg-primary/10 text-primary">
                   {featured.firstName?.[0]}{featured.lastName?.[0]}
                 </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5" style={{ color: '#E6C87E' }} />
-                    <span className="label-caps" style={{ color: '#D9B868' }}>Top match for you</span>
-                  </div>
-                  <h2 className="text-display mt-1.5 text-2xl md:text-[1.75rem]" style={{ color: '#F4F0E8' }}>
-                    {featured.firstName} {featured.lastName}
-                  </h2>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style={{ color: '#AEB6AA' }}>
-                    <span className="inline-flex items-center gap-1">
-                      <GraduationCap className="h-3.5 w-3.5" />
-                      <span className="font-semibold" style={{ color: '#F4F0E8' }}>Grade {featured.gradeLevel}</span>
-                    </span>
-                    {featured.region && (
-                      <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{featured.region}</span>
-                    )}
-                    {featured.budget !== null && featured.budget !== undefined && (
-                      <span className="inline-flex items-center gap-1">
-                        <Wallet className="h-3.5 w-3.5" />
-                        <span className="font-semibold tabular-nums" style={{ color: '#F4F0E8' }}>{formatNaira(featured.budget)}</span>/mo
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {reasons.map(r => (
-                      <span key={r} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium"
-                        style={{ background: 'rgba(242,237,227,0.07)', color: '#EDE7DA', border: '1px solid rgba(242,237,227,0.12)' }}>
-                        <CheckCircle2 className="h-3 w-3" style={{ color: '#C0D89A' }} /> {r}
-                      </span>
-                    ))}
-                    {fSubjects.slice(0, 2).map(s => (
-                      <span key={s} className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                        style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)` }}>{s}</span>
-                    ))}
-                  </div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Top match for you</p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{featured.firstName} {featured.lastName}</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Grade {featured.gradeLevel} · needs {featured.requiredSubject}
+                    {featured.budget != null && ` · budget ₦${Number(featured.budget).toLocaleString()}`}
+                  </p>
                 </div>
               </div>
-
-              {/* Score + actions */}
-              <div className="flex flex-shrink-0 items-center gap-5 md:flex-col md:items-stretch md:gap-4">
-                <div className="flex items-center gap-3 md:justify-center">
-                  <MatchRing pct={matchPct} accent={strength.accent} size={64} stroke={5} onDark />
-                  <div className="md:hidden">
-                    <p className="text-sm font-bold" style={{ color: '#F4F0E8' }}>{strength.label}</p>
-                    <p className="text-xs" style={{ color: '#AEB6AA' }}>fit for your subjects</p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2 md:w-52">
-                  <div className="relative group/btn">
-                    <button
-                      onClick={() => setBookTarget(featured)}
-                      disabled={!isEligible}
-                      className="rounded-pill inline-flex w-full items-center justify-center gap-2 px-5 py-3 text-sm font-bold transition-all cursor-pointer active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-                      style={{ background: '#F4F0E8', color: '#241C0C', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}
-                    >
-                      <Calendar className="h-4 w-4" /> Reach Out
-                    </button>
-                    {!isEligible && (
-                      <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[10px] font-semibold opacity-0 group-hover/btn:opacity-100 transition-opacity"
-                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', boxShadow: 'var(--shadow-sm)', zIndex: 10 }}>
-                        {featured.reason || 'Not eligible right now'}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setMessageTarget(featured)}
-                    className="rounded-pill inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all cursor-pointer active:scale-[0.98]"
-                    style={{ background: 'rgba(242,237,227,0.08)', color: '#F4F0E8', border: '1px solid rgba(242,237,227,0.16)' }}
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" /> Message
-                  </button>
+              <div className="flex shrink-0 items-center gap-3 md:flex-col md:items-stretch md:gap-3">
+                <span className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  {matchPct}% match
+                </span>
+                <div className="flex flex-col gap-2 md:w-48">
+                  <Button onClick={() => setBookTarget(featured)} disabled={!isEligible}><CalendarIcon /> Reach Out</Button>
+                  <Button variant="outline" onClick={() => setMessageTarget(featured)}><MessageSquareIcon /> Message</Button>
                 </div>
               </div>
             </div>
@@ -291,153 +202,48 @@ export function StudentList() {
         )
       })()}
 
-      {/* ── Section label ── */}
-      {!loading && filtered.length > 0 && (
-        <div className="flex items-center gap-3">
-          <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-            {featured ? 'More students for you' : 'Students'}
-          </h2>
-          <span className="h-px flex-1" style={{ background: 'var(--border)' }} />
-        </div>
-      )}
-
-      {/* ── Student grid ── */}
+      {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
-        <motion.div
-          className="flex flex-col items-center gap-4 rounded-2xl py-20 text-center"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        >
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: 'var(--surface-2)' }}>
-            <Search className="h-7 w-7" style={{ color: 'var(--text-muted)' }} />
-          </div>
-          <div>
-            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>No students match your filters</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Try adjusting your search or subject filter</p>
-          </div>
-        </motion.div>
+        <CardContent className="rounded-lg border bg-background p-8">
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><Search aria-hidden="true" /></EmptyMedia>
+              <EmptyTitle>No students match your filters</EmptyTitle>
+              <EmptyDescription className="text-xs">Try a different subject.</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent><Button variant="outline" size="sm" onClick={clearFilters}>Clear all filters</Button></EmptyContent>
+          </Empty>
+        </CardContent>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {gridItems.map((person, index) => {
-              const color = accentFor(person.studentId)
-              const id = person.studentId
-              const isLiked = liked.has(id)
-              const isEligible = person.isEligible !== false
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {gridItems.map((person) => {
               const personSubjects = [...new Set([...(person.subjects ?? []), person.requiredSubject].filter(Boolean))] as string[]
-              const matchPct = Math.round((person.score ?? 0) * 100)
-              const strength = matchStrength(person.score ?? 0)
-
               return (
-                <motion.div
-                  key={id}
-                  className="relative rounded-3xl flex flex-col overflow-hidden group"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ delay: (index % 6) * 0.06, duration: 0.4, ease: EASE }}
-                  whileHover={{ y: -4, boxShadow: 'var(--shadow-lg)' }}
-                >
-                  {/* Soft corner accent wash */}
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-60 transition-opacity duration-300 group-hover:opacity-100"
-                    style={{ background: `var(--accent-${color}-bg)`, filter: 'blur(36px)' }}
-                  />
-
-                  <div className="relative flex flex-col flex-1 p-5 space-y-3.5">
-                    {/* Header */}
-                    <div className="flex items-start gap-3">
-                      <div
-                        className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl text-base font-bold"
-                        style={{ background: `var(--accent-${color}-bg)`, color: `var(--accent-${color}-fg)`, boxShadow: 'inset 0 0 0 1px var(--border)' }}
-                      >
-                        {person.firstName?.[0]}{person.lastName?.[0]}
-                      </div>
-                      <div className="min-w-0 flex-1 pt-0.5">
-                        <p className="truncate text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
-                          {person.firstName} {person.lastName}
-                        </p>
-                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                          {person.gradeLevel ? `Grade ${person.gradeLevel}` : 'Student'} · {person.region ?? 'Remote'}
-                        </p>
-                      </div>
-                      {/* Match ring — recommendation signal */}
-                      <MatchRing pct={matchPct} accent={strength.accent} size={48} />
-                    </div>
-
-                    {/* Needs — the fields the matcher actually keys on */}
-                    <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                      Grade {person.gradeLevel} · needs <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{person.requiredSubject}</span>
-                      {person.budget !== null && ` · budget ${formatNaira(person.budget)}`}
-                    </p>
-
-                    {/* Subjects */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {personSubjects.slice(0, 3).map((s: string, i: number) => (
-                        <Badge key={`${s}-${i}`} color={color} size="sm">{s}</Badge>
-                      ))}
-                    </div>
-
-                    {/* Not eligible warning */}
-                    {!isEligible && (
-                      <div className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs" style={{ background: 'var(--accent-coral-bg)', color: 'var(--accent-coral-fg)' }}>
-                        <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span>{person.reason}</span>
-                      </div>
-                    )}
-
-                    {/* Match + budget */}
-                    <div className="flex items-center justify-between gap-2 py-3 mt-auto" style={{ borderTop: '1px solid var(--border)' }}>
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold"
-                        style={{ background: `var(--accent-${strength.accent}-bg)`, color: `var(--accent-${strength.accent}-fg)` }}
-                      >
-                        <CheckCircle2 className="h-3 w-3" />
-                        {strength.label}
-                      </span>
-                      {person.budget && (
-                        <span className="font-bold text-base tabular-nums" style={{ color: 'var(--text-primary)' }}>
-                          ₦{Number(person.budget).toLocaleString()}
-                          <span className="text-xs font-normal ml-0.5" style={{ color: 'var(--text-muted)' }}>/mo</span>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* CTAs — Reach Out is the anchor, kept inside the fold */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setBookTarget(person)}
-                        disabled={!isEligible}
-                        className="rounded-pill inline-flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold transition-all cursor-pointer active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-                        style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}
-                      >
-                        <Calendar className="h-4 w-4" /> Reach Out
-                      </button>
-                      <button
-                        onClick={() => setMessageTarget(person)}
-                        aria-label={`Message ${person.firstName}`}
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-all hover:scale-105 cursor-pointer"
-                        style={{ color: 'var(--text-secondary)', background: 'var(--surface-2)', border: '1px solid var(--border)' }}
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => toggleLike(id)}
-                        aria-label={isLiked ? 'Remove from saved' : 'Save student'}
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-all hover:scale-105 cursor-pointer"
-                        style={{ color: isLiked ? 'var(--accent-coral-fg)' : 'var(--text-muted)', background: isLiked ? 'var(--accent-coral-bg)' : 'var(--surface-2)', border: '1px solid var(--border)' }}
-                      >
-                        <Heart className="h-4 w-4" fill={isLiked ? 'currentColor' : 'none'} />
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
+                <CatalogCard
+                  key={person.studentId}
+                  data={{
+                    id: person.studentId,
+                    name: `${person.firstName} ${person.lastName}`,
+                    tagline: `Grade ${person.gradeLevel} · ${person.region ?? 'Remote'}`,
+                    subjects: personSubjects.slice(0, 4),
+                    price: person.budget != null ? `₦${Number(person.budget).toLocaleString()}` : undefined,
+                    priceSuffix: '/mo',
+                    matchPct: Math.round((person.score ?? 0) * 100),
+                    disabled: person.isEligible === false,
+                    disabledReason: person.reason ?? undefined,
+                  }}
+                  actions={[
+                    { kind: 'book', label: 'Reach Out', onClick: () => setBookTarget(person) },
+                    { kind: 'message', onClick: () => setMessageTarget(person) },
+                  ]}
+                  liked={liked.has(person.studentId)}
+                  onToggleLike={() => toggleLike(person.studentId)}
+                />
               )
             })}
           </div>
@@ -445,11 +251,9 @@ export function StudentList() {
         </>
       )}
 
-      {/* ── Modals ── */}
       {bookTarget && (
         <BookSessionModal
-          isOpen
-          onClose={() => setBookTarget(null)}
+          isOpen onClose={() => setBookTarget(null)}
           onSuccess={() => { addToast(`Session request sent to ${bookTarget.firstName}!`, 'success'); setBookTarget(null) }}
           onError={msg => addToast(msg, 'error')}
           tutorId={user?.id ?? ''}
@@ -460,9 +264,7 @@ export function StudentList() {
         />
       )}
       {messageTarget && (
-        <MessageModal
-          isOpen
-          onClose={() => setMessageTarget(null)}
+        <MessageModal isOpen onClose={() => setMessageTarget(null)}
           otherUserId={messageTarget.studentId}
           otherUserName={`${messageTarget.firstName} ${messageTarget.lastName}`}
         />
@@ -470,3 +272,6 @@ export function StudentList() {
     </div>
   )
 }
+
+function CalendarIcon() { return <Calendar className="size-4" /> }
+function MessageSquareIcon() { return <MessageSquare className="size-4" /> }

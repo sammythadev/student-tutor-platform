@@ -2,35 +2,10 @@
 
 import { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes, ReactNode, useId } from 'react'
 import { AlertCircle } from 'lucide-react'
+import { Input as UiInput } from '@/components/ui/input'
+import { Textarea as UiTextarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { Dropdown } from './Dropdown'
-
-/* ─────────────────────────────────────────
-   Shared input styles (via inline CSS vars
-   so they respect both dark & light mode)
-   ───────────────────────────────────────── */
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  height: '44px',
-  borderRadius: '10px',
-  border: '1px solid var(--border)',
-  background: 'var(--surface-2)',
-  color: 'var(--text-primary)',
-  padding: '0 14px',
-  fontSize: '14px',
-  fontFamily: 'var(--font-sans)',
-  outline: 'none',
-  transition: 'border-color 150ms ease, box-shadow 150ms ease',
-}
-
-const inputFocusStyle: React.CSSProperties = {
-  borderColor: 'var(--primary)',
-  boxShadow: '0 0 0 3px var(--primary-subtle)',
-}
-
-const inputErrorStyle: React.CSSProperties = {
-  borderColor: 'var(--accent-coral-fg)',
-  boxShadow: '0 0 0 3px rgba(239,68,68,0.12)',
-}
 
 /* ─── Input ─── */
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -41,77 +16,44 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   rightElement?: ReactNode
 }
 
-export function Input({ label, error, icon, helper, rightElement, className = '', style, id, ...props }: InputProps) {
+export function Input({ label, error, icon, helper, rightElement, className = '', id, ...props }: InputProps) {
   const generatedId = useId()
   const fieldId = id ?? generatedId
   return (
-    <div className="w-full">
-      {label && (
-        <label
-          htmlFor={fieldId}
-          className="block text-sm font-semibold mb-2"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          {label}
-        </label>
-      )}
-
+    <div className="w-full space-y-2">
+      {label && <Label htmlFor={fieldId}>{label}</Label>}
       <div className="relative">
         {icon && (
-          <div
-            className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-4 h-4"
-            style={{ color: 'var(--text-muted)' }}
-          >
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
             {icon}
-          </div>
+          </span>
         )}
-
-        <input
+        <UiInput
           id={fieldId}
-          className={`${className}`}
-          style={{
-            ...inputStyle,
-            ...(error ? inputErrorStyle : {}),
-            paddingLeft: icon ? '38px' : '14px',
-            paddingRight: rightElement ? '38px' : '14px',
-            ...style,
-          }}
-          onFocus={(e) => {
-            Object.assign(e.currentTarget.style, error ? inputErrorStyle : inputFocusStyle)
-          }}
-          onBlur={(e) => {
-            Object.assign(e.currentTarget.style, {
-              borderColor: error ? 'var(--accent-coral-fg)' : 'var(--border)',
-              boxShadow: error ? '0 0 0 3px rgba(239,68,68,0.12)' : 'none',
-            })
-          }}
+          className={`${className} ${icon ? 'pl-10' : ''} ${rightElement ? 'pr-10' : ''}`}
+          data-error={error ? true : undefined}
           {...props}
         />
-
         {rightElement && (
-          <div
-            className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center"
-            style={{ color: 'var(--text-muted)' }}
-          >
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
             {rightElement}
-          </div>
+          </span>
         )}
       </div>
-
       {error && (
-        <p className="mt-1.5 text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--accent-coral-fg)' }}>
-          <AlertCircle className="w-3 h-3 flex-shrink-0" strokeWidth={2} />
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
+          <AlertCircle className="size-3 shrink-0" />
           {error}
         </p>
       )}
       {helper && !error && (
-        <p className="mt-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>{helper}</p>
+        <p className="text-xs text-muted-foreground">{helper}</p>
       )}
     </div>
   )
 }
 
-/* ─── Select (uses custom Dropdown) ─── */
+/* ─── Select ─── */
 interface SelectProps {
   label?:       string
   error?:       string
@@ -125,12 +67,11 @@ interface SelectProps {
 
 export function Select({ label, error, helper, name, value, onChange, options, placeholder }: SelectProps) {
   return (
-    <div className="w-full">
+    <div className="w-full space-y-2">
       <Dropdown
         label={label}
         value={value ?? ''}
         onChange={(newVal) => {
-          // Synthetic event keeps the caller's existing onChange(e) handlers working
           const syntheticEvent = {
             target: { name: name ?? '', value: newVal },
             currentTarget: { name: name ?? '', value: newVal },
@@ -142,7 +83,7 @@ export function Select({ label, error, helper, name, value, onChange, options, p
         error={error}
       />
       {helper && !error && (
-        <p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{helper}</p>
+        <p className="text-xs text-muted-foreground">{helper}</p>
       )}
     </div>
   )
@@ -160,42 +101,17 @@ export function Textarea({ label, error, helper, rows = 4, className = '', id, .
   const generatedId = useId()
   const fieldId = id ?? generatedId
   return (
-    <div className="w-full">
-      {label && (
-        <label htmlFor={fieldId} className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
-          {label}
-        </label>
-      )}
-
-      <textarea
-        id={fieldId}
-        rows={rows}
-        className={className}
-        style={{
-          ...inputStyle,
-          height: 'auto',
-          padding: '12px 14px',
-          resize: 'none',
-          ...(error ? inputErrorStyle : {}),
-        }}
-        onFocus={(e) => { Object.assign(e.currentTarget.style, { ...inputFocusStyle, height: 'auto' }) }}
-        onBlur={(e) => {
-          Object.assign(e.currentTarget.style, {
-            borderColor: error ? 'var(--accent-coral-fg)' : 'var(--border)',
-            boxShadow: 'none',
-          })
-        }}
-        {...props}
-      />
-
+    <div className="w-full space-y-2">
+      {label && <Label htmlFor={fieldId}>{label}</Label>}
+      <UiTextarea id={fieldId} rows={rows} className={className} data-error={error ? true : undefined} {...props} />
       {error && (
-        <p className="mt-1.5 text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--accent-coral-fg)' }}>
-          <AlertCircle className="w-3 h-3 flex-shrink-0" strokeWidth={2} />
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
+          <AlertCircle className="size-3 shrink-0" />
           {error}
         </p>
       )}
       {helper && !error && (
-        <p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{helper}</p>
+        <p className="text-xs text-muted-foreground">{helper}</p>
       )}
     </div>
   )

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Check, ChevronDown, Search } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Label } from '@/components/ui/label'
 
 export interface DropdownOption {
   value: string
@@ -49,51 +51,40 @@ export function Dropdown({
   }
 
   return (
-    <div className="w-full relative" ref={ref}>
-      {label && (
-        <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
-          {label}
-        </label>
-      )}
+    <div className="relative w-full" ref={ref}>
+      {label && <Label className="mb-2 block">{label}</Label>}
 
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className={`flex items-center justify-between w-full h-11 rounded-xl px-3.5 text-sm outline-none transition-all cursor-pointer ${className}`}
-        style={{
-          border: error ? '1px solid var(--accent-coral-fg)' : open ? '2px solid var(--primary)' : '1px solid var(--border)',
-          background: 'var(--surface-2)',
-          color: selected ? 'var(--text-primary)' : 'var(--text-muted)',
-          boxShadow: open ? '0 0 0 3px var(--primary-subtle)' : 'none',
-        }}
+        className={cn(
+          'flex h-11 w-full cursor-pointer items-center justify-between rounded-lg border bg-background px-3.5 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+          error ? 'border-rose-500/60' : 'border-input',
+          open && 'border-ring ring-3 ring-ring/50',
+          className
+        )}
+        aria-expanded={open}
       >
-        <span className="truncate">{selected ? selected.label : placeholder || 'Select...'}</span>
+        <span className={cn('truncate', !selected && 'text-muted-foreground')}>
+          {selected ? selected.label : placeholder || 'Select...'}
+        </span>
         <ChevronDown
-          className="w-4 h-4 flex-shrink-0 ml-2 transition-transform"
-          style={{ color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          className={cn('ml-2 size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')}
         />
       </button>
 
       {open && (
-        <div
-          className="absolute z-50 w-full mt-1 rounded-xl border overflow-hidden shadow-lg"
-          style={{
-            background: 'var(--surface)',
-            borderColor: 'var(--border)',
-            boxShadow: 'var(--shadow-lg)',
-          }}
-        >
+        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-md">
           {searchable && (
-            <div className="p-2 border-b" style={{ borderColor: 'var(--border)' }}>
-              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-                <Search className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+            <div className="border-b p-2">
+              <div className="flex items-center gap-2 rounded-md bg-muted px-2.5 py-1.5">
+                <Search className="size-3.5 text-muted-foreground" />
                 <input
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search..."
-                  className="bg-transparent text-sm outline-none w-full"
-                  style={{ color: 'var(--text-primary)' }}
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                 />
               </div>
             </div>
@@ -101,23 +92,20 @@ export function Dropdown({
 
           <div className="max-h-48 overflow-y-auto">
             {filtered.length === 0 ? (
-              <div className="px-3.5 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>No options found</div>
+              <div className="px-3.5 py-3 text-xs text-muted-foreground">No options found</div>
             ) : (
               filtered.map((opt) => (
                 <button
                   key={opt.value}
                   type="button"
                   onClick={() => handleSelect(opt)}
-                  className="flex items-center justify-between w-full px-3.5 py-2.5 text-sm text-left transition-colors cursor-pointer"
-                  style={{
-                    color: opt.value === value ? 'var(--primary)' : 'var(--text-primary)',
-                    background: opt.value === value ? 'var(--primary-subtle)' : 'transparent',
-                  }}
-                  onMouseEnter={(e) => { if (opt.value !== value) e.currentTarget.style.background = 'var(--surface-2)' }}
-                  onMouseLeave={(e) => { if (opt.value !== value) e.currentTarget.style.background = 'transparent' }}
+                  className={cn(
+                    'flex w-full cursor-pointer items-center justify-between px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-accent',
+                    opt.value === value && 'bg-accent font-semibold text-foreground'
+                  )}
                 >
-                  <span>{opt.label}</span>
-                  {opt.value === value && <Check className="w-4 h-4 flex-shrink-0" strokeWidth={3} />}
+                  <span className="truncate">{opt.label}</span>
+                  {opt.value === value && <Check className="size-4 shrink-0" strokeWidth={3} />}
                 </button>
               ))
             )}
@@ -126,7 +114,7 @@ export function Dropdown({
       )}
 
       {error && (
-        <p className="mt-1.5 text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--accent-coral-fg)' }}>
+        <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
           {error}
         </p>
       )}
