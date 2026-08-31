@@ -26,6 +26,7 @@ import { DashboardCard } from '@/components/dashboard-card'
 import { DashboardHero } from '@/components/dashboard-hero'
 import { useTimeOfDayGreeting } from '@/lib/greeting'
 import { SubjectMixChart } from '@/components/widgets/subject-mix-chart'
+import { ChartEmpty } from '@/components/widgets/chart-empty'
 import {
   Empty,
   EmptyContent,
@@ -380,6 +381,9 @@ function WeeklyHoursChart({ bars }: { bars: WeeklyBar[] }) {
   const first = rows[0]?.hours ?? 0
   const last = rows.at(-1)?.hours ?? first
   const growthPct = first === 0 ? 0 : Number((((last - first) / first) * 100).toFixed(1))
+  /* The API always returns seven days, so an untouched account arrives as seven
+     zeroes rather than an empty array — sum, don't count. */
+  const isEmpty = rows.reduce((sum, r) => sum + r.hours, 0) === 0
 
   return (
     <motion.div
@@ -392,18 +396,24 @@ function WeeklyHoursChart({ bars }: { bars: WeeklyBar[] }) {
         <CardHeader className="gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle>Learning hours</CardTitle>
-            <Delta value={growthPct} variant="badge">
-              <DeltaIcon variant="trend" />
-              <DeltaValue />
-            </Delta>
+            {isEmpty ? null : (
+              <Delta value={growthPct} variant="badge">
+                <DeltaIcon variant="trend" />
+                <DeltaValue />
+              </Delta>
+            )}
           </div>
           <CardDescription>Completed session time, current week.</CardDescription>
         </CardHeader>
         <CardContent>
-          {bars.length === 0 ? (
-            <div className="flex h-60 items-center justify-center text-sm text-muted-foreground">
-              No completed sessions logged this week yet.
-            </div>
+          {isEmpty ? (
+            <ChartEmpty
+              action={{ label: 'Find a tutor', href: '/tutors' }}
+              description="Hours land here once a session you booked is marked complete."
+              icon={BookOpen}
+              shape="bars"
+              title="No learning hours yet"
+            />
           ) : (
             <ChartContainer config={WEEK_CHART_CONFIG} className="aspect-auto h-60 w-full">
               <BarChart accessibilityLayer data={rows}>
@@ -445,6 +455,7 @@ function ChannelSeriesChart({ series }: { series: ChannelPoint[] }) {
   const totalCompleted = rows.reduce((sum, r) => sum + r.completed, 0)
   const totalBooked = rows.reduce((sum, r) => sum + r.booked, 0)
   const delta = totalCompleted + totalBooked
+  const isEmpty = delta === 0
   return (
     <motion.div
       initial={reduce ? false : { opacity: 0, y: 12 }}
@@ -455,49 +466,61 @@ function ChannelSeriesChart({ series }: { series: ChannelPoint[] }) {
         <CardHeader className="gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle>Sessions flow</CardTitle>
-            <Delta value={delta} variant="badge">
-              <DeltaIcon variant="trend" />
-              <DeltaValue suffix="" />
-            </Delta>
+            {isEmpty ? null : (
+              <Delta value={delta} variant="badge">
+                <DeltaIcon variant="trend" />
+                <DeltaValue suffix="" />
+              </Delta>
+            )}
           </div>
           <CardDescription>Completed vs booked sessions, last 7 days.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={CHANNEL_CHART_CONFIG} className="aspect-auto h-60 w-full p-0">
-            <LineChart
-              accessibilityLayer
-              data={rows}
-              margin={{ left: 12, right: 12, top: 8 }}
-            >
-              <CartesianGrid className="stroke-border" vertical={false} />
-              <XAxis
-                axisLine={false}
-                dataKey="day"
-                interval={0}
-                tickFormatter={(value) => String(value)}
-                tickLine={false}
-                tickMargin={8}
-              />
-              <ChartTooltip
-                content={<ChartTooltipContent hideLabel />}
-                cursor={false}
-              />
-              <Line
-                dataKey="booked"
-                dot={false}
-                stroke="var(--color-booked)"
-                strokeWidth={2}
-                type="step"
-              />
-              <Line
-                dataKey="completed"
-                dot={false}
-                stroke="var(--color-completed)"
-                strokeWidth={2}
-                type="step"
-              />
-            </LineChart>
-          </ChartContainer>
+          {isEmpty ? (
+            <ChartEmpty
+              action={{ label: 'Browse tutors', href: '/tutors' }}
+              description="Book your first session and this tracks what you have coming up against what you have finished."
+              icon={Calendar}
+              shape="line"
+              title="Nothing booked in the last 7 days"
+            />
+          ) : (
+            <ChartContainer config={CHANNEL_CHART_CONFIG} className="aspect-auto h-60 w-full p-0">
+              <LineChart
+                accessibilityLayer
+                data={rows}
+                margin={{ left: 12, right: 12, top: 8 }}
+              >
+                <CartesianGrid className="stroke-border" vertical={false} />
+                <XAxis
+                  axisLine={false}
+                  dataKey="day"
+                  interval={0}
+                  tickFormatter={(value) => String(value)}
+                  tickLine={false}
+                  tickMargin={8}
+                />
+                <ChartTooltip
+                  content={<ChartTooltipContent hideLabel />}
+                  cursor={false}
+                />
+                <Line
+                  dataKey="booked"
+                  dot={false}
+                  stroke="var(--color-booked)"
+                  strokeWidth={2}
+                  type="step"
+                />
+                <Line
+                  dataKey="completed"
+                  dot={false}
+                  stroke="var(--color-completed)"
+                  strokeWidth={2}
+                  type="step"
+                />
+              </LineChart>
+            </ChartContainer>
+          )}
         </CardContent>
       </DashboardCard>
     </motion.div>

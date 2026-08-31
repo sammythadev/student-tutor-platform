@@ -1,6 +1,15 @@
 'use client'
 
-import { useCallback, useEffect, useState, useRef } from 'react'
+/**
+ * Messaging — a conversation list and a thread, mobile-first.
+ *
+ * On phones the two are separate screens: the list fills the viewport, picking a
+ * conversation replaces it with the thread, and the back arrow returns. From `md`
+ * up they sit side by side. Everything below the header scrolls internally so the
+ * composer never leaves the screen and the page itself never scrolls.
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuthStore } from '@/lib/store/authStore'
 import {
   getConversations,
@@ -10,324 +19,609 @@ import {
   type ConversationItem,
   type MessageItem,
 } from '@/lib/api/messages'
-import { ArrowLeft, Check, CheckCheck, MessageSquare, Send } from 'lucide-react'
+import {
+  ArrowLeft, ArrowDown, Check, CheckCheck, MessageSquare, RotateCcw, Search, Send, X,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import StarBorder from '@/components/reactbits/StarBorder'
+
+/** A sent message that has not landed yet, or failed on the way. */
+type ThreadMessage = MessageItem & { pending?: boolean; failed?: boolean }
+
+/* Avatar tints. Deterministic per user, so the same person keeps the same colour
+   across the list and the thread — recognition, not decoration. */
+const TINTS = [
+  'bg-blue-500/12 text-blue-600 dark:text-blue-400',
+  'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400',
+  'bg-amber-500/12 text-amber-600 dark:text-amber-400',
+  'bg-violet-500/12 text-violet-600 dark:text-violet-400',
+  'bg-rose-500/12 text-rose-600 dark:text-rose-400',
+  'bg-cyan-500/12 text-cyan-600 dark:text-cyan-400',
+] as const
+
+function tintFor(id: string): string {
+  let hash = 0
+  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) | 0
+  return TINTS[Math.abs(hash) % TINTS.length]
+}
+
+/** Messages closer than this to the previous one join the same visual run. */
+const GROUP_WINDOW_MS = 5 * 60 * 1000
+/** How far off the bottom counts as "reading history" rather than "at the end". */
+const AT_BOTTOM_SLACK = 120
+
+const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
+
+function dayLabel(iso: string): string {
+  const d = new Date(iso)
+  const now = new Date()
+  if (sameDay(d, now)) return 'Today'
+  if (sameDay(d, new Date(now.getTime() - 86_400_000))) return 'Yesterday'
+  const withinWeek = now.getTime() - d.getTime() < 6 * 86_400_000
+  if (withinWeek) return d.toLocaleDateString([], { weekday: 'long' })
+  return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+const clockTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+
+/** List timestamps: time today, weekday this week, date beyond that. */
+function listStamp(iso: string): string {
+  const d = new Date(iso)
+  const now = new Date()
+  if (sameDay(d, now)) return clockTime(iso)
+  if (sameDay(d, new Date(now.getTime() - 86_400_000))) return 'Yesterday'
+  if (now.getTime() - d.getTime() < 6 * 86_400_000) return d.toLocaleDateString([], { weekday: 'short' })
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
+}
+
+function Avatar({
+  id, first, last, size = 'md', online,
+}: {
+  id: string
+  first: string
+  last: string
+  size?: 'sm' | 'md'
+  online?: boolean
+}) {
+  return (
+    <span className="relative inline-flex shrink-0">
+      <span
+        aria-hidden
+        className={cn(
+          'inline-flex items-center justify-center rounded-full font-semibold',
+          size === 'sm' ? 'size-9 text-xs' : 'size-11 text-sm',
+          tintFor(id),
+        )}
+      >
+        {(first[0] ?? '?')}{(last[0] ?? '')}
+      </span>
+      {online && (
+        <span
+          className="absolute right-0 bottom-0 size-3 rounded-full bg-emerald-500 ring-2 ring-card"
+          aria-label="Active now"
+        />
+      )}
+    </span>
+  )
+}
+
+/** Sticky so you always know which day you are reading while scrolling back. */
+function DayDivider({ iso }: { iso: string }) {
+  return (
+    <div className="sticky top-0 z-10 flex justify-center py-2">
+      <span className="rounded-full border bg-card/85 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground backdrop-blur-sm">
+        {dayLabel(iso)}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * One bubble in a run. `first`/`last` describe its position within the run: only
+ * the last bubble of a run gets the pointed corner and carries the timestamp and
+ * receipt, which is what keeps a long exchange from looking like a list of cards.
+ */
+function Bubble({
+  msg, mine, first, last, onRetry,
+}: {
+  msg: ThreadMessage
+  mine: boolean
+  first: boolean
+  last: boolean
+  onRetry: (msg: ThreadMessage) => void
+}) {
+  return (
+    <div className={cn('flex flex-col', mine ? 'items-end' : 'items-start', first ? 'mt-3' : 'mt-0.5')}>
+      <div
+        className={cn(
+          'max-w-[85%] px-3.5 py-2 text-sm whitespace-pre-wrap break-words sm:max-w-[72%]',
+          'rounded-2xl',
+          mine
+            ? cn('bg-primary text-primary-foreground', last && 'rounded-br-md')
+            : cn('bg-muted text-foreground', last && 'rounded-bl-md'),
+          msg.pending && 'opacity-60',
+          msg.failed && 'ring-1 ring-destructive/60',
+        )}
+      >
+        {msg.content}
+      </div>
+
+      {/* Metadata stays visible on the last bubble of a run rather than appearing
+          on hover — a receipt you have to go looking for is not a receipt. */}
+      {(last || msg.failed) && (
+        <div className="mt-1 flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
+          {msg.failed ? (
+            <button
+              type="button"
+              onClick={() => onRetry(msg)}
+              className="inline-flex items-center gap-1 font-medium text-destructive transition-colors hover:underline"
+            >
+              <RotateCcw className="size-3" aria-hidden /> Not sent · Retry
+            </button>
+          ) : (
+            <>
+              <span className="tabular-nums">{msg.pending ? 'Sending…' : clockTime(msg.createdAt)}</span>
+              {mine && !msg.pending && (
+                msg.readAt
+                  ? <CheckCheck className="size-3.5 text-primary" aria-label="Read" />
+                  : <Check className="size-3.5" aria-label="Sent" />
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Composer. Grows with the text up to five lines, then scrolls — a textarea that
+ * grows without limit pushes the conversation off screen. Enter sends, Shift+Enter
+ * breaks the line, which is what anyone who has used a chat app will try first.
+ */
+function Composer({ onSend, peerName }: { onSend: (text: string) => void; peerName: string }) {
+  const [text, setText] = useState('')
+  const ref = useRef<HTMLTextAreaElement>(null)
+
+  const resize = useCallback(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 132)}px`
+  }, [])
+
+  useEffect(resize, [text, resize])
+
+  const submit = () => {
+    const value = text.trim()
+    if (!value) return
+    onSend(value)
+    setText('')
+    ref.current?.focus()
+  }
+
+  return (
+    <form
+      className="flex items-end gap-2 border-t bg-card p-3 md:p-4"
+      onSubmit={(e) => {
+        e.preventDefault()
+        submit()
+      }}
+    >
+      <StarBorder
+        as="div"
+        className="min-w-0 flex-1"
+        radius={16}
+        thickness={1}
+        speed="7s"
+        color="var(--primary)"
+        backgroundColor="var(--background)"
+        textColor="var(--foreground)"
+        borderColor="var(--input)"
+        innerClassName="px-1"
+      >
+        <textarea
+          ref={ref}
+          rows={1}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              submit()
+            }
+          }}
+          placeholder={`Message ${peerName}`}
+          aria-label={`Message ${peerName}`}
+          className="block max-h-[132px] w-full resize-none bg-transparent px-3 py-2.5 text-sm leading-6 text-foreground outline-none placeholder:text-muted-foreground"
+        />
+      </StarBorder>
+      <button
+        type="submit"
+        disabled={!text.trim()}
+        aria-label="Send message"
+        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+      >
+        <Send className="size-4" aria-hidden />
+      </button>
+    </form>
+  )
+}
 
 export default function MessagesPage() {
   const { user } = useAuthStore()
   const [conversations, setConversations] = useState<ConversationItem[]>([])
-  const [selectedConvo, setSelectedConvo] = useState<ConversationItem | null>(null)
-  const [messages, setMessages] = useState<MessageItem[]>([])
-  const [newMessage, setNewMessage] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set())
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [peer, setPeer] = useState<ConversationItem | null>(null)
+  const [messages, setMessages] = useState<ThreadMessage[]>([])
+  const [loadingList, setLoadingList] = useState(true)
+  const [loadingThread, setLoadingThread] = useState(false)
+  const [query, setQuery] = useState('')
+  const [atBottom, setAtBottom] = useState(true)
 
-  const loadConversations = useCallback(() => {
-    getConversations()
-      .then(setConversations)
-      .finally(() => setLoading(false))
-  }, [])
+  const scrollerRef = useRef<HTMLDivElement>(null)
+  const endRef = useRef<HTMLDivElement>(null)
+
+  const loadConversations = useCallback(
+    () =>
+      getConversations()
+        .then(setConversations)
+        .catch(() => undefined)
+        .finally(() => setLoadingList(false)),
+    [],
+  )
 
   useEffect(() => {
     loadConversations()
-    const interval = setInterval(loadConversations, 15000)
-    return () => clearInterval(interval)
+    const id = setInterval(loadConversations, 15_000)
+    return () => clearInterval(id)
   }, [loadConversations])
 
-  useEffect(() => {
-    if (!selectedConvo) return
-    const loadMessages = () => {
-      getConversation(selectedConvo.userId).then((data) => {
-        setMessages(data)
-        if (selectedConvo.unreadCount && selectedConvo.unreadCount > 0) {
-          markRead(selectedConvo.userId).then(() => {
-            setConversations((prev) =>
-              prev.map((c) =>
-                c.userId === selectedConvo.userId ? { ...c, unreadCount: 0 } : c
-              )
-            )
-          })
-        }
-      })
-    }
-    loadMessages()
-    const interval = setInterval(loadMessages, 5000)
-    return () => clearInterval(interval)
-  }, [selectedConvo])
+  const peerId = peer?.userId
 
+  /* Poll the open thread. Locally pending sends are preserved across refreshes so
+     a poll landing mid-flight cannot make a message the user just typed vanish. */
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    if (!peerId) {
+      setMessages([])
+      return
     }
-  }, [messages])
+    let cancelled = false
+    setLoadingThread(true)
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newMessage.trim() || !selectedConvo) return
-    const text = newMessage.trim()
-    setNewMessage('')
-    inputRef.current?.focus()
-    
-    // Optimistic UI
-    const optimisticMsg: MessageItem = {
-      id: Date.now().toString(),
-      senderId: user?.id || '',
-      receiverId: selectedConvo.userId,
+    const load = () =>
+      getConversation(peerId)
+        .then((fresh) => {
+          if (cancelled) return
+          setMessages((prev) => [...fresh, ...prev.filter((m) => m.pending || m.failed)])
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          if (!cancelled) setLoadingThread(false)
+        })
+
+    load()
+    const id = setInterval(load, 5_000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [peerId])
+
+  /* Clear the unread badge once the thread is actually on screen. */
+  useEffect(() => {
+    if (!peer?.unreadCount) return
+    const id = peer.userId
+    markRead(id)
+      .then(() => setConversations((prev) => prev.map((c) => (c.userId === id ? { ...c, unreadCount: 0 } : c))))
+      .catch(() => undefined)
+  }, [peer])
+
+  /* Follow new messages only while the reader is already at the end; yanking the
+     view down while someone reads history is the classic chat-app annoyance. */
+  useEffect(() => {
+    if (!atBottom) return
+    endRef.current?.scrollIntoView({ block: 'end' })
+  }, [messages, atBottom])
+
+  const onScroll = () => {
+    const el = scrollerRef.current
+    if (!el) return
+    setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < AT_BOTTOM_SLACK)
+  }
+
+  const jumpToEnd = () => {
+    setAtBottom(true)
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }
+
+  const deliver = useCallback(
+    async (draft: ThreadMessage) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === draft.id ? { ...m, pending: true, failed: false } : m)),
+      )
+      try {
+        const saved = await sendMessage({ receiverId: draft.receiverId, content: draft.content })
+        setMessages((prev) => prev.map((m) => (m.id === draft.id ? saved : m)))
+        loadConversations()
+      } catch {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === draft.id ? { ...m, pending: false, failed: true } : m)),
+        )
+      }
+    },
+    [loadConversations],
+  )
+
+  const handleSend = (text: string) => {
+    if (!peer || !user) return
+    const draft: ThreadMessage = {
+      id: `local-${Date.now()}`,
+      senderId: user.id,
+      receiverId: peer.userId,
       content: text,
       readAt: null,
       createdAt: new Date().toISOString(),
+      pending: true,
     }
-    setMessages((prev) => [...prev, optimisticMsg])
-    
-    try {
-      const saved = await sendMessage({ receiverId: selectedConvo.userId, content: text })
-      setMessages((prev) => prev.map((m) => (m.id === optimisticMsg.id ? saved : m)))
-      loadConversations()
-    } catch (error) {
-      console.error('Failed to send message', error)
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id))
-      setNewMessage(text)
-    }
+    setAtBottom(true)
+    setMessages((prev) => [...prev, draft])
+    deliver(draft)
   }
 
-  const formatMsgTime = (dateStr: string) => {
-    const d = new Date(dateStr)
-    const now = new Date()
-    const isToday = d.toDateString() === now.toDateString()
-    if (isToday) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    return d.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-  }
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return conversations
+    return conversations.filter((c) =>
+      `${c.firstName} ${c.lastName} ${c.lastMessage}`.toLowerCase().includes(q),
+    )
+  }, [conversations, query])
 
-  const shouldShowDateSeparator = (i: number, msgs: MessageItem[]) => {
-    if (i === 0) return true
-    const prev = new Date(msgs[i - 1].createdAt)
-    const curr = new Date(msgs[i].createdAt)
-    return prev.toDateString() !== curr.toDateString()
-  }
+  const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0)
 
-  const formatDateSeparator = (dateStr: string) => {
-    const d = new Date(dateStr)
-    const now = new Date()
-    const isToday = d.toDateString() === now.toDateString()
-    const isYesterday = new Date(now.getTime() - 86400000).toDateString() === d.toDateString()
-    if (isToday) return 'Today'
-    if (isYesterday) return 'Yesterday'
-    return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })
-  }
+  /* Precompute run boundaries once, so the bubbles stay dumb. */
+  const rows = useMemo(
+    () =>
+      messages.map((msg, i) => {
+        const prev = messages[i - 1]
+        const next = messages[i + 1]
+        const sameSenderAsPrev = prev?.senderId === msg.senderId
+        const sameSenderAsNext = next?.senderId === msg.senderId
+        const newDay = !prev || !sameDay(new Date(prev.createdAt), new Date(msg.createdAt))
+        const near = (a?: ThreadMessage, b?: ThreadMessage) =>
+          !!a && !!b &&
+          Math.abs(new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) < GROUP_WINDOW_MS
+        return {
+          msg,
+          newDay,
+          first: newDay || !sameSenderAsPrev || !near(prev, msg),
+          last: !sameSenderAsNext || !near(msg, next),
+        }
+      }),
+    [messages],
+  )
 
   return (
-    <div className="flex overflow-hidden rounded-lg border bg-background" style={{ maxHeight: 'calc(100dvh - 100px)' }}>
-      {/* Sidebar — Conversations */}
-      <div
-        className={`${selectedConvo ? 'hidden md:flex' : 'flex'} w-full md:w-80 lg:w-96 flex-col border-r border-border`}
+    // Fixed to the viewport minus the app header and the shell's own padding, so
+    // only the list and the thread scroll — never the page.
+    <div className="flex h-[calc(100dvh-5.5rem)] overflow-hidden rounded-xl border bg-card md:h-[calc(100dvh-6.5rem)]">
+      {/* ── Conversations ── */}
+      <aside
+        className={cn(
+          'w-full flex-col border-r md:flex md:w-80 lg:w-96',
+          peer ? 'hidden' : 'flex',
+        )}
+        aria-label="Conversations"
       >
-        <div className="border-b border-border px-4 md:px-5 py-3 md:py-4">
-          <h2 className="text-lg md:text-xl font-semibold text-foreground">Messages</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">{conversations.length} conversations</p>
+        <div className="shrink-0 border-b px-4 py-3">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-lg font-semibold text-foreground">Messages</h1>
+            {totalUnread > 0 && (
+              <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground tabular-nums">
+                {totalUnread}
+              </span>
+            )}
+          </div>
+          <div className="mt-3 flex items-center gap-2 rounded-lg border bg-background px-2.5 transition-colors focus-within:border-ring">
+            <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search conversations"
+              aria-label="Search conversations"
+              className="h-9 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            )}
+          </div>
         </div>
-        
-        <div className="flex-1 overflow-y-auto">
-          {loading && conversations.length === 0 ? (
-            Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex gap-3 border-b border-border p-3 md:p-4">
-                <div className="h-10 w-10 md:h-12 md:w-12 animate-pulse rounded-full bg-muted" />
+
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          {loadingList && conversations.length === 0 ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex gap-3 px-4 py-3">
+                <div className="size-11 shrink-0 animate-pulse rounded-full bg-muted" />
                 <div className="flex-1 space-y-2 py-1">
-                  <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-                  <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+                  <div className="h-3.5 w-1/2 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
                 </div>
               </div>
             ))
-          ) : conversations.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-4 p-6 md:p-8 text-center text-muted-foreground">
-              <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-muted">
-                <MessageSquare className="h-6 w-6 md:h-7 md:w-7 opacity-50" />
-              </div>
-              <div>
-                <p className="font-medium text-sm text-foreground">No conversations</p>
-                <p className="mt-1 text-xs">Find a tutor to start a chat</p>
-              </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+              <span className="flex size-12 items-center justify-center rounded-2xl bg-muted">
+                <MessageSquare className="size-6 text-muted-foreground" aria-hidden />
+              </span>
+              <p className="text-sm font-medium text-foreground">
+                {query ? 'No matches' : 'No conversations yet'}
+              </p>
+              <p className="max-w-[22ch] text-xs text-muted-foreground">
+                {query
+                  ? 'Try a different name or word.'
+                  : 'Book a tutor and your conversation with them starts here.'}
+              </p>
             </div>
           ) : (
-            conversations.map((convo) => {
-              const isSelected = selectedConvo?.userId === convo.userId
-              return (
-                <button
-                  key={convo.userId}
-                  onClick={() => setSelectedConvo(convo)}
-                  className={cn(
-                    'group w-full border-b border-border p-3 md:p-4 text-left transition-all duration-200 active:scale-[0.98]',
-                    isSelected && 'bg-accent'
-                  )}
-                >
-                  <div className="flex gap-3">
-                    <div className="relative shrink-0">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full text-base font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                        {convo.firstName[0]}{convo.lastName[0]}
-                      </div>
-                      {convo.unreadCount ? (
-                        <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold bg-rose-600 text-white shadow-[0_0_0_2px_var(--background)]">
-                          {convo.unreadCount}
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-baseline justify-between">
-                        <span className="truncate pr-2 text-sm font-semibold text-foreground">
-                          {convo.firstName} {convo.lastName}
-                        </span>
-                        <span className="shrink-0 text-[10px] font-medium text-muted-foreground">
-                          {new Date(convo.lastMessageAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={cn('block flex-1 truncate text-xs', isSelected ? 'text-foreground' : 'text-muted-foreground')}>
-                          {convo.lastMessage}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Main — Chat Interface */}
-      <div className={`${!selectedConvo ? 'hidden md:flex' : 'flex'} flex-1 flex-col`} style={{ maxHeight: 'calc(100dvh - 100px)' }}>
-        {selectedConvo ? (
-          <>
-            {/* Chat Header */}
-            <div className="flex h-16 shrink-0 items-center gap-3 border-b border-border px-5">
-              <button
-                type="button"
-                onClick={() => setSelectedConvo(null)}
-                className="mr-1 flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-muted md:hidden text-muted-foreground"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                {selectedConvo.firstName[0]}{selectedConvo.lastName[0]}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate font-semibold text-sm text-foreground">
-                  {selectedConvo.firstName} {selectedConvo.lastName}
-                </h3>
-                <p className="text-[11px] text-muted-foreground">Active now</p>
-              </div>
-            </div>
-
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto space-y-1 p-5">
-              {messages.map((msg, i) => {
-                const isMe = msg.senderId === user?.id
-                const showDateSep = shouldShowDateSeparator(i, messages)
-                const showTime = i === messages.length - 1 || new Date(messages[i + 1]?.createdAt).getTime() - new Date(msg.createdAt).getTime() > 10 * 60 * 1000
-
+            <ul>
+              {filtered.map((convo) => {
+                const active = peer?.userId === convo.userId
+                const unread = convo.unreadCount ?? 0
                 return (
-                  <div key={msg.id}>
-                    {showDateSep && (
-                      <div className="py-3 text-center">
-                        <span className="inline-block rounded-full px-3 py-1 text-[10px] font-semibold bg-muted text-muted-foreground">
-                          {formatDateSeparator(msg.createdAt)}
+                  <li key={convo.userId}>
+                    <button
+                      type="button"
+                      onClick={() => setPeer(convo)}
+                      aria-current={active}
+                      className={cn(
+                        'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors',
+                        active ? 'bg-accent' : 'hover:bg-muted/60',
+                      )}
+                    >
+                      <Avatar id={convo.userId} first={convo.firstName} last={convo.lastName} />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline gap-2">
+                          <span
+                            className={cn(
+                              'truncate text-sm text-foreground',
+                              unread ? 'font-semibold' : 'font-medium',
+                            )}
+                          >
+                            {convo.firstName} {convo.lastName}
+                          </span>
+                          <span className="ml-auto shrink-0 text-[11px] text-muted-foreground tabular-nums">
+                            {listStamp(convo.lastMessageAt)}
+                          </span>
                         </span>
-                      </div>
-                    )}
-                    <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} px-1`}>
-                      <div className={`max-w-[75%] group relative ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
-                        <div
-                          className={`rounded-2xl px-4 py-2.5 text-sm transition-all ${
-                            isMe
-                              ? 'rounded-br-sm bg-primary text-primary-foreground'
-                              : 'rounded-bl-sm bg-muted text-foreground'
-                          }`}
-                        >
-                          {msg.content}
-                        </div>
-                        <div className={`mt-0.5 flex items-center gap-1.5 px-1 opacity-0 transition-opacity group-hover:opacity-100 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
-                          {showTime && (
-                            <span className="text-[9px] font-medium text-muted-foreground">
-                              {formatMsgTime(msg.createdAt)}
+                        <span className="mt-0.5 flex items-center gap-2">
+                          <span
+                            className={cn(
+                              'truncate text-xs',
+                              unread ? 'font-medium text-foreground' : 'text-muted-foreground',
+                            )}
+                          >
+                            {convo.lastMessage}
+                          </span>
+                          {unread > 0 && (
+                            <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground tabular-nums">
+                              {unread > 9 ? '9+' : unread}
                             </span>
                           )}
-                          {isMe && (
-                            msg.readAt
-                              ? <CheckCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                              : <Check className="h-3 w-3 text-muted-foreground" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                        </span>
+                      </span>
+                    </button>
+                  </li>
                 )
               })}
+            </ul>
+          )}
+        </div>
+      </aside>
 
-              {/* Typing indicator */}
-              {typingUsers.size > 0 && (
-                <div className="flex items-start px-1">
-                  <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm px-4 py-3 bg-muted">
-                    <span className="flex gap-1">
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: '0ms' }} />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: '150ms' }} />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: '300ms' }} />
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Area */}
-            <div className="border-t border-border p-4">
-              <form onSubmit={handleSend} className="flex items-end gap-2">
-                <StarBorder
-                  as="div"
-                  className="flex-1"
-                  radius={12}
-                  thickness={1}
-                  speed="6s"
-                  color="var(--primary)"
-                  backgroundColor="var(--background)"
-                  textColor="var(--foreground)"
-                  borderColor="var(--input)"
-                  innerClassName="flex items-end gap-1 px-3 py-2 transition-shadow focus-within:shadow-sm"
-                >
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    className="min-h-[40px] flex-1 bg-transparent px-2 text-sm outline-none text-foreground placeholder:text-muted-foreground"
-                    autoFocus
-                  />
-                </StarBorder>
-                <button
-                  type="submit"
-                  disabled={!newMessage.trim()}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-all hover:opacity-90 disabled:opacity-40"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </form>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center text-muted-foreground">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-              <MessageSquare className="h-8 w-8 opacity-50" />
-            </div>
-            <div>
-              <p className="mb-1 font-medium text-sm text-foreground">Your Messages</p>
-              <p className="text-sm">Select a conversation from the sidebar</p>
-            </div>
+      {/* ── Thread ── */}
+      <section
+        className={cn('min-w-0 flex-1 flex-col md:flex', peer ? 'flex' : 'hidden')}
+        aria-label="Conversation"
+      >
+        {!peer ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-muted">
+              <MessageSquare className="size-7 text-muted-foreground" aria-hidden />
+            </span>
+            <p className="text-sm font-medium text-foreground">Pick a conversation</p>
+            <p className="max-w-[30ch] text-sm text-muted-foreground">
+              Your messages with tutors and students appear here.
+            </p>
           </div>
+        ) : (
+          <>
+            <header className="flex h-16 shrink-0 items-center gap-3 border-b px-3 md:px-5">
+              <button
+                type="button"
+                onClick={() => setPeer(null)}
+                aria-label="Back to conversations"
+                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+              >
+                <ArrowLeft className="size-4" aria-hidden />
+              </button>
+              <Avatar id={peer.userId} first={peer.firstName} last={peer.lastName} size="sm" online />
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-sm font-semibold text-foreground">
+                  {peer.firstName} {peer.lastName}
+                </h2>
+                <p className="text-[11px] text-muted-foreground">Active now</p>
+              </div>
+            </header>
+
+            <div className="relative min-h-0 flex-1">
+              <div
+                ref={scrollerRef}
+                onScroll={onScroll}
+                className="h-full overflow-y-auto overscroll-contain px-3 pb-4 md:px-5"
+              >
+                {loadingThread && messages.length === 0 ? (
+                  <div className="space-y-3 py-4">
+                    {[72, 56, 84, 48].map((w, i) => (
+                      <div
+                        key={i}
+                        className={cn('flex', i % 2 ? 'justify-end' : 'justify-start')}
+                      >
+                        <div
+                          className="h-9 animate-pulse rounded-2xl bg-muted"
+                          style={{ width: `${w}%`, maxWidth: '18rem' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+                    <p className="text-sm font-medium text-foreground">No messages yet</p>
+                    <p className="max-w-[28ch] text-xs text-muted-foreground">
+                      Say hello to {peer.firstName} — mention the subject and what you want to cover.
+                    </p>
+                  </div>
+                ) : (
+                  rows.map(({ msg, newDay, first, last }) => (
+                    <div key={msg.id}>
+                      {newDay && <DayDivider iso={msg.createdAt} />}
+                      <Bubble
+                        msg={msg}
+                        mine={msg.senderId === user?.id}
+                        first={first}
+                        last={last}
+                        onRetry={deliver}
+                      />
+                    </div>
+                  ))
+                )}
+                <div ref={endRef} className="h-px" />
+              </div>
+
+              {/* Only offered when it is actually useful — otherwise it is chrome. */}
+              {!atBottom && messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={jumpToEnd}
+                  aria-label="Jump to latest message"
+                  className="absolute right-4 bottom-4 inline-flex size-10 items-center justify-center rounded-full border bg-card text-foreground shadow-md transition-colors hover:bg-muted"
+                >
+                  <ArrowDown className="size-4" aria-hidden />
+                </button>
+              )}
+            </div>
+
+            <Composer onSend={handleSend} peerName={peer.firstName} />
+          </>
         )}
-      </div>
+      </section>
     </div>
   )
 }

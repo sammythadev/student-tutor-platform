@@ -9,7 +9,11 @@ export const metadata: Metadata = {
   description: 'Connect with world-class educators through our premium learning infrastructure. Personalized sessions, expert tutors, measurable results.',
   keywords: ['tutoring', 'education', 'online learning', 'tutors', 'students'],
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon-light-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
   },
 }
 

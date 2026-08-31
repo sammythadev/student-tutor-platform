@@ -26,6 +26,7 @@ import { DashboardCard } from '@/components/dashboard-card'
 import { DashboardHero } from '@/components/dashboard-hero'
 import { useTimeOfDayGreeting } from '@/lib/greeting'
 import { SubjectMixChart } from '@/components/widgets/subject-mix-chart'
+import { ChartEmpty } from '@/components/widgets/chart-empty'
 import {
   Empty,
   EmptyContent,
@@ -275,6 +276,9 @@ function ChannelSeriesChart({ series }: { series: ChannelPoint[] }) {
   const rows = series.map(point => ({ ...point }))
   const totalCompleted = rows.reduce((sum, r) => sum + r.completed, 0)
   const totalBooked = rows.reduce((sum, r) => sum + r.booked, 0)
+  /* Seven days always come back from the API, zeroed on a new account, so an
+     empty week is a sum of zero rather than an absent array. */
+  const isEmpty = totalCompleted + totalBooked === 0
   return (
     <motion.div
       className="md:col-span-2"
@@ -286,34 +290,46 @@ function ChannelSeriesChart({ series }: { series: ChannelPoint[] }) {
         <CardHeader className="gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle>Sessions flow</CardTitle>
-            <Badge variant="secondary">{totalCompleted + totalBooked} total</Badge>
+            {isEmpty ? null : (
+              <Badge variant="secondary">{totalCompleted + totalBooked} total</Badge>
+            )}
           </div>
           <CardDescription>Completed vs booked sessions, last 7 days.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={CHANNEL_CHART_CONFIG} className="aspect-auto h-60 w-full p-0">
-            <LineChart
-              accessibilityLayer
-              data={rows}
-              margin={{ left: 12, right: 12, top: 8 }}
-            >
-              <CartesianGrid className="stroke-border" vertical={false} />
-              <XAxis
-                axisLine={false}
-                dataKey="day"
-                interval={0}
-                tickFormatter={(value) => String(value)}
-                tickLine={false}
-                tickMargin={8}
-              />
-              <ChartTooltip
-                content={<ChartTooltipContent hideLabel />}
-                cursor={false}
-              />
-              <Line dataKey="booked" dot={false} stroke="var(--color-booked)" strokeWidth={2} type="step" />
-              <Line dataKey="completed" dot={false} stroke="var(--color-completed)" strokeWidth={2} type="step" />
-            </LineChart>
-          </ChartContainer>
+          {isEmpty ? (
+            <ChartEmpty
+              action={{ label: 'Check your availability', href: '/schedules' }}
+              description="Once students start booking you, this compares what is on your calendar against what you have taught."
+              icon={Calendar}
+              shape="line"
+              title="No sessions in the last 7 days"
+            />
+          ) : (
+            <ChartContainer config={CHANNEL_CHART_CONFIG} className="aspect-auto h-60 w-full p-0">
+              <LineChart
+                accessibilityLayer
+                data={rows}
+                margin={{ left: 12, right: 12, top: 8 }}
+              >
+                <CartesianGrid className="stroke-border" vertical={false} />
+                <XAxis
+                  axisLine={false}
+                  dataKey="day"
+                  interval={0}
+                  tickFormatter={(value) => String(value)}
+                  tickLine={false}
+                  tickMargin={8}
+                />
+                <ChartTooltip
+                  content={<ChartTooltipContent hideLabel />}
+                  cursor={false}
+                />
+                <Line dataKey="booked" dot={false} stroke="var(--color-booked)" strokeWidth={2} type="step" />
+                <Line dataKey="completed" dot={false} stroke="var(--color-completed)" strokeWidth={2} type="step" />
+              </LineChart>
+            </ChartContainer>
+          )}
         </CardContent>
       </DashboardCard>
     </motion.div>
@@ -674,15 +690,21 @@ export function TutorDashboard() {
                     <BarChart3 className="size-4 text-muted-foreground" aria-hidden="true" />
                     Teaching hours
                   </CardTitle>
-                  <Badge variant="secondary">{totalHours.toFixed(1)}h this week</Badge>
+                  {totalHours === 0 ? null : (
+                    <Badge variant="secondary">{totalHours.toFixed(1)}h this week</Badge>
+                  )}
                 </div>
                 <CardDescription>Completed sessions, last 7 days.</CardDescription>
               </CardHeader>
               <CardContent>
-                {weeklyBars.length === 0 ? (
-                  <div className="flex h-60 items-center justify-center text-sm text-muted-foreground">
-                    No completed sessions in the last seven days.
-                  </div>
+                {totalHours === 0 ? (
+                  <ChartEmpty
+                    action={{ label: 'Set your availability', href: '/schedules' }}
+                    description="Teaching time shows up here after a session you ran is marked complete."
+                    icon={BarChart3}
+                    shape="bars"
+                    title="No teaching hours yet"
+                  />
                 ) : (
                   <ChartContainer config={HOURS_CHART_CONFIG} className="aspect-auto h-60 w-full">
                     <BarChart accessibilityLayer data={weeklyBars.map(b => ({ ...b }))}>

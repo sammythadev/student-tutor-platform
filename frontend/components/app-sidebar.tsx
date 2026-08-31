@@ -31,7 +31,7 @@ export function AppSidebar() {
 		>
 			<SidebarHeader className="h-14 justify-center border-b px-2">
 				<SidebarMenuButton asChild>
-					<Link href="/dashboard">
+					<Link href="/">
 						<LogoIcon className="text-foreground" />
 						<span className="font-medium text-foreground!">Tutorly</span>
 					</Link>

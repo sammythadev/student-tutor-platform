@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
@@ -56,38 +57,49 @@ export default function SignupPage() {
     <div className="relative min-h-screen overflow-hidden bg-canvas">
 
       {/* ── Hero band — pushes the form down ── */}
-      <div
-        className="relative overflow-hidden"
-        style={{ background: 'linear-gradient(165deg, #10201A 0%, #0B1712 60%, #091310 100%)' }}
-      >
+      <div className="relative overflow-hidden" style={{ background: '#05060A' }}>
+        {/* Photographic base — a lone figure on the ridge: the climb, not the summit. */}
+        <Image
+          src="/hero-desert-peak.jpg"
+          alt=""
+          aria-hidden
+          fill
+          priority
+          sizes="100vw"
+          className="pointer-events-none select-none object-cover"
+          style={{ objectPosition: '50% 46%' }}
+        />
+        {/* Scrim — keeps the copy legible over the ridge line. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0"
+          style={{ background: 'linear-gradient(180deg, rgba(5,6,10,0.86) 0%, rgba(5,6,10,0.70) 45%, rgba(5,6,10,0.93) 100%)' }} />
         {/* Atmospheric glows */}
         <div aria-hidden className="pointer-events-none absolute -top-24 right-[10%] h-[24rem] w-[24rem] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(201,162,75,0.20), transparent 65%)', filter: 'blur(20px)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(106,166,255,0.22), transparent 65%)', filter: 'blur(20px)' }} />
         <div aria-hidden className="pointer-events-none absolute -bottom-32 -left-20 h-[28rem] w-[28rem] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(47,122,99,0.28), transparent 65%)', filter: 'blur(20px)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.20), transparent 65%)', filter: 'blur(20px)' }} />
         <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.4]"
-          style={{ backgroundImage: 'radial-gradient(rgba(242,237,227,0.06) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
+          style={{ backgroundImage: 'radial-gradient(rgba(246,247,250,0.06) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
 
         {/* Top nav */}
         <div className="relative mx-auto flex max-w-5xl items-center justify-between px-5 pt-6 sm:px-8">
           <Link href="/" className="flex items-center gap-2.5 cursor-pointer w-fit">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(201,162,75,0.16)', border: '1px solid rgba(201,162,75,0.3)' }}>
-              <BookOpen className="w-5 h-5" strokeWidth={2.25} style={{ color: '#E6C87E' }} />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(106,166,255,0.16)', border: '1px solid rgba(106,166,255,0.3)' }}>
+              <BookOpen className="w-5 h-5" strokeWidth={2.25} style={{ color: '#8AB4FF' }} />
             </div>
-            <span className="font-heading text-xl font-bold" style={{ color: '#F4F0E8' }}>Tutorly</span>
+            <span className="font-heading text-xl font-bold" style={{ color: '#F6F7FA' }}>Tutorly</span>
           </Link>
-          <Link href="/signin" className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: '#AEB6AA' }}>
+          <Link href="/signin" className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: '#AAB1C2' }}>
             Sign in
           </Link>
         </div>
 
         {/* Hero copy */}
         <div className="relative mx-auto max-w-5xl px-5 pt-14 pb-28 text-center sm:px-8 sm:pt-20 sm:pb-32">
-          <p className="label-caps" style={{ color: '#D9B868' }}>Create your account</p>
-          <h1 className="text-display mx-auto mt-3 max-w-2xl text-4xl sm:text-5xl" style={{ color: '#F4F0E8' }}>
+          <p className="label-caps" style={{ color: '#8AB4FF' }}>Create your account</p>
+          <h1 className="text-display mx-auto mt-3 max-w-2xl text-4xl sm:text-5xl" style={{ color: '#F6F7FA' }}>
             Learn with a tutor who actually fits how you study
           </h1>
-          <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed sm:text-base" style={{ color: '#AEB6AA' }}>
+          <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed sm:text-base" style={{ color: '#C3C9D6' }}>
             Tell us your subject, availability and budget. A scored matching engine
             does the rest — no endless scrolling through profiles.
           </p>
@@ -104,17 +116,40 @@ export default function SignupPage() {
                 <span
                   key={a.i}
                   className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-bold ring-2"
-                  style={{ background: `var(--accent-${a.c}-bg)`, color: `var(--accent-${a.c}-fg)`, boxShadow: '0 0 0 2px #0B1712' }}
+                  style={{ background: `var(--accent-${a.c}-bg)`, color: `var(--accent-${a.c}-fg)`, boxShadow: '0 0 0 2px #05060A' }}
                 >
                   {a.i}
                 </span>
               ))}
             </div>
-            <p className="text-xs sm:text-sm" style={{ color: '#9AA398' }}>
-              <span className="font-semibold" style={{ color: '#F4F0E8' }}>2,400+ students</span> matched this term
+            <p className="text-xs sm:text-sm" style={{ color: '#AAB1C2' }}>
+              <span className="font-semibold" style={{ color: '#F6F7FA' }}>2,400+ students</span> matched this term
             </p>
           </div>
         </div>
+
+        {/* CC BY-SA 4.0 attribution for the hero photograph. */}
+        <p className="absolute bottom-2 right-3 z-10 text-[10px]" style={{ color: 'rgba(246,247,250,0.35)' }}>
+          Photo:{' '}
+          <a
+            href="https://commons.wikimedia.org/wiki/File:DESERT_MINIMALISM.jpg"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="underline decoration-dotted"
+          >
+            Tanjeel Ahmed
+          </a>
+          {' · '}
+          <a
+            href="https://creativecommons.org/licenses/by-sa/4.0/"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="underline decoration-dotted"
+          >
+            CC BY-SA 4.0
+          </a>
+          , cropped
+        </p>
       </div>
 
       {/* ── Form — pulled up to overlap the hero for depth ── */}

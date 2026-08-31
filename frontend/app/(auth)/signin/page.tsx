@@ -272,44 +272,44 @@ export default function SigninPage() {
       {/* ─── Brand hero — desktop only ─── */}
       <aside
         className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-center lg:px-14 lg:py-14"
-        style={{ background: '#0B1712' }}
+        style={{ background: '#05060A' }}
       >
-        {/* Photographic base — warm, scholarly, expensive */}
+        {/* Photographic base — a fjord at night: one light source in the dark. */}
         <Image
-          src="/signin-hero.jpg"
+          src="/hero-night-water.jpg"
           alt=""
           aria-hidden
           fill
           priority
           sizes="(min-width: 1024px) 45vw, 0px"
           className="pointer-events-none select-none object-cover"
-          style={{ objectPosition: '50% 42%' }}
+          style={{ objectPosition: '50% 38%' }}
         />
-        {/* Pine scrim — brand tint + legibility. Darkest at the copy edge. */}
+        {/* Scrim — canvas tint + legibility. Darkest at the copy edge. */}
         <div aria-hidden className="pointer-events-none absolute inset-0"
-          style={{ background: 'linear-gradient(160deg, rgba(11,23,18,0.94) 0%, rgba(11,23,18,0.86) 42%, rgba(9,19,16,0.66) 100%)' }} />
+          style={{ background: 'linear-gradient(160deg, rgba(5,6,10,0.92) 0%, rgba(5,6,10,0.82) 42%, rgba(5,6,10,0.58) 100%)' }} />
         <div aria-hidden className="pointer-events-none absolute inset-0"
-          style={{ background: 'linear-gradient(90deg, rgba(9,19,16,0.72) 0%, transparent 62%)' }} />
+          style={{ background: 'linear-gradient(90deg, rgba(5,6,10,0.74) 0%, transparent 62%)' }} />
         {/* Atmospheric glows layered over the photo */}
         <div aria-hidden className="pointer-events-none absolute -top-24 -right-16 h-[26rem] w-[26rem] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(201,162,75,0.22), transparent 65%)', filter: 'blur(20px)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(106,166,255,0.24), transparent 65%)', filter: 'blur(20px)' }} />
         <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-24 h-[30rem] w-[30rem] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(47,122,99,0.30), transparent 65%)', filter: 'blur(20px)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.20), transparent 65%)', filter: 'blur(20px)' }} />
         {/* Grain */}
         <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.05]"
           style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
-        {/* Brass hairline down the seam between the two columns */}
+        {/* Beam hairline down the seam between the two columns */}
         <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-px"
-          style={{ background: 'linear-gradient(180deg, transparent, rgba(230,200,126,0.4), transparent)' }} />
+          style={{ background: 'linear-gradient(180deg, transparent, rgba(106,166,255,0.5), transparent)' }} />
 
         <div className="relative max-w-[27rem]">
-          <p className="label-caps" style={{ color: '#D9B868' }}>
+          <p className="label-caps" style={{ color: '#8AB4FF' }}>
             Student–tutor matching
           </p>
-          <h2 className="text-display mt-3 text-[2.4rem]" style={{ color: '#F4F0E8' }}>
+          <h2 className="text-display mt-3 text-[2.4rem]" style={{ color: '#F6F7FA' }}>
             Matched by an algorithm, not a waiting list
           </h2>
-          <p className="mt-4 text-sm leading-relaxed" style={{ color: '#C6CCC2' }}>
+          <p className="mt-4 text-sm leading-relaxed" style={{ color: '#C3C9D6' }}>
             Every recommendation is produced by a scored assignment engine and can
             be traced back to the four criteria below — built for Nigerian
             secondary schools.
@@ -319,26 +319,26 @@ export default function SigninPage() {
             <span
               aria-hidden
               className="absolute left-[19px] top-5 bottom-5 w-px"
-              style={{ background: 'rgba(242,237,227,0.14)' }}
+              style={{ background: 'rgba(246,247,250,0.14)' }}
             />
             {MATCH_CRITERIA.map(({ id, icon: Icon, label, detail }) => (
               <li key={id} className="relative flex gap-4">
                 <span
                   className="flex h-[39px] w-[39px] shrink-0 items-center justify-center rounded-xl"
                   style={{
-                    background: 'rgba(15,28,23,0.55)',
-                    border: '1px solid rgba(242,237,227,0.14)',
-                    color: '#D9B868',
+                    background: 'rgba(12,16,26,0.55)',
+                    border: '1px solid rgba(246,247,250,0.14)',
+                    color: '#8AB4FF',
                     backdropFilter: 'blur(6px)',
                   }}
                 >
                   <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
                 </span>
                 <div className="pt-1">
-                  <p className="text-sm font-semibold" style={{ color: '#F4F0E8' }}>
+                  <p className="text-sm font-semibold" style={{ color: '#F6F7FA' }}>
                     {label}
                   </p>
-                  <p className="mt-1 text-xs leading-relaxed" style={{ color: '#AEB4AA' }}>
+                  <p className="mt-1 text-xs leading-relaxed" style={{ color: '#AAB1C2' }}>
                     {detail}
                   </p>
                 </div>
