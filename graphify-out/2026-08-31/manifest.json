@@ -1020,13 +1020,13 @@
     "semantic_hash": ""
   },
   "frontend/app/(app)/dashboard/StudentDashboard.tsx": {
-    "mtime": 1788197939.4667168,
-    "ast_hash": "28afd52d19cd58c1274214c4c585592b",
+    "mtime": 1788032348.9458046,
+    "ast_hash": "b21d86ad7770722bd430ca512e79095a",
     "semantic_hash": ""
   },
   "frontend/app/(app)/dashboard/TutorDashboard.tsx": {
-    "mtime": 1788198026.6385043,
-    "ast_hash": "4af6d712ee63c660124428bc419806cf",
+    "mtime": 1788032449.2975347,
+    "ast_hash": "1f834d9ef2ab65f9eaf8183d6c46d00d",
     "semantic_hash": ""
   },
   "frontend/app/(app)/dashboard/page.tsx": {
@@ -1035,8 +1035,8 @@
     "semantic_hash": ""
   },
   "frontend/app/(app)/feed/page.tsx": {
-    "mtime": 1788197329.2359045,
-    "ast_hash": "cf247e4dfb1ee3bbe79956c150427e72",
+    "mtime": 1788031765.6308625,
+    "ast_hash": "1fb11da695c9cf1de5cae3f248b292ad",
     "semantic_hash": ""
   },
   "frontend/app/(app)/layout.tsx": {
@@ -1045,8 +1045,8 @@
     "semantic_hash": ""
   },
   "frontend/app/(app)/messages/page.tsx": {
-    "mtime": 1788196219.6014593,
-    "ast_hash": "cf6ec5ef9a2ca59301b7bbddcf203b59",
+    "mtime": 1788031539.1327212,
+    "ast_hash": "8399c388ea78661ee923f4f02182b46c",
     "semantic_hash": ""
   },
   "frontend/app/(app)/notifications/page.tsx": {
@@ -1105,23 +1105,23 @@
     "semantic_hash": ""
   },
   "frontend/app/(auth)/signin/page.tsx": {
-    "mtime": 1788079965.67158,
-    "ast_hash": "dc8a97f1bf42891995b9608555d68b4a",
+    "mtime": 1786034508.472304,
+    "ast_hash": "0fe5f1ae9dda01ceefd9dbceae489a4a",
     "semantic_hash": ""
   },
   "frontend/app/(auth)/signup/page.tsx": {
-    "mtime": 1788080102.2615242,
-    "ast_hash": "545c99e88396b5c3efbc24d1222f8086",
+    "mtime": 1786029072.414369,
+    "ast_hash": "3c7b02f07bd771d69de96aad2507233a",
     "semantic_hash": ""
   },
   "frontend/app/layout.tsx": {
-    "mtime": 1788177340.0316796,
-    "ast_hash": "0a1d8817e67336968f56f35876ba508a",
+    "mtime": 1787629603.5636678,
+    "ast_hash": "2cecf4220b0eab4b1a0e696cde083479",
     "semantic_hash": ""
   },
   "frontend/app/page.tsx": {
-    "mtime": 1788207366.078442,
-    "ast_hash": "1ff0caff79b4097f4ebb0c17ceaa1f93",
+    "mtime": 1788034847.5660863,
+    "ast_hash": "3e4dc62aaa0edf21d239fd720944389b",
     "semantic_hash": ""
   },
   "frontend/components.json": {
@@ -1830,23 +1830,23 @@
     "semantic_hash": ""
   },
   "frontend/public/apple-icon.png": {
-    "mtime": 1788177268.9536688,
-    "ast_hash": "e3a68524e383db81ead829a8c2a38fe8",
+    "mtime": 1782233934.6803026,
+    "ast_hash": "734ce6c878789fcd5843e8a7963e0756",
     "semantic_hash": ""
   },
   "frontend/public/icon-dark-32x32.png": {
-    "mtime": 1788177268.8181493,
-    "ast_hash": "d68f62e61418bb611c093cc18b0b2854",
+    "mtime": 1782233934.6813016,
+    "ast_hash": "abd5ebe9e287ca0a89f4fd3da2b5cf9c",
     "semantic_hash": ""
   },
   "frontend/public/icon-light-32x32.png": {
-    "mtime": 1788177268.58522,
-    "ast_hash": "d68f62e61418bb611c093cc18b0b2854",
+    "mtime": 1782233934.682305,
+    "ast_hash": "53426c910bcab7d3e5213cc64aa1b2c5",
     "semantic_hash": ""
   },
   "frontend/public/icon.svg": {
-    "mtime": 1788177269.4069705,
-    "ast_hash": "7b35506826ebd8ddd1de1f789af126de",
+    "mtime": 1782233934.6833024,
+    "ast_hash": "0285a820d3fb2d06a9fb098ef84c1174",
     "semantic_hash": ""
   },
   "frontend/public/placeholder-logo.png": {
@@ -2245,8 +2245,8 @@
     "semantic_hash": ""
   },
   "frontend/components/app-sidebar.tsx": {
-    "mtime": 1788184773.338468,
-    "ast_hash": "c21c96c5d4232e818633bea61362a3d3",
+    "mtime": 1787740472.4899516,
+    "ast_hash": "f9cd852f716bc467b75b5c8b4de06593",
     "semantic_hash": ""
   },
   "frontend/components/catalog/catalog-card.tsx": {
@@ -2310,8 +2310,8 @@
     "semantic_hash": ""
   },
   "frontend/components/dashboard-hero.tsx": {
-    "mtime": 1788179470.4387937,
-    "ast_hash": "38ec509e35feb38123d38ae7cd43e18f",
+    "mtime": 1788032124.3972454,
+    "ast_hash": "7fcb7963f797d1322e0a17618cf82fed",
     "semantic_hash": ""
   },
   "frontend/components/dashboard-skeleton.tsx": {
@@ -2585,8 +2585,8 @@
     "semantic_hash": ""
   },
   "frontend/components/widgets/subject-mix-chart.tsx": {
-    "mtime": 1788198077.5584414,
-    "ast_hash": "ef8d3fef80bac4f7046378f11af84016",
+    "mtime": 1787945580.4940639,
+    "ast_hash": "9eb0a2753327970299672252253c79fa",
     "semantic_hash": ""
   },
   "frontend/hooks/use-mobile.ts": {
@@ -2617,76 +2617,6 @@
   "frontend/EFFERD_MIGRATION_SPEC.md": {
     "mtime": 1787946207.2170436,
     "ast_hash": "f37b95f6d26990e69ecbf01764b18244",
-    "semantic_hash": ""
-  },
-  "frontend/components/dev-preview-auth.tsx": {
-    "mtime": 1788203195.5434947,
-    "ast_hash": "6020c8f753dab27988d0885423a596c6",
-    "semantic_hash": ""
-  },
-  "frontend/components/landing/DashboardPreview.tsx": {
-    "mtime": 1788207150.1101477,
-    "ast_hash": "7ef79cdc87b1ff33890ec44f539f11ca",
-    "semantic_hash": ""
-  },
-  "frontend/components/reactbits/LogoLoop.tsx": {
-    "mtime": 1788195372.1567516,
-    "ast_hash": "a0d231835150a2028a868260263da30b",
-    "semantic_hash": ""
-  },
-  "frontend/components/widgets/chart-empty.tsx": {
-    "mtime": 1788197742.826233,
-    "ast_hash": "2046c74ed80d89903a7540e361e33f43",
-    "semantic_hash": ""
-  },
-  "frontend/public/CREDITS.md": {
-    "mtime": 1788035937.121463,
-    "ast_hash": "d83561b32447d982c88c48c2f35902a5",
-    "semantic_hash": ""
-  },
-  "frontend/public/dashboard-shot.png": {
-    "mtime": 1788199427.767455,
-    "ast_hash": "325ec0b25750665299ebc8da582f3b94",
-    "semantic_hash": ""
-  },
-  "frontend/public/favicon.svg": {
-    "mtime": 1788176922.7414947,
-    "ast_hash": "7b35506826ebd8ddd1de1f789af126de",
-    "semantic_hash": ""
-  },
-  "frontend/public/hero-desert-peak.jpg": {
-    "mtime": 1788035919.5274177,
-    "ast_hash": "fa7bd6a564361713fffa59d07e50a4ef",
-    "semantic_hash": ""
-  },
-  "frontend/public/hero-night-rock.jpg": {
-    "mtime": 1788035919.3849075,
-    "ast_hash": "f86639b25641fd0d0d8a13ca328ab4d7",
-    "semantic_hash": ""
-  },
-  "frontend/public/hero-night-water.jpg": {
-    "mtime": 1788035919.4430888,
-    "ast_hash": "c40a192864a34d773be044a091c97d74",
-    "semantic_hash": ""
-  },
-  "frontend/public/icon-512.png": {
-    "mtime": 1788177269.1241999,
-    "ast_hash": "71e5ab2209d8e2afad58a521ebdf3d9e",
-    "semantic_hash": ""
-  },
-  "frontend/public/shot-feed.png": {
-    "mtime": 1788203669.6313884,
-    "ast_hash": "f84422247276fcdccff9014155560e27",
-    "semantic_hash": ""
-  },
-  "frontend/public/shot-schedules.png": {
-    "mtime": 1788203668.2504463,
-    "ast_hash": "4e49bc852c75f40db05d764e30551605",
-    "semantic_hash": ""
-  },
-  "frontend/public/shot-tutors.png": {
-    "mtime": 1788203670.8407168,
-    "ast_hash": "c2cf502f0d8e7c2b41a9833750dbee6d",
     "semantic_hash": ""
   }
 }

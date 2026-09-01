@@ -511,7 +511,7 @@ const STATS = [
 const HOW_STEPS = [
   {
     title: 'Tell us what you need',
-    desc: 'Subject, level, the hours you are free and what you can spend. Subject is a hard filter — tutors who do not teach it never reach your list.',
+    desc: 'Subject, level, the hours you are free and what you can spend. Subject is a hard filter: tutors who do not teach it never reach your list.',
   },
   {
     title: 'Pick from a ranked list',
@@ -708,13 +708,13 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/signup"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-white/90 active:scale-[0.97]"
+              className="inline-flex h-11 items-center gap-1.5 rounded-md bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-white/90 active:scale-[0.97] md:h-9 md:px-4"
             >
               Get started <ChevronRight className="size-3.5" />
             </Link>
             <button
               type="button"
-              className="relative inline-flex size-9 items-center justify-center rounded-md border border-white/20 md:hidden"
+              className="relative inline-flex size-11 items-center justify-center rounded-md border border-white/20 md:hidden"
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen(v => !v)}
@@ -724,13 +724,13 @@ export default function LandingPage() {
               <span
                 className={cn(
                   'absolute h-px w-4 bg-white transition-transform duration-200',
-                  menuOpen ? 'rotate-45' : '-translate-y-[3px]',
+                  menuOpen ? 'rotate-45' : '-translate-y-[5px]',
                 )}
               />
               <span
                 className={cn(
                   'absolute h-px w-4 bg-white transition-transform duration-200',
-                  menuOpen ? '-rotate-45' : 'translate-y-[3px]',
+                  menuOpen ? '-rotate-45' : 'translate-y-[5px]',
                 )}
               />
             </button>
@@ -762,7 +762,7 @@ export default function LandingPage() {
                     key={label}
                     href={href}
                     onClick={() => setMenuOpen(false)}
-                    className="rounded-md px-3 py-3 text-sm font-medium text-white/65 hover:bg-white/10 hover:text-white"
+                    className="rounded-md px-3 py-3 text-sm font-medium text-white/65 transition-[background-color,transform] duration-150 hover:bg-white/10 hover:text-white active:scale-[0.98] active:bg-white/10"
                   >
                     {label}
                   </Link>
@@ -910,11 +910,11 @@ export default function LandingPage() {
                   transition={{ ...SPRING, delay: CASCADE[2] }}
                 >
                   <p className="text-[15px] font-medium text-white sm:text-lg">
-                    For WAEC &amp; JAMB prep, A-levels, university entrance — any subject, any level.
+                    For WAEC &amp; JAMB prep, A-levels, university entrance, any subject, any level.
                   </p>
                   <p className="text-sm leading-relaxed text-white/55 sm:text-base sm:text-white/60">
                     Every tutor you see is ranked on schedule overlap, learning style, budget and
-                    experience — and the score is shown.
+                    experience, and the score is shown.
                   </p>
                 </motion.div>
 
@@ -998,7 +998,7 @@ export default function LandingPage() {
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-white/60 sm:text-base">
               Built for students and tutors in Nigeria, from WAEC prep to university coursework. The
-              same four criteria decide every pairing — no hidden boost, no pay-to-rank.
+              same four criteria decide every pairing: no hidden boost, no pay-to-rank.
             </p>
           </Reveal>
 
@@ -1018,7 +1018,7 @@ export default function LandingPage() {
                     <p className="mt-3 max-w-[52ch] text-sm leading-relaxed text-white/65">
                       You set how much each criterion counts; the engine scores every eligible tutor
                       against it and ranks them. Nothing in the list is there because it was
-                      promoted — each position comes out of the four criteria below.
+                      promoted: each position comes out of the four criteria below.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">

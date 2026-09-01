@@ -172,23 +172,25 @@ function KpiCard({ kpi, index, Icon }: {
       transition={{ duration: DURATION, delay: stagger(index), ease: EASE }}
     >
       <DashboardCard className="h-full">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2 font-normal text-xs tracking-wide">
-            <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
-            {kpi.label}
+        <CardHeader className="flex flex-row items-center justify-between gap-2 px-4 sm:px-6">
+          <CardTitle className="flex min-w-0 items-center gap-2 font-normal text-xs tracking-wide">
+            <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="truncate">{kpi.label}</span>
           </CardTitle>
           {kpi.deltaPct !== null && (
-            <Delta value={kpi.deltaPct} variant="badge">
+            /* Deltas earn a full-width card; at half width (mobile 2-up) they crowd
+               the label, and the trend line in the footer carries the same signal. */
+            <Delta value={kpi.deltaPct} variant="badge" className="hidden sm:inline-flex">
               <DeltaIcon variant="trend" />
               <DeltaValue />
             </Delta>
           )}
         </CardHeader>
-        <CardContent className="flex flex-row items-center gap-2">
+        <CardContent className="flex flex-row items-center gap-2 px-4 sm:px-6">
           <p className="font-semibold text-2xl tabular-nums">{kpi.value}</p>
         </CardContent>
-        <CardFooter className="gap-1 rounded-none bg-background text-xs">
-          <span className="text-muted-foreground">{kpi.trend}</span>
+        <CardFooter className="gap-1 rounded-none bg-background px-4 text-xs sm:px-6">
+          <span className="truncate text-muted-foreground">{kpi.trend}</span>
         </CardFooter>
       </DashboardCard>
     </motion.div>
@@ -903,8 +905,11 @@ export function StudentDashboard() {
         </div>
       )}
 
-      {/* KPI grid (Efferd gap-px grammar) */}
-      <div className="grid grid-cols-1 gap-px bg-border p-px sm:grid-cols-2 lg:grid-cols-4">
+      {/* KPI grid (Efferd gap-px grammar).
+          Two-up from the smallest screen: four tall single-column cards stacked
+          meant four scroll-screens of the same shape on a phone. At 2×2 the hero
+          + the four numbers fit above the fold together. */}
+      <div className="grid grid-cols-2 gap-px bg-border p-px lg:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
             <div key={`kpi-skeleton-${i}`} className="min-h-36 animate-pulse bg-background/90" />
