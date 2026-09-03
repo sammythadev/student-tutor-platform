@@ -2,6 +2,7 @@ import { GreedyAssignmentEngine } from '@core/algorithms';
 import type { AssignmentStats } from '@core/algorithms';
 import { emitResults, runCli } from './cli-output';
 import { type CapacityStrategy, generateStudents, generateTutors } from './fixtures';
+import { index } from 'drizzle-orm/sqlite-core/indexes';
 
 export interface EvaluationConfig {
   scenario: string;
@@ -10,6 +11,7 @@ export interface EvaluationConfig {
   loadFactorWeight: number;
   capacityStrategy: CapacityStrategy;
   topK?: number;
+  truncation: number;
 }
 
 export interface EvaluationRow {

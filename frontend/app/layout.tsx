@@ -5,9 +5,10 @@ import { Providers } from '@/components/Providers'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Tutorly: Premium Student & Tutor Platform',
-  description: 'Connect with world-class educators through our premium learning infrastructure. Personalized sessions, expert tutors, measurable results.',
-  keywords: ['tutoring', 'education', 'online learning', 'tutors', 'students'],
+  title: 'Tutorly: ranked tutor matching, with the reasons shown',
+  description:
+    'Every eligible tutor is scored on academic fit, learning preferences, schedule overlap and an even spread across tutors, and the score is shown. Built for WAEC and JAMB preparation in Nigerian secondary schools.',
+  keywords: ['tutoring', 'WAEC', 'JAMB', 'Nigeria', 'tutor matching', 'secondary school'],
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -20,12 +21,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#FAFAFA' },
+    { media: '(prefers-color-scheme: light)', color: '#F4F4F5' },
     { media: '(prefers-color-scheme: dark)',  color: '#000000' },
   ],
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  /* No maximumScale. Capping it blocks pinch zoom, which fails WCAG 1.4.4 and
+     is the single most common accessibility mistake in a Next.js viewport. */
 }
 
 export default function RootLayout({

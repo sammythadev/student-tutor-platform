@@ -20,6 +20,8 @@
   },
   "registries": {
     "@react-bits": "https://reactbits.dev/r/{name}.json",
-    "@efferd": "https://efferd.com/r/{style}/{name}.json"
+    "@efferd": "https://efferd.com/r/{style}/{name}.json",
+    "@aceternity": "https://ui.aceternity.com/registry/{name}.json",
+    "@21st": "https://21st.dev/r/{name}.json"
   }
 }
