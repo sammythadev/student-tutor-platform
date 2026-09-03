@@ -2,7 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import figlet from 'figlet';
 import { readFileSync } from 'fs';
-import { DEFAULT_RUNS, type CountOverride } from '@core/evaluation/evaluation-harness';
+import {
+  DEFAULT_RUNS,
+  MAX_SAVED_RUNS,
+  type CountOverride,
+} from '@core/evaluation/evaluation-harness';
 import {
   columnWidths,
   parseCsv,
@@ -150,7 +154,7 @@ function DataTable({
       {truncated > 0 && (
         <Box>
           <Text color="gray" dimColor>
-            … {truncated} more row(s) — full table saved to the CSV
+            … {truncated} more row(s) — see the saved CSV for the full table
           </Text>
         </Box>
       )}
@@ -584,7 +588,6 @@ export function RunScreen({
           </Text>
         </Box>
       )}
-
       {results.length === 1 ? (
         <>
           <Box marginTop={1} flexDirection="column">
@@ -612,7 +615,6 @@ export function RunScreen({
           ))}
         </Box>
       )}
-
       {saveAs && results.length === 1 && (
         <Box marginTop={1} flexDirection="column">
           <Text color="yellow">Save results as (docs/benchmarks/)</Text>
@@ -651,13 +653,11 @@ export function RunScreen({
           )}
         </Box>
       )}
-
       {extraSaved !== null && !saveAs && (
         <Box marginTop={1}>
           <Text color="green">✓ Also saved to: {extraSaved}</Text>
         </Box>
       )}
-
       {optionPrompt !== null && (
         <Box marginTop={1} flexDirection="column">
           <Text color="yellow">
@@ -685,17 +685,15 @@ export function RunScreen({
             </Box>
           )}
         </Box>
-      )}
-
+      )}{' '}
       {results.some((result) => (result.dropped ?? 0) > 0) && (
         <Box marginTop={1}>
           <Text color="yellow">
-            ⚠ Per-run CSV capped at 1000 rows — some runs were skipped. Lower the run count (R) or
-            the test sizes (C).
+            ⚠ Per-run CSV capped at {MAX_SAVED_RUNS} rows — some runs were skipped. Lower the run
+            count (R) or the test sizes (C).
           </Text>
         </Box>
       )}
-
       <Box marginTop={1}>
         <Text color="gray" dimColor>
           r rerun · s save as · t timing {noTiming ? 'off' : 'on'} · ? help · m menu · q quit

@@ -126,21 +126,22 @@ function harnessRunner(spec: HarnessSuiteSpec): SuiteRunner {
     if (options?.perRun === true) {
       const rows: string[][] = [];
       let dropped = 0;
-      let done = 0;
       const total = configs.length * runs;
+      let done = 0;
       for (const config of configs) {
         for (let run = 1; run <= runs; run += 1) {
-          if (rows.length >= MAX_SAVED_RUNS) {
+          const overCap = rows.length >= MAX_SAVED_RUNS;
+          if (overCap) {
             dropped += 1;
-            continue;
+          } else {
+            rows.push(harnessToRow(evaluatePerRunRow(config, run, runs)));
           }
-          rows.push(harnessToRow(evaluatePerRunRow(config, run, runs)));
           done += 1;
           emit({
             done,
             total,
             header: HARNESS_HEADER,
-            current: `${harnessLabel(config)} · run ${run}/${runs}`,
+            current: `${harnessLabel(config)} · run ${run}/${runs}${overCap ? ' (capped)' : ''}`,
             rows: [...rows],
           });
           await yieldToInk();
