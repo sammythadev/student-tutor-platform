@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import figlet from 'figlet';
 import { readFileSync } from 'fs';
+import { DEFAULT_RUNS, type CountOverride } from '@core/evaluation/evaluation-harness';
 import {
   columnWidths,
   parseCsv,
@@ -56,6 +57,13 @@ interface DataTableProps {
 
 const NO_HIGHLIGHTS: NonNullable<DataTableProps['highlights']> = [];
 
+/**
+ * Cap on rendered rows. The TUI has no internal scrollback (ink renders one
+ * frame), so a 1000-row per-run result must not flood the terminal — the full
+ * table always lives in the saved CSV.
+ */
+const MAX_TABLE_ROWS = 40;
+
 /** Column-aligned table that fits the terminal width and tints best-in-class cells. */
 function DataTable({
   header,
@@ -65,9 +73,11 @@ function DataTable({
   const { stdout } = useStdout();
   const availableWidth = Math.max(24, (stdout.columns ?? 80) - 4);
   const columnGap = 2;
+  const truncated = rows.length - MAX_TABLE_ROWS;
+  const visibleRows = truncated > 0 ? rows.slice(0, MAX_TABLE_ROWS) : rows;
 
   const { widths, bestCells } = useMemo(() => {
-    const base = columnWidths(header, rows);
+    const base = columnWidths(header, visibleRows);
     const natural = base.reduce((sum, width) => sum + width, 0) + columnGap * (base.length - 1);
     const scaled = base.map((width) =>
       natural > availableWidth
@@ -83,7 +93,7 @@ function DataTable({
       }
       let bestIndex = -1;
       let bestValue = mode === 'max' ? -Infinity : Infinity;
-      rows.forEach((row, rowIndex) => {
+      visibleRows.forEach((row, rowIndex) => {
         const value = Number.parseFloat(row[columnIndex] ?? '');
         if (Number.isNaN(value)) {
           return;
@@ -99,7 +109,7 @@ function DataTable({
     }
 
     return { widths: scaled, bestCells };
-  }, [header, rows, highlights, availableWidth]);
+  }, [header, visibleRows, highlights, availableWidth]);
 
   const fit = (value: string, width: number): string =>
     value.length <= width ? value : `${value.slice(0, Math.max(width - 1, 1))}…`;
@@ -123,7 +133,7 @@ function DataTable({
           </Box>
         ))}
       </Box>
-      {rows.map((row, rowIndex) => (
+      {visibleRows.map((row, rowIndex) => (
         <Box key={`row-${rowIndex}`}>
           {row.map((value, columnIndex) => (
             <Box key={`${rowIndex}-${columnIndex}`} flexDirection="row">
@@ -137,6 +147,13 @@ function DataTable({
           ))}
         </Box>
       ))}
+      {truncated > 0 && (
+        <Box>
+          <Text color="gray" dimColor>
+            … {truncated} more row(s) — full table saved to the CSV
+          </Text>
+        </Box>
+      )}
     </Box>
   );
 }
@@ -348,6 +365,14 @@ export function RunScreen({
   const [saveAsError, setSaveAsError] = useState<string | null>(null);
   const [extraSaved, setExtraSaved] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  // Run options mirroring the CLI flags: --runs, --students/--tutors, --per-run.
+  // Only suites with `supportsOptions` honor them (eval/topk/moderate/all).
+  const [runs, setRuns] = useState(DEFAULT_RUNS);
+  const [override, setOverride] = useState<CountOverride | undefined>(undefined);
+  const [perRun, setPerRun] = useState(false);
+  const [optionPrompt, setOptionPrompt] = useState<'runs' | 'counts' | null>(null);
+  const [optionValue, setOptionValue] = useState('');
+  const [optionError, setOptionError] = useState<string | null>(null);
   const startRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -362,11 +387,14 @@ export function RunScreen({
 
     const run = async (): Promise<void> => {
       try {
-        const suiteResults = await suite.run((progress) => {
-          if (!cancelled) {
-            setState({ ...progress });
-          }
-        });
+        const suiteResults = await suite.run(
+          (progress) => {
+            if (!cancelled) {
+              setState({ ...progress });
+            }
+          },
+          { runs, override, perRun },
+        );
         if (!cancelled) {
           setResults(suiteResults);
         }
@@ -381,7 +409,7 @@ export function RunScreen({
     return () => {
       cancelled = true;
     };
-  }, [suite, runId]);
+  }, [suite, runId, runs, override, perRun]);
 
   // Save whenever results or the timing toggle changes, so the CSV on disk
   // always matches what is displayed (timing columns zeroed when noTiming).
@@ -403,7 +431,7 @@ export function RunScreen({
   // While help is open it is modal: the panel owns all keys (`isHelpCloseChord`).
   useInput(
     (input, key) => {
-      if (saveAs) {
+      if (saveAs || optionPrompt !== null) {
         return; // TextInput handles the keys
       }
       if (input === 'q' || key.escape || input === 'm') {
@@ -416,6 +444,16 @@ export function RunScreen({
         setSaveAsError(null);
       } else if (input === 't') {
         onToggleNoTiming();
+      } else if (input === 'R' && results !== null && suite.supportsOptions) {
+        setOptionPrompt('runs');
+        setOptionValue(String(runs));
+        setOptionError(null);
+      } else if (input === 'C' && results !== null && suite.supportsOptions) {
+        setOptionPrompt('counts');
+        setOptionValue(override === undefined ? '' : `${override.students}, ${override.tutors}`);
+        setOptionError(null);
+      } else if (input === 'P' && results !== null && suite.supportsOptions) {
+        setPerRun((value) => !value);
       } else if (input === '?' && results !== null) {
         setShowHelp((value) => !value);
       }
@@ -425,6 +463,52 @@ export function RunScreen({
 
   const elapsed =
     startRef.current === null ? '' : `${((Date.now() - startRef.current) / 1000).toFixed(1)}s`;
+
+  /** Parses and applies the runs/counts prompt value, then re-runs the suite. */
+  const submitOption = (): void => {
+    if (optionPrompt === 'runs') {
+      const value = Number(optionValue.trim());
+      if (!Number.isInteger(value) || value <= 0) {
+        setOptionError('Runs per test must be a positive integer.');
+        return;
+      }
+      setRuns(value);
+      setOptionPrompt(null);
+      setOptionError(null);
+      return;
+    }
+    if (optionPrompt === 'counts') {
+      const trimmed = optionValue.trim();
+      if (trimmed === '') {
+        setOverride(undefined);
+        setOptionPrompt(null);
+        setOptionError(null);
+        return;
+      }
+      const parts = trimmed.split(/\s*,\s*|\s+/).filter((part) => part !== '');
+      if (parts.length !== 2) {
+        setOptionError('Enter two positive integers separated by a comma (e.g. 120, 30).');
+        return;
+      }
+      const students = Number(parts[0]);
+      const tutors = Number(parts[1]);
+      if (
+        !Number.isInteger(students) ||
+        !Number.isInteger(tutors) ||
+        students <= 0 ||
+        tutors <= 0
+      ) {
+        setOptionError('Enter two positive integers separated by a comma (e.g. 120, 30).');
+        return;
+      }
+      setOverride({ students, tutors });
+      setOptionPrompt(null);
+      setOptionError(null);
+      return;
+    }
+    setOptionPrompt(null);
+    setOptionError(null);
+  };
 
   const heading = (
     <Box>
@@ -490,6 +574,16 @@ export function RunScreen({
       <Box marginTop={1}>
         <Text color="green">✓ Completed in {elapsed}</Text>
       </Box>
+      {suite.supportsOptions && (
+        <Box>
+          <Text color="gray">
+            Each test ran {runs} time(s)
+            {runs === DEFAULT_RUNS ? ' (default)' : ''}
+            {perRun ? ' · per-run mode (one row per run, winner column)' : ''}
+            {override !== undefined ? ` · counts ${override.students}/${override.tutors}` : ''}
+          </Text>
+        </Box>
+      )}
 
       {results.length === 1 ? (
         <>
@@ -564,11 +658,59 @@ export function RunScreen({
         </Box>
       )}
 
+      {optionPrompt !== null && (
+        <Box marginTop={1} flexDirection="column">
+          <Text color="yellow">
+            {optionPrompt === 'runs'
+              ? `Runs per test (default ${DEFAULT_RUNS})`
+              : 'Counts override for every test — blank resets to auto'}
+          </Text>
+          <TextInput
+            label={optionPrompt === 'runs' ? 'Runs:' : 'Counts:'}
+            value={optionValue}
+            onChange={setOptionValue}
+            placeholder={optionPrompt === 'runs' ? String(DEFAULT_RUNS) : 'e.g. 120, 30'}
+            onSubmit={submitOption}
+            onCancel={() => {
+              setOptionPrompt(null);
+              setOptionError(null);
+            }}
+          />
+          <Text color="gray" dimColor>
+            Enter apply · Esc cancel
+          </Text>
+          {optionError !== null && (
+            <Box marginTop={1}>
+              <Text color="red">✗ {optionError}</Text>
+            </Box>
+          )}
+        </Box>
+      )}
+
+      {results.some((result) => (result.dropped ?? 0) > 0) && (
+        <Box marginTop={1}>
+          <Text color="yellow">
+            ⚠ Per-run CSV capped at 1000 rows — some runs were skipped. Lower the run count (R) or
+            the test sizes (C).
+          </Text>
+        </Box>
+      )}
+
       <Box marginTop={1}>
         <Text color="gray" dimColor>
           r rerun · s save as · t timing {noTiming ? 'off' : 'on'} · ? help · m menu · q quit
         </Text>
       </Box>
+      {suite.supportsOptions && (
+        <Box>
+          <Text color="cyan" dimColor>
+            R runs:{runs}
+            {runs === DEFAULT_RUNS ? ' (default)' : ''} · C counts:
+            {override === undefined ? 'auto' : `${override.students}×${override.tutors}`} · P
+            per-run:{perRun ? 'on' : 'off'}
+          </Text>
+        </Box>
+      )}
     </Box>
   );
 }
