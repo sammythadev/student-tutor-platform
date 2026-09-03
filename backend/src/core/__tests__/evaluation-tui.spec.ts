@@ -1,5 +1,11 @@
 import { existsSync, readFileSync, rmSync } from 'fs';
-import { columnWidths, parseCsv, stripTimingColumns, toCsv } from '../evaluation/cli-output';
+import {
+  columnWidths,
+  parseCsv,
+  stripTimingColumns,
+  toCsv,
+  toSpacedCsv,
+} from '../evaluation/cli-output';
 import { defaultNoteName, NOTES_DIR, saveNoteFile } from '../evaluation/tui/files';
 import { cursorPosition, indexFromPosition, wrapText } from '../evaluation/tui/text-utils';
 import {
@@ -88,6 +94,24 @@ describe('shared CSV/table helpers', () => {
       ['3', 'four'],
     ];
     expect(parseCsv(toCsv(header, rows))).toEqual([header, ...rows]);
+  });
+
+  it('toSpacedCsv puts a blank line between every row and round-trips', () => {
+    const header = ['run', 'score'];
+    const rows = [
+      ['1', '0.5'],
+      ['2', '0.6'],
+      ['3', '0.7'],
+    ];
+    const spaced = toSpacedCsv(header, rows);
+    // Header stays tight against the first run; every run after is boxed off.
+    expect(spaced).toBe('run,score\n1,0.5\n\n2,0.6\n\n3,0.7');
+    // parseCsv already skips blank lines, so readers see the same data.
+    expect(parseCsv(spaced)).toEqual([header, ...rows]);
+  });
+
+  it('toSpacedCsv with no rows emits just the header', () => {
+    expect(toSpacedCsv(['a'], [])).toBe('a');
   });
 
   it('parseCsv handles quoted fields and CRLF line endings', () => {
@@ -201,6 +225,7 @@ describe('tui suite run options', () => {
     });
     expect(result.defaultName).toBe('moderate-capture-results.csv');
     expect(result.header).toEqual(CAPTURE_HEADER);
+    expect(result.spacedRows).toBe(true); // saved with a blank line between runs
     expect(result.dropped).toBeUndefined(); // capture never drops rows
     expect(result.rows).toHaveLength(buildModerateConfigs().length * 2);
     for (const row of result.rows) {
