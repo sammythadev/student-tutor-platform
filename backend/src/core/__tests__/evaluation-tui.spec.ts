@@ -1,10 +1,5 @@
 import { existsSync, readFileSync, rmSync } from 'fs';
-import {
-  columnWidths,
-  parseCsv,
-  stripTimingColumns,
-  toCsv,
-} from '../evaluation/cli-output';
+import { columnWidths, parseCsv, stripTimingColumns, toCsv } from '../evaluation/cli-output';
 import { defaultNoteName, NOTES_DIR, saveNoteFile } from '../evaluation/tui/files';
 import { cursorPosition, indexFromPosition, wrapText } from '../evaluation/tui/text-utils';
 import {
@@ -12,6 +7,7 @@ import {
   buildModerateConfigs,
   buildRealisticConfigs,
   buildTopKSweepConfigs,
+  DEFAULT_RUNS,
   evaluate,
   HEADER,
   runModerateEvaluation,
@@ -20,8 +16,13 @@ import {
 } from '../evaluation/evaluation-harness';
 import { computeOptimalityGapRow, DEFAULT_GAP_SIZES } from '../evaluation/optimal-baseline';
 import { runBaselineCell, SCENARIOS } from '../evaluation/baseline-comparison';
-import { getSuite, SUITES } from '../evaluation/tui/suites';
+import { getSuite, harnessSuite, moderateSuite, topkSuite, SUITES } from '../evaluation/tui/suites';
 import { CLI_FLAG_ROWS, HELP_SECTIONS, isHelpCloseChord } from '../evaluation/tui/help-data';
+
+const WINNERS = ['fcfs-filter', 'fcfs-best', 'da-stable', 'greedy-engine'];
+
+/** No-op progress emitter for suite-run tests. */
+const noopEmit = (): void => {};
 
 describe('evaluation harness config builders', () => {
   it('export the expected scenario counts', () => {
@@ -134,6 +135,54 @@ describe('tui suite registry', () => {
       expect(getSuite(suite.id)).toBe(suite);
     }
   });
+
+  it('marks only harness-style suites as supporting run options', () => {
+    expect(harnessSuite.supportsOptions).toBe(true);
+    expect(moderateSuite.supportsOptions).toBe(true);
+    expect(topkSuite.supportsOptions).toBe(true);
+  });
+});
+
+describe('tui suite run options', () => {
+  it('aggregate rows honor runs and the counts override', async () => {
+    const [result] = await moderateSuite.run(noopEmit, {
+      runs: 2,
+      override: { students: 12, tutors: 6 },
+    });
+    expect(result.defaultName).toBe('moderate-results.csv');
+    expect(result.header).toEqual(HEADER);
+    expect(result.rows).toHaveLength(buildModerateConfigs().length);
+    for (const row of result.rows) {
+      expect(row[HEADER.indexOf('students')]).toBe('12');
+      expect(row[HEADER.indexOf('tutors')]).toBe('6');
+      expect(row[HEADER.indexOf('runs')]).toBe('2');
+      expect(row[HEADER.indexOf('run')]).toBe('');
+    }
+  });
+
+  it('per-run mode emits one row per run with a winning algorithm', async () => {
+    const [result] = await moderateSuite.run(noopEmit, {
+      runs: 2,
+      override: { students: 12, tutors: 6 },
+      perRun: true,
+    });
+    expect(result.defaultName).toBe('moderate-per-run-results.csv');
+    expect(result.header).toEqual(HEADER);
+    expect(result.rows).toHaveLength(buildModerateConfigs().length * 2);
+    expect(result.dropped).toBe(0);
+    for (const row of result.rows) {
+      expect(['1', '2']).toContain(row[HEADER.indexOf('run')]);
+      expect(WINNERS).toContain(row[HEADER.indexOf('winner')]);
+    }
+  });
+
+  it('runs with default options when none are passed', async () => {
+    const [result] = await moderateSuite.run(noopEmit);
+    expect(result.defaultName).toBe('moderate-results.csv');
+    expect(result.rows).toHaveLength(buildModerateConfigs().length);
+    expect(result.rows[0][HEADER.indexOf('students')]).toBe('150'); // suite defaults kept
+    expect(result.rows[0][HEADER.indexOf('runs')]).toBe(String(DEFAULT_RUNS));
+  }, 30_000);
 });
 
 describe('tui help content', () => {
