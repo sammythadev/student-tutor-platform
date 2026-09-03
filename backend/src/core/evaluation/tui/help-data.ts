@@ -61,6 +61,15 @@ export const RUN_KEYS: HelpSection = {
     { keys: 'r', action: 'rerun the suite' },
     { keys: 's', action: 'save under a new filename' },
     { keys: 't', action: 'timing columns on / off' },
+    { keys: 'R', action: 'set runs per test (default 5) — harness suites' },
+    {
+      keys: 'C',
+      action: 'set a students/tutors override for every test — blank resets to auto — harness suites',
+    },
+    {
+      keys: 'P',
+      action: 'toggle per-run mode (one row per run, winning algorithm in the winner column)',
+    },
     { keys: 'm / Esc', action: 'back to menu' },
     { keys: 'q', action: 'quit' },
   ],
@@ -108,12 +117,15 @@ export const CLI_FLAG_ROWS: HelpRow[] = [
   { keys: '--moderate / --topk-sweep', action: 'narrow the eval harness (CLI only)' },
   {
     keys: '--students <n> --tutors <n>',
-    action: 'override student/tutor counts for every harness test — both required (CLI only)',
+    action: 'override student/tutor counts for every harness test — both required (same as C in the run view)',
   },
-  { keys: '--runs <n>', action: 'repeats per test, default 5 (shown in the results table)' },
+  {
+    keys: '--runs <n>',
+    action: 'repeats per test, default 5 (shown in the results table; same as R in the run view)',
+  },
   {
     keys: '--per-run',
-    action: 'save one row per run with the winning algorithm, max 1000 rows per CSV (CLI only)',
+    action: 'save one row per run with the winning algorithm, max 1000 rows per CSV (same as P in the run view)',
   },
   { keys: '--sizes <10,25,50,100>', action: 'optimality-gap sweep sizes (CLI only)' },
   { keys: '--scenario / --strategy', action: 'narrow baseline runs (CLI only)' },
