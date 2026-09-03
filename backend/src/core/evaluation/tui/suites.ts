@@ -4,11 +4,14 @@ import {
   buildModerateConfigs,
   buildRealisticConfigs,
   buildTopKSweepConfigs,
+  CAPTURE_HEADER,
   DEFAULT_RUNS,
   evaluate,
+  evaluateCapturedRun,
   evaluatePerRunRow,
   HEADER as HARNESS_HEADER,
   MAX_SAVED_RUNS,
+  toCapturedRunRow,
   toRow as harnessToRow,
   type CountOverride,
   type EvaluationConfig,
@@ -64,7 +67,8 @@ export interface Highlight {
 
 /**
  * Options the TUI run view can pass into a suite, mirroring the CLI flags
- * --runs, --students/--tutors and --per-run (see evaluation-harness.ts).
+ * --runs, --students/--tutors, --per-run and --capture-runs (see
+ * evaluation-harness.ts). `capture` wins over `perRun` when both are set.
  */
 export interface RunOptions {
   /** Repeats per test; falls back to the CLI default when omitted. */
@@ -73,6 +77,11 @@ export interface RunOptions {
   override?: CountOverride;
   /** One row per run with the winning algorithm instead of an aggregate row. */
   perRun?: boolean;
+  /**
+   * Full capture mode (P cycles summary → per-run → capture): every run is one
+   * row with ALL four strategies' results plus its timestamp/duration, no cap.
+   */
+  capture?: boolean;
 }
 
 export type SuiteRunner = (
@@ -105,6 +114,8 @@ interface HarnessSuiteSpec {
   defaultName: string;
   /** Per-run CSV filename (one row per run, winner column). */
   perRunName: string;
+  /** Capture CSV filename (one row per run, all strategies + per-run time). */
+  captureName: string;
 }
 
 /**
@@ -122,6 +133,37 @@ function harnessRunner(spec: HarnessSuiteSpec): SuiteRunner {
         ? baseConfigs
         : applyCountOverride(baseConfigs, options.override);
     const runs = options?.runs ?? DEFAULT_RUNS;
+    const capture = options?.capture === true;
+
+    if (capture) {
+      // Full capture: every run is one row with all four strategies' results
+      // plus its started-at time and duration — one CSV, NO row cap (mirrors
+      // the CLI's --capture-runs mode).
+      const rows: string[][] = [];
+      const total = configs.length * runs;
+      let done = 0;
+      for (const config of configs) {
+        for (let run = 1; run <= runs; run += 1) {
+          done += 1;
+          rows.push(toCapturedRunRow(config, run, runs, evaluateCapturedRun(config, run, runs)));
+          emit({
+            done,
+            total,
+            header: CAPTURE_HEADER,
+            current: `${harnessLabel(config)} · capture ${run}/${runs}`,
+            rows: [...rows],
+          });
+          await yieldToInk();
+        }
+      }
+      return [
+        {
+          defaultName: spec.captureName,
+          header: CAPTURE_HEADER,
+          rows,
+        },
+      ];
+    }
 
     if (options?.perRun === true) {
       const rows: string[][] = [];
@@ -182,18 +224,21 @@ const runHarness: SuiteRunner = harnessRunner({
   ],
   defaultName: 'evaluation-results.csv',
   perRunName: 'evaluation-per-run-results.csv',
+  captureName: 'evaluation-capture-results.csv',
 });
 
 const runTopk: SuiteRunner = harnessRunner({
   buildConfigs: () => buildTopKSweepConfigs(),
   defaultName: 'topk-sweep-results.csv',
   perRunName: 'topk-per-run-results.csv',
+  captureName: 'topk-capture-results.csv',
 });
 
 const runModerate: SuiteRunner = harnessRunner({
   buildConfigs: () => buildModerateConfigs(),
   defaultName: 'moderate-results.csv',
   perRunName: 'moderate-per-run-results.csv',
+  captureName: 'moderate-capture-results.csv',
 });
 
 // These suites run their own scenarios (gap sizes, baseline strategy cells) and

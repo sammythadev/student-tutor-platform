@@ -392,6 +392,7 @@ export function RunScreen({
   const runs = options.runs ?? DEFAULT_RUNS;
   const override = options.override;
   const perRun = options.perRun === true;
+  const capture = options.capture === true;
   const [optionPrompt, setOptionPrompt] = useState<'runs' | 'counts' | null>(null);
   const [optionValue, setOptionValue] = useState('');
   const [optionError, setOptionError] = useState<string | null>(null);
@@ -491,7 +492,15 @@ export function RunScreen({
         setOptionValue(override === undefined ? '' : `${override.students}, ${override.tutors}`);
         setOptionError(null);
       } else if (input === 'P' && results !== null && suite.supportsOptions) {
-        onOptionsChange({ perRun: !perRun });
+        // Cycle the row mode: summary → per-run (winner) → capture (all
+        // strategies, no cap) → summary. Mirrors the CLI row modes.
+        onOptionsChange(
+          perRun && !capture
+            ? { perRun: true, capture: true }
+            : capture
+              ? { perRun: false, capture: false }
+              : { perRun: true, capture: false },
+        );
       } else if (input === '?' && results !== null) {
         setShowHelp((value) => !value);
       }
@@ -655,7 +664,7 @@ export function RunScreen({
         <Box marginTop={1}>
           <Text color="cyan" dimColor>
             Current: {runs} run(s) · counts {countsLabel}
-            {perRun ? ' · per-run on' : ''}
+            {capture ? ' · capture on' : perRun ? ' · per-run on' : ''}
           </Text>
         </Box>
       </Box>
@@ -704,7 +713,11 @@ export function RunScreen({
           <Text color="gray">
             Each test ran {runs} time(s)
             {runs === DEFAULT_RUNS ? ' (default)' : ''}
-            {perRun ? ' · per-run mode (one row per run, winner column)' : ''}
+            {capture
+              ? ' · capture mode (every run: all strategies + per-run time, no cap)'
+              : perRun
+                ? ' · per-run mode (one row per run, winner column)'
+                : ''}
             {override !== undefined ? ` · counts ${override.students}/${override.tutors}` : ''}
           </Text>
         </Box>
@@ -825,8 +838,8 @@ export function RunScreen({
           <Text color="cyan" dimColor>
             R runs:{runs}
             {runs === DEFAULT_RUNS ? ' (default)' : ''} · C counts:
-            {override === undefined ? 'auto' : `${override.students}×${override.tutors}`} · P
-            per-run:{perRun ? 'on' : 'off'}
+            {override === undefined ? 'auto' : `${override.students}×${override.tutors}`} · P mode:
+            {capture ? 'capture' : perRun ? 'per-run' : 'summary'}
           </Text>
         </Box>
       )}
