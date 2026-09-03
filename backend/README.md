@@ -110,7 +110,7 @@ already given).
 | `↑`/`↓` or `j`/`k` | move the selection                             |
 | `Enter`            | run the selected suite / open a CSV            |
 | `r`                | rerun the suite / refresh the results list     |
-| `s`                | save the results under a custom filename (run) |
+| `s`                | save under a custom filename — first pick which rows: summary, per-run (winner), or capture (all strategies); a different mode re-runs the suite for those rows, then asks for the name |
 | `t`                | toggle timing columns in the table + saved CSV (run) |
 | `R`                | set runs per test (harness suites, default 5)  |
 | `C`                | set a students/tutors override for every test (harness suites; blank resets to auto) |
