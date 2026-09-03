@@ -176,9 +176,24 @@ run view (`R`/`C`/`P` keys):
 | Flag                     | Effect                                              |
 | ------------------------ | --------------------------------------------------- |
 | `--save-runs <n>`        | run each test n times and write EVERY run to the CSV as its own row (one file, max 1000 rows) — R set to n + per-run mode on |
+| `--capture-runs <n>`     | **full capture mode** — every run becomes its own row containing ALL four strategies’ quality results plus that run’s started-at timestamp and duration, all in one file (`evaluation-capture-results.csv`), no row cap |
 | `--runs <n>`             | repeats per test for the timing stats, default 5 (R) |
 | `--per-run`              | legacy toggle for per-run rows using the `--runs` count (P) |
 | `--students <n> --tutors <n>` | override counts for every test (both required) (C) |
+
+The default output is the **averaged summary** — each test is one row of mean
+results across its runs. Turn capture on when you want every single run
+instead:
+
+```bash
+# 100 runs per test, every run its own row (all 4 strategies + per-run time):
+pnpm run eval -- --capture-runs 100 --students 120 --tutors 30
+```
+
+That writes `evaluation-capture-results.csv` with 100 rows per test (no cap):
+`startedAt` and `durationMs` tell you when each run happened and how long it
+took, and the `<strategy>.averageScore` / `.unassignedPercent` /
+`.jainFairnessIndex` columns hold that run's full results for every strategy.
 
 ## Notes
 

@@ -144,6 +144,11 @@ export const CLI_FLAG_ROWS: HelpRow[] = [
       'run each test n times and write EVERY run to the CSV as its own row (one file, max 1000 rows) — same as R set + per-run mode on',
   },
   {
+    keys: '--capture-runs <n>',
+    action:
+      'full capture mode — every run is one row with ALL four strategies’ results plus that run’s started-at time and duration (one file, NO row cap)',
+  },
+  {
     keys: '--runs <n>',
     action:
       'repeats per test for the timing stats, default 5 (shown in the results table; same as R in the run view)',
