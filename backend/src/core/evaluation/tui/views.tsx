@@ -685,7 +685,7 @@ export function RunScreen({
             </Box>
           )}
         </Box>
-      )}{' '}
+      )}
       {results.some((result) => (result.dropped ?? 0) > 0) && (
         <Box marginTop={1}>
           <Text color="yellow">
