@@ -7,6 +7,7 @@ import {
   MAX_SAVED_RUNS,
   parseCountOverride,
   parseRuns,
+  parseSaveRuns,
   toRow,
   buildRealisticConfigs,
 } from '../evaluation/evaluation-harness';
@@ -47,6 +48,26 @@ describe('evaluation harness --runs', () => {
     withArgv(['--runs', '0'], () => expect(() => parseRuns()).toThrow(/positive integer/));
     withArgv(['--runs', 'abc'], () => expect(() => parseRuns()).toThrow(/positive integer/));
     withArgv(['--runs', '2.5'], () => expect(() => parseRuns()).toThrow(/positive integer/));
+  });
+});
+
+describe('evaluation harness --save-runs', () => {
+  it('returns undefined when the flag is absent', () => {
+    withArgv([], () => expect(parseSaveRuns()).toBeUndefined());
+  });
+
+  it('parses the run count from --save-runs', () => {
+    withArgv(['--save-runs', '100'], () => expect(parseSaveRuns()).toBe(100));
+  });
+
+  it('rejects a non-positive or non-integer --save-runs value', () => {
+    withArgv(['--save-runs', '0'], () => expect(() => parseSaveRuns()).toThrow(/positive integer/));
+    withArgv(['--save-runs', 'abc'], () =>
+      expect(() => parseSaveRuns()).toThrow(/positive integer/),
+    );
+    withArgv(['--save-runs', '1.5'], () =>
+      expect(() => parseSaveRuns()).toThrow(/positive integer/),
+    );
   });
 });
 
