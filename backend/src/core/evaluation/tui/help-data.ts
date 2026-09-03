@@ -64,7 +64,8 @@ export const RUN_KEYS: HelpSection = {
     { keys: 'R', action: 'set runs per test (default 5) — harness suites' },
     {
       keys: 'C',
-      action: 'set a students/tutors override for every test — blank resets to auto — harness suites',
+      action:
+        'set a students/tutors override for every test — blank resets to auto — harness suites',
     },
     {
       keys: 'P',
@@ -117,7 +118,8 @@ export const CLI_FLAG_ROWS: HelpRow[] = [
   { keys: '--moderate / --topk-sweep', action: 'narrow the eval harness (CLI only)' },
   {
     keys: '--students <n> --tutors <n>',
-    action: 'override student/tutor counts for every harness test — both required (same as C in the run view)',
+    action:
+      'override student/tutor counts for every harness test — both required (same as C in the run view)',
   },
   {
     keys: '--runs <n>',
@@ -125,7 +127,8 @@ export const CLI_FLAG_ROWS: HelpRow[] = [
   },
   {
     keys: '--per-run',
-    action: 'save one row per run with the winning algorithm, max 1000 rows per CSV (same as P in the run view)',
+    action:
+      'save one row per run with the winning algorithm, max 1000 rows per CSV (same as P in the run view)',
   },
   { keys: '--sizes <10,25,50,100>', action: 'optimality-gap sweep sizes (CLI only)' },
   { keys: '--scenario / --strategy', action: 'narrow baseline runs (CLI only)' },
