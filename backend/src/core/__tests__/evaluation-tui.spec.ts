@@ -7,6 +7,7 @@ import {
   buildModerateConfigs,
   buildRealisticConfigs,
   buildTopKSweepConfigs,
+  CAPTURE_HEADER,
   DEFAULT_RUNS,
   evaluate,
   HEADER,
@@ -184,6 +185,24 @@ describe('tui suite run options', () => {
     expect(result.rows[0][HEADER.indexOf('students')]).toBe('150'); // suite defaults kept
     expect(result.rows[0][HEADER.indexOf('runs')]).toBe(String(DEFAULT_RUNS));
   }, 30_000);
+
+  it('capture mode emits every run with the full multi-strategy header, no cap', async () => {
+    const [result] = await moderateSuite.run(noopEmit, {
+      runs: 2,
+      override: { students: 12, tutors: 6 },
+      capture: true,
+    });
+    expect(result.defaultName).toBe('moderate-capture-results.csv');
+    expect(result.header).toEqual(CAPTURE_HEADER);
+    expect(result.dropped).toBeUndefined(); // capture never drops rows
+    expect(result.rows).toHaveLength(buildModerateConfigs().length * 2);
+    for (const row of result.rows) {
+      expect(['1', '2']).toContain(row[CAPTURE_HEADER.indexOf('run')]);
+      expect(WINNERS).toContain(row[CAPTURE_HEADER.indexOf('winner')]);
+      // Every run records its own moment in time.
+      expect(Number.isNaN(Date.parse(row[CAPTURE_HEADER.indexOf('startedAt')]))).toBe(false);
+    }
+  });
 });
 
 describe('tui launch argument parsing', () => {
