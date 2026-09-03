@@ -1,13 +1,5 @@
-'use client'
-
 import Link from 'next/link'
 import { CTA, HERO } from './content'
-import { useRef } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useGSAP } from '@gsap/react'
-
-gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 /* ──────────────────────────────────────────────────────────
    Hero copy.
@@ -17,35 +9,10 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
    who has not agreed to care about the scoring yet was being handed the scoring.
    The product assembling itself, immediately below, is the better first move.
 
-   The visual is client-bound because its exploded assembly is scroll-driven.
+   Server-rendered, no client boundary: nothing here needs one.
 ────────────────────────────────────────────────────────── */
 
 export default function Hero() {
-  const visual = useRef<HTMLDivElement>(null)
-
-  useGSAP(() => {
-    const mm = gsap.matchMedia()
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
-      const pieces = visual.current?.querySelectorAll('[data-hero-piece]')
-      if (!pieces?.length) return
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: visual.current,
-          start: 'top 78%',
-          end: 'bottom 28%',
-          scrub: 0.8,
-        },
-      })
-      tl.to('[data-hero-piece="shell"]', { y: -16, rotateY: -9, rotateZ: -2, duration: 1 }, 0)
-        .to('[data-hero-piece="score"]', { x: -74, y: -62, z: 78, rotateZ: -9, duration: 1 }, 0)
-        .to('[data-hero-piece="profile"]', { x: 82, y: -28, z: 100, rotateZ: 8, duration: 1 }, 0)
-        .to('[data-hero-piece="bars"]', { x: -66, y: 64, z: 52, rotateZ: 5, duration: 1 }, 0)
-        .to('[data-hero-piece="meta"]', { x: 74, y: 70, z: 72, rotateZ: -7, duration: 1 }, 0)
-      return () => { tl.scrollTrigger?.kill(); tl.kill() }
-    })
-    return () => mm.revert()
-  }, { scope: visual })
-
   return (
     <section aria-labelledby="hero-title" className="relative">
       <div className="landing-hero mx-auto grid w-full max-w-6xl items-center gap-14 px-5 pb-10 pt-16 md:px-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:gap-20 lg:pb-8 lg:pt-28">
@@ -82,19 +49,19 @@ export default function Hero() {
           </div>
         </div>
 
-        <div ref={visual} className="landing-hero-visual" aria-label="Exploded view of a Tutorly tutor match assembling from its ranking layers">
+        <div className="landing-hero-visual" aria-label="Illustration of Tutorly matching a student with a tutor">
           <div className="landing-orbit landing-orbit-a" />
           <div className="landing-orbit landing-orbit-b" />
           <div className="landing-hero-glow" />
           <div className="landing-match-card landing-match-card-back"><span>03</span><b>Available now</b><small>Thu · 4:00 PM</small></div>
-          <div data-hero-piece="shell" className="landing-match-card landing-match-card-front">
-            <div data-hero-piece="score" className="landing-piece landing-score-piece"><span className="landing-card-label">TOP MATCH</span><strong>97</strong></div>
-            <div data-hero-piece="profile" className="landing-piece landing-profile-row"><span className="landing-profile-avatar">IK</span><span><b>Ibrahim K.</b><small>Physics · SS3 / WAEC</small></span><span className="landing-arrow">↗</span></div>
-            <div data-hero-piece="bars" className="landing-piece landing-score-line"><span /><span /><span /><span /></div>
-            <div data-hero-piece="meta" className="landing-piece landing-card-meta"><span>Academic fit</span><span>Schedule overlap</span><span>₦5,000 / hr</span></div>
+          <div className="landing-match-card landing-match-card-front">
+            <div className="landing-card-top"><span className="landing-card-label">TOP MATCH</span><span className="landing-card-score">97</span></div>
+            <div className="landing-profile-row"><span className="landing-profile-avatar">IK</span><span><b>Ibrahim K.</b><small>Physics · SS3 / WAEC</small></span><span className="landing-arrow">↗</span></div>
+            <div className="landing-score-line"><span /><span /><span /><span /></div>
+            <div className="landing-card-meta"><span>Academic fit</span><span>Schedule overlap</span><span>₦5,000 / hr</span></div>
           </div>
           <span className="landing-float-label landing-float-label-one">4 criteria · 1 clear answer</span>
-          <span className="landing-float-label landing-float-label-two">scroll to explode</span>
+          <span className="landing-float-label landing-float-label-two">score explained</span>
         </div>
       </div>
     </section>

@@ -1193,14 +1193,3 @@
 @media (prefers-reduced-motion: reduce) {
   .landing-match-card-front { animation: none; }
 }
-
-/* Exploded hero layers: each sub-surface gets its own transform plane. */
-.landing-hero-visual { transform-style: preserve-3d; }
-.landing-match-card-front { transform-style: preserve-3d; }
-.landing-piece { transform-style: preserve-3d; will-change: transform; }
-.landing-score-piece { display: flex; align-items: flex-start; justify-content: space-between; }
-.landing-score-piece strong { color: #fff; font: 600 2.7rem/1 var(--font-geist-mono); letter-spacing: -.12em; }
-.landing-match-card-front > .landing-profile-row { margin-top: 1.25rem; }
-@media (max-width: 767px) {
-  .landing-score-piece strong { font-size: 2.2rem; }
-}
