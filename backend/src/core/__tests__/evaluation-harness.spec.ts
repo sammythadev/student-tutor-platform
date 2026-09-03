@@ -13,6 +13,7 @@ import {
   parseSaveRuns,
   parseCaptureRuns,
   toRow,
+  winnerSummaryFromRows,
   applyCountOverride,
   buildModerateConfigs,
   buildRealisticConfigs,
@@ -202,5 +203,67 @@ describe('evaluation harness --capture-runs (full capture mode)', () => {
     withArgv(['--capture-runs', '0'], () => {
       expect(() => parseCaptureRuns()).toThrow(/positive integer/);
     });
+  });
+});
+
+describe('winner summary from result rows', () => {
+  const captureRow = (overrides: Record<string, string>): string[] =>
+    CAPTURE_HEADER.map((column) => overrides[column] ?? '0');
+
+  it('tallies strict wins, ties and means across capture rows', () => {
+    // r1: da and greedy tie for best → tiedBest only, no strict win.
+    // r2: greedy strictly best.
+    // r3: all four tie → everybody tiedBest, nobody strict.
+    const rows = [
+      captureRow({
+        'fcfs-filter.averageScore': '0.50',
+        'fcfs-best.averageScore': '0.55',
+        'da-stable.averageScore': '0.60',
+        'greedy-engine.averageScore': '0.60',
+      }),
+      captureRow({
+        'fcfs-filter.averageScore': '0.50',
+        'fcfs-best.averageScore': '0.60',
+        'da-stable.averageScore': '0.59',
+        'greedy-engine.averageScore': '0.61',
+      }),
+      captureRow({}), // all zeros → all four tie
+    ];
+    const summary = winnerSummaryFromRows(CAPTURE_HEADER, rows);
+    expect(summary.mode).toBe('capture');
+    expect(summary.rows).toBe(3);
+    const byName = new Map(summary.strategies.map((s) => [s.strategy, s]));
+    expect(byName.get('greedy-engine')).toMatchObject({ strictWins: 1, tiedBest: 3 }); // r1 tie + r2 win + r3 all-tie
+    expect(byName.get('da-stable')).toMatchObject({ strictWins: 0, tiedBest: 2 });
+    expect(byName.get('fcfs-best')).toMatchObject({ strictWins: 0, tiedBest: 1 });
+    expect(byName.get('fcfs-filter')).toMatchObject({ strictWins: 0, tiedBest: 1 });
+    // r3 is all zeros, so the third term is 0: (0.60 + 0.61 + 0) / 3
+    expect(byName.get('greedy-engine')?.meanScore).toBeCloseTo(0.403333, 5);
+    expect(byName.get('da-stable')?.meanScore).toBeCloseTo(0.396667, 5);
+  });
+
+  it('counts wins from per-run rows and falls back for aggregate rows', () => {
+    const perRunRows = [
+      ['scenario', '', '', '', '', '2', '1', 'da-stable'],
+      ['scenario', '', '', '', '', '2', '2', 'greedy-engine'],
+      ['scenario', '', '', '', '', '2', '3', 'greedy-engine'],
+    ].map((cells) => {
+      const row = new Array<string>(HEADER.length).fill('');
+      cells.forEach((cell, i) => {
+        row[i] = cell;
+      });
+      return row;
+    });
+    const perRun = winnerSummaryFromRows(HEADER, perRunRows);
+    expect(perRun.mode).toBe('per-run');
+    const byName = new Map(perRun.strategies.map((s) => [s.strategy, s]));
+    expect(byName.get('greedy-engine')?.strictWins).toBe(2);
+    expect(byName.get('da-stable')?.strictWins).toBe(1);
+    expect(byName.get('greedy-engine')?.meanScore).toBeNull();
+
+    // Aggregate rows: winner column present but empty → mode 'aggregate'.
+    const aggregate = winnerSummaryFromRows(HEADER, [new Array<string>(HEADER.length).fill('')]);
+    expect(aggregate.mode).toBe('aggregate');
+    expect(aggregate.strategies).toEqual([]);
   });
 });
