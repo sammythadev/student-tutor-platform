@@ -17,6 +17,7 @@ import {
 import { defaultNoteName, listSavedCsvs, saveNoteFile, type CsvFileInfo } from './files';
 import { cursorPosition, indexFromPosition, visualSpans } from './text-utils';
 import { HelpContent } from './help';
+import { currentSaveMode, SAVE_MODES, type SaveRowMode } from './help-data';
 import {
   SUITES,
   type RunOptions,
@@ -74,6 +75,16 @@ const NO_HIGHLIGHTS: NonNullable<DataTableProps['highlights']> = [];
  */
 const MAX_TABLE_ROWS = 40;
 
+/**
+ * Terminal lines reserved for chrome above/below the table (heading, status
+ * lines, saved-file line, key hints). The visible table is capped so the whole
+ * frame fits the terminal height: ink's renderer switches to a full-screen
+ * clear when output exceeds the terminal rows, which desyncs its line-erase
+ * counter and leaves debris on the next shorter frame ("clumpy" output after a
+ * rerun). Fitting on screen avoids that path entirely.
+ */
+const TABLE_CHROME_LINES = 16;
+
 /** Column-aligned table that fits the terminal width and tints best-in-class cells. */
 function DataTable({
   header,
@@ -83,8 +94,9 @@ function DataTable({
   const { stdout } = useStdout();
   const availableWidth = Math.max(24, (stdout.columns ?? 80) - 4);
   const columnGap = 2;
-  const truncated = rows.length - MAX_TABLE_ROWS;
-  const visibleRows = truncated > 0 ? rows.slice(0, MAX_TABLE_ROWS) : rows;
+  const maxRows = Math.max(4, Math.min(MAX_TABLE_ROWS, (stdout.rows ?? 30) - TABLE_CHROME_LINES));
+  const truncated = rows.length - maxRows;
+  const visibleRows = truncated > 0 ? rows.slice(0, maxRows) : rows;
 
   const { widths, bestCells } = useMemo(() => {
     const base = columnWidths(header, visibleRows);
@@ -470,9 +482,18 @@ export function RunScreen({
   const [results, setResults] = useState<SuiteResult[] | null>(null);
   const [savedPaths, setSavedPaths] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [saveAs, setSaveAs] = useState(false);
+  // Save flow: `s` first asks WHICH rows to save (summary / per-run / capture),
+  // then the filename. `saveAsStep` is 'mode' while the picker is open, 'name'
+  // while the filename TextInput is open, and null when closed. When the picked
+  // mode differs from the current run mode the suite is re-run in that mode
+  // (same cost as pressing P then r) before the name prompt opens.
+  const [saveAsStep, setSaveAsStep] = useState<'mode' | 'name' | null>(null);
+  const [saveAsPick, setSaveAsPick] = useState<SaveRowMode>('summary');
   const [saveAsName, setSaveAsName] = useState('');
   const [saveAsError, setSaveAsError] = useState<string | null>(null);
+  // Set when `s` picks a row mode different from the current one: the suite is
+  // re-run in that mode, and when it finishes the name prompt opens itself.
+  const pendingSaveAfterRun = useRef(false);
   const [extraSaved, setExtraSaved] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   // W panel: "which algorithm wins" tally over the current results.
@@ -528,9 +549,18 @@ export function RunScreen({
         );
         if (!cancelled) {
           setResults(suiteResults);
+          if (pendingSaveAfterRun.current) {
+            // A save picked a different row mode and re-ran the suite for it:
+            // results just landed in that mode — open the filename prompt.
+            pendingSaveAfterRun.current = false;
+            setSaveAsStep('name');
+            setSaveAsName('');
+            setSaveAsError(null);
+          }
         }
       } catch (err) {
         if (!cancelled) {
+          pendingSaveAfterRun.current = false;
           setError(err instanceof Error ? err.message : String(err));
         }
       }
@@ -559,10 +589,50 @@ export function RunScreen({
     }
   }, [results, noTiming]);
 
+  /**
+   * Starts the save-as flow for a picked row mode. When the mode matches what's
+   * on screen the filename prompt opens immediately; otherwise the suite is
+   * re-run in that mode (same cost as P then r) and the prompt opens when the
+   * run lands.
+   */
+  const beginSaveAs = (mode: SaveRowMode): void => {
+    const current = currentSaveMode(perRun, capture);
+    if (mode === current) {
+      setSaveAsStep('name');
+      setSaveAsName('');
+      setSaveAsError(null);
+      return;
+    }
+    pendingSaveAfterRun.current = true;
+    setSaveAsStep(null);
+    setSaveAsError(null);
+    onOptionsChange({
+      perRun: mode !== 'summary',
+      capture: mode === 'capture',
+    });
+  };
+
   // While help is open it is modal: the panel owns all keys (`isHelpCloseChord`).
   useInput(
     (input, key) => {
-      if (saveAs || optionPrompt !== null || configStep !== null) {
+      // Save-mode picker is NOT a TextInput — it owns arrow/1-3/Enter/Esc keys.
+      if (saveAsStep === 'mode') {
+        const index = SAVE_MODES.findIndex((mode) => mode.id === saveAsPick);
+        if (input === '1' || input === '2' || input === '3') {
+          setSaveAsPick(SAVE_MODES[Number(input) - 1].id);
+        } else if (key.upArrow || input === 'k') {
+          setSaveAsPick(SAVE_MODES[(index - 1 + SAVE_MODES.length) % SAVE_MODES.length].id);
+        } else if (key.downArrow || input === 'j') {
+          setSaveAsPick(SAVE_MODES[(index + 1) % SAVE_MODES.length].id);
+        } else if (key.return) {
+          beginSaveAs(saveAsPick);
+        } else if (key.escape || input === 'q' || input === 'm') {
+          setSaveAsStep(null);
+          setSaveAsError(null);
+        }
+        return;
+      }
+      if (saveAsStep === 'name' || optionPrompt !== null || configStep !== null) {
         return; // TextInput handles the keys
       }
       if (input === 'q' || key.escape || input === 'm') {
@@ -570,9 +640,19 @@ export function RunScreen({
       } else if (input === 'r' && results !== null) {
         setRunId((id) => id + 1);
       } else if (input === 's' && results !== null && results.length === 1) {
-        setSaveAs(true);
-        setSaveAsName('');
-        setSaveAsError(null);
+        // Ask which rows to save first; the currently-shown mode is preselected.
+        const current = currentSaveMode(perRun, capture);
+        if (!suite.supportsOptions) {
+          // gap/baselines have no row modes — straight to the filename.
+          setSaveAsStep('name');
+          setSaveAsName('');
+          setSaveAsError(null);
+        } else {
+          setSaveAsPick(current);
+          setSaveAsStep('mode');
+          setSaveAsName('');
+          setSaveAsError(null);
+        }
       } else if (input === 't') {
         onToggleNoTiming();
       } else if (input === 'R' && results !== null && suite.supportsOptions) {
@@ -849,7 +929,30 @@ export function RunScreen({
           ))}
         </Box>
       )}
-      {saveAs && results.length === 1 && (
+      {saveAsStep === 'mode' && results.length === 1 && suite.supportsOptions && (
+        <Box marginTop={1} flexDirection="column">
+          <Text color="yellow">Save which rows?</Text>
+          {SAVE_MODES.map((mode) => (
+            <Text
+              key={mode.id}
+              color={saveAsPick === mode.id ? 'cyan' : 'white'}
+              bold={saveAsPick === mode.id}
+            >
+              {saveAsPick === mode.id ? ' ❯ ' : '   '}
+              {mode.label} — {mode.hint}
+            </Text>
+          ))}
+          <Text color="gray" dimColor>
+            ↑/↓ or 1-3 choose · Enter next · Esc cancel
+          </Text>
+          {saveAsError !== null && (
+            <Box marginTop={1}>
+              <Text color="red">✗ {saveAsError}</Text>
+            </Box>
+          )}
+        </Box>
+      )}
+      {saveAsStep === 'name' && results.length === 1 && (
         <Box marginTop={1} flexDirection="column">
           <Text color="yellow">Save results as (docs/benchmarks/)</Text>
           <TextInput
@@ -867,13 +970,14 @@ export function RunScreen({
                   : result.rows;
                 const path = writeCsvOutput(name, toCsv(result.header, rows));
                 setExtraSaved(path);
-                setSaveAs(false);
+                setSaveAsStep(null);
+                setSaveAsName('');
               } catch (err) {
                 setSaveAsError(err instanceof Error ? err.message : String(err));
               }
             }}
             onCancel={() => {
-              setSaveAs(false);
+              setSaveAsStep(null);
               setSaveAsError(null);
             }}
           />
@@ -887,7 +991,7 @@ export function RunScreen({
           )}
         </Box>
       )}
-      {extraSaved !== null && !saveAs && (
+      {extraSaved !== null && saveAsStep === null && (
         <Box marginTop={1}>
           <Text color="green">✓ Also saved to: {extraSaved}</Text>
         </Box>

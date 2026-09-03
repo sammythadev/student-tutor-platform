@@ -28,6 +28,39 @@ export const GLOBAL_KEYS: HelpSection = {
 };
 
 /**
+ * Row formats the `s` save flow can write (mirrors the P row-mode cycle).
+ * Kept ink-free so the picker logic is unit-testable under jest.
+ */
+export type SaveRowMode = 'summary' | 'per-run' | 'capture';
+
+export interface SaveModeOption {
+  id: SaveRowMode;
+  label: string;
+  hint: string;
+}
+
+export const SAVE_MODES: SaveModeOption[] = [
+  { id: 'summary', label: 'Summary', hint: '1 averaged row per test' },
+  { id: 'per-run', label: 'Per-run', hint: 'one row per run — winner column' },
+  {
+    id: 'capture',
+    label: 'Capture',
+    hint: 'every run — all strategies + per-run time, no cap',
+  },
+];
+
+/** The save mode matching the current run options (what the table already shows). */
+export function currentSaveMode(perRun: boolean, capture: boolean): SaveRowMode {
+  if (capture) {
+    return 'capture';
+  }
+  if (perRun) {
+    return 'per-run';
+  }
+  return 'summary';
+}
+
+/**
  * Keys that dismiss the help panel while it is open. The panel is modal: while
  * it renders, the hosting screen's own `useInput` is gated off (via
  * `isActive: !showHelp`), so these are the only live keys.
@@ -64,7 +97,11 @@ export const RUN_KEYS: HelpSection = {
         'picking a harness suite first asks runs per test, then students/tutors — Enter accepts, blank keeps current / auto counts',
     },
     { keys: 'r', action: 'rerun the suite' },
-    { keys: 's', action: 'save under a new filename' },
+    {
+      keys: 's',
+      action:
+        'save under a new filename — first pick which rows: summary, per-run (winner), or capture (all strategies); picking a different mode re-runs the suite for those rows',
+    },
     { keys: 't', action: 'timing columns on / off' },
     { keys: 'R', action: 'set runs per test (default 5) — harness suites' },
     {

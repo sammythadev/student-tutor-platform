@@ -2,6 +2,7 @@ import { pathToFileURL } from 'url';
 import { render } from 'ink';
 import { App } from './app';
 import { parseTuiArgs, tuiUsage } from './launch';
+import { patchInkClearDesync } from './stdout-clear-patch';
 
 /**
  * Entry point for the eval TUI (`pnpm run tui`), which runs as an ES module
@@ -46,5 +47,6 @@ if (isDirectRun) {
     );
   }
 
+  patchInkClearDesync();
   render(<App launch={launch} />);
 }
