@@ -157,12 +157,15 @@ function TextInput({
   onCancel: () => void;
   placeholder?: string;
 }): React.JSX.Element {
+  // Windows terminals often send DEL (\x7f) for the Backspace key, which ink
+  // reports as `key.delete` rather than `key.backspace` — so handle both. These
+  // prompts are single-line with no cursor, so both erase the last character.
   useInput((input, key) => {
     if (key.escape) {
       onCancel();
     } else if (key.return) {
       onSubmit();
-    } else if (key.backspace) {
+    } else if (key.backspace || key.delete) {
       onChange(value.slice(0, -1));
     } else if (input && !key.ctrl) {
       onChange(value + input);
