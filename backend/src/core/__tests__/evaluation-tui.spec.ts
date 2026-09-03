@@ -18,6 +18,7 @@ import { computeOptimalityGapRow, DEFAULT_GAP_SIZES } from '../evaluation/optima
 import { runBaselineCell, SCENARIOS } from '../evaluation/baseline-comparison';
 import { getSuite, harnessSuite, moderateSuite, topkSuite, SUITES } from '../evaluation/tui/suites';
 import { CLI_FLAG_ROWS, HELP_SECTIONS, isHelpCloseChord } from '../evaluation/tui/help-data';
+import { parseTuiArgs, tuiUsage } from '../evaluation/tui/launch';
 
 const WINNERS = ['fcfs-filter', 'fcfs-best', 'da-stable', 'greedy-engine'];
 
@@ -183,6 +184,113 @@ describe('tui suite run options', () => {
     expect(result.rows[0][HEADER.indexOf('students')]).toBe('150'); // suite defaults kept
     expect(result.rows[0][HEADER.indexOf('runs')]).toBe(String(DEFAULT_RUNS));
   }, 30_000);
+});
+
+describe('tui launch argument parsing', () => {
+  it('defaults to the menu with no overrides when no args are given', () => {
+    const launch = parseTuiArgs([]);
+    expect(launch.target).toBeUndefined();
+    expect(launch.runs).toBe(DEFAULT_RUNS);
+    expect(launch.perRun).toBe(false);
+    expect(launch.override).toBeUndefined();
+    expect(launch.noTiming).toBe(false);
+    expect(launch.optionsExplicit).toBe(false);
+    expect(launch.errors).toEqual([]);
+    expect(launch.ignored).toEqual([]);
+  });
+
+  it('resolves positional suite ids and screen aliases, last one winning', () => {
+    expect(parseTuiArgs(['eval']).target).toBe('eval');
+    expect(parseTuiArgs(['gap']).target).toBe('gap');
+    expect(parseTuiArgs(['results']).target).toBe('browser');
+    expect(parseTuiArgs(['scratchpad']).target).toBe('notes');
+    expect(parseTuiArgs(['eval', 'topk']).target).toBe('topk');
+    // Unknown positional tokens fall through to the menu, as before.
+    expect(parseTuiArgs(['not-a-suite']).target).toBeUndefined();
+  });
+
+  it('maps --moderate and --topk-sweep onto the matching suites', () => {
+    expect(parseTuiArgs(['--moderate']).target).toBe('moderate');
+    expect(parseTuiArgs(['--topk-sweep']).target).toBe('topk');
+    // Selector flags and positional ids share one last-wins target slot.
+    expect(parseTuiArgs(['eval', '--topk-sweep']).target).toBe('topk');
+    expect(parseTuiArgs(['--topk-sweep', 'eval']).target).toBe('eval');
+  });
+
+  it('--no-timing seeds the timing toggle', () => {
+    expect(parseTuiArgs(['--no-timing']).noTiming).toBe(true);
+  });
+
+  it('--runs seeds the run count, last occurrence winning', () => {
+    expect(parseTuiArgs(['--runs', '3']).runs).toBe(3);
+    expect(parseTuiArgs(['--runs', '3', '--runs', '7']).runs).toBe(7);
+    expect(parseTuiArgs(['--runs', '3']).perRun).toBe(false);
+  });
+
+  it('--save-runs seeds the count AND per-run mode, winning over --runs', () => {
+    for (const argv of [
+      ['--save-runs', '100'],
+      ['--runs', '8', '--save-runs', '100'],
+      ['--save-runs', '100', '--runs', '8'],
+    ]) {
+      const launch = parseTuiArgs(argv);
+      expect(launch.runs).toBe(100);
+      expect(launch.perRun).toBe(true);
+    }
+  });
+
+  it('--per-run alone toggles per-run rows at the default run count', () => {
+    const launch = parseTuiArgs(['--per-run']);
+    expect(launch.perRun).toBe(true);
+    expect(launch.runs).toBe(DEFAULT_RUNS);
+  });
+
+  it('--students and --tutors must come together and be positive integers', () => {
+    expect(parseTuiArgs(['--students', '40', '--tutors', '12']).override).toEqual({
+      students: 40,
+      tutors: 12,
+    });
+    expect(parseTuiArgs(['--students', '40']).errors[0]).toContain('must be passed together');
+    expect(parseTuiArgs(['--tutors', '12']).errors[0]).toContain('must be passed together');
+    expect(parseTuiArgs(['--students', '40', '--tutors', '0']).errors[0]).toContain(
+      '--tutors expects a positive integer',
+    );
+  });
+
+  it('rejects malformed run counts with one-line errors', () => {
+    expect(parseTuiArgs(['--runs', 'abc']).errors[0]).toBe(
+      '--runs expects a positive integer, got "abc"',
+    );
+    expect(parseTuiArgs(['--save-runs', '-5']).errors[0]).toContain('--save-runs');
+    expect(parseTuiArgs(['--runs']).errors[0]).toBe('--runs expects a value');
+    expect(parseTuiArgs(['--runs', '--per-run']).errors[0]).toBe('--runs expects a value');
+  });
+
+  it('reports unknown flags as errors and ignores known CLI-only flags', () => {
+    expect(parseTuiArgs(['--wat']).errors[0]).toBe('Unknown flag "--wat"');
+    // CLI-script flags are consumed (their values too) and reported as ignored.
+    const launch = parseTuiArgs(['eval', '--name', 'mine.csv', '--no-file']);
+    expect(launch.errors).toEqual([]);
+    expect(launch.target).toBe('eval');
+    expect(launch.ignored).toEqual(expect.arrayContaining(['--name', '--no-file']));
+  });
+
+  it('flags --help / -h as a usage request', () => {
+    expect(parseTuiArgs(['--help']).requestedHelp).toBe(true);
+    expect(parseTuiArgs(['-h']).requestedHelp).toBe(true);
+    expect(parseTuiArgs([]).requestedHelp).toBe(false);
+    expect(tuiUsage()).toContain('pnpm run tui');
+  });
+
+  it('tracks whether run options were given explicitly at launch', () => {
+    expect(parseTuiArgs(['--runs', '3']).optionsExplicit).toBe(true);
+    expect(parseTuiArgs(['--save-runs', '10']).optionsExplicit).toBe(true);
+    expect(parseTuiArgs(['--per-run']).optionsExplicit).toBe(true);
+    expect(parseTuiArgs(['--students', '40', '--tutors', '12']).optionsExplicit).toBe(true);
+    expect(parseTuiArgs(['eval']).optionsExplicit).toBe(false);
+    // The timing toggle is not a run option — config prompts still show.
+    expect(parseTuiArgs(['--no-timing']).optionsExplicit).toBe(false);
+  });
 });
 
 describe('tui help content', () => {
