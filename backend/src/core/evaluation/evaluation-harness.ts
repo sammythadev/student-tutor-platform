@@ -18,6 +18,8 @@ export interface EvaluationRow {
   tutors: number;
   loadFactorWeight: number;
   topK: number | null;
+  /** Number of repeated runs per test — aggregate rows report the total; per-run rows report the test's total. */
+  runs: number;
   averageScore: number;
   unassignedPercent: number;
   jainFairnessIndex: number;
@@ -28,12 +30,18 @@ export interface EvaluationRow {
   peakHeapEntries: number;
 }
 
-/** Number of repeated runs; elapsed time is reported as min/mean/max across runs. */
-const BENCHMARK_RUNS = 5;
+/** Default number of repeated runs per test (override with `--runs <n>`). */
+export const DEFAULT_RUNS = 5;
 
 export interface CountOverride {
   students: number;
   tutors: number;
+}
+
+/** Reads `--runs <n>` from argv; falls back to DEFAULT_RUNS when absent. */
+export function parseRuns(): number {
+  const raw = getFlagValue('--runs');
+  return raw === undefined ? DEFAULT_RUNS : parsePositiveInt('--runs', raw);
 }
 
 /** Parses a positive-integer CLI flag value, or throws a one-line user error. */
@@ -75,7 +83,7 @@ function applyCountOverride(configs: EvaluationConfig[], override: CountOverride
 const mean = (values: number[]): number =>
   values.length === 0 ? 0 : values.reduce((total, value) => total + value, 0) / values.length;
 
-export function evaluate(config: EvaluationConfig): EvaluationRow {
+export function evaluate(config: EvaluationConfig, runs: number = DEFAULT_RUNS): EvaluationRow {
   // The engine mutates tutor.assignedCount, so each run needs fresh fixtures.
   // Quality metrics are deterministic across runs; timing is min/mean/max of N.
   const elapsedSamples: number[] = [];
@@ -83,7 +91,7 @@ export function evaluate(config: EvaluationConfig): EvaluationRow {
   let assignedCounts: number[] = [];
   const stats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
 
-  for (let run = 0; run < BENCHMARK_RUNS; run += 1) {
+  for (let run = 0; run < runs; run += 1) {
     const students = generateStudents(config.students, config.loadFactorWeight);
     const tutors = generateTutors(config.tutors, config.capacityStrategy);
     const runStats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
@@ -112,6 +120,7 @@ export function evaluate(config: EvaluationConfig): EvaluationRow {
     tutors: config.tutors,
     loadFactorWeight: config.loadFactorWeight,
     topK: config.topK ?? null,
+    runs,
     averageScore: result.assignments.length === 0 ? 0 : totalScore / result.assignments.length,
     unassignedPercent: (result.unassignable.length / config.students) * 100,
     jainFairnessIndex:
@@ -228,6 +237,7 @@ export const HEADER = [
   'tutors',
   'loadFactorWeight',
   'topK',
+  'runs',
   'averageScore',
   'unassignedPercent',
   'jainFairnessIndex',
@@ -244,6 +254,7 @@ export const toRow = (row: EvaluationRow): string[] => [
   String(row.tutors),
   String(row.loadFactorWeight),
   row.topK === null ? 'inf' : String(row.topK),
+  String(row.runs),
   row.averageScore.toFixed(6),
   row.unassignedPercent.toFixed(2),
   row.jainFairnessIndex.toFixed(6),
@@ -268,12 +279,16 @@ if (typeof require !== 'undefined' && require.main === module) {
 
     const override = parseCountOverride();
     const configs = override ? applyCountOverride(baseConfigs, override) : baseConfigs;
-    const rows = configs.map((config) => toRow(evaluate(config)));
+    const runs = parseRuns();
+    const rows = configs.map((config) => toRow(evaluate(config, runs)));
 
     emitResults({
       defaultName: 'evaluation-results.csv',
       header: HEADER,
       rows,
     });
+    console.error(
+      `\nEach test ran ${runs} time(s)${runs === DEFAULT_RUNS ? ' (default)' : ''} — set with --runs <n>`,
+    );
   });
 }
