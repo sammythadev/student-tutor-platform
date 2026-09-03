@@ -5,7 +5,7 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3268 nodes · 5031 edges · 347 communities (209 shown, 138 thin omitted)
+- 3268 nodes · 5039 edges · 344 communities (206 shown, 138 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 23 edges (avg confidence: 0.58)
 - Token cost: 0 input · 0 output
 
@@ -324,7 +324,6 @@
 - CalendarGrid.tsx
 - Image credits
 - Button.tsx
-- chart.tsx
 - AuthSignupDto
 - @nestjs/schematics
 - @nestjs/testing
@@ -343,10 +342,8 @@
 - Patch
 - Post
 - UseGuards
-- render-probe-gap.tsx
 - stdout-clear-patch.ts
 - FeedRepository
-- indicator.tsx
 
 ## God Nodes (most connected - your core abstractions)
 1. `AuthenticatedUser` - 61 edges
@@ -361,6 +358,8 @@
 10. `CardContent()` - 21 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `parseSizes()` --calls--> `getFlagValue()`  [EXTRACTED]
+  backend/src/core/evaluation/optimal-baseline.ts → backend/src/core/evaluation/cli-output.ts
 - `AuthenticatedRequest` --references--> `AuthenticatedUser`  [EXTRACTED]
   backend/src/common/filters/http-exception.filter.ts → backend/src/common/auth/auth.types.ts
 - `bootstrap()` --indirect_call--> `AppLoggerService`  [INFERRED]
@@ -369,13 +368,11 @@
   backend/src/core/evaluation/tui/views.tsx → backend/src/core/evaluation/cli-output.ts
 - `MetricCard` --references--> `Accent`  [EXTRACTED]
   frontend/app/(app)/admin/page.tsx → frontend/lib/ui.ts
-- `ProfilePage()` --calls--> `accentFor()`  [EXTRACTED]
-  frontend/app/(app)/profile/page.tsx → frontend/lib/ui.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (347 total, 138 thin omitted)
+## Communities (344 total, 138 thin omitted)
 
 ### Community 0 - "scripts"
 Cohesion: 0.05
@@ -386,16 +383,16 @@ Cohesion: 0.15
 Nodes (13): jest, collectCoverageFrom, coverageDirectory, moduleFileExtensions, rootDir, testEnvironment, testRegex, transform (+5 more)
 
 ### Community 2 - "evaluation-harness.ts"
-Cohesion: 0.14
-Nodes (14): getFlagValue(), resolveOutputPath(), runCli(), computeOptimal(), computeOptimalityGapRow(), DEFAULT_GAP_SIZES, Edge, greedyStaticTotal() (+6 more)
+Cohesion: 0.15
+Nodes (12): runCli(), computeOptimal(), computeOptimalityGapRow(), DEFAULT_GAP_SIZES, Edge, greedyStaticTotal(), HEADER, MinCostMaxFlow (+4 more)
 
 ### Community 3 - "package.json"
 Cohesion: 0.29
 Nodes (6): author, description, license, name, private, version
 
 ### Community 4 - "devDependencies"
-Cohesion: 0.10
-Nodes (24): AccentColor, BadgeProps, CardProps, ChannelBreakdownChart(), ChannelDatum, ChannelKey, chartData, chartData (+16 more)
+Cohesion: 0.06
+Nodes (47): AccentColor, BadgeProps, CardProps, ChannelBreakdownChart(), ChannelDatum, ChannelKey, chartData, chartData (+39 more)
 
 ### Community 5 - "dependencies"
 Cohesion: 0.22
@@ -439,19 +436,19 @@ Nodes (11): devDependencies, eslint-config-prettier, @eslint/eslintrc, @swc/jest
 
 ### Community 39 - "lint-staged"
 Cohesion: 0.10
-Nodes (26): buildModerateConfigs(), buildRealisticConfigs(), CAPTURE_HEADER, CAPTURE_STRATEGIES, CountOverride, emitCaptureRuns(), emitPerRun(), evaluate() (+18 more)
+Nodes (27): getFlagValue(), buildModerateConfigs(), buildRealisticConfigs(), CAPTURE_HEADER, CAPTURE_STRATEGIES, CountOverride, emitCaptureRuns(), emitPerRun() (+19 more)
 
 ### Community 40 - "@nestjs/cli"
 Cohesion: 0.06
 Nodes (34): 10. DEVICE MOCKUP FRAME RULE, 11. ONBOARDING FLOW RULE, 12. FIRST SCREEN CLEANLINESS RULE, 13. SAFE AREA AND SYSTEM REGION RULE, 14. NAVIGATION RULE, 15. CLEAN LAYOUT RULE, 16. CREATIVE IMAGE DIRECTION RULE, 17. BACKGROUND TEXTURE AND SURFACE RULE (+26 more)
 
 ### Community 41 - "@nestjs/schematics"
-Cohesion: 0.11
-Nodes (23): allSuite, baselinesSuite, gapSuite, getSuite(), harnessLabel(), harnessRunner(), harnessSuite, HarnessSuiteSpec (+15 more)
+Cohesion: 0.10
+Nodes (25): allSuite, baselinesSuite, gapSuite, getSuite(), harnessLabel(), harnessRunner(), harnessSuite, HarnessSuiteSpec (+17 more)
 
 ### Community 42 - "@nestjs/testing"
-Cohesion: 0.12
-Nodes (14): getInitials(), INITIAL_TEAMMATES, Teammate, TeamOnDuty(), Avatar(), AvatarFallback(), AvatarImage(), DropdownMenu() (+6 more)
+Cohesion: 0.10
+Nodes (17): StatusIndicator(), StatusIndicatorProps, statusIndicatorVariants, getInitials(), INITIAL_TEAMMATES, Teammate, TeamOnDuty(), Avatar() (+9 more)
 
 ### Community 48 - "@swc/core"
 Cohesion: 0.15
@@ -614,12 +611,12 @@ Cohesion: 0.38
 Nodes (4): Assignment, MatchScore, MatchScoreBreakdown, MatchSubBreakdown
 
 ### Community 96 - "core-units.spec.ts"
-Cohesion: 0.09
-Nodes (21): Collapsible(), CollapsibleContent(), CollapsibleTrigger(), Sidebar(), SidebarContext, SidebarContextProps, SidebarGroup(), SidebarGroupLabel() (+13 more)
+Cohesion: 0.11
+Nodes (11): Sidebar(), SidebarContext, SidebarContextProps, SidebarMenuButton(), sidebarMenuButtonVariants, SidebarProvider(), SidebarRail(), SidebarTrigger() (+3 more)
 
 ### Community 97 - "docx"
-Cohesion: 0.10
-Nodes (17): chartData, ConversationVolumeChart(), lastChartRow, PeriodDays, volumeChartReferenceDate, VolumeRow, ChartTooltipWeekdayStyle, DashboardDateStyle (+9 more)
+Cohesion: 0.09
+Nodes (18): chartData, ConversationVolumeChart(), lastChartRow, PeriodDays, volumeChartReferenceDate, VolumeRow, ChartTooltipWeekdayStyle, DashboardDateStyle (+10 more)
 
 ### Community 100 - "@commitlint/config-conventional"
 Cohesion: 0.10
@@ -823,15 +820,15 @@ Nodes (3): injectCSS(), mountScrollWorld(), seedParticles()
 
 ### Community 160 - "lenis"
 Cohesion: 0.09
-Nodes (24): STATUS_DOT, FindTutors(), ButtonProps, IconButtonProps, CatalogFilters(), SORT_OPTIONS, SortKey, FilterChip() (+16 more)
+Nodes (25): STATUS_DOT, FindTutors(), ButtonProps, IconButtonProps, CatalogFilters(), SORT_OPTIONS, SortKey, FilterChip() (+17 more)
 
 ### Community 162 - "pg"
 Cohesion: 0.24
 Nodes (5): AuthLoginDto, ApiProperty, IsEmail, IsString, MinLength
 
 ### Community 163 - "swagger-ui-express"
-Cohesion: 0.19
-Nodes (16): channelIcon(), Conversation, formatWaitTime(), RecentConversations(), rows, statusLabel(), statusVariant(), CardTitle() (+8 more)
+Cohesion: 0.10
+Nodes (27): DashboardCard(), channelIcon(), Conversation, formatWaitTime(), RecentConversations(), rows, statusLabel(), statusVariant() (+19 more)
 
 ### Community 165 - "@nestjs/schematics"
 Cohesion: 0.53
@@ -878,8 +875,8 @@ Cohesion: 0.22
 Nodes (8): Accessibility, Design Engineering, Initial Response, prefers-reduced-motion, Review Checklist, Review Format (Required), Stagger Animations, Touch device hover states
 
 ### Community 184 - "MessagesRepository"
-Cohesion: 0.09
-Nodes (27): DashboardCard(), Delta(), DeltaContext, DeltaContextValue, DeltaIcon(), DeltaIconVariant, DeltaValue(), DeltaVariant (+19 more)
+Cohesion: 0.21
+Nodes (10): Collapsible(), CollapsibleContent(), CollapsibleTrigger(), SidebarGroup(), SidebarGroupLabel(), SidebarMenu(), SidebarMenuItem(), SidebarMenuSub() (+2 more)
 
 ### Community 185 - "http-exception.filter.ts"
 Cohesion: 0.22
@@ -934,8 +931,8 @@ Cohesion: 0.40
 Nodes (5): Interruptibility advantage, Spring Animations, Spring-based mouse interactions, Spring configuration, When to use springs
 
 ### Community 198 - "JwtAccessStrategy"
-Cohesion: 0.25
-Nodes (13): columnWidths(), DEFAULT_OUTPUT_DIR, EmitOptions, emitResults(), formatTable(), shouldSpaceRows(), stripTimingColumns(), TIMING_COLUMNS (+5 more)
+Cohesion: 0.13
+Nodes (21): columnWidths(), DEFAULT_OUTPUT_DIR, EmitOptions, emitResults(), formatTable(), parseCsv(), resolveOutputPath(), shouldSpaceRows() (+13 more)
 
 ### Community 199 - "Core Philosophy"
 Cohesion: 0.50
@@ -990,8 +987,8 @@ Cohesion: 0.29
 Nodes (6): exclude, scripts/render-probe-baselines.tsx, scripts/render-probe-gap.tsx, scripts/render-probe-help.tsx, scripts/render-probe.tsx, src/core/evaluation/tui
 
 ### Community 237 - "PinoLikeLogger"
-Cohesion: 0.13
-Nodes (14): parseCsv(), Screen, TuiLaunch, Suite, SuiteResult, BANNER_FONTS, BrowserScreen(), DataTableProps (+6 more)
+Cohesion: 0.18
+Nodes (9): fakeStdin, FakeStdout, instance, App(), Screen, TuiLaunch, MenuScreen(), NotePadScreen() (+1 more)
 
 ### Community 240 - "index.ts"
 Cohesion: 0.33
@@ -1133,14 +1130,6 @@ Nodes (5): StudentProfileRecord, TutorProfileRecord, UserRecord, PublicUserRecor
 Cohesion: 0.67
 Nodes (3): types, jest, node
 
-### Community 324 - "chart.tsx"
-Cohesion: 0.25
-Nodes (9): ChartContext, ChartContextProps, ChartLegendContent(), ChartTooltipContent(), getPayloadConfigFromPayload(), INITIAL_DIMENSION, THEMES, TooltipNameType (+1 more)
-
-### Community 343 - "render-probe-gap.tsx"
-Cohesion: 0.33
-Nodes (4): fakeStdin, FakeStdout, instance, App()
-
 ### Community 344 - "stdout-clear-patch.ts"
 Cohesion: 0.70
 Nodes (3): FULL_CLEAR_MARKERS, patchInkClearDesync(), wrapClearDesync()
@@ -1149,12 +1138,8 @@ Nodes (3): FULL_CLEAR_MARKERS, patchInkClearDesync(), wrapClearDesync()
 Cohesion: 0.22
 Nodes (4): posts, FeedRepository, Inject, Injectable
 
-### Community 346 - "indicator.tsx"
-Cohesion: 0.67
-Nodes (3): StatusIndicator(), StatusIndicatorProps, statusIndicatorVariants
-
 ## Knowledge Gaps
-- **1328 isolated node(s):** `EvaluationConfig`, `EvaluationRow`, `CountOverride`, `CAPTURE_HEADER`, `WinnerStrategySummary` (+1323 more)
+- **1328 isolated node(s):** `WINNERS`, `DEFAULT_OUTPUT_DIR`, `EmitOptions`, `Highlight`, `SuiteRunner` (+1323 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **138 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -1162,16 +1147,16 @@ Nodes (3): StatusIndicator(), StatusIndicatorProps, statusIndicatorVariants
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `AuthenticatedUser` connect `CurrentUser` to `MessagesController`, `body-parser`, `channel-sales-chart.tsx`, `cookie-parser`, `matchmaking.repository.ts`, `AppLoggerService`, `chart.tsx`, `nigerian-secondary.seed.ts`, `@types/express`, `swagger-ui-express`, `FeedQueryDto`?**
-  _High betweenness centrality (0.033) - this node is a cross-community bridge._
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
 - **Why does `AppDatabase` connect `AppDatabase` to `@eslint/eslintrc`, `MessagesController`, `schema.ts`, `cookie-parser`, `FeedRepository`, `AuthService`?**
-  _High betweenness centrality (0.010) - this node is a cross-community bridge._
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Why does `LearningPace` connect `OnboardStudentDto` to `ts-prune`, `OnboardUserDto`, `UpdateStudentPreferencesDto`, `tsconfig-paths`, `nigerian-secondary.seed.ts`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
-- **What connects `EvaluationConfig`, `EvaluationRow`, `CountOverride` to the rest of the system?**
+- **What connects `WINNERS`, `DEFAULT_OUTPUT_DIR`, `EmitOptions` to the rest of the system?**
   _1328 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `scripts` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
-- **Should `evaluation-harness.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.14035087719298245 - nodes in this community are weakly interconnected._
 - **Should `devDependencies` be split into smaller, more focused modules?**
-  _Cohesion score 0.10384068278805121 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06013986013986014 - nodes in this community are weakly interconnected._
+- **Should `class-transformer` be split into smaller, more focused modules?**
+  _Cohesion score 0.0625 - nodes in this community are weakly interconnected._

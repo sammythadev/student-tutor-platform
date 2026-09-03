@@ -2,8 +2,10 @@ packages:
   - backend/
   - frontend/
 
-onlyBuiltDependencies:
-  - bcrypt
-  - '@swc/core'
-  - esbuild
-  - sharp
+allowBuilds:
+  '@scarf/scarf': true
+  '@swc/core': true
+  bcrypt: true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

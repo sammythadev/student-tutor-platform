@@ -4,356 +4,15 @@
   "graph": {},
   "nodes": [
     {
-      "label": "evaluation-harness.ts",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "evaluation-harness.ts"
-    },
-    {
-      "label": "EvaluationConfig",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L7",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_evaluationconfig",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "evaluationconfig"
-    },
-    {
-      "label": "EvaluationRow",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L16",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_evaluationrow",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "evaluationrow"
-    },
-    {
-      "label": "CountOverride",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L44",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_countoverride",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "countoverride"
-    },
-    {
-      "label": "parseRuns()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L50",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_parseruns",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "parseruns()"
-    },
-    {
-      "label": "parseSaveRuns()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L61",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_parsesaveruns",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "parsesaveruns()"
-    },
-    {
-      "label": "parseCaptureRuns()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L72",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_parsecaptureruns",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "parsecaptureruns()"
-    },
-    {
-      "label": "evaluatePerRunRow()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L82",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_evaluateperrunrow",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "evaluateperrunrow()"
-    },
-    {
-      "label": "emitPerRun()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L129",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_emitperrun",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "emitperrun()"
-    },
-    {
-      "label": "CAPTURE_STRATEGIES",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L151",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_capture_strategies",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "capture_strategies"
-    },
-    {
-      "label": "strategyMetrics()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L158",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_strategymetrics",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "strategymetrics()"
-    },
-    {
-      "label": "CAPTURE_HEADER",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L168",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_capture_header",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "capture_header"
-    },
-    {
-      "label": "evaluateCapturedRun()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L192",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_evaluatecapturedrun",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "evaluatecapturedrun()"
-    },
-    {
-      "label": "toCapturedRunRow()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L237",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_tocapturedrunrow",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "tocapturedrunrow()"
-    },
-    {
-      "label": "emitCaptureRuns()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L278",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_emitcaptureruns",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "emitcaptureruns()"
-    },
-    {
-      "label": "WinnerStrategySummary",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L293",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_winnerstrategysummary",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "winnerstrategysummary"
-    },
-    {
-      "label": "WinnerSummary",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L304",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_winnersummary",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "winnersummary"
-    },
-    {
-      "label": "winnerSummaryFromRows()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L320",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_winnersummaryfromrows",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "winnersummaryfromrows()"
-    },
-    {
-      "label": "parsePositiveInt()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L438",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_parsepositiveint",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "parsepositiveint()"
-    },
-    {
-      "label": "parseCountOverride()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L451",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_parsecountoverride",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "parsecountoverride()"
-    },
-    {
-      "label": "applyCountOverride()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L469",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_applycountoverride",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "applycountoverride()"
-    },
-    {
-      "label": "mean()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L476",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_mean",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "mean()"
-    },
-    {
-      "label": "evaluate()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L479",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_evaluate",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "evaluate()"
-    },
-    {
-      "label": "buildEvaluationConfigs()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L534",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_buildevaluationconfigs",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "buildevaluationconfigs()"
-    },
-    {
-      "label": "buildTopKSweepConfigs()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L557",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_buildtopksweepconfigs",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "buildtopksweepconfigs()"
-    },
-    {
-      "label": "buildRealisticConfigs()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L574",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_buildrealisticconfigs",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "buildrealisticconfigs()"
-    },
-    {
-      "label": "buildModerateConfigs()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L597",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_buildmoderateconfigs",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "buildmoderateconfigs()"
-    },
-    {
-      "label": "runRealisticEvaluation()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L614",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_runrealisticevaluation",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "runrealisticevaluation()"
-    },
-    {
-      "label": "runModerateEvaluation()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L618",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_runmoderateevaluation",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "runmoderateevaluation()"
-    },
-    {
-      "label": "HEADER",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L621",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_header",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "header"
-    },
-    {
-      "label": "toRow()",
-      "file_type": "code",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L640",
-      "_origin": "ast",
-      "id": "backend_src_core_evaluation_evaluation_harness_torow",
-      "community": 39,
-      "community_name": "lint-staged",
-      "norm_label": "torow()"
-    },
-    {
       "label": "evaluation-tui.spec.ts",
       "file_type": "code",
       "source_file": "backend/src/core/__tests__/evaluation-tui.spec.ts",
       "source_location": "L1",
       "_origin": "ast",
+      "id": "backend_src_core_tests_evaluation_tui_spec",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "evaluation-tui.spec.ts",
-      "id": "backend_src_core_tests_evaluation_tui_spec"
+      "norm_label": "evaluation-tui.spec.ts"
     },
     {
       "label": "WINNERS",
@@ -361,10 +20,10 @@
       "source_file": "backend/src/core/__tests__/evaluation-tui.spec.ts",
       "source_location": "L38",
       "_origin": "ast",
+      "id": "backend_src_core_tests_evaluation_tui_spec_winners",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "winners",
-      "id": "backend_src_core_tests_evaluation_tui_spec_winners"
+      "norm_label": "winners"
     },
     {
       "label": "noopEmit()",
@@ -372,10 +31,10 @@
       "source_file": "backend/src/core/__tests__/evaluation-tui.spec.ts",
       "source_location": "L41",
       "_origin": "ast",
+      "id": "backend_src_core_tests_evaluation_tui_spec_noopemit",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "noopemit()",
-      "id": "backend_src_core_tests_evaluation_tui_spec_noopemit"
+      "norm_label": "noopemit()"
     },
     {
       "label": "cli-output.ts",
@@ -383,10 +42,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L1",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "cli-output.ts",
-      "id": "backend_src_core_evaluation_cli_output"
+      "norm_label": "cli-output.ts"
     },
     {
       "label": "defaultBenchmarksDir()",
@@ -394,10 +53,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L21",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_defaultbenchmarksdir",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "defaultbenchmarksdir()",
-      "id": "backend_src_core_evaluation_cli_output_defaultbenchmarksdir"
+      "norm_label": "defaultbenchmarksdir()"
     },
     {
       "label": "DEFAULT_OUTPUT_DIR",
@@ -405,10 +64,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L28",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_default_output_dir",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "default_output_dir",
-      "id": "backend_src_core_evaluation_cli_output_default_output_dir"
+      "norm_label": "default_output_dir"
     },
     {
       "label": "getFlagValue()",
@@ -416,10 +75,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 2,
-      "community_name": "evaluation-harness.ts",
-      "norm_label": "getflagvalue()",
-      "id": "backend_src_core_evaluation_cli_output_getflagvalue"
+      "id": "backend_src_core_evaluation_cli_output_getflagvalue",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "getflagvalue()"
     },
     {
       "label": "resolveOutputPath()",
@@ -427,10 +86,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L51",
       "_origin": "ast",
-      "community": 2,
-      "community_name": "evaluation-harness.ts",
-      "norm_label": "resolveoutputpath()",
-      "id": "backend_src_core_evaluation_cli_output_resolveoutputpath"
+      "id": "backend_src_core_evaluation_cli_output_resolveoutputpath",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "resolveoutputpath()"
     },
     {
       "label": "toCsv()",
@@ -438,10 +97,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L66",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_tocsv",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "tocsv()",
-      "id": "backend_src_core_evaluation_cli_output_tocsv"
+      "norm_label": "tocsv()"
     },
     {
       "label": "shouldSpaceRows()",
@@ -449,10 +108,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L76",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_shouldspacerows",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "shouldspacerows()",
-      "id": "backend_src_core_evaluation_cli_output_shouldspacerows"
+      "norm_label": "shouldspacerows()"
     },
     {
       "label": "toSpacedCsv()",
@@ -460,10 +119,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L90",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_tospacedcsv",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "tospacedcsv()",
-      "id": "backend_src_core_evaluation_cli_output_tospacedcsv"
+      "norm_label": "tospacedcsv()"
     },
     {
       "label": "columnWidths()",
@@ -471,10 +130,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L99",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_columnwidths",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "columnwidths()",
-      "id": "backend_src_core_evaluation_cli_output_columnwidths"
+      "norm_label": "columnwidths()"
     },
     {
       "label": "formatTable()",
@@ -482,10 +141,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L105",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_formattable",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "formattable()",
-      "id": "backend_src_core_evaluation_cli_output_formattable"
+      "norm_label": "formattable()"
     },
     {
       "label": "parseCsv()",
@@ -493,10 +152,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L125",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "parsecsv()",
-      "id": "backend_src_core_evaluation_cli_output_parsecsv"
+      "id": "backend_src_core_evaluation_cli_output_parsecsv",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "parsecsv()"
     },
     {
       "label": "writeCsvOutput()",
@@ -504,10 +163,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L171",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_writecsvoutput",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "writecsvoutput()",
-      "id": "backend_src_core_evaluation_cli_output_writecsvoutput"
+      "norm_label": "writecsvoutput()"
     },
     {
       "label": "TIMING_COLUMNS",
@@ -515,10 +174,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L183",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_timing_columns",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "timing_columns",
-      "id": "backend_src_core_evaluation_cli_output_timing_columns"
+      "norm_label": "timing_columns"
     },
     {
       "label": "stripTimingColumns()",
@@ -526,10 +185,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L195",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_striptimingcolumns",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "striptimingcolumns()",
-      "id": "backend_src_core_evaluation_cli_output_striptimingcolumns"
+      "norm_label": "striptimingcolumns()"
     },
     {
       "label": "runCli()",
@@ -537,10 +196,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L211",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_runcli",
       "community": 2,
       "community_name": "evaluation-harness.ts",
-      "norm_label": "runcli()",
-      "id": "backend_src_core_evaluation_cli_output_runcli"
+      "norm_label": "runcli()"
     },
     {
       "label": "EmitOptions",
@@ -548,10 +207,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L220",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_emitoptions",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "emitoptions",
-      "id": "backend_src_core_evaluation_cli_output_emitoptions"
+      "norm_label": "emitoptions"
     },
     {
       "label": "emitResults()",
@@ -559,10 +218,10 @@
       "source_file": "backend/src/core/evaluation/cli-output.ts",
       "source_location": "L237",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_cli_output_emitresults",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "emitresults()",
-      "id": "backend_src_core_evaluation_cli_output_emitresults"
+      "norm_label": "emitresults()"
     },
     {
       "label": "suites.ts",
@@ -570,10 +229,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L1",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "suites.ts",
-      "id": "backend_src_core_evaluation_tui_suites"
+      "norm_label": "suites.ts"
     },
     {
       "label": "SuiteResult",
@@ -581,10 +240,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L41",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "suiteresult",
-      "id": "backend_src_core_evaluation_tui_suites_suiteresult"
+      "id": "backend_src_core_evaluation_tui_suites_suiteresult",
+      "community": 41,
+      "community_name": "@nestjs/schematics",
+      "norm_label": "suiteresult"
     },
     {
       "label": "SuiteRunState",
@@ -592,10 +251,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L50",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_suiterunstate",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "suiterunstate",
-      "id": "backend_src_core_evaluation_tui_suites_suiterunstate"
+      "norm_label": "suiterunstate"
     },
     {
       "label": "Highlight",
@@ -603,10 +262,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L62",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_highlight",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "highlight",
-      "id": "backend_src_core_evaluation_tui_suites_highlight"
+      "norm_label": "highlight"
     },
     {
       "label": "RunOptions",
@@ -614,10 +273,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L73",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_runoptions",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "runoptions",
-      "id": "backend_src_core_evaluation_tui_suites_runoptions"
+      "norm_label": "runoptions"
     },
     {
       "label": "SuiteRunner",
@@ -625,10 +284,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L87",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_suiterunner",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "suiterunner",
-      "id": "backend_src_core_evaluation_tui_suites_suiterunner"
+      "norm_label": "suiterunner"
     },
     {
       "label": "Suite",
@@ -636,10 +295,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L92",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "suite",
-      "id": "backend_src_core_evaluation_tui_suites_suite"
+      "id": "backend_src_core_evaluation_tui_suites_suite",
+      "community": 41,
+      "community_name": "@nestjs/schematics",
+      "norm_label": "suite"
     },
     {
       "label": "yieldToInk()",
@@ -647,10 +306,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L104",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_yieldtoink",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "yieldtoink()",
-      "id": "backend_src_core_evaluation_tui_suites_yieldtoink"
+      "norm_label": "yieldtoink()"
     },
     {
       "label": "harnessLabel()",
@@ -658,10 +317,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L106",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_harnesslabel",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "harnesslabel()",
-      "id": "backend_src_core_evaluation_tui_suites_harnesslabel"
+      "norm_label": "harnesslabel()"
     },
     {
       "label": "HarnessSuiteSpec",
@@ -669,10 +328,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L111",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_harnesssuitespec",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "harnesssuitespec",
-      "id": "backend_src_core_evaluation_tui_suites_harnesssuitespec"
+      "norm_label": "harnesssuitespec"
     },
     {
       "label": "harnessRunner()",
@@ -680,10 +339,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L128",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_harnessrunner",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "harnessrunner()",
-      "id": "backend_src_core_evaluation_tui_suites_harnessrunner"
+      "norm_label": "harnessrunner()"
     },
     {
       "label": "runHarness",
@@ -691,10 +350,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L219",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_runharness",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "runharness",
-      "id": "backend_src_core_evaluation_tui_suites_runharness"
+      "norm_label": "runharness"
     },
     {
       "label": "runTopk",
@@ -702,10 +361,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L230",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_runtopk",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "runtopk",
-      "id": "backend_src_core_evaluation_tui_suites_runtopk"
+      "norm_label": "runtopk"
     },
     {
       "label": "runModerate",
@@ -713,10 +372,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L237",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_runmoderate",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "runmoderate",
-      "id": "backend_src_core_evaluation_tui_suites_runmoderate"
+      "norm_label": "runmoderate"
     },
     {
       "label": "runGap()",
@@ -724,10 +383,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L247",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_rungap",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "rungap()",
-      "id": "backend_src_core_evaluation_tui_suites_rungap"
+      "norm_label": "rungap()"
     },
     {
       "label": "runBaselines()",
@@ -735,10 +394,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L264",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_runbaselines",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "runbaselines()",
-      "id": "backend_src_core_evaluation_tui_suites_runbaselines"
+      "norm_label": "runbaselines()"
     },
     {
       "label": "runAll()",
@@ -746,10 +405,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L281",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_runall",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "runall()",
-      "id": "backend_src_core_evaluation_tui_suites_runall"
+      "norm_label": "runall()"
     },
     {
       "label": "harnessSuite",
@@ -757,10 +416,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L291",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_harnesssuite",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "harnesssuite",
-      "id": "backend_src_core_evaluation_tui_suites_harnesssuite"
+      "norm_label": "harnesssuite"
     },
     {
       "label": "topkSuite",
@@ -768,10 +427,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L308",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_topksuite",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "topksuite",
-      "id": "backend_src_core_evaluation_tui_suites_topksuite"
+      "norm_label": "topksuite"
     },
     {
       "label": "moderateSuite",
@@ -779,10 +438,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L321",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_moderatesuite",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "moderatesuite",
-      "id": "backend_src_core_evaluation_tui_suites_moderatesuite"
+      "norm_label": "moderatesuite"
     },
     {
       "label": "gapSuite",
@@ -790,10 +449,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L334",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_gapsuite",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "gapsuite",
-      "id": "backend_src_core_evaluation_tui_suites_gapsuite"
+      "norm_label": "gapsuite"
     },
     {
       "label": "baselinesSuite",
@@ -801,10 +460,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L343",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_baselinessuite",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "baselinessuite",
-      "id": "backend_src_core_evaluation_tui_suites_baselinessuite"
+      "norm_label": "baselinessuite"
     },
     {
       "label": "allSuite",
@@ -812,10 +471,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L356",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_allsuite",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "allsuite",
-      "id": "backend_src_core_evaluation_tui_suites_allsuite"
+      "norm_label": "allsuite"
     },
     {
       "label": "SUITES",
@@ -823,10 +482,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L367",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_suites",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "suites",
-      "id": "backend_src_core_evaluation_tui_suites_suites"
+      "norm_label": "suites"
     },
     {
       "label": "getSuite()",
@@ -834,10 +493,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L376",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_getsuite",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "getsuite()",
-      "id": "backend_src_core_evaluation_tui_suites_getsuite"
+      "norm_label": "getsuite()"
     },
     {
       "label": "NOTE: `runAll` intentionally composes [harness, topk, gap, baselines] \u2014 the",
@@ -845,10 +504,10 @@
       "source_file": "backend/src/core/evaluation/tui/suites.ts",
       "source_location": "L304",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_suites_rationale_304",
       "community": 41,
       "community_name": "@nestjs/schematics",
-      "norm_label": "note: `runall` intentionally composes [harness, topk, gap, baselines] \u2014 the",
-      "id": "backend_src_core_evaluation_tui_suites_rationale_304"
+      "norm_label": "note: `runall` intentionally composes [harness, topk, gap, baselines] \u2014 the"
     },
     {
       "label": "views.tsx",
@@ -856,10 +515,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "views.tsx",
-      "id": "backend_src_core_evaluation_tui_views"
+      "id": "backend_src_core_evaluation_tui_views",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "views.tsx"
     },
     {
       "label": "SPINNER_FRAMES",
@@ -867,10 +526,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L33",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "spinner_frames",
-      "id": "backend_src_core_evaluation_tui_views_spinner_frames"
+      "id": "backend_src_core_evaluation_tui_views_spinner_frames",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "spinner_frames"
     },
     {
       "label": "Spinner()",
@@ -878,10 +537,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L35",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "spinner()",
-      "id": "backend_src_core_evaluation_tui_views_spinner"
+      "id": "backend_src_core_evaluation_tui_views_spinner",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "spinner()"
     },
     {
       "label": "ProgressBar()",
@@ -889,10 +548,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L46",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "progressbar()",
-      "id": "backend_src_core_evaluation_tui_views_progressbar"
+      "id": "backend_src_core_evaluation_tui_views_progressbar",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "progressbar()"
     },
     {
       "label": "DataTableProps",
@@ -900,10 +559,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L65",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "datatableprops",
-      "id": "backend_src_core_evaluation_tui_views_datatableprops"
+      "id": "backend_src_core_evaluation_tui_views_datatableprops",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "datatableprops"
     },
     {
       "label": "NO_HIGHLIGHTS",
@@ -911,10 +570,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L71",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "no_highlights",
-      "id": "backend_src_core_evaluation_tui_views_no_highlights"
+      "id": "backend_src_core_evaluation_tui_views_no_highlights",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "no_highlights"
     },
     {
       "label": "DataTable()",
@@ -922,10 +581,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L91",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_views_datatable",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "datatable()",
-      "id": "backend_src_core_evaluation_tui_views_datatable"
+      "norm_label": "datatable()"
     },
     {
       "label": "WinnerSummaryTable()",
@@ -933,10 +592,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L191",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "winnersummarytable()",
-      "id": "backend_src_core_evaluation_tui_views_winnersummarytable"
+      "id": "backend_src_core_evaluation_tui_views_winnersummarytable",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "winnersummarytable()"
     },
     {
       "label": "TextInput()",
@@ -944,10 +603,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L271",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "textinput()",
-      "id": "backend_src_core_evaluation_tui_views_textinput"
+      "id": "backend_src_core_evaluation_tui_views_textinput",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "textinput()"
     },
     {
       "label": "BANNER_FONTS",
@@ -955,10 +614,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L319",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "banner_fonts",
-      "id": "backend_src_core_evaluation_tui_views_banner_fonts"
+      "id": "backend_src_core_evaluation_tui_views_banner_fonts",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "banner_fonts"
     },
     {
       "label": "FigletFontName",
@@ -966,10 +625,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L322",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "figletfontname",
-      "id": "backend_src_core_evaluation_tui_views_figletfontname"
+      "id": "backend_src_core_evaluation_tui_views_figletfontname",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "figletfontname"
     },
     {
       "label": "renderBanner()",
@@ -977,10 +636,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L325",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_views_renderbanner",
       "community": 237,
       "community_name": "PinoLikeLogger",
-      "norm_label": "renderbanner()",
-      "id": "backend_src_core_evaluation_tui_views_renderbanner"
+      "norm_label": "renderbanner()"
     },
     {
       "label": "MenuScreen()",
@@ -988,10 +647,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L340",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_views_menuscreen",
       "community": 237,
       "community_name": "PinoLikeLogger",
-      "norm_label": "menuscreen()",
-      "id": "backend_src_core_evaluation_tui_views_menuscreen"
+      "norm_label": "menuscreen()"
     },
     {
       "label": "RunScreen()",
@@ -999,10 +658,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L458",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_views_runscreen",
       "community": 198,
       "community_name": "JwtAccessStrategy",
-      "norm_label": "runscreen()",
-      "id": "backend_src_core_evaluation_tui_views_runscreen"
+      "norm_label": "runscreen()"
     },
     {
       "label": "BrowserScreen()",
@@ -1010,10 +669,10 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L1066",
       "_origin": "ast",
-      "community": 237,
-      "community_name": "PinoLikeLogger",
-      "norm_label": "browserscreen()",
-      "id": "backend_src_core_evaluation_tui_views_browserscreen"
+      "id": "backend_src_core_evaluation_tui_views_browserscreen",
+      "community": 198,
+      "community_name": "JwtAccessStrategy",
+      "norm_label": "browserscreen()"
     },
     {
       "label": "NotePadScreen()",
@@ -1021,10 +680,351 @@
       "source_file": "backend/src/core/evaluation/tui/views.tsx",
       "source_location": "L1190",
       "_origin": "ast",
+      "id": "backend_src_core_evaluation_tui_views_notepadscreen",
       "community": 237,
       "community_name": "PinoLikeLogger",
-      "norm_label": "notepadscreen()",
-      "id": "backend_src_core_evaluation_tui_views_notepadscreen"
+      "norm_label": "notepadscreen()"
+    },
+    {
+      "label": "evaluation-harness.ts",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "evaluation-harness.ts",
+      "id": "backend_src_core_evaluation_evaluation_harness"
+    },
+    {
+      "label": "EvaluationConfig",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L7",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "evaluationconfig",
+      "id": "backend_src_core_evaluation_evaluation_harness_evaluationconfig"
+    },
+    {
+      "label": "EvaluationRow",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L16",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "evaluationrow",
+      "id": "backend_src_core_evaluation_evaluation_harness_evaluationrow"
+    },
+    {
+      "label": "CountOverride",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L44",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "countoverride",
+      "id": "backend_src_core_evaluation_evaluation_harness_countoverride"
+    },
+    {
+      "label": "parseRuns()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L50",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "parseruns()",
+      "id": "backend_src_core_evaluation_evaluation_harness_parseruns"
+    },
+    {
+      "label": "parseSaveRuns()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L61",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "parsesaveruns()",
+      "id": "backend_src_core_evaluation_evaluation_harness_parsesaveruns"
+    },
+    {
+      "label": "parseCaptureRuns()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L72",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "parsecaptureruns()",
+      "id": "backend_src_core_evaluation_evaluation_harness_parsecaptureruns"
+    },
+    {
+      "label": "evaluatePerRunRow()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L82",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "evaluateperrunrow()",
+      "id": "backend_src_core_evaluation_evaluation_harness_evaluateperrunrow"
+    },
+    {
+      "label": "emitPerRun()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L129",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "emitperrun()",
+      "id": "backend_src_core_evaluation_evaluation_harness_emitperrun"
+    },
+    {
+      "label": "CAPTURE_STRATEGIES",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L151",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "capture_strategies",
+      "id": "backend_src_core_evaluation_evaluation_harness_capture_strategies"
+    },
+    {
+      "label": "strategyMetrics()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L158",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "strategymetrics()",
+      "id": "backend_src_core_evaluation_evaluation_harness_strategymetrics"
+    },
+    {
+      "label": "CAPTURE_HEADER",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L168",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "capture_header",
+      "id": "backend_src_core_evaluation_evaluation_harness_capture_header"
+    },
+    {
+      "label": "evaluateCapturedRun()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L192",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "evaluatecapturedrun()",
+      "id": "backend_src_core_evaluation_evaluation_harness_evaluatecapturedrun"
+    },
+    {
+      "label": "toCapturedRunRow()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L237",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "tocapturedrunrow()",
+      "id": "backend_src_core_evaluation_evaluation_harness_tocapturedrunrow"
+    },
+    {
+      "label": "emitCaptureRuns()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L278",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "emitcaptureruns()",
+      "id": "backend_src_core_evaluation_evaluation_harness_emitcaptureruns"
+    },
+    {
+      "label": "WinnerStrategySummary",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L293",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "winnerstrategysummary",
+      "id": "backend_src_core_evaluation_evaluation_harness_winnerstrategysummary"
+    },
+    {
+      "label": "WinnerSummary",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L304",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "winnersummary",
+      "id": "backend_src_core_evaluation_evaluation_harness_winnersummary"
+    },
+    {
+      "label": "winnerSummaryFromRows()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L320",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "winnersummaryfromrows()",
+      "id": "backend_src_core_evaluation_evaluation_harness_winnersummaryfromrows"
+    },
+    {
+      "label": "parsePositiveInt()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L438",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "parsepositiveint()",
+      "id": "backend_src_core_evaluation_evaluation_harness_parsepositiveint"
+    },
+    {
+      "label": "parseCountOverride()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L451",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "parsecountoverride()",
+      "id": "backend_src_core_evaluation_evaluation_harness_parsecountoverride"
+    },
+    {
+      "label": "applyCountOverride()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L469",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "applycountoverride()",
+      "id": "backend_src_core_evaluation_evaluation_harness_applycountoverride"
+    },
+    {
+      "label": "mean()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L476",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "mean()",
+      "id": "backend_src_core_evaluation_evaluation_harness_mean"
+    },
+    {
+      "label": "evaluate()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L479",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "evaluate()",
+      "id": "backend_src_core_evaluation_evaluation_harness_evaluate"
+    },
+    {
+      "label": "buildEvaluationConfigs()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L534",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "buildevaluationconfigs()",
+      "id": "backend_src_core_evaluation_evaluation_harness_buildevaluationconfigs"
+    },
+    {
+      "label": "buildTopKSweepConfigs()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L557",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "buildtopksweepconfigs()",
+      "id": "backend_src_core_evaluation_evaluation_harness_buildtopksweepconfigs"
+    },
+    {
+      "label": "buildRealisticConfigs()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L574",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "buildrealisticconfigs()",
+      "id": "backend_src_core_evaluation_evaluation_harness_buildrealisticconfigs"
+    },
+    {
+      "label": "buildModerateConfigs()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L597",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "buildmoderateconfigs()",
+      "id": "backend_src_core_evaluation_evaluation_harness_buildmoderateconfigs"
+    },
+    {
+      "label": "runRealisticEvaluation()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L614",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "runrealisticevaluation()",
+      "id": "backend_src_core_evaluation_evaluation_harness_runrealisticevaluation"
+    },
+    {
+      "label": "runModerateEvaluation()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L618",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "runmoderateevaluation()",
+      "id": "backend_src_core_evaluation_evaluation_harness_runmoderateevaluation"
+    },
+    {
+      "label": "HEADER",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L621",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "header",
+      "id": "backend_src_core_evaluation_evaluation_harness_header"
+    },
+    {
+      "label": "toRow()",
+      "file_type": "code",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L640",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "lint-staged",
+      "norm_label": "torow()",
+      "id": "backend_src_core_evaluation_evaluation_harness_torow"
     },
     {
       "label": "help-data.ts",
@@ -5190,8 +5190,8 @@
       "source_file": "backend/src/core/evaluation/tui/app.tsx",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 343,
-      "community_name": "render-probe-gap.tsx",
+      "community": 237,
+      "community_name": "PinoLikeLogger",
       "norm_label": "app()",
       "id": "backend_src_core_evaluation_tui_app_app"
     },
@@ -10712,8 +10712,8 @@
       "source_file": "frontend/components/dashboard-card.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "dashboard-card.tsx",
       "id": "frontend_components_dashboard_card"
     },
@@ -10723,8 +10723,8 @@
       "source_file": "frontend/components/dashboard-card.tsx",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "dashboardcard()",
       "id": "frontend_components_dashboard_card_dashboardcard"
     },
@@ -10778,8 +10778,8 @@
       "source_file": "frontend/components/delta.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "delta.tsx",
       "id": "frontend_components_delta"
     },
@@ -10789,8 +10789,8 @@
       "source_file": "frontend/components/delta.tsx",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "deltaiconvariant",
       "id": "frontend_components_delta_deltaiconvariant"
     },
@@ -10800,8 +10800,8 @@
       "source_file": "frontend/components/delta.tsx",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "deltavariant",
       "id": "frontend_components_delta_deltavariant"
     },
@@ -10811,8 +10811,8 @@
       "source_file": "frontend/components/delta.tsx",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "deltacontextvalue",
       "id": "frontend_components_delta_deltacontextvalue"
     },
@@ -10822,8 +10822,8 @@
       "source_file": "frontend/components/delta.tsx",
       "source_location": "L14",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "deltacontext",
       "id": "frontend_components_delta_deltacontext"
     },
@@ -10833,8 +10833,8 @@
       "source_file": "frontend/components/delta.tsx",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "usedeltavalue()",
       "id": "frontend_components_delta_usedeltavalue"
     },
@@ -10844,8 +10844,8 @@
       "source_file": "frontend/components/delta.tsx",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "delta()",
       "id": "frontend_components_delta_delta"
     },
@@ -10855,8 +10855,8 @@
       "source_file": "frontend/components/delta.tsx",
       "source_location": "L69",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "filledshell()",
       "id": "frontend_components_delta_filledshell"
     },
@@ -10866,8 +10866,8 @@
       "source_file": "frontend/components/delta.tsx",
       "source_location": "L92",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "deltaicon()",
       "id": "frontend_components_delta_deltaicon"
     },
@@ -10877,8 +10877,8 @@
       "source_file": "frontend/components/delta.tsx",
       "source_location": "L151",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "deltavalue()",
       "id": "frontend_components_delta_deltavalue"
     },
@@ -11075,8 +11075,8 @@
       "source_file": "frontend/components/indicator.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 346,
-      "community_name": "indicator.tsx",
+      "community": 42,
+      "community_name": "@nestjs/testing",
       "norm_label": "indicator.tsx",
       "id": "frontend_components_indicator"
     },
@@ -11086,8 +11086,8 @@
       "source_file": "frontend/components/indicator.tsx",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 346,
-      "community_name": "indicator.tsx",
+      "community": 42,
+      "community_name": "@nestjs/testing",
       "norm_label": "statusindicatorvariants",
       "id": "frontend_components_indicator_statusindicatorvariants"
     },
@@ -11097,8 +11097,8 @@
       "source_file": "frontend/components/indicator.tsx",
       "source_location": "L32",
       "_origin": "ast",
-      "community": 346,
-      "community_name": "indicator.tsx",
+      "community": 42,
+      "community_name": "@nestjs/testing",
       "norm_label": "statusindicatorprops",
       "id": "frontend_components_indicator_statusindicatorprops"
     },
@@ -11108,8 +11108,8 @@
       "source_file": "frontend/components/indicator.tsx",
       "source_location": "L35",
       "_origin": "ast",
-      "community": 346,
-      "community_name": "indicator.tsx",
+      "community": 42,
+      "community_name": "@nestjs/testing",
       "norm_label": "statusindicator()",
       "id": "frontend_components_indicator_statusindicator"
     },
@@ -11174,8 +11174,8 @@
       "source_file": "frontend/components/nav-group.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "nav-group.tsx",
       "id": "frontend_components_nav_group"
     },
@@ -12098,8 +12098,8 @@
       "source_file": "frontend/components/ui/card.tsx",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 4,
-      "community_name": "devDependencies",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "cardheader()",
       "id": "frontend_components_ui_card_cardheader"
     },
@@ -12109,8 +12109,8 @@
       "source_file": "frontend/components/ui/card.tsx",
       "source_location": "L31",
       "_origin": "ast",
-      "community": 163,
-      "community_name": "swagger-ui-express",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "cardtitle()",
       "id": "frontend_components_ui_card_cardtitle"
     },
@@ -12120,8 +12120,8 @@
       "source_file": "frontend/components/ui/card.tsx",
       "source_location": "L41",
       "_origin": "ast",
-      "community": 4,
-      "community_name": "devDependencies",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "carddescription()",
       "id": "frontend_components_ui_card_carddescription"
     },
@@ -12142,8 +12142,8 @@
       "source_file": "frontend/components/ui/card.tsx",
       "source_location": "L64",
       "_origin": "ast",
-      "community": 4,
-      "community_name": "devDependencies",
+      "community": 160,
+      "community_name": "lenis",
       "norm_label": "cardcontent()",
       "id": "frontend_components_ui_card_cardcontent"
     },
@@ -12153,8 +12153,8 @@
       "source_file": "frontend/components/ui/card.tsx",
       "source_location": "L74",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "cardfooter()",
       "id": "frontend_components_ui_card_cardfooter"
     },
@@ -12164,8 +12164,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "chart.tsx",
       "id": "frontend_components_ui_chart"
     },
@@ -12175,8 +12175,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "themes",
       "id": "frontend_components_ui_chart_themes"
     },
@@ -12186,8 +12186,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "initial_dimension",
       "id": "frontend_components_ui_chart_initial_dimension"
     },
@@ -12197,8 +12197,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "tooltipnametype",
       "id": "frontend_components_ui_chart_tooltipnametype"
     },
@@ -12219,8 +12219,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "chartcontextprops",
       "id": "frontend_components_ui_chart_chartcontextprops"
     },
@@ -12230,8 +12230,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "chartcontext",
       "id": "frontend_components_ui_chart_chartcontext"
     },
@@ -12241,8 +12241,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L32",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "usechart()",
       "id": "frontend_components_ui_chart_usechart"
     },
@@ -12263,8 +12263,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L84",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "chartstyle()",
       "id": "frontend_components_ui_chart_chartstyle"
     },
@@ -12274,8 +12274,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L119",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "charttooltipcontent()",
       "id": "frontend_components_ui_chart_charttooltipcontent"
     },
@@ -12285,8 +12285,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L275",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "chartlegendcontent()",
       "id": "frontend_components_ui_chart_chartlegendcontent"
     },
@@ -12296,8 +12296,8 @@
       "source_file": "frontend/components/ui/chart.tsx",
       "source_location": "L331",
       "_origin": "ast",
-      "community": 324,
-      "community_name": "chart.tsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "getpayloadconfigfrompayload()",
       "id": "frontend_components_ui_chart_getpayloadconfigfrompayload"
     },
@@ -12329,8 +12329,8 @@
       "source_file": "frontend/components/ui/collapsible.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "collapsible.tsx",
       "id": "frontend_components_ui_collapsible"
     },
@@ -12340,8 +12340,8 @@
       "source_file": "frontend/components/ui/collapsible.tsx",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "collapsible()",
       "id": "frontend_components_ui_collapsible_collapsible"
     },
@@ -12351,8 +12351,8 @@
       "source_file": "frontend/components/ui/collapsible.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "collapsibletrigger()",
       "id": "frontend_components_ui_collapsible_collapsibletrigger"
     },
@@ -12362,8 +12362,8 @@
       "source_file": "frontend/components/ui/collapsible.tsx",
       "source_location": "L22",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "collapsiblecontent()",
       "id": "frontend_components_ui_collapsible_collapsiblecontent"
     },
@@ -13396,8 +13396,8 @@
       "source_file": "frontend/components/ui/sidebar.tsx",
       "source_location": "L385",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "sidebargroup()",
       "id": "frontend_components_ui_sidebar_sidebargroup"
     },
@@ -13407,8 +13407,8 @@
       "source_file": "frontend/components/ui/sidebar.tsx",
       "source_location": "L396",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "sidebargrouplabel()",
       "id": "frontend_components_ui_sidebar_sidebargrouplabel"
     },
@@ -13440,8 +13440,8 @@
       "source_file": "frontend/components/ui/sidebar.tsx",
       "source_location": "L454",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "sidebarmenu()",
       "id": "frontend_components_ui_sidebar_sidebarmenu"
     },
@@ -13451,8 +13451,8 @@
       "source_file": "frontend/components/ui/sidebar.tsx",
       "source_location": "L465",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "sidebarmenuitem()",
       "id": "frontend_components_ui_sidebar_sidebarmenuitem"
     },
@@ -13517,8 +13517,8 @@
       "source_file": "frontend/components/ui/sidebar.tsx",
       "source_location": "L640",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "sidebarmenusub()",
       "id": "frontend_components_ui_sidebar_sidebarmenusub"
     },
@@ -13528,8 +13528,8 @@
       "source_file": "frontend/components/ui/sidebar.tsx",
       "source_location": "L655",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "sidebarmenusubitem()",
       "id": "frontend_components_ui_sidebar_sidebarmenusubitem"
     },
@@ -13539,8 +13539,8 @@
       "source_file": "frontend/components/ui/sidebar.tsx",
       "source_location": "L669",
       "_origin": "ast",
-      "community": 96,
-      "community_name": "core-units.spec.ts",
+      "community": 184,
+      "community_name": "MessagesRepository",
       "norm_label": "sidebarmenusubbutton()",
       "id": "frontend_components_ui_sidebar_sidebarmenusubbutton"
     },
@@ -13869,8 +13869,8 @@
       "source_file": "frontend/components/widgets/billing-health.tsx",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "billinghealth()",
       "id": "frontend_components_widgets_billing_health_billinghealth"
     },
@@ -13880,8 +13880,8 @@
       "source_file": "frontend/components/widgets/channel-sales-chart.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "channel-sales-chart.tsx",
       "id": "frontend_components_widgets_channel_sales_chart"
     },
@@ -13891,8 +13891,8 @@
       "source_file": "frontend/components/widgets/channel-sales-chart.tsx",
       "source_location": "L24",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "channelsaleschartrow",
       "id": "frontend_components_widgets_channel_sales_chart_channelsaleschartrow"
     },
@@ -13902,8 +13902,8 @@
       "source_file": "frontend/components/widgets/channel-sales-chart.tsx",
       "source_location": "L33",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "chartdata",
       "id": "frontend_components_widgets_channel_sales_chart_chartdata"
     },
@@ -13913,8 +13913,8 @@
       "source_file": "frontend/components/widgets/channel-sales-chart.tsx",
       "source_location": "L67",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "chartrows",
       "id": "frontend_components_widgets_channel_sales_chart_chartrows"
     },
@@ -13924,8 +13924,8 @@
       "source_file": "frontend/components/widgets/channel-sales-chart.tsx",
       "source_location": "L69",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "rowtotal()",
       "id": "frontend_components_widgets_channel_sales_chart_rowtotal"
     },
@@ -13935,8 +13935,8 @@
       "source_file": "frontend/components/widgets/channel-sales-chart.tsx",
       "source_location": "L73",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "growthpctforwindow()",
       "id": "frontend_components_widgets_channel_sales_chart_growthpctforwindow"
     },
@@ -13946,8 +13946,8 @@
       "source_file": "frontend/components/widgets/channel-sales-chart.tsx",
       "source_location": "L90",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "growthpctnum",
       "id": "frontend_components_widgets_channel_sales_chart_growthpctnum"
     },
@@ -13957,8 +13957,8 @@
       "source_file": "frontend/components/widgets/channel-sales-chart.tsx",
       "source_location": "L103",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 97,
+      "community_name": "docx",
       "norm_label": "channelsaleschart()",
       "id": "frontend_components_widgets_channel_sales_chart_channelsaleschart"
     },
@@ -13968,8 +13968,8 @@
       "source_file": "frontend/components/widgets/dashboard-activity.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 4,
-      "community_name": "devDependencies",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "dashboard-activity.tsx",
       "id": "frontend_components_widgets_dashboard_activity"
     },
@@ -13979,8 +13979,8 @@
       "source_file": "frontend/components/widgets/dashboard-activity.tsx",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 4,
-      "community_name": "devDependencies",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "items",
       "id": "frontend_components_widgets_dashboard_activity_items"
     },
@@ -13990,8 +13990,8 @@
       "source_file": "frontend/components/widgets/dashboard-activity.tsx",
       "source_location": "L45",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "dashboardactivity()",
       "id": "frontend_components_widgets_dashboard_activity_dashboardactivity"
     },
@@ -14023,8 +14023,8 @@
       "source_file": "frontend/components/widgets/dashboard-invoices.tsx",
       "source_location": "L49",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "dashboardinvoices()",
       "id": "frontend_components_widgets_dashboard_invoices_dashboardinvoices"
     },
@@ -14056,8 +14056,8 @@
       "source_file": "frontend/components/widgets/dashboard.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "dashboard.tsx",
       "id": "frontend_components_widgets_dashboard"
     },
@@ -14067,8 +14067,8 @@
       "source_file": "frontend/components/widgets/dashboard.tsx",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "dashboard()",
       "id": "frontend_components_widgets_dashboard_dashboard"
     },
@@ -14078,8 +14078,8 @@
       "source_file": "frontend/components/widgets/net-revenue-chart.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "net-revenue-chart.tsx",
       "id": "frontend_components_widgets_net_revenue_chart"
     },
@@ -14089,8 +14089,8 @@
       "source_file": "frontend/components/widgets/net-revenue-chart.tsx",
       "source_location": "L21",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "salesdaily7",
       "id": "frontend_components_widgets_net_revenue_chart_salesdaily7"
     },
@@ -14100,8 +14100,8 @@
       "source_file": "frontend/components/widgets/net-revenue-chart.tsx",
       "source_location": "L31",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "chartrows",
       "id": "frontend_components_widgets_net_revenue_chart_chartrows"
     },
@@ -14111,8 +14111,8 @@
       "source_file": "frontend/components/widgets/net-revenue-chart.tsx",
       "source_location": "L35",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "growthpct",
       "id": "frontend_components_widgets_net_revenue_chart_growthpct"
     },
@@ -14122,8 +14122,8 @@
       "source_file": "frontend/components/widgets/net-revenue-chart.tsx",
       "source_location": "L44",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "customgradientbar()",
       "id": "frontend_components_widgets_net_revenue_chart_customgradientbar"
     },
@@ -14133,8 +14133,8 @@
       "source_file": "frontend/components/widgets/net-revenue-chart.tsx",
       "source_location": "L82",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "netrevenuechart()",
       "id": "frontend_components_widgets_net_revenue_chart_netrevenuechart"
     },
@@ -14144,8 +14144,8 @@
       "source_file": "frontend/components/widgets/stats.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "stats.tsx",
       "id": "frontend_components_widgets_stats"
     },
@@ -14155,8 +14155,8 @@
       "source_file": "frontend/components/widgets/stats.tsx",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "stat",
       "id": "frontend_components_widgets_stats_stat"
     },
@@ -14166,8 +14166,8 @@
       "source_file": "frontend/components/widgets/stats.tsx",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "stats",
       "id": "frontend_components_widgets_stats_stats"
     },
@@ -14177,8 +14177,8 @@
       "source_file": "frontend/components/widgets/stats.tsx",
       "source_location": "L39",
       "_origin": "ast",
-      "community": 184,
-      "community_name": "MessagesRepository",
+      "community": 163,
+      "community_name": "swagger-ui-express",
       "norm_label": "dashboardstats()",
       "id": "frontend_components_widgets_stats_dashboardstats"
     },
@@ -17675,8 +17675,8 @@
       "source_file": "backend/scripts/render-probe-gap.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 343,
-      "community_name": "render-probe-gap.tsx",
+      "community": 237,
+      "community_name": "PinoLikeLogger",
       "norm_label": "render-probe-gap.tsx",
       "id": "backend_scripts_render_probe_gap"
     },
@@ -17686,8 +17686,8 @@
       "source_file": "backend/scripts/render-probe-gap.tsx",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 343,
-      "community_name": "render-probe-gap.tsx",
+      "community": 237,
+      "community_name": "PinoLikeLogger",
       "norm_label": "fakestdin",
       "id": "backend_scripts_render_probe_gap_fakestdin"
     },
@@ -17697,8 +17697,8 @@
       "source_file": "backend/scripts/render-probe-gap.tsx",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 343,
-      "community_name": "render-probe-gap.tsx",
+      "community": 237,
+      "community_name": "PinoLikeLogger",
       "norm_label": "fakestdout",
       "id": "backend_scripts_render_probe_gap_fakestdout"
     },
@@ -17708,8 +17708,8 @@
       "source_file": "backend/scripts/render-probe-gap.tsx",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 343,
-      "community_name": "render-probe-gap.tsx",
+      "community": 237,
+      "community_name": "PinoLikeLogger",
       "norm_label": ".write()",
       "id": "backend_scripts_render_probe_gap_fakestdout_write"
     },
@@ -17719,8 +17719,8 @@
       "source_file": "backend/scripts/render-probe-gap.tsx",
       "source_location": "L27",
       "_origin": "ast",
-      "community": 343,
-      "community_name": "render-probe-gap.tsx",
+      "community": 237,
+      "community_name": "PinoLikeLogger",
       "norm_label": "instance",
       "id": "backend_scripts_render_probe_gap_instance"
     },
@@ -35954,517 +35954,6 @@
   ],
   "links": [
     {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L469",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_applycountoverride",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L534",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_buildevaluationconfigs",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L597",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_buildmoderateconfigs",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L574",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_buildrealisticconfigs",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L557",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_buildtopksweepconfigs",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L168",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_capture_header",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L151",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_capture_strategies",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L44",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_countoverride",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L278",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_emitcaptureruns",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L129",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_emitperrun",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L479",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_evaluate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L192",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_evaluatecapturedrun",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L82",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_evaluateperrunrow",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L7",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_evaluationconfig",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L16",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_evaluationrow",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L621",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_header",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L476",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_mean",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L72",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_parsecaptureruns",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L451",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_parsecountoverride",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L438",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_parsepositiveint",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L50",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_parseruns",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L61",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_parsesaveruns",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L618",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_runmoderateevaluation",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L614",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_runrealisticevaluation",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "indirect_call",
-      "confidence": "INFERRED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L179",
-      "weight": 1.0,
-      "_origin": "ast",
-      "context": "argument",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_strategymetrics",
-      "confidence_score": 0.5
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L237",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_tocapturedrunrow",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L640",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_torow",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L293",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_winnerstrategysummary",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L304",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_winnersummary",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L320",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness",
-      "target": "backend_src_core_evaluation_evaluation_harness_winnersummaryfromrows",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L52",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_parseruns",
-      "target": "backend_src_core_evaluation_evaluation_harness_parsepositiveint",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L63",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_parsesaveruns",
-      "target": "backend_src_core_evaluation_evaluation_harness_parsepositiveint",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L74",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_parsecaptureruns",
-      "target": "backend_src_core_evaluation_evaluation_harness_parsepositiveint",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L142",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_emitperrun",
-      "target": "backend_src_core_evaluation_evaluation_harness_evaluateperrunrow",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L142",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_emitperrun",
-      "target": "backend_src_core_evaluation_evaluation_harness_torow",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "references",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L244",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_tocapturedrunrow",
-      "target": "backend_src_core_evaluation_evaluation_harness_capture_strategies"
-    },
-    {
-      "relation": "references",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L321",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_winnersummaryfromrows",
-      "target": "backend_src_core_evaluation_evaluation_harness_capture_strategies"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L285",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_emitcaptureruns",
-      "target": "backend_src_core_evaluation_evaluation_harness_evaluatecapturedrun",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L285",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_emitcaptureruns",
-      "target": "backend_src_core_evaluation_evaluation_harness_tocapturedrunrow",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L463",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_parsecountoverride",
-      "target": "backend_src_core_evaluation_evaluation_harness_parsepositiveint",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L526",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_evaluate",
-      "target": "backend_src_core_evaluation_evaluation_harness_mean",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "indirect_call",
-      "context": "argument",
-      "confidence": "INFERRED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L619",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_runmoderateevaluation",
-      "target": "backend_src_core_evaluation_evaluation_harness_evaluate",
-      "confidence_score": 0.5
-    },
-    {
-      "relation": "indirect_call",
-      "context": "argument",
-      "confidence": "INFERRED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L615",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_runrealisticevaluation",
-      "target": "backend_src_core_evaluation_evaluation_harness_evaluate",
-      "confidence_score": 0.5
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L615",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_runrealisticevaluation",
-      "target": "backend_src_core_evaluation_evaluation_harness_buildrealisticconfigs",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
-      "source_location": "L619",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_src_core_evaluation_evaluation_harness_runmoderateevaluation",
-      "target": "backend_src_core_evaluation_evaluation_harness_buildmoderateconfigs",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -36472,9 +35961,9 @@
       "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_cli_output"
+      "target": "backend_src_core_evaluation_cli_output",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36484,9 +35973,9 @@
       "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_cli_output_columnwidths"
+      "target": "backend_src_core_evaluation_cli_output_columnwidths",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36496,9 +35985,9 @@
       "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_cli_output_parsecsv"
+      "target": "backend_src_core_evaluation_cli_output_parsecsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36508,9 +35997,9 @@
       "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_cli_output_shouldspacerows"
+      "target": "backend_src_core_evaluation_cli_output_shouldspacerows",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36520,9 +36009,9 @@
       "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_cli_output_striptimingcolumns"
+      "target": "backend_src_core_evaluation_cli_output_striptimingcolumns",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36532,9 +36021,9 @@
       "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_cli_output_tocsv"
+      "target": "backend_src_core_evaluation_cli_output_tocsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36544,9 +36033,9 @@
       "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_cli_output_tospacedcsv"
+      "target": "backend_src_core_evaluation_cli_output_tospacedcsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -36556,9 +36045,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_tui_suites"
+      "target": "backend_src_core_evaluation_tui_suites",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36568,9 +36057,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_tui_suites_getsuite"
+      "target": "backend_src_core_evaluation_tui_suites_getsuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36580,9 +36069,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_tui_suites_harnesssuite"
+      "target": "backend_src_core_evaluation_tui_suites_harnesssuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36592,9 +36081,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_tui_suites_moderatesuite"
+      "target": "backend_src_core_evaluation_tui_suites_moderatesuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36604,9 +36093,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_tui_suites_suites"
+      "target": "backend_src_core_evaluation_tui_suites_suites",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36616,9 +36105,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_evaluation_tui_suites_topksuite"
+      "target": "backend_src_core_evaluation_tui_suites_topksuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36627,9 +36116,9 @@
       "source_location": "L41",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_tests_evaluation_tui_spec_noopemit"
+      "target": "backend_src_core_tests_evaluation_tui_spec_noopemit",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36638,9 +36127,9 @@
       "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_tests_evaluation_tui_spec",
-      "target": "backend_src_core_tests_evaluation_tui_spec_winners"
+      "target": "backend_src_core_tests_evaluation_tui_spec_winners",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36649,9 +36138,9 @@
       "source_location": "L99",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_columnwidths"
+      "target": "backend_src_core_evaluation_cli_output_columnwidths",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36660,9 +36149,9 @@
       "source_location": "L28",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_default_output_dir"
+      "target": "backend_src_core_evaluation_cli_output_default_output_dir",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36671,9 +36160,9 @@
       "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_defaultbenchmarksdir"
+      "target": "backend_src_core_evaluation_cli_output_defaultbenchmarksdir",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36682,9 +36171,9 @@
       "source_location": "L220",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_emitoptions"
+      "target": "backend_src_core_evaluation_cli_output_emitoptions",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36693,9 +36182,9 @@
       "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_emitresults"
+      "target": "backend_src_core_evaluation_cli_output_emitresults",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36704,9 +36193,9 @@
       "source_location": "L105",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_formattable"
+      "target": "backend_src_core_evaluation_cli_output_formattable",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36715,9 +36204,9 @@
       "source_location": "L36",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_getflagvalue"
+      "target": "backend_src_core_evaluation_cli_output_getflagvalue",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36726,9 +36215,9 @@
       "source_location": "L125",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_parsecsv"
+      "target": "backend_src_core_evaluation_cli_output_parsecsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36737,9 +36226,9 @@
       "source_location": "L51",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_resolveoutputpath"
+      "target": "backend_src_core_evaluation_cli_output_resolveoutputpath",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36748,9 +36237,9 @@
       "source_location": "L211",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_runcli"
+      "target": "backend_src_core_evaluation_cli_output_runcli",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36759,9 +36248,9 @@
       "source_location": "L76",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_shouldspacerows"
+      "target": "backend_src_core_evaluation_cli_output_shouldspacerows",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36770,9 +36259,9 @@
       "source_location": "L195",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_striptimingcolumns"
+      "target": "backend_src_core_evaluation_cli_output_striptimingcolumns",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36781,9 +36270,9 @@
       "source_location": "L183",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_timing_columns"
+      "target": "backend_src_core_evaluation_cli_output_timing_columns",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36792,9 +36281,9 @@
       "source_location": "L66",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_tocsv"
+      "target": "backend_src_core_evaluation_cli_output_tocsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36803,9 +36292,9 @@
       "source_location": "L90",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_tospacedcsv"
+      "target": "backend_src_core_evaluation_cli_output_tospacedcsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -36814,9 +36303,21 @@
       "source_location": "L171",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output",
-      "target": "backend_src_core_evaluation_cli_output_writecsvoutput"
+      "target": "backend_src_core_evaluation_cli_output_writecsvoutput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_cli_output"
     },
     {
       "relation": "imports_from",
@@ -36838,9 +36339,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_cli_output"
+      "target": "backend_src_core_evaluation_cli_output",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -36850,8 +36351,68 @@
       "source_location": "L52",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output_resolveoutputpath",
+      "target": "backend_src_core_evaluation_cli_output_getflagvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_cli_output_getflagvalue"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_src_core_evaluation_evaluation_harness_parsecaptureruns",
+      "target": "backend_src_core_evaluation_cli_output_getflagvalue"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L452",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_src_core_evaluation_evaluation_harness_parsecountoverride",
+      "target": "backend_src_core_evaluation_cli_output_getflagvalue"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L51",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_src_core_evaluation_evaluation_harness_parseruns",
+      "target": "backend_src_core_evaluation_cli_output_getflagvalue"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L62",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_src_core_evaluation_evaluation_harness_parsesaveruns",
       "target": "backend_src_core_evaluation_cli_output_getflagvalue"
     },
     {
@@ -36886,9 +36447,9 @@
       "source_location": "L172",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output_writecsvoutput",
-      "target": "backend_src_core_evaluation_cli_output_resolveoutputpath"
+      "target": "backend_src_core_evaluation_cli_output_resolveoutputpath",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -36898,9 +36459,9 @@
       "source_location": "L246",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output_emitresults",
-      "target": "backend_src_core_evaluation_cli_output_tocsv"
+      "target": "backend_src_core_evaluation_cli_output_tocsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36910,9 +36471,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_cli_output_tocsv"
+      "target": "backend_src_core_evaluation_cli_output_tocsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -36934,9 +36495,9 @@
       "source_location": "L244",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output_emitresults",
-      "target": "backend_src_core_evaluation_cli_output_shouldspacerows"
+      "target": "backend_src_core_evaluation_cli_output_shouldspacerows",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36946,9 +36507,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_cli_output_shouldspacerows"
+      "target": "backend_src_core_evaluation_cli_output_shouldspacerows",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -36970,9 +36531,9 @@
       "source_location": "L245",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output_emitresults",
-      "target": "backend_src_core_evaluation_cli_output_tospacedcsv"
+      "target": "backend_src_core_evaluation_cli_output_tospacedcsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36982,9 +36543,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_cli_output_tospacedcsv"
+      "target": "backend_src_core_evaluation_cli_output_tospacedcsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -37006,9 +36567,9 @@
       "source_location": "L106",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output_formattable",
-      "target": "backend_src_core_evaluation_cli_output_columnwidths"
+      "target": "backend_src_core_evaluation_cli_output_columnwidths",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -37018,9 +36579,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_cli_output_columnwidths"
+      "target": "backend_src_core_evaluation_cli_output_columnwidths",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -37042,9 +36603,9 @@
       "source_location": "L248",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output_emitresults",
-      "target": "backend_src_core_evaluation_cli_output_formattable"
+      "target": "backend_src_core_evaluation_cli_output_formattable",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -37054,9 +36615,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_cli_output_parsecsv"
+      "target": "backend_src_core_evaluation_cli_output_parsecsv",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -37078,9 +36639,9 @@
       "source_location": "L254",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output_emitresults",
-      "target": "backend_src_core_evaluation_cli_output_writecsvoutput"
+      "target": "backend_src_core_evaluation_cli_output_writecsvoutput",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -37090,9 +36651,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_cli_output_writecsvoutput"
+      "target": "backend_src_core_evaluation_cli_output_writecsvoutput",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -37126,9 +36687,9 @@
       "source_location": "L242",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_cli_output_emitresults",
-      "target": "backend_src_core_evaluation_cli_output_striptimingcolumns"
+      "target": "backend_src_core_evaluation_cli_output_striptimingcolumns",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -37138,9 +36699,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_cli_output_striptimingcolumns"
+      "target": "backend_src_core_evaluation_cli_output_striptimingcolumns",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -37158,6 +36719,18 @@
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_cli_output_runcli"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "backend/src/core/evaluation/optimal-baseline.ts",
       "source_location": "L4",
       "weight": 1.0,
@@ -37165,6 +36738,18 @@
       "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_optimal_baseline",
       "target": "backend_src_core_evaluation_cli_output_runcli"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_cli_output_emitresults"
     },
     {
       "relation": "imports",
@@ -37185,9 +36770,9 @@
       "source_location": "L356",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_allsuite"
+      "target": "backend_src_core_evaluation_tui_suites_allsuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37196,9 +36781,9 @@
       "source_location": "L343",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_baselinessuite"
+      "target": "backend_src_core_evaluation_tui_suites_baselinessuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37207,9 +36792,9 @@
       "source_location": "L334",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_gapsuite"
+      "target": "backend_src_core_evaluation_tui_suites_gapsuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37218,9 +36803,9 @@
       "source_location": "L376",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_getsuite"
+      "target": "backend_src_core_evaluation_tui_suites_getsuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37229,9 +36814,9 @@
       "source_location": "L106",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_harnesslabel"
+      "target": "backend_src_core_evaluation_tui_suites_harnesslabel",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37240,9 +36825,9 @@
       "source_location": "L128",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_harnessrunner"
+      "target": "backend_src_core_evaluation_tui_suites_harnessrunner",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37251,9 +36836,9 @@
       "source_location": "L291",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_harnesssuite"
+      "target": "backend_src_core_evaluation_tui_suites_harnesssuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37262,9 +36847,9 @@
       "source_location": "L111",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_harnesssuitespec"
+      "target": "backend_src_core_evaluation_tui_suites_harnesssuitespec",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37273,9 +36858,9 @@
       "source_location": "L62",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_highlight"
+      "target": "backend_src_core_evaluation_tui_suites_highlight",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37284,9 +36869,9 @@
       "source_location": "L321",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_moderatesuite"
+      "target": "backend_src_core_evaluation_tui_suites_moderatesuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "indirect_call",
@@ -37296,9 +36881,9 @@
       "weight": 1.0,
       "_origin": "ast",
       "context": "collection",
-      "confidence_score": 0.5,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_runall"
+      "target": "backend_src_core_evaluation_tui_suites_runall",
+      "confidence_score": 0.5
     },
     {
       "relation": "indirect_call",
@@ -37308,9 +36893,9 @@
       "weight": 1.0,
       "_origin": "ast",
       "context": "collection",
-      "confidence_score": 0.5,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_runbaselines"
+      "target": "backend_src_core_evaluation_tui_suites_runbaselines",
+      "confidence_score": 0.5
     },
     {
       "relation": "indirect_call",
@@ -37320,9 +36905,9 @@
       "weight": 1.0,
       "_origin": "ast",
       "context": "collection",
-      "confidence_score": 0.5,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_rungap"
+      "target": "backend_src_core_evaluation_tui_suites_rungap",
+      "confidence_score": 0.5
     },
     {
       "relation": "contains",
@@ -37331,9 +36916,9 @@
       "source_location": "L219",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_runharness"
+      "target": "backend_src_core_evaluation_tui_suites_runharness",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37342,9 +36927,9 @@
       "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_runmoderate"
+      "target": "backend_src_core_evaluation_tui_suites_runmoderate",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37353,9 +36938,9 @@
       "source_location": "L73",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_runoptions"
+      "target": "backend_src_core_evaluation_tui_suites_runoptions",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37364,9 +36949,9 @@
       "source_location": "L230",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_runtopk"
+      "target": "backend_src_core_evaluation_tui_suites_runtopk",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37375,9 +36960,9 @@
       "source_location": "L92",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_suite"
+      "target": "backend_src_core_evaluation_tui_suites_suite",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37386,9 +36971,9 @@
       "source_location": "L41",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_suiteresult"
+      "target": "backend_src_core_evaluation_tui_suites_suiteresult",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37397,9 +36982,9 @@
       "source_location": "L87",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_suiterunner"
+      "target": "backend_src_core_evaluation_tui_suites_suiterunner",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37408,9 +36993,9 @@
       "source_location": "L50",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_suiterunstate"
+      "target": "backend_src_core_evaluation_tui_suites_suiterunstate",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37419,9 +37004,9 @@
       "source_location": "L367",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_suites"
+      "target": "backend_src_core_evaluation_tui_suites_suites",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37430,9 +37015,9 @@
       "source_location": "L308",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_topksuite"
+      "target": "backend_src_core_evaluation_tui_suites_topksuite",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37441,9 +37026,9 @@
       "source_location": "L104",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites",
-      "target": "backend_src_core_evaluation_tui_suites_yieldtoink"
+      "target": "backend_src_core_evaluation_tui_suites_yieldtoink",
+      "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
@@ -37452,9 +37037,9 @@
       "source_location": "L304",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites_rationale_304",
-      "target": "backend_src_core_evaluation_tui_suites"
+      "target": "backend_src_core_evaluation_tui_suites",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -37464,9 +37049,9 @@
       "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_suites"
+      "target": "backend_src_core_evaluation_tui_suites",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -37476,9 +37061,9 @@
       "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_suites_suiteresult"
+      "target": "backend_src_core_evaluation_tui_suites_suiteresult",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -37488,9 +37073,9 @@
       "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_suites_suiterunstate"
+      "target": "backend_src_core_evaluation_tui_suites_suiterunstate",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -37500,9 +37085,9 @@
       "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_suites_runoptions"
+      "target": "backend_src_core_evaluation_tui_suites_runoptions",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -37512,9 +37097,9 @@
       "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_suites_suite"
+      "target": "backend_src_core_evaluation_tui_suites_suite",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -37524,9 +37109,9 @@
       "source_location": "L156",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites_harnessrunner",
-      "target": "backend_src_core_evaluation_tui_suites_yieldtoink"
+      "target": "backend_src_core_evaluation_tui_suites_yieldtoink",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -37536,9 +37121,9 @@
       "source_location": "L275",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites_runbaselines",
-      "target": "backend_src_core_evaluation_tui_suites_yieldtoink"
+      "target": "backend_src_core_evaluation_tui_suites_yieldtoink",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -37548,9 +37133,9 @@
       "source_location": "L259",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites_rungap",
-      "target": "backend_src_core_evaluation_tui_suites_yieldtoink"
+      "target": "backend_src_core_evaluation_tui_suites_yieldtoink",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -37560,9 +37145,9 @@
       "source_location": "L153",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_suites_harnessrunner",
-      "target": "backend_src_core_evaluation_tui_suites_harnesslabel"
+      "target": "backend_src_core_evaluation_tui_suites_harnesslabel",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -37596,9 +37181,9 @@
       "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_suites_suites"
+      "target": "backend_src_core_evaluation_tui_suites_suites",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -37619,9 +37204,9 @@
       "source_location": "L319",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_banner_fonts"
+      "target": "backend_src_core_evaluation_tui_views_banner_fonts",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37630,9 +37215,9 @@
       "source_location": "L1066",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_browserscreen"
+      "target": "backend_src_core_evaluation_tui_views_browserscreen",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37641,9 +37226,9 @@
       "source_location": "L91",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_datatable"
+      "target": "backend_src_core_evaluation_tui_views_datatable",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37652,9 +37237,9 @@
       "source_location": "L65",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_datatableprops"
+      "target": "backend_src_core_evaluation_tui_views_datatableprops",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37663,9 +37248,9 @@
       "source_location": "L322",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_figletfontname"
+      "target": "backend_src_core_evaluation_tui_views_figletfontname",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37674,9 +37259,9 @@
       "source_location": "L340",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_menuscreen"
+      "target": "backend_src_core_evaluation_tui_views_menuscreen",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37685,9 +37270,9 @@
       "source_location": "L71",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_no_highlights"
+      "target": "backend_src_core_evaluation_tui_views_no_highlights",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37696,9 +37281,9 @@
       "source_location": "L1190",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_notepadscreen"
+      "target": "backend_src_core_evaluation_tui_views_notepadscreen",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37707,9 +37292,9 @@
       "source_location": "L46",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_progressbar"
+      "target": "backend_src_core_evaluation_tui_views_progressbar",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37718,9 +37303,9 @@
       "source_location": "L325",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_renderbanner"
+      "target": "backend_src_core_evaluation_tui_views_renderbanner",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37729,9 +37314,9 @@
       "source_location": "L458",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_runscreen"
+      "target": "backend_src_core_evaluation_tui_views_runscreen",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37740,9 +37325,9 @@
       "source_location": "L35",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_spinner"
+      "target": "backend_src_core_evaluation_tui_views_spinner",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37751,9 +37336,9 @@
       "source_location": "L33",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_spinner_frames"
+      "target": "backend_src_core_evaluation_tui_views_spinner_frames",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37762,9 +37347,9 @@
       "source_location": "L271",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_textinput"
+      "target": "backend_src_core_evaluation_tui_views_textinput",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -37773,9 +37358,9 @@
       "source_location": "L191",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views",
-      "target": "backend_src_core_evaluation_tui_views_winnersummarytable"
+      "target": "backend_src_core_evaluation_tui_views_winnersummarytable",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -37785,9 +37370,9 @@
       "source_location": "L357",
       "weight": 1.0,
       "_origin": "ast",
-      "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_views_menuscreen",
-      "target": "backend_src_core_evaluation_tui_views_renderbanner"
+      "target": "backend_src_core_evaluation_tui_views_renderbanner",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -37836,6 +37421,517 @@
       "confidence_score": 1.0,
       "source": "backend_src_core_evaluation_tui_app",
       "target": "backend_src_core_evaluation_tui_views_notepadscreen"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L469",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_applycountoverride"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L534",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_buildevaluationconfigs"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L597",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_buildmoderateconfigs"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L574",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_buildrealisticconfigs"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L557",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_buildtopksweepconfigs"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L168",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_capture_header"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L151",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_capture_strategies"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_countoverride"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L278",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_emitcaptureruns"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L129",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_emitperrun"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L479",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_evaluate"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L192",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_evaluatecapturedrun"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_evaluateperrunrow"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_evaluationconfig"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_evaluationrow"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L621",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_header"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L476",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_mean"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L72",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_parsecaptureruns"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L451",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_parsecountoverride"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L438",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_parsepositiveint"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L50",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_parseruns"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L61",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_parsesaveruns"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L618",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_runmoderateevaluation"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L614",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_runrealisticevaluation"
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L179",
+      "weight": 1.0,
+      "_origin": "ast",
+      "context": "argument",
+      "confidence_score": 0.5,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_strategymetrics"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L237",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_tocapturedrunrow"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L640",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_torow"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L293",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_winnerstrategysummary"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L304",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_winnersummary"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L320",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness",
+      "target": "backend_src_core_evaluation_evaluation_harness_winnersummaryfromrows"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_parseruns",
+      "target": "backend_src_core_evaluation_evaluation_harness_parsepositiveint"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_parsesaveruns",
+      "target": "backend_src_core_evaluation_evaluation_harness_parsepositiveint"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L74",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_parsecaptureruns",
+      "target": "backend_src_core_evaluation_evaluation_harness_parsepositiveint"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L142",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_emitperrun",
+      "target": "backend_src_core_evaluation_evaluation_harness_evaluateperrunrow"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L142",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_emitperrun",
+      "target": "backend_src_core_evaluation_evaluation_harness_torow"
+    },
+    {
+      "relation": "references",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L244",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_src_core_evaluation_evaluation_harness_tocapturedrunrow",
+      "target": "backend_src_core_evaluation_evaluation_harness_capture_strategies"
+    },
+    {
+      "relation": "references",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L321",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_src_core_evaluation_evaluation_harness_winnersummaryfromrows",
+      "target": "backend_src_core_evaluation_evaluation_harness_capture_strategies"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L285",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_emitcaptureruns",
+      "target": "backend_src_core_evaluation_evaluation_harness_evaluatecapturedrun"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L285",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_emitcaptureruns",
+      "target": "backend_src_core_evaluation_evaluation_harness_tocapturedrunrow"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L463",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_parsecountoverride",
+      "target": "backend_src_core_evaluation_evaluation_harness_parsepositiveint"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L526",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_evaluate",
+      "target": "backend_src_core_evaluation_evaluation_harness_mean"
+    },
+    {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L619",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 0.5,
+      "source": "backend_src_core_evaluation_evaluation_harness_runmoderateevaluation",
+      "target": "backend_src_core_evaluation_evaluation_harness_evaluate"
+    },
+    {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L615",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 0.5,
+      "source": "backend_src_core_evaluation_evaluation_harness_runrealisticevaluation",
+      "target": "backend_src_core_evaluation_evaluation_harness_evaluate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L615",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_runrealisticevaluation",
+      "target": "backend_src_core_evaluation_evaluation_harness_buildrealisticconfigs"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/src/core/evaluation/evaluation-harness.ts",
+      "source_location": "L619",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_src_core_evaluation_evaluation_harness_runmoderateevaluation",
+      "target": "backend_src_core_evaluation_evaluation_harness_buildmoderateconfigs"
     },
     {
       "relation": "imports_from",
