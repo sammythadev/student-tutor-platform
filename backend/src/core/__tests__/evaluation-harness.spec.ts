@@ -3,12 +3,18 @@ import {
   evaluate,
   evaluatePerRunRow,
   emitPerRun,
+  CAPTURE_HEADER,
+  CAPTURE_STRATEGIES,
+  emitCaptureRuns,
   HEADER,
   MAX_SAVED_RUNS,
   parseCountOverride,
   parseRuns,
   parseSaveRuns,
+  parseCaptureRuns,
   toRow,
+  applyCountOverride,
+  buildModerateConfigs,
   buildRealisticConfigs,
 } from '../evaluation/evaluation-harness';
 
@@ -137,5 +143,64 @@ describe('evaluation harness --per-run rows', () => {
     expect(rows).toHaveLength(buildRealisticConfigs().length * 5);
     expect(rows.length).toBeLessThanOrEqual(MAX_SAVED_RUNS);
     expect(dropped).toBe(0);
+  });
+});
+
+describe('evaluation harness --capture-runs (full capture mode)', () => {
+  const smallConfigs = (): ReturnType<typeof applyCountOverride> =>
+    applyCountOverride(buildModerateConfigs(), { students: 20, tutors: 10 });
+
+  it('lays out one full row per run: all strategies + per-run time, no cap', () => {
+    const { header, rows } = emitCaptureRuns(smallConfigs(), 2);
+    expect(header).toEqual(CAPTURE_HEADER);
+    // 8 moderate configs × 2 runs — every run kept, nothing dropped/capped.
+    expect(rows).toHaveLength(buildModerateConfigs().length * 2);
+    expect(CAPTURE_HEADER).toHaveLength(25);
+    expect(CAPTURE_HEADER).toContain('startedAt');
+    expect(CAPTURE_HEADER).toContain('durationMs');
+    for (const strategy of CAPTURE_STRATEGIES) {
+      expect(CAPTURE_HEADER).toContain(`${strategy}.averageScore`);
+      expect(CAPTURE_HEADER).toContain(`${strategy}.unassignedPercent`);
+      expect(CAPTURE_HEADER).toContain(`${strategy}.jainFairnessIndex`);
+    }
+  });
+
+  it('records a real started-at timestamp and duration for each run', () => {
+    const { rows } = emitCaptureRuns(smallConfigs(), 2);
+    for (const row of rows) {
+      expect(row).toHaveLength(CAPTURE_HEADER.length);
+      const startedAt = row[CAPTURE_HEADER.indexOf('startedAt')];
+      expect(Number.isNaN(Date.parse(startedAt))).toBe(false);
+      expect(Number(row[CAPTURE_HEADER.indexOf('durationMs')])).toBeGreaterThanOrEqual(0);
+      expect(['1', '2']).toContain(row[CAPTURE_HEADER.indexOf('run')]);
+      expect(WINNERS).toContain(row[CAPTURE_HEADER.indexOf('winner')]);
+    }
+    // The two runs of the first test get distinct timestamps.
+    const first = rows[0][CAPTURE_HEADER.indexOf('startedAt')];
+    const second = rows[1][CAPTURE_HEADER.indexOf('startedAt')];
+    expect(first).not.toBe(second);
+  });
+
+  it('fills every strategy metric cell with a number', () => {
+    const { rows } = emitCaptureRuns(smallConfigs(), 1);
+    const row = rows[0];
+    for (const strategy of CAPTURE_STRATEGIES) {
+      for (const metric of ['averageScore', 'unassignedPercent', 'jainFairnessIndex']) {
+        const cell = row[CAPTURE_HEADER.indexOf(`${strategy}.${metric}`)];
+        expect(Number.isNaN(Number.parseFloat(cell))).toBe(false);
+      }
+    }
+  });
+
+  it('parses --capture-runs and rejects bad values', () => {
+    withArgv(['--capture-runs', '100'], () => {
+      expect(parseCaptureRuns()).toBe(100);
+    });
+    withArgv([], () => {
+      expect(parseCaptureRuns()).toBeUndefined();
+    });
+    withArgv(['--capture-runs', '0'], () => {
+      expect(() => parseCaptureRuns()).toThrow(/positive integer/);
+    });
   });
 });
