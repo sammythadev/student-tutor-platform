@@ -29,7 +29,7 @@ import Footer from '@/components/landing/Footer'
 
 export default function LandingPage() {
   return (
-    <div className="landing-shell relative min-h-dvh overflow-x-clip bg-mk-panel-sunken">
+    <div className="relative min-h-dvh overflow-x-clip bg-mk-panel-sunken">
       <Atmosphere />
       <Nav />
       <main className="relative">
