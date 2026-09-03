@@ -115,7 +115,7 @@ already given).
 | `R`                | set runs per test (harness suites, default 5)  |
 | `C`                | set a students/tutors override for every test (harness suites; blank resets to auto) |
 | setup prompts      | picking a harness suite first asks runs → counts (Enter accepts, Esc backs out) |
-| `P`                | toggle per-run mode — one row per run, winning algorithm in the winner column |
+| `P`                | cycle row mode: **summary → per-run (winner) → capture (every run, all strategies, no cap)** |
 | `?`                | open/close the full help reference (menu, run, browser) |
 | `Ctrl+O`           | open/close the help reference (notes; `?` stays typable) |
 | `j`/`k` or `↑`/`↓` | scroll the help panel on short terminals (help) |
@@ -163,10 +163,20 @@ saves free text to `docs/notes/`:
 | baselines | `baseline-comparison-results.csv` |
 | notes     | `docs/notes/<name>.txt`           |
 
-With per-run mode on (`P`), eval/topk/moderate instead save every run as its
-own row — `evaluation-per-run-results.csv`, `topk-per-run-results.csv`,
+With per-run mode on (first `P` press), eval/topk/moderate save every run as
+its own row — `evaluation-per-run-results.csv`, `topk-per-run-results.csv`,
 `moderate-per-run-results.csv` — each row carrying its run index and the
 winning algorithm, capped at 1000 rows per file.
+
+Capture mode (second `P` press — summary → per-run → capture) saves the full
+record instead: `evaluation-capture-results.csv`, `topk-capture-results.csv`,
+`moderate-capture-results.csv` — every run is one row with ALL four
+strategies' results plus its `startedAt` timestamp and `durationMs`, and there
+is **no row cap**.
+
+The on-screen table only shows the first 40 rows (the TUI has no scrollback),
+but the **saved CSV always contains every row** — auto-save and `s` both write
+the complete table.
 
 ### Run options
 
@@ -176,7 +186,7 @@ run view (`R`/`C`/`P` keys):
 | Flag                     | Effect                                              |
 | ------------------------ | --------------------------------------------------- |
 | `--save-runs <n>`        | run each test n times and write EVERY run to the CSV as its own row (one file, max 1000 rows) — R set to n + per-run mode on |
-| `--capture-runs <n>`     | **full capture mode** — every run becomes its own row containing ALL four strategies’ quality results plus that run’s started-at timestamp and duration, all in one file (`evaluation-capture-results.csv`), no row cap |
+| `--capture-runs <n>`     | **full capture mode** — every run becomes its own row containing ALL four strategies’ quality results plus that run’s started-at timestamp and duration, all in one file (`evaluation-capture-results.csv`), no row cap — same as `P` cycled to capture in the TUI |
 | `--runs <n>`             | repeats per test for the timing stats, default 5 (R) |
 | `--per-run`              | legacy toggle for per-run rows using the `--runs` count (P) |
 | `--students <n> --tutors <n>` | override counts for every test (both required) (C) |

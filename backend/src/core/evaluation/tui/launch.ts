@@ -96,9 +96,9 @@ export function tuiUsage(): string {
     '  --students <n> --tutors <n>   count override for every test (both required)',
     '  --no-timing                zero wall-clock timing columns in saved CSVs',
     '',
-    'CLI-only (run the eval script for these): --capture-runs <n> (full capture',
-    '  of every run with all strategies + per-run time), --name --out --no-file',
-    '  --table --csv --sizes --scenario --strategy',
+    'CLI-only (run the eval script for these): --name --out --no-file --table',
+    '  --csv --sizes --scenario --strategy. Full capture (--capture-runs) is set',
+    '  in the TUI by cycling P to capture mode.',
   ].join('\n');
 }
 

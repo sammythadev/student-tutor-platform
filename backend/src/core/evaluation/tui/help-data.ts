@@ -74,7 +74,8 @@ export const RUN_KEYS: HelpSection = {
     },
     {
       keys: 'P',
-      action: 'toggle per-run mode (one row per run, winning algorithm in the winner column)',
+      action:
+        'cycle row mode: summary → per-run (winner) → capture (every run, all strategies, no cap) — the saved CSV always contains every row',
     },
     { keys: 'm / Esc', action: 'back to menu' },
     { keys: 'q', action: 'quit' },
@@ -146,7 +147,7 @@ export const CLI_FLAG_ROWS: HelpRow[] = [
   {
     keys: '--capture-runs <n>',
     action:
-      'full capture mode — every run is one row with ALL four strategies’ results plus that run’s started-at time and duration (one file, NO row cap)',
+      'full capture mode — every run is one row with ALL four strategies’ results plus that run’s started-at time and duration (one file, NO row cap) — same as P cycled to capture',
   },
   {
     keys: '--runs <n>',
