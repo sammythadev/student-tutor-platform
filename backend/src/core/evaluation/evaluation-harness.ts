@@ -38,7 +38,7 @@ export interface EvaluationRow {
 /** Default number of repeated runs per test (override with `--runs <n>`). */
 export const DEFAULT_RUNS = 5;
 
-/** Hard cap on per-run rows saved to one CSV in --per-run mode. */
+/** Hard cap on per-run rows saved to one CSV in --save-runs / --per-run mode. */
 export const MAX_SAVED_RUNS = 1000;
 
 export interface CountOverride {
@@ -50,6 +50,17 @@ export interface CountOverride {
 export function parseRuns(): number {
   const raw = getFlagValue('--runs');
   return raw === undefined ? DEFAULT_RUNS : parsePositiveInt('--runs', raw);
+}
+
+/**
+ * Reads `--save-runs <n>` from argv; returns undefined when absent. This is the
+ * self-contained "write every run to the CSV" command: each test in the sweep
+ * runs n times and each run is saved as its own row in one CSV file (capped at
+ * MAX_SAVED_RUNS rows total). Equivalent to `--runs <n> --per-run`.
+ */
+export function parseSaveRuns(): number | undefined {
+  const raw = getFlagValue('--save-runs');
+  return raw === undefined ? undefined : parsePositiveInt('--save-runs', raw);
 }
 
 /**
@@ -367,8 +378,12 @@ if (typeof require !== 'undefined' && require.main === module) {
 
     const override = parseCountOverride();
     const configs = override ? applyCountOverride(baseConfigs, override) : baseConfigs;
-    const runs = parseRuns();
-    const perRun = process.argv.includes('--per-run');
+
+    // --save-runs <n> is the discoverable "save every run" command; --runs +
+    // --per-run remain for compatibility. --save-runs wins when both appear.
+    const saveRuns = parseSaveRuns();
+    const runs = saveRuns ?? parseRuns();
+    const perRun = saveRuns !== undefined || process.argv.includes('--per-run');
 
     if (perRun) {
       const { header, rows, dropped } = emitPerRun(configs, runs);
@@ -379,7 +394,7 @@ if (typeof require !== 'undefined' && require.main === module) {
       });
       if (dropped > 0) {
         console.error(
-          `\nPer-run CSV capped at ${MAX_SAVED_RUNS} rows; ${dropped} run(s) not computed. Lower --runs or the test counts.`,
+          `\nPer-run CSV capped at ${MAX_SAVED_RUNS} rows; ${dropped} run(s) not computed. Lower --save-runs/--runs or the test counts.`,
         );
       }
     } else {
@@ -390,7 +405,9 @@ if (typeof require !== 'undefined' && require.main === module) {
       });
     }
     console.error(
-      `\nEach test ran ${runs} time(s)${runs === DEFAULT_RUNS ? ' (default)' : ''} — set with --runs <n>`,
+      `\nEach test ran ${runs} time(s)${runs === DEFAULT_RUNS ? ' (default)' : ''}${
+        perRun ? ' — every run saved to the CSV' : ''
+      }${saveRuns === undefined ? ' — set with --runs <n>' : ' — set with --save-runs <n>'}`,
     );
   });
 }
