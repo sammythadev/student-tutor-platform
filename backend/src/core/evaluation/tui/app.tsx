@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Text, useApp } from 'ink';
-import { getSuite } from './suites';
+import { DEFAULT_RUNS } from '@core/evaluation/evaluation-harness';
+import { getSuite, type RunOptions } from './suites';
 import { BrowserScreen, MenuScreen, NotePadScreen, RunScreen } from './views';
+import type { TuiLaunch } from './launch';
 
 type Screen =
   | { name: 'menu' }
@@ -10,31 +12,49 @@ type Screen =
   | { name: 'notes' };
 
 /**
- * Root of the eval TUI. `initial` lets `pnpm run tui -- <suiteId|browser|notes>`
- * skip the menu and jump straight into a screen; `initialNoTiming` turns the
- * timing-column stripping on from launch (mirrors `--no-timing` on the CLI).
+ * Root of the eval TUI.
+ *
+ * `initial` / `initialNoTiming` let `pnpm run tui -- <suiteId|browser|notes>`
+ * skip the menu (kept for the render probes and back-compat). `launch` is the
+ * full parsed argv from the real entry (launch.ts) — it supersedes `initial`
+ * and also seeds the run options (`runs` / count override / per-run mode) plus
+ * the timing toggle, so `pnpm run tui -- eval --save-runs 100` starts the eval
+ * suite in per-run mode with 100 runs. The options state lives HERE so it
+ * survives navigating back to the menu and picking another suite; the run view
+ * edits it through `R` / `C` / `P`.
  */
 export function App({
   initial,
   initialNoTiming = false,
+  launch,
 }: {
   initial?: string;
   initialNoTiming?: boolean;
+  launch?: TuiLaunch;
 }): React.JSX.Element {
   const { exit } = useApp();
-  const [noTiming, setNoTiming] = useState(initialNoTiming);
+  const target = launch?.target ?? initial;
+  const [noTiming, setNoTiming] = useState(launch?.noTiming ?? initialNoTiming);
+  const [options, setOptions] = useState<RunOptions>(() => ({
+    runs: launch?.runs ?? DEFAULT_RUNS,
+    override: launch?.override,
+    perRun: launch?.perRun ?? false,
+  }));
   const [screen, setScreen] = useState<Screen>(() => {
-    if (initial === 'browser' || initial === 'results') {
+    if (target === 'browser' || target === 'results') {
       return { name: 'browser' };
     }
-    if (initial === 'notes' || initial === 'scratchpad') {
+    if (target === 'notes' || target === 'scratchpad') {
       return { name: 'notes' };
     }
-    if (initial !== undefined && getSuite(initial) !== undefined) {
-      return { name: 'run', suiteId: initial };
+    if (target !== undefined && getSuite(target) !== undefined) {
+      return { name: 'run', suiteId: target };
     }
     return { name: 'menu' };
   });
+
+  const applyOptions = (patch: Partial<RunOptions>): void =>
+    setOptions((previous) => ({ ...previous, ...patch }));
 
   if (screen.name === 'menu') {
     return (
@@ -58,6 +78,10 @@ export function App({
         onBack={() => setScreen({ name: 'menu' })}
         noTiming={noTiming}
         onToggleNoTiming={() => setNoTiming((value) => !value)}
+        options={options}
+        onOptionsChange={applyOptions}
+        // Launch flags already picked the run values — skip the prompts.
+        skipConfig={launch?.optionsExplicit === true}
       />
     );
   }

@@ -2,11 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import figlet from 'figlet';
 import { readFileSync } from 'fs';
-import {
-  DEFAULT_RUNS,
-  MAX_SAVED_RUNS,
-  type CountOverride,
-} from '@core/evaluation/evaluation-harness';
+import { DEFAULT_RUNS, MAX_SAVED_RUNS } from '@core/evaluation/evaluation-harness';
 import {
   columnWidths,
   parseCsv,
@@ -17,7 +13,13 @@ import {
 import { defaultNoteName, listSavedCsvs, saveNoteFile, type CsvFileInfo } from './files';
 import { cursorPosition, indexFromPosition, visualSpans } from './text-utils';
 import { HelpContent } from './help';
-import { SUITES, type Suite, type SuiteResult, type SuiteRunState } from './suites';
+import {
+  SUITES,
+  type RunOptions,
+  type Suite,
+  type SuiteResult,
+  type SuiteRunState,
+} from './suites';
 
 /** ── shared building blocks ─────────────────────────────────────────────── */
 
@@ -352,12 +354,24 @@ export function RunScreen({
   onBack,
   noTiming,
   onToggleNoTiming,
+  options,
+  onOptionsChange,
+  skipConfig = false,
 }: {
   suite: Suite;
   onBack: () => void;
   /** Zero the wall-clock timing columns in the table and the saved CSV. */
   noTiming: boolean;
   onToggleNoTiming: () => void;
+  /** Run options (runs / count override / per-run mode) owned by App. */
+  options: RunOptions;
+  /** App-level setter; the R / C / P keys patch these options and re-run. */
+  onOptionsChange: (patch: Partial<RunOptions>) => void;
+  /**
+   * Skip the pre-run config prompts (set when the suite was launched with
+   * explicit run-option flags — the user already chose the values).
+   */
+  skipConfig?: boolean;
 }): React.JSX.Element {
   const [runId, setRunId] = useState(0);
   const [state, setState] = useState<SuiteRunState | null>(null);
@@ -369,17 +383,34 @@ export function RunScreen({
   const [saveAsError, setSaveAsError] = useState<string | null>(null);
   const [extraSaved, setExtraSaved] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
-  // Run options mirroring the CLI flags: --runs, --students/--tutors, --per-run.
-  // Only suites with `supportsOptions` honor them (eval/topk/moderate/all).
-  const [runs, setRuns] = useState(DEFAULT_RUNS);
-  const [override, setOverride] = useState<CountOverride | undefined>(undefined);
-  const [perRun, setPerRun] = useState(false);
+  // Run options mirroring the CLI flags (--runs, --save-runs, --students/--tutors,
+  // --per-run). State lives in App so launch flags seed it and it survives
+  // switching suites; only suites with `supportsOptions` honor them.
+  const runs = options.runs ?? DEFAULT_RUNS;
+  const override = options.override;
+  const perRun = options.perRun === true;
   const [optionPrompt, setOptionPrompt] = useState<'runs' | 'counts' | null>(null);
   const [optionValue, setOptionValue] = useState('');
   const [optionError, setOptionError] = useState<string | null>(null);
+  // Pre-run configuration: harness suites (eval/topk/moderate/all) stop at a
+  // runs → counts prompt sequence before their first run, unless the suite was
+  // launched with explicit run-option flags (skipConfig). gap/baselines have no
+  // options and always run immediately.
+  const configNeeded = suite.supportsOptions && !skipConfig;
+  const [ready, setReady] = useState(() => !configNeeded);
+  const [configStep, setConfigStep] = useState<'runs' | 'counts' | null>(() =>
+    configNeeded ? 'runs' : null,
+  );
+  const [configValue, setConfigValue] = useState('');
+  const [configError, setConfigError] = useState<string | null>(null);
   const startRef = useRef<number | null>(null);
 
   useEffect(() => {
+    // Harness suites wait for the pre-run config prompts (ready flips when the
+    // runs + counts steps are accepted) before the first run starts.
+    if (!ready) {
+      return;
+    }
     let cancelled = false;
     setState(null);
     setResults(null);
@@ -413,7 +444,7 @@ export function RunScreen({
     return () => {
       cancelled = true;
     };
-  }, [suite, runId, runs, override, perRun]);
+  }, [suite, runId, runs, override, perRun, ready]);
 
   // Save whenever results or the timing toggle changes, so the CSV on disk
   // always matches what is displayed (timing columns zeroed when noTiming).
@@ -435,7 +466,7 @@ export function RunScreen({
   // While help is open it is modal: the panel owns all keys (`isHelpCloseChord`).
   useInput(
     (input, key) => {
-      if (saveAs || optionPrompt !== null) {
+      if (saveAs || optionPrompt !== null || configStep !== null) {
         return; // TextInput handles the keys
       }
       if (input === 'q' || key.escape || input === 'm') {
@@ -457,7 +488,7 @@ export function RunScreen({
         setOptionValue(override === undefined ? '' : `${override.students}, ${override.tutors}`);
         setOptionError(null);
       } else if (input === 'P' && results !== null && suite.supportsOptions) {
-        setPerRun((value) => !value);
+        onOptionsChange({ perRun: !perRun });
       } else if (input === '?' && results !== null) {
         setShowHelp((value) => !value);
       }
@@ -468,6 +499,31 @@ export function RunScreen({
   const elapsed =
     startRef.current === null ? '' : `${((Date.now() - startRef.current) / 1000).toFixed(1)}s`;
 
+  const COUNTS_HINT = 'Enter two positive integers separated by a comma (e.g. 120, 30).';
+
+  /**
+   * Applies a "students, tutors" prompt value. Blank resets to auto counts.
+   * Returns an error message when the input is invalid, null when applied.
+   */
+  const applyCountsValue = (text: string): string | null => {
+    const trimmed = text.trim();
+    if (trimmed === '') {
+      onOptionsChange({ override: undefined });
+      return null;
+    }
+    const parts = trimmed.split(/\s*,\s*|\s+/).filter((part) => part !== '');
+    if (parts.length !== 2) {
+      return COUNTS_HINT;
+    }
+    const students = Number(parts[0]);
+    const tutors = Number(parts[1]);
+    if (!Number.isInteger(students) || !Number.isInteger(tutors) || students <= 0 || tutors <= 0) {
+      return COUNTS_HINT;
+    }
+    onOptionsChange({ override: { students, tutors } });
+    return null;
+  };
+
   /** Parses and applies the runs/counts prompt value, then re-runs the suite. */
   const submitOption = (): void => {
     if (optionPrompt === 'runs') {
@@ -476,36 +532,17 @@ export function RunScreen({
         setOptionError('Runs per test must be a positive integer.');
         return;
       }
-      setRuns(value);
+      onOptionsChange({ runs: value });
       setOptionPrompt(null);
       setOptionError(null);
       return;
     }
     if (optionPrompt === 'counts') {
-      const trimmed = optionValue.trim();
-      if (trimmed === '') {
-        setOverride(undefined);
-        setOptionPrompt(null);
-        setOptionError(null);
+      const errorMessage = applyCountsValue(optionValue);
+      if (errorMessage !== null) {
+        setOptionError(errorMessage);
         return;
       }
-      const parts = trimmed.split(/\s*,\s*|\s+/).filter((part) => part !== '');
-      if (parts.length !== 2) {
-        setOptionError('Enter two positive integers separated by a comma (e.g. 120, 30).');
-        return;
-      }
-      const students = Number(parts[0]);
-      const tutors = Number(parts[1]);
-      if (
-        !Number.isInteger(students) ||
-        !Number.isInteger(tutors) ||
-        students <= 0 ||
-        tutors <= 0
-      ) {
-        setOptionError('Enter two positive integers separated by a comma (e.g. 120, 30).');
-        return;
-      }
-      setOverride({ students, tutors });
       setOptionPrompt(null);
       setOptionError(null);
       return;
@@ -513,6 +550,42 @@ export function RunScreen({
     setOptionPrompt(null);
     setOptionError(null);
   };
+
+  /**
+   * Advances the pre-run config prompts: runs → counts → start the run.
+   * Blank input keeps the current runs / resets counts to auto.
+   */
+  const acceptConfigStep = (): void => {
+    if (configStep === 'runs') {
+      const trimmed = configValue.trim();
+      if (trimmed !== '') {
+        const value = Number(trimmed);
+        if (!Number.isInteger(value) || value <= 0) {
+          setConfigError('Runs per test must be a positive integer.');
+          return;
+        }
+        onOptionsChange({ runs: value });
+      }
+      setConfigStep('counts');
+      setConfigValue(override === undefined ? '' : `${override.students}, ${override.tutors}`);
+      setConfigError(null);
+      return;
+    }
+    if (configStep === 'counts') {
+      const errorMessage = applyCountsValue(configValue);
+      if (errorMessage !== null) {
+        setConfigError(errorMessage);
+        return;
+      }
+      setConfigStep(null);
+      setConfigError(null);
+      setReady(true);
+      return;
+    }
+    setReady(true);
+  };
+
+  const countsLabel = override === undefined ? 'auto' : `${override.students}×${override.tutors}`;
 
   const heading = (
     <Box>
@@ -536,6 +609,51 @@ export function RunScreen({
         </Box>
         <Box marginTop={1}>
           <Text color="gray">q back to menu</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!ready) {
+    const onCounts = configStep === 'counts';
+    return (
+      <Box flexDirection="column" padding={1}>
+        {heading}
+        <Box marginTop={1}>
+          <Text bold color="yellow">
+            Configure this run
+          </Text>
+        </Box>
+        <Box>
+          <Text color="gray" dimColor>
+            {onCounts
+              ? '2 of 2 — Student/tutor counts override, e.g. 120, 30 (blank = auto)'
+              : `1 of 2 — Runs per test (blank = keep current ${runs})`}
+          </Text>
+        </Box>
+        <Box marginTop={1} flexDirection="column">
+          <TextInput
+            label={onCounts ? 'Counts:' : 'Runs:'}
+            value={configValue}
+            onChange={setConfigValue}
+            placeholder={onCounts ? 'e.g. 120, 30' : String(runs)}
+            onSubmit={acceptConfigStep}
+            onCancel={onBack}
+          />
+          <Text color="gray" dimColor>
+            {onCounts ? 'Enter start · Esc back to menu' : 'Enter next · Esc back to menu'}
+          </Text>
+        </Box>
+        {configError !== null && (
+          <Box marginTop={1}>
+            <Text color="red">✗ {configError}</Text>
+          </Box>
+        )}
+        <Box marginTop={1}>
+          <Text color="cyan" dimColor>
+            Current: {runs} run(s) · counts {countsLabel}
+            {perRun ? ' · per-run on' : ''}
+          </Text>
         </Box>
       </Box>
     );
