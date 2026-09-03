@@ -45,11 +45,6 @@ export interface SuiteResult {
   rows: string[][];
   /** Rows dropped by the per-run cap (0 when none), surfaced as a warning. */
   dropped?: number;
-  /**
-   * Capture rows: when writing the CSV, separate every run with a blank line
-   * so each run is visible at a glance (run 1, blank, run 2, blank, …).
-   */
-  spacedRows?: boolean;
 }
 
 export interface SuiteRunState {
@@ -166,7 +161,6 @@ function harnessRunner(spec: HarnessSuiteSpec): SuiteRunner {
           defaultName: spec.captureName,
           header: CAPTURE_HEADER,
           rows,
-          spacedRows: true,
         },
       ];
     }

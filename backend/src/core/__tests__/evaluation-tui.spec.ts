@@ -2,6 +2,7 @@ import { existsSync, readFileSync, rmSync } from 'fs';
 import {
   columnWidths,
   parseCsv,
+  shouldSpaceRows,
   stripTimingColumns,
   toCsv,
   toSpacedCsv,
@@ -112,6 +113,14 @@ describe('shared CSV/table helpers', () => {
 
   it('toSpacedCsv with no rows emits just the header', () => {
     expect(toSpacedCsv(['a'], [])).toBe('a');
+  });
+
+  it('shouldSpaceRows is content-based: run rows yes, aggregate rows no', () => {
+    const header = ['scenario', 'run', 'winner'];
+    expect(shouldSpaceRows(header, [['a', '1', 'greedy-engine']])).toBe(true);
+    expect(shouldSpaceRows(header, [['a', '', '']])).toBe(false); // aggregate row
+    expect(shouldSpaceRows(['a', 'b'], [['a', 'b']])).toBe(false); // no run column
+    expect(shouldSpaceRows(header, [])).toBe(false);
   });
 
   it('parseCsv handles quoted fields and CRLF line endings', () => {
@@ -225,7 +234,8 @@ describe('tui suite run options', () => {
     });
     expect(result.defaultName).toBe('moderate-capture-results.csv');
     expect(result.header).toEqual(CAPTURE_HEADER);
-    expect(result.spacedRows).toBe(true); // saved with a blank line between runs
+    // Capture rows carry real run numbers → spaced by default when written.
+    expect(shouldSpaceRows(result.header, result.rows)).toBe(true);
     expect(result.dropped).toBeUndefined(); // capture never drops rows
     expect(result.rows).toHaveLength(buildModerateConfigs().length * 2);
     for (const row of result.rows) {

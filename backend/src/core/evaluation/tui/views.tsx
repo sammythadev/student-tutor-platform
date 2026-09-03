@@ -10,6 +10,7 @@ import {
 import {
   columnWidths,
   parseCsv,
+  shouldSpaceRows,
   stripTimingColumns,
   toCsv,
   toSpacedCsv,
@@ -582,10 +583,10 @@ export function RunScreen({
     try {
       const paths = results.map((result) => {
         const rows = noTiming ? stripTimingColumns(result.header, result.rows) : result.rows;
-        const csv =
-          result.spacedRows === true
-            ? toSpacedCsv(result.header, rows)
-            : toCsv(result.header, rows);
+        // Per-run and capture CSVs carry real run numbers → spaced by default.
+        const csv = shouldSpaceRows(result.header, rows)
+          ? toSpacedCsv(result.header, rows)
+          : toCsv(result.header, rows);
         return writeCsvOutput(result.defaultName, csv);
       });
       setSavedPaths(paths);
@@ -973,10 +974,9 @@ export function RunScreen({
                 const rows = noTiming
                   ? stripTimingColumns(result.header, result.rows)
                   : result.rows;
-                const csv =
-                  result.spacedRows === true
-                    ? toSpacedCsv(result.header, rows)
-                    : toCsv(result.header, rows);
+                const csv = shouldSpaceRows(result.header, rows)
+                  ? toSpacedCsv(result.header, rows)
+                  : toCsv(result.header, rows);
                 const path = writeCsvOutput(name, csv);
                 setExtraSaved(path);
                 setSaveAsStep(null);

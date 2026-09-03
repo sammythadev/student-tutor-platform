@@ -68,9 +68,23 @@ export function toCsv(header: string[], rows: string[][]): string {
 }
 
 /**
- * Like `toCsv`, but inserts a blank line between EVERY row. Capture CSVs use
- * this so each run of a test is visually boxed off when opened in an editor —
- * run 1, blank, run 2, blank, … The header stays tight against the first row.
+ * True when the rows are per-run records (a `run` column that actually holds
+ * run numbers). Such CSVs are saved with a blank line between every run by
+ * default so run 1..N reads clearly when opened in an editor. Aggregate rows
+ * (empty run cell) and non-harness CSVs are left dense.
+ */
+export function shouldSpaceRows(header: string[], rows: string[][]): boolean {
+  const runIndex = header.indexOf('run');
+  if (runIndex === -1) {
+    return false;
+  }
+  return rows.some((row) => (row[runIndex] ?? '') !== '');
+}
+
+/**
+ * Like `toCsv`, but inserts a blank line between EVERY row. Per-run CSVs use
+ * this automatically so each run of a test is visually boxed off — run 1,
+ * blank, run 2, blank, … The header stays tight against the first row.
  * `parseCsv` already skips blank lines, so round-trip readers are unaffected.
  */
 export function toSpacedCsv(header: string[], rows: string[][]): string {
@@ -208,11 +222,6 @@ export interface EmitOptions {
   defaultName: string;
   header: string[];
   rows: string[][];
-  /**
-   * Insert a blank line between every row (used by capture mode so each run is
-   * visually separated in the saved CSV). Off by default.
-   */
-  spacedRows?: boolean;
 }
 
 /**
@@ -225,13 +234,16 @@ export interface EmitOptions {
  * The CSV file is written regardless of render mode (unless --no-file), and the
  * saved path is reported on stderr so it stays out of redirected stdout.
  */
-export function emitResults({ defaultName, header, rows, spacedRows }: EmitOptions): void {
+export function emitResults({ defaultName, header, rows }: EmitOptions): void {
   const forceCsv = process.argv.includes('--csv');
   const forceTable = process.argv.includes('--table');
   const useTable = forceTable || (process.stdout.isTTY === true && !forceCsv);
   const noTiming = process.argv.includes('--no-timing');
   const outputRows = noTiming ? stripTimingColumns(header, rows) : rows;
-  const csv = spacedRows === true ? toSpacedCsv(header, outputRows) : toCsv(header, outputRows);
+  // Any CSV that carries actual run rows is spaced by default — no flag needed.
+  const csv = shouldSpaceRows(header, outputRows)
+    ? toSpacedCsv(header, outputRows)
+    : toCsv(header, outputRows);
 
   console.log(useTable ? formatTable(header, outputRows) : csv);
 
