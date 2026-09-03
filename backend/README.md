@@ -79,12 +79,29 @@ pnpm run tui -- all         # eval + topk + gap + baselines, each its own CSV
 pnpm run tui -- browser     # browse saved results
 pnpm run tui -- notes       # open the notes / scratchpad editor
 
-Pass `--no-timing` to zero the wall-clock timing columns in saved CSVs from
-launch (quality metrics stay exact; timing is noisy across runs):
+The run options below can also be passed at launch — they seed the run view,
+so the suite starts with them applied (the `R` / `C` / `P` keys still adjust
+them live):
 
 ```bash
 pnpm run tui -- eval --no-timing
+pnpm run tui -- eval --save-runs 100   # every run saved as its own CSV row
+pnpm run tui -- topk --runs 3
+pnpm run tui -- moderate --students 40 --tutors 12
+pnpm run tui -- --moderate --save-runs 20   # --moderate selects the moderate suite
 ```
+
+`pnpm run tui -- --help` prints the full launch-flag usage. Flags that only
+belong to the piped scripts (`--name`, `--out`, `--no-file`, `--table/--csv`,
+`--sizes`, `--scenario/--strategy`) are reported as ignored at launch — the TUI
+always auto-saves to `docs/benchmarks/`.
+
+You never have to memorize the flags: picking a harness suite (eval, topk,
+moderate, all) pauses at a **two-step setup prompt** first — runs per test, then
+student/tutor counts — with each field prefilled from the current settings, so
+Enter accepts and blank keeps the default (runs) or auto counts. `Esc` backs out
+to the menu. Launching with run-option flags skips the prompts (the values were
+already given).
 
 ### Controls
 
@@ -97,6 +114,7 @@ pnpm run tui -- eval --no-timing
 | `t`                | toggle timing columns in the table + saved CSV (run) |
 | `R`                | set runs per test (harness suites, default 5)  |
 | `C`                | set a students/tutors override for every test (harness suites; blank resets to auto) |
+| setup prompts      | picking a harness suite first asks runs → counts (Enter accepts, Esc backs out) |
 | `P`                | toggle per-run mode — one row per run, winning algorithm in the winner column |
 | `?`                | open/close the full help reference (menu, run, browser) |
 | `Ctrl+O`           | open/close the help reference (notes; `?` stays typable) |
@@ -115,7 +133,9 @@ pnpm run tui -- eval --no-timing
   so `?` stays typable). The panel replaces the screen while open (state is
   preserved) and is capped to the terminal height, scrolling with `j`/`k` or
   `↑`/`↓` on short terminals; `?`, `Esc`, `q`, `m` or `Ctrl+O` closes it.
-- **Run** — live progress (spinner, progress bar, current scenario, completed
+- **Run** — harness suites first show a two-step setup prompt (runs per test,
+  then students/tutors counts — prefilled, Enter accepts); afterwards live
+  progress (spinner, progress bar, current scenario, completed
   ticks), then a results table with the best value in each highlighted column
   tinted green (highest average score, lowest unassigned %, best fairness, ...).
   Press `t` to zero the wall-clock timing columns in both the displayed table
@@ -148,17 +168,17 @@ own row — `evaluation-per-run-results.csv`, `topk-per-run-results.csv`,
 `moderate-per-run-results.csv` — each row carrying its run index and the
 winning algorithm, capped at 1000 rows per file.
 
-### CLI run options
+### Run options
 
-The `pnpm run eval` CLI mirrors the same options the run view drives with
-`R`/`C`/`P`:
+The same options drive the `pnpm run eval` CLI, the TUI launch line, and the
+run view (`R`/`C`/`P` keys):
 
 | Flag                     | Effect                                              |
 | ------------------------ | --------------------------------------------------- |
-| `--save-runs <n>`        | run each test n times and write EVERY run to the CSV as its own row (one file, max 1000 rows) |
-| `--runs <n>`             | repeats per test for the timing stats, default 5    |
-| `--per-run`              | legacy toggle for per-run rows using the `--runs` count |
-| `--students <n> --tutors <n>` | override counts for every test (both required) |
+| `--save-runs <n>`        | run each test n times and write EVERY run to the CSV as its own row (one file, max 1000 rows) — R set to n + per-run mode on |
+| `--runs <n>`             | repeats per test for the timing stats, default 5 (R) |
+| `--per-run`              | legacy toggle for per-run rows using the `--runs` count (P) |
+| `--students <n> --tutors <n>` | override counts for every test (both required) (C) |
 
 ## Notes
 

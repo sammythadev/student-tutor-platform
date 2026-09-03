@@ -108,7 +108,7 @@ export function HelpContent({
   );
   const flagSegments = useMemo<Segment[]>(
     () => [
-      { kind: 'title', text: 'CLI flags — pnpm run eval* (TUI: --no-timing, suite id)' },
+      { kind: 'title', text: 'CLI flags — pnpm run eval* · run options also work at TUI launch' },
       ...CLI_FLAG_ROWS.map((row): Segment => ({ kind: 'row', keys: row.keys, action: row.action })),
     ],
     [],

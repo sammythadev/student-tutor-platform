@@ -58,6 +58,11 @@ export const MENU_KEYS: HelpSection = {
 export const RUN_KEYS: HelpSection = {
   title: 'Run',
   rows: [
+    {
+      keys: 'setup',
+      action:
+        'picking a harness suite first asks runs per test, then students/tutors — Enter accepts, blank keeps current / auto counts',
+    },
     { keys: 'r', action: 'rerun the suite' },
     { keys: 's', action: 'save under a new filename' },
     { keys: 't', action: 'timing columns on / off' },
@@ -105,8 +110,17 @@ export const HELP_SECTIONS: HelpSection[] = [
   NOTES_KEYS,
 ];
 
-/** CLI flags mirrored by the eval scripts (`pnpm run eval*`). */
+/**
+ * CLI flags mirrored by the eval scripts (`pnpm run eval*`). The run-option
+ * flags are also accepted at TUI launch (`pnpm run tui -- <suite> --save-runs
+ * 100`), where they seed the run view — same effect as the R / C / P keys.
+ */
 export const CLI_FLAG_ROWS: HelpRow[] = [
+  {
+    keys: 'launch',
+    action:
+      'pnpm run tui -- <suite> [--save-runs <n> | --runs <n> | --per-run | --students <n> --tutors <n> | --no-timing]',
+  },
   {
     keys: '--no-timing',
     action: 'zero wall-clock timing columns in saved CSVs (same as t in the run view)',
@@ -115,7 +129,10 @@ export const CLI_FLAG_ROWS: HelpRow[] = [
   { keys: '--out <path>', action: 'explicit output path, bypassing docs/benchmarks/' },
   { keys: '--no-file', action: 'print only — do not write the CSV' },
   { keys: '--table / --csv', action: 'force aligned-table or raw-CSV output' },
-  { keys: '--moderate / --topk-sweep', action: 'narrow the eval harness (CLI only)' },
+  {
+    keys: '--moderate / --topk-sweep',
+    action: 'narrow the eval harness — at TUI launch these select the moderate / topk suite',
+  },
   {
     keys: '--students <n> --tutors <n>',
     action:
@@ -124,7 +141,7 @@ export const CLI_FLAG_ROWS: HelpRow[] = [
   {
     keys: '--save-runs <n>',
     action:
-      'run each test n times and write EVERY run to the CSV as its own row (one file, max 1000 rows) — the discoverable way to save runs',
+      'run each test n times and write EVERY run to the CSV as its own row (one file, max 1000 rows) — same as R set + per-run mode on',
   },
   {
     keys: '--runs <n>',
