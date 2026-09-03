@@ -67,6 +67,20 @@ export function toCsv(header: string[], rows: string[][]): string {
   return [header.join(','), ...rows.map((row) => row.join(','))].join('\n');
 }
 
+/**
+ * Like `toCsv`, but inserts a blank line between EVERY row. Capture CSVs use
+ * this so each run of a test is visually boxed off when opened in an editor —
+ * run 1, blank, run 2, blank, … The header stays tight against the first row.
+ * `parseCsv` already skips blank lines, so round-trip readers are unaffected.
+ */
+export function toSpacedCsv(header: string[], rows: string[][]): string {
+  const headerLine = header.join(',');
+  if (rows.length === 0) {
+    return headerLine;
+  }
+  return `${headerLine}\n${rows.map((row) => row.join(',')).join('\n\n')}`;
+}
+
 /** Per-column display widths, shared by the CLI table and the TUI table view. */
 export function columnWidths(header: string[], rows: string[][]): number[] {
   return header.map((cell, column) =>
@@ -194,6 +208,11 @@ export interface EmitOptions {
   defaultName: string;
   header: string[];
   rows: string[][];
+  /**
+   * Insert a blank line between every row (used by capture mode so each run is
+   * visually separated in the saved CSV). Off by default.
+   */
+  spacedRows?: boolean;
 }
 
 /**
@@ -206,13 +225,13 @@ export interface EmitOptions {
  * The CSV file is written regardless of render mode (unless --no-file), and the
  * saved path is reported on stderr so it stays out of redirected stdout.
  */
-export function emitResults({ defaultName, header, rows }: EmitOptions): void {
+export function emitResults({ defaultName, header, rows, spacedRows }: EmitOptions): void {
   const forceCsv = process.argv.includes('--csv');
   const forceTable = process.argv.includes('--table');
   const useTable = forceTable || (process.stdout.isTTY === true && !forceCsv);
   const noTiming = process.argv.includes('--no-timing');
   const outputRows = noTiming ? stripTimingColumns(header, rows) : rows;
-  const csv = toCsv(header, outputRows);
+  const csv = spacedRows === true ? toSpacedCsv(header, outputRows) : toCsv(header, outputRows);
 
   console.log(useTable ? formatTable(header, outputRows) : csv);
 

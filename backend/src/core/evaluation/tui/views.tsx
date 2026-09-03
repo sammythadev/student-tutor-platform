@@ -12,6 +12,7 @@ import {
   parseCsv,
   stripTimingColumns,
   toCsv,
+  toSpacedCsv,
   writeCsvOutput,
 } from '@core/evaluation/cli-output';
 import { defaultNoteName, listSavedCsvs, saveNoteFile, type CsvFileInfo } from './files';
@@ -581,7 +582,11 @@ export function RunScreen({
     try {
       const paths = results.map((result) => {
         const rows = noTiming ? stripTimingColumns(result.header, result.rows) : result.rows;
-        return writeCsvOutput(result.defaultName, toCsv(result.header, rows));
+        const csv =
+          result.spacedRows === true
+            ? toSpacedCsv(result.header, rows)
+            : toCsv(result.header, rows);
+        return writeCsvOutput(result.defaultName, csv);
       });
       setSavedPaths(paths);
     } catch (err) {
@@ -968,7 +973,11 @@ export function RunScreen({
                 const rows = noTiming
                   ? stripTimingColumns(result.header, result.rows)
                   : result.rows;
-                const path = writeCsvOutput(name, toCsv(result.header, rows));
+                const csv =
+                  result.spacedRows === true
+                    ? toSpacedCsv(result.header, rows)
+                    : toCsv(result.header, rows);
+                const path = writeCsvOutput(name, csv);
                 setExtraSaved(path);
                 setSaveAsStep(null);
                 setSaveAsName('');

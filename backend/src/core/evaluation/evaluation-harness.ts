@@ -685,6 +685,7 @@ if (typeof require !== 'undefined' && require.main === module) {
         defaultName: 'evaluation-capture-results.csv',
         header,
         rows,
+        spacedRows: true,
       });
       console.error(
         `\nCaptured ${rows.length} run(s) — ${configs.length} test(s) × ${captureRuns} run(s), every run with all four strategies + its own time, no cap.`,
