@@ -311,14 +311,6 @@ export function buildModerateConfigs(): EvaluationConfig[] {
   );
 }
 
-export function runEvaluation(): EvaluationRow[] {
-  return buildEvaluationConfigs().map(evaluate);
-}
-
-export function runTopKSweep(): EvaluationRow[] {
-  return buildTopKSweepConfigs().map(evaluate);
-}
-
 export function runRealisticEvaluation(): EvaluationRow[] {
   return buildRealisticConfigs().map(evaluate);
 }

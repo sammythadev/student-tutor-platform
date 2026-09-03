@@ -213,13 +213,16 @@ function TextInput({
 
 /** ── main menu ──────────────────────────────────────────────────────────── */
 
-const BANNER_FONTS = ['ANSI Shadow', 'Standard', 'Small'];
+const BANNER_FONTS = ['ANSI Shadow', 'Standard', 'Small'] as const;
+
+/** Font-name union from the figlet module itself (avoids the UMD global type). */
+type FigletFontName = NonNullable<Parameters<typeof figlet.textSync>[1]>['font'];
 
 /** Claude-style figlet banner, choosing the widest font that fits the screen. */
 function renderBanner(text: string, availableWidth: number): string[] {
   for (const font of BANNER_FONTS) {
     try {
-      const art = figlet.textSync(text, { font: font as figlet.Fonts });
+      const art = figlet.textSync(text, { font: font as FigletFontName });
       const lines = art.replace(/\n$/, '').split('\n');
       if (Math.max(...lines.map((line) => line.length)) <= availableWidth) {
         return lines;

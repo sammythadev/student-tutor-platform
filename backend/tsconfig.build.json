@@ -1,4 +1,10 @@
 {
   "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // SWC's path rewriting needs baseUrl to resolve the tsconfig paths aliases
+    // (it canonicalizes jsc.baseUrl on Windows). The main tsconfig omits it so
+    // the TypeScript 6/7 compilers stay on deprecation-free options.
+    "baseUrl": "./"
+  },
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }
