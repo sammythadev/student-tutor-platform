@@ -116,6 +116,7 @@ already given).
 | `C`                | set a students/tutors override for every test (harness suites; blank resets to auto) |
 | setup prompts      | picking a harness suite first asks runs → counts (Enter accepts, Esc backs out) |
 | `P`                | cycle row mode: **summary → per-run (winner) → capture (every run, all strategies, no cap)** |
+| `W`                | toggle the **winner summary** — which algorithm wins across these runs (strict wins, tied-for-best, and per-strategy means; full detail on capture rows) |
 | `?`                | open/close the full help reference (menu, run, browser) |
 | `Ctrl+O`           | open/close the help reference (notes; `?` stays typable) |
 | `j`/`k` or `↑`/`↓` | scroll the help panel on short terminals (help) |

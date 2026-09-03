@@ -77,6 +77,11 @@ export const RUN_KEYS: HelpSection = {
       action:
         'cycle row mode: summary → per-run (winner) → capture (every run, all strategies, no cap) — the saved CSV always contains every row',
     },
+    {
+      keys: 'W',
+      action:
+        'toggle the winner summary — which algorithm wins across these runs (strict wins, ties, means; full on capture rows)',
+    },
     { keys: 'm / Esc', action: 'back to menu' },
     { keys: 'q', action: 'quit' },
   ],
