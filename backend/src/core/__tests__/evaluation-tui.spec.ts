@@ -18,7 +18,14 @@ import {
 import { computeOptimalityGapRow, DEFAULT_GAP_SIZES } from '../evaluation/optimal-baseline';
 import { runBaselineCell, SCENARIOS } from '../evaluation/baseline-comparison';
 import { getSuite, harnessSuite, moderateSuite, topkSuite, SUITES } from '../evaluation/tui/suites';
-import { CLI_FLAG_ROWS, HELP_SECTIONS, isHelpCloseChord } from '../evaluation/tui/help-data';
+import { wrapClearDesync } from '../evaluation/tui/stdout-clear-patch';
+import {
+  CLI_FLAG_ROWS,
+  currentSaveMode,
+  HELP_SECTIONS,
+  isHelpCloseChord,
+  SAVE_MODES,
+} from '../evaluation/tui/help-data';
 import { parseTuiArgs, tuiUsage } from '../evaluation/tui/launch';
 
 const WINNERS = ['fcfs-filter', 'fcfs-best', 'da-stable', 'greedy-engine'];
@@ -359,6 +366,99 @@ describe('tui help content', () => {
     expect(isHelpCloseChord('a', {})).toBe(false);
     expect(isHelpCloseChord('o', {})).toBe(false);
     expect(isHelpCloseChord('', {})).toBe(false);
+  });
+});
+
+describe('tui save-as row modes', () => {
+  it('offers summary, per-run and capture in that order', () => {
+    expect(SAVE_MODES.map((mode) => mode.id)).toEqual(['summary', 'per-run', 'capture']);
+    for (const mode of SAVE_MODES) {
+      expect(mode.label.length).toBeGreaterThan(0);
+      expect(mode.hint.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('currentSaveMode matches the run options (capture wins over per-run)', () => {
+    expect(currentSaveMode(false, false)).toBe('summary');
+    expect(currentSaveMode(true, false)).toBe('per-run');
+    expect(currentSaveMode(false, true)).toBe('capture');
+    expect(currentSaveMode(true, true)).toBe('capture');
+  });
+});
+
+describe('stdout clear-desync patch', () => {
+  it('passes ordinary frames through untouched', () => {
+    const writes: string[] = [];
+    const wrapped = wrapClearDesync((chunk) => {
+      writes.push(String(chunk));
+      return true;
+    });
+    wrapped('erase\u001b[2K\u001b[1A\nframe one\n');
+    wrapped('\u001b[2K\u001b[1A\nframe two\n');
+    expect(writes).toEqual([
+      'erase\u001b[2K\u001b[1A\nframe one\n',
+      '\u001b[2K\u001b[1A\nframe two\n',
+    ]);
+  });
+
+  it('injects a full clear before the frame that follows a taller-than-terminal frame', () => {
+    const writes: string[] = [];
+    const wrapped = wrapClearDesync((chunk) => {
+      writes.push(String(chunk));
+      return true;
+    });
+    // Ink's tall-frame path: clearTerminal + tall output.
+    wrapped('\u001b[2J\u001b[3J\u001b[Htall frame line 1\ntall frame line 2\n');
+    // Next (shorter) frame: must start with a fresh clear before ink's stale
+    // eraseLines bookkeeping can misfire.
+    wrapped('\u001b[2K\u001b[1A\nshort frame\n');
+    expect(writes[1]).toBe(
+      String.fromCharCode(0x1b) +
+        '[2J' +
+        String.fromCharCode(0x1b) +
+        '[3J' +
+        String.fromCharCode(0x1b) +
+        '[H' +
+        String.fromCharCode(0x1b) +
+        '[2K' +
+        String.fromCharCode(0x1b) +
+        '[1A\nshort frame\n',
+    );
+  });
+
+  it('only injects once — the following frame is untouched again', () => {
+    const writes: string[] = [];
+    const wrapped = wrapClearDesync((chunk) => {
+      writes.push(String(chunk));
+      return true;
+    });
+    wrapped('\u001b[2J\u001b[3J\u001b[Htall\n');
+    wrapped('short one\n');
+    wrapped('short two\n');
+    expect(writes[1]).toMatch(
+      new RegExp('^' + String.fromCharCode(0x1b) + '\\[2J' + String.fromCharCode(0x1b) + '\\[3J'),
+    );
+    expect(writes[2]).toBe('short two\n');
+  });
+
+  it('keeps the pending clear across non-frame writes (cursor controls)', () => {
+    const writes: string[] = [];
+    const wrapped = wrapClearDesync((chunk) => {
+      writes.push(String(chunk));
+      return true;
+    });
+    wrapped('\u001b[2J\u001b[3J\u001b[Htall\n');
+    wrapped('\u001b[?25l'); // cursor hide — not a frame, must not consume the flag
+    wrapped('short frame\n');
+    expect(writes[1]).toBe('\u001b[?25l');
+    expect(writes[2]).toBe(
+      String.fromCharCode(0x1b) +
+        '[2J' +
+        String.fromCharCode(0x1b) +
+        '[3J' +
+        String.fromCharCode(0x1b) +
+        '[Hshort frame\n',
+    );
   });
 });
 
