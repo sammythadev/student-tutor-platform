@@ -2,7 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import figlet from 'figlet';
 import { readFileSync } from 'fs';
-import { DEFAULT_RUNS, MAX_SAVED_RUNS } from '@core/evaluation/evaluation-harness';
+import {
+  DEFAULT_RUNS,
+  MAX_SAVED_RUNS,
+  winnerSummaryFromRows,
+} from '@core/evaluation/evaluation-harness';
 import {
   columnWidths,
   parseCsv,
@@ -160,6 +164,91 @@ function DataTable({
           </Text>
         </Box>
       )}
+    </Box>
+  );
+}
+
+/**
+ * "Which algorithm wins" tally over the current results (see
+ * winnerSummaryFromRows): full per-strategy means + win counts on capture
+ * rows, win counts on per-run rows, or a prompt to switch modes on aggregate
+ * rows. Replaces the table while the W panel is open.
+ */
+function WinnerSummaryTable({
+  header,
+  rows,
+}: {
+  header: string[];
+  rows: string[][];
+}): React.JSX.Element {
+  const summary = useMemo(() => winnerSummaryFromRows(header, rows), [header, rows]);
+
+  if (summary.mode === 'aggregate') {
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyan">
+          Winner summary
+        </Text>
+        <Text color="gray">
+          These are aggregate rows (one averaged result per test) — press P for per-run rows, twice
+          for capture mode, to tally winners.
+        </Text>
+      </Box>
+    );
+  }
+
+  const bestScore = summary.strategies.reduce<number | null>(
+    (best, strategy) =>
+      strategy.meanScore !== null && (best === null || strategy.meanScore > best)
+        ? strategy.meanScore
+        : best,
+    null,
+  );
+  const pad = (text: string, width: number): string =>
+    text.length >= width ? text : `${text}${' '.repeat(width - text.length)}`;
+  const cell = (text: string, width: number): string => pad(text, width);
+
+  return (
+    <Box flexDirection="column">
+      <Text bold color="cyan">
+        Winner summary — {summary.rows} run(s)
+      </Text>
+      <Text color="gray" dimColor>
+        {summary.mode === 'per-run'
+          ? 'per-run rows: win counts only — ties break to the first strategy; press P again for capture to see all strategies + means'
+          : 'capture rows — every strategy’s full metrics per run (seeded fixtures, so the tally is exact)'}
+      </Text>
+      <Box>
+        <Text bold>{cell('strategy', 14)}</Text>
+        <Text bold>{cell('wins', 9)}</Text>
+        <Text bold>{cell('tiedBest', 11)}</Text>
+        <Text bold>{cell('meanScore', 12)}</Text>
+        <Text bold>{cell('unassigned%', 14)}</Text>
+        <Text bold>{cell('fairness', 11)}</Text>
+      </Box>
+      {summary.strategies.map((strategy) => (
+        <Box key={strategy.strategy}>
+          <Text>{cell(strategy.strategy, 14)}</Text>
+          <Text>{cell(String(strategy.strictWins), 9)}</Text>
+          <Text>{cell(strategy.tiedBest === null ? '—' : String(strategy.tiedBest), 11)}</Text>
+          <Text
+            color={
+              strategy.meanScore !== null && strategy.meanScore === bestScore ? 'green' : undefined
+            }
+          >
+            {cell(strategy.meanScore === null ? '—' : strategy.meanScore.toFixed(6), 12)}
+          </Text>
+          <Text>
+            {cell(strategy.meanUnassigned === null ? '—' : strategy.meanUnassigned.toFixed(2), 14)}
+          </Text>
+          <Text>
+            {cell(strategy.meanFairness === null ? '—' : strategy.meanFairness.toFixed(6), 11)}
+          </Text>
+        </Box>
+      ))}
+      <Text color="gray" dimColor>
+        W toggles this panel · best meanScore in green
+      </Text>
     </Box>
   );
 }
@@ -386,6 +475,8 @@ export function RunScreen({
   const [saveAsError, setSaveAsError] = useState<string | null>(null);
   const [extraSaved, setExtraSaved] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  // W panel: "which algorithm wins" tally over the current results.
+  const [showSummary, setShowSummary] = useState(false);
   // Run options mirroring the CLI flags (--runs, --save-runs, --students/--tutors,
   // --per-run). State lives in App so launch flags seed it and it survives
   // switching suites; only suites with `supportsOptions` honor them.
@@ -422,6 +513,7 @@ export function RunScreen({
     setError(null);
     setExtraSaved(null);
     setShowHelp(false);
+    setShowSummary(false);
     startRef.current = Date.now();
 
     const run = async (): Promise<void> => {
@@ -432,7 +524,7 @@ export function RunScreen({
               setState({ ...progress });
             }
           },
-          { runs, override, perRun },
+          { runs, override, perRun, capture },
         );
         if (!cancelled) {
           setResults(suiteResults);
@@ -448,7 +540,7 @@ export function RunScreen({
     return () => {
       cancelled = true;
     };
-  }, [suite, runId, runs, override, perRun, ready]);
+  }, [suite, runId, runs, override, perRun, capture, ready]);
 
   // Save whenever results or the timing toggle changes, so the CSV on disk
   // always matches what is displayed (timing columns zeroed when noTiming).
@@ -501,6 +593,8 @@ export function RunScreen({
               ? { perRun: false, capture: false }
               : { perRun: true, capture: false },
         );
+      } else if (input === 'W' && results !== null && results.length === 1) {
+        setShowSummary((value) => !value);
       } else if (input === '?' && results !== null) {
         setShowHelp((value) => !value);
       }
@@ -725,13 +819,19 @@ export function RunScreen({
       {results.length === 1 ? (
         <>
           <Box marginTop={1} flexDirection="column">
-            <DataTable
-              header={results[0].header}
-              rows={
-                noTiming ? stripTimingColumns(results[0].header, results[0].rows) : results[0].rows
-              }
-              highlights={suite.highlights}
-            />
+            {showSummary ? (
+              <WinnerSummaryTable header={results[0].header} rows={results[0].rows} />
+            ) : (
+              <DataTable
+                header={results[0].header}
+                rows={
+                  noTiming
+                    ? stripTimingColumns(results[0].header, results[0].rows)
+                    : results[0].rows
+                }
+                highlights={suite.highlights}
+              />
+            )}
           </Box>
           <Box marginTop={1}>
             <Text color="green">
@@ -830,7 +930,8 @@ export function RunScreen({
       )}
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          r rerun · s save as · t timing {noTiming ? 'off' : 'on'} · ? help · m menu · q quit
+          r rerun · s save as · t timing {noTiming ? 'off' : 'on'} · W winner summary · ? help · m
+          menu · q quit
         </Text>
       </Box>
       {suite.supportsOptions && (

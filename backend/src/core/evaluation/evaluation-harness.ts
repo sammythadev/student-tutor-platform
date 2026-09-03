@@ -186,11 +186,13 @@ export const CAPTURE_HEADER: string[] = [
  * Evaluates ONE run in capture mode: all four strategies share the same
  * student population, the wall-clock started-at timestamp and duration frame
  * the run, and greedy's own timed execution supplies the stats columns.
+ * (`_run`/`_runs` mirror the per-run signature; the run index is attached by
+ * toCapturedRunRow, not measured here.)
  */
 export function evaluateCapturedRun(
   config: EvaluationConfig,
-  run: number,
-  runs: number,
+  _run: number,
+  _runs: number,
 ): {
   startedAt: string;
   durationMs: number;
@@ -284,6 +286,152 @@ export function emitCaptureRuns(
     }
   }
   return { header: CAPTURE_HEADER, rows };
+}
+
+/** ── winner summary: which algorithm wins across the captured runs ──────── */
+
+export interface WinnerStrategySummary {
+  strategy: string;
+  /** Runs where this strategy strictly beat every other strategy. */
+  strictWins: number;
+  /** Runs where this strategy tied the best score (incl. strict wins). */
+  tiedBest: number | null;
+  meanScore: number | null;
+  meanUnassigned: number | null;
+  meanFairness: number | null;
+}
+
+export interface WinnerSummary {
+  mode: 'capture' | 'per-run' | 'aggregate';
+  rows: number;
+  strategies: WinnerStrategySummary[];
+}
+
+/**
+ * Tallies "which algorithm is best" over result rows. Deterministic per
+ * config (fixtures are seeded), so the tally is exact for the population at
+ * hand:
+ *   capture rows — every strategy's metrics are in each row → full tally
+ *                  (strict wins, tied-for-best, means).
+ *   per-run rows  — only the winner column exists → win counts only.
+ *   aggregate rows — no per-run information → empty strategies (mode
+ *                  'aggregate'), caller prompts for per-run/capture mode.
+ */
+export function winnerSummaryFromRows(header: string[], rows: string[][]): WinnerSummary {
+  const isCapture = CAPTURE_STRATEGIES.every((strategy) =>
+    header.includes(`${strategy}.averageScore`),
+  );
+
+  if (isCapture) {
+    interface CaptureAccumulator {
+      strictWins: number;
+      tiedBest: number;
+      scoreSum: number;
+      unassignedSum: number;
+      fairnessSum: number;
+      valid: number;
+    }
+    const acc = new Map<string, CaptureAccumulator>();
+    for (const strategy of CAPTURE_STRATEGIES) {
+      acc.set(strategy, {
+        strictWins: 0,
+        tiedBest: 0,
+        scoreSum: 0,
+        unassignedSum: 0,
+        fairnessSum: 0,
+        valid: 0,
+      });
+    }
+    const scoresOf = (row: string[]): Map<string, number> => {
+      const map = new Map<string, number>();
+      for (const strategy of CAPTURE_STRATEGIES) {
+        const cell = row[header.indexOf(`${strategy}.averageScore`)];
+        map.set(strategy, Number.parseFloat(cell ?? ''));
+      }
+      return map;
+    };
+    for (const row of rows) {
+      const scores = scoresOf(row);
+      if ([...scores.values()].some(Number.isNaN)) {
+        continue;
+      }
+      const values = [...scores.values()];
+      const max = Math.max(...values);
+      // A strict win needs a UNIQUE best score — an all-tie run gives nobody one.
+      const atMax = values.filter((value) => value === max).length;
+      for (const strategy of CAPTURE_STRATEGIES) {
+        const entry = acc.get(strategy);
+        if (entry === undefined) {
+          continue;
+        }
+        const score = scores.get(strategy) ?? NaN;
+        const unassigned = Number.parseFloat(row[header.indexOf(`${strategy}.unassignedPercent`)]);
+        const fairness = Number.parseFloat(row[header.indexOf(`${strategy}.jainFairnessIndex`)]);
+        entry.valid += 1;
+        entry.scoreSum += score;
+        entry.unassignedSum += unassigned;
+        entry.fairnessSum += fairness;
+        if (score === max) {
+          entry.tiedBest += 1;
+          if (atMax === 1) {
+            entry.strictWins += 1;
+          }
+        }
+      }
+    }
+    const divide = (sum: number, count: number): number => sum / count;
+    return {
+      mode: 'capture',
+      rows: rows.length,
+      strategies: CAPTURE_STRATEGIES.map((strategy) => {
+        const entry = acc.get(strategy);
+        return {
+          strategy,
+          strictWins: entry?.strictWins ?? 0,
+          tiedBest: entry?.tiedBest ?? 0,
+          meanScore:
+            entry !== undefined && entry.valid > 0 ? divide(entry.scoreSum, entry.valid) : null,
+          meanUnassigned:
+            entry !== undefined && entry.valid > 0
+              ? divide(entry.unassignedSum, entry.valid)
+              : null,
+          meanFairness:
+            entry !== undefined && entry.valid > 0 ? divide(entry.fairnessSum, entry.valid) : null,
+        };
+      }),
+    };
+  }
+
+  if (header.includes('winner')) {
+    const winnerIndex = header.indexOf('winner');
+    // Aggregate rows also carry a winner column (empty) — treat rows with no
+    // actual winners as aggregate, not per-run.
+    const hasWinner = rows.some((row) => (row[winnerIndex] ?? '') !== '');
+    if (!hasWinner) {
+      return { mode: 'aggregate', rows: rows.length, strategies: [] };
+    }
+    const wins = new Map<string, number>();
+    for (const row of rows) {
+      const winner = row[winnerIndex];
+      if (winner !== undefined && winner !== '') {
+        wins.set(winner, (wins.get(winner) ?? 0) + 1);
+      }
+    }
+    return {
+      mode: 'per-run',
+      rows: rows.length,
+      strategies: CAPTURE_STRATEGIES.map((strategy) => ({
+        strategy,
+        strictWins: wins.get(strategy) ?? 0,
+        tiedBest: null, // ties are broken by the first strategy in the winner column
+        meanScore: null,
+        meanUnassigned: null,
+        meanFairness: null,
+      })),
+    };
+  }
+
+  return { mode: 'aggregate', rows: rows.length, strategies: [] };
 }
 
 /** Parses a positive-integer CLI flag value, or throws a one-line user error. */
