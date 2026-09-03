@@ -155,7 +155,7 @@ export function parseCountOverride(): CountOverride | undefined {
 }
 
 /** Replaces the student/tutor counts of every config in a sweep. */
-function applyCountOverride(
+export function applyCountOverride(
   configs: EvaluationConfig[],
   override: CountOverride,
 ): EvaluationConfig[] {
