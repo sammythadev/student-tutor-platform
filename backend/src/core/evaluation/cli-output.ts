@@ -7,7 +7,9 @@ import { join, resolve } from 'path';
  * "write the CSV + tell the user where it went", so all three behave the same
  * way from the terminal.
  *
- * Flags: --csv, --table, --name <file>, --out <path>, --no-file
+ * Flags: --csv, --table, --name <file>, --out <path>, --no-file.
+ * Harness-specific flags (--students/--tutors/--runs/--per-run) are parsed in
+ * evaluation-harness.ts; the flags here are shared by all three eval scripts.
  */
 
 /**

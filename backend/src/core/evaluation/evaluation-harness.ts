@@ -1,6 +1,6 @@
 import { GreedyAssignmentEngine } from '@core/algorithms';
 import type { AssignmentStats } from '@core/algorithms';
-import { emitResults, runCli } from './cli-output';
+import { emitResults, getFlagValue, runCli } from './cli-output';
 import { type CapacityStrategy, generateStudents, generateTutors } from './fixtures';
 
 export interface EvaluationConfig {
@@ -30,6 +30,47 @@ export interface EvaluationRow {
 
 /** Number of repeated runs; elapsed time is reported as min/mean/max across runs. */
 const BENCHMARK_RUNS = 5;
+
+export interface CountOverride {
+  students: number;
+  tutors: number;
+}
+
+/** Parses a positive-integer CLI flag value, or throws a one-line user error. */
+function parsePositiveInt(flag: string, raw: string): number {
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${flag} expects a positive integer, got "${raw}"`);
+  }
+  return value;
+}
+
+/**
+ * Reads `--students <n>` / `--tutors <n>` from argv. The two must be passed
+ * together (both or neither) so the ratio is never accidentally mangled; the
+ * override applies to EVERY test in the selected sweep.
+ */
+export function parseCountOverride(): CountOverride | undefined {
+  const studentsRaw = getFlagValue('--students');
+  const tutorsRaw = getFlagValue('--tutors');
+
+  if (studentsRaw === undefined && tutorsRaw === undefined) {
+    return undefined;
+  }
+  if (studentsRaw === undefined || tutorsRaw === undefined) {
+    throw new Error('--students and --tutors must be passed together (both or neither)');
+  }
+
+  return {
+    students: parsePositiveInt('--students', studentsRaw),
+    tutors: parsePositiveInt('--tutors', tutorsRaw),
+  };
+}
+
+/** Replaces the student/tutor counts of every config in a sweep. */
+function applyCountOverride(configs: EvaluationConfig[], override: CountOverride): EvaluationConfig[] {
+  return configs.map((config) => ({ ...config, ...override }));
+}
 
 const mean = (values: number[]): number =>
   values.length === 0 ? 0 : values.reduce((total, value) => total + value, 0) / values.length;
@@ -219,16 +260,20 @@ if (typeof require !== 'undefined' && require.main === module) {
       throw new Error('The optimality gap moved to its own script. Run: pnpm run eval:gap');
     }
 
-    const rows = process.argv.includes('--topk-sweep')
-      ? runTopKSweep()
+    const baseConfigs = process.argv.includes('--topk-sweep')
+      ? buildTopKSweepConfigs()
       : process.argv.includes('--moderate')
-        ? runModerateEvaluation()
-        : [...runRealisticEvaluation(), ...runModerateEvaluation(), ...runEvaluation()];
+        ? buildModerateConfigs()
+        : [...buildRealisticConfigs(), ...buildModerateConfigs(), ...buildEvaluationConfigs()];
+
+    const override = parseCountOverride();
+    const configs = override ? applyCountOverride(baseConfigs, override) : baseConfigs;
+    const rows = configs.map((config) => toRow(evaluate(config)));
 
     emitResults({
       defaultName: 'evaluation-results.csv',
       header: HEADER,
-      rows: rows.map(toRow),
+      rows,
     });
   });
 }

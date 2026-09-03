@@ -106,6 +106,9 @@ export const CLI_FLAG_ROWS: HelpRow[] = [
   { keys: '--no-file', action: 'print only — do not write the CSV' },
   { keys: '--table / --csv', action: 'force aligned-table or raw-CSV output' },
   { keys: '--moderate / --topk-sweep', action: 'narrow the eval harness (CLI only)' },
+  { keys: '--students <n> --tutors <n>', action: 'override student/tutor counts for every harness test — both required (CLI only)' },
+  { keys: '--runs <n>', action: 'repeats per test, default 5 (shown in the results table)' },
+  { keys: '--per-run', action: 'save one row per run with the winning algorithm, max 1000 rows per CSV (CLI only)' },
   { keys: '--sizes <10,25,50,100>', action: 'optimality-gap sweep sizes (CLI only)' },
   { keys: '--scenario / --strategy', action: 'narrow baseline runs (CLI only)' },
 ];
