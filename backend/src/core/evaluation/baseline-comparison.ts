@@ -253,26 +253,49 @@ const STRATEGIES: Array<{
 
 export type BaselineScenario = (typeof SCENARIOS)[number];
 
+export interface StrategyOutcome {
+  strategy: string;
+  averageScore: number;
+  unassignedPercent: number;
+  jainFairnessIndex: number;
+}
+
+/**
+ * Runs every built-in strategy against ONE student population. Students are
+ * read-only and shared, so all strategies see the identical population; tutors
+ * are regenerated per strategy because the runs mutate tutor.assignedCount.
+ * Used by the eval harness's --per-run mode to pick the winning strategy.
+ */
+export function runAllStrategies(
+  students: Student[],
+  tutorCount: number,
+  capacityStrategy: CapacityStrategy,
+): StrategyOutcome[] {
+  return STRATEGIES.map(({ strategy, run }) => {
+    const tutors = generateTutors(tutorCount, capacityStrategy);
+    const { scores, unassigned, loads } = run(students, tutors);
+    return {
+      strategy,
+      averageScore: scores.length === 0 ? 0 : scores.reduce((a, b) => a + b, 0) / scores.length,
+      unassignedPercent: (unassigned / students.length) * 100,
+      jainFairnessIndex: jain(loads),
+    };
+  });
+}
+
 /** Runs all strategies against ONE scenario — exported so the TUI can report
  *  per-scenario progress instead of waiting for the whole comparison. */
 export function runBaselineCell(scenario: BaselineScenario): BaselineRow[] {
-  const rows: BaselineRow[] = [];
-  for (const { strategy, run } of STRATEGIES) {
-    // Fresh fixtures per strategy: the runs mutate tutor.assignedCount.
-    const students = generateStudents(scenario.students, 0.05);
-    const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy);
-    const { scores, unassigned, loads } = run(students, tutors);
-    rows.push({
-      scenario: scenario.scenario,
-      strategy,
-      students: scenario.students,
-      tutors: scenario.tutors,
-      averageScore: scores.length === 0 ? 0 : scores.reduce((a, b) => a + b, 0) / scores.length,
-      unassignedPercent: (unassigned / scenario.students) * 100,
-      jainFairnessIndex: jain(loads),
-    });
-  }
-  return rows;
+  const students = generateStudents(scenario.students, 0.05);
+  return runAllStrategies(students, scenario.tutors, scenario.capacityStrategy).map((outcome) => ({
+    scenario: scenario.scenario,
+    strategy: outcome.strategy,
+    students: scenario.students,
+    tutors: scenario.tutors,
+    averageScore: outcome.averageScore,
+    unassignedPercent: outcome.unassignedPercent,
+    jainFairnessIndex: outcome.jainFairnessIndex,
+  }));
 }
 
 /**

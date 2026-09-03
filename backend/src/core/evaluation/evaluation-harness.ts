@@ -1,6 +1,7 @@
 import { GreedyAssignmentEngine } from '@core/algorithms';
 import type { AssignmentStats } from '@core/algorithms';
 import { emitResults, getFlagValue, runCli } from './cli-output';
+import { runAllStrategies } from './baseline-comparison';
 import { type CapacityStrategy, generateStudents, generateTutors } from './fixtures';
 
 export interface EvaluationConfig {
@@ -20,6 +21,10 @@ export interface EvaluationRow {
   topK: number | null;
   /** Number of repeated runs per test — aggregate rows report the total; per-run rows report the test's total. */
   runs: number;
+  /** 1-based run index; set only in --per-run rows (null in aggregate rows). */
+  run: number | null;
+  /** Winning strategy for this run; set only in --per-run rows (null in aggregate rows). */
+  winner: string | null;
   averageScore: number;
   unassignedPercent: number;
   jainFairnessIndex: number;
@@ -33,6 +38,9 @@ export interface EvaluationRow {
 /** Default number of repeated runs per test (override with `--runs <n>`). */
 export const DEFAULT_RUNS = 5;
 
+/** Hard cap on per-run rows saved to one CSV in --per-run mode. */
+export const MAX_SAVED_RUNS = 1000;
+
 export interface CountOverride {
   students: number;
   tutors: number;
@@ -42,6 +50,73 @@ export interface CountOverride {
 export function parseRuns(): number {
   const raw = getFlagValue('--runs');
   return raw === undefined ? DEFAULT_RUNS : parsePositiveInt('--runs', raw);
+}
+
+/**
+ * One per-run row: runs all four strategies (fcfs-filter, fcfs-best,
+ * da-stable, greedy-engine) on the config's population, reports the WINNER's
+ * quality metrics, and records greedy's per-run wall-clock timing/stats.
+ */
+export function evaluatePerRunRow(config: EvaluationConfig, run: number, runs: number): EvaluationRow {
+  const students = generateStudents(config.students, config.loadFactorWeight);
+  const outcomes = runAllStrategies(students, config.tutors, config.capacityStrategy);
+  const winner = outcomes.reduce((best, outcome) =>
+    outcome.averageScore > best.averageScore ? outcome : best,
+  );
+
+  // Greedy's timing is measured separately (the strategy runs inside
+  // runAllStrategies do not collect stats or wall-clock time).
+  const greedyTutors = generateTutors(config.tutors, config.capacityStrategy);
+  const runStats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
+  const start = Date.now();
+  new GreedyAssignmentEngine().assignBatch(students, greedyTutors, {
+    stats: runStats,
+    topK: config.topK,
+  });
+  const elapsedMs = Date.now() - start;
+
+  return {
+    scenario: config.scenario,
+    students: config.students,
+    tutors: config.tutors,
+    loadFactorWeight: config.loadFactorWeight,
+    topK: config.topK ?? null,
+    runs,
+    run,
+    winner: winner.strategy,
+    averageScore: winner.averageScore,
+    unassignedPercent: winner.unassignedPercent,
+    jainFairnessIndex: winner.jainFairnessIndex,
+    elapsedMinMs: elapsedMs,
+    elapsedMeanMs: elapsedMs,
+    elapsedMaxMs: elapsedMs,
+    pairsScored: runStats.pairsScored,
+    peakHeapEntries: runStats.peakHeapEntries,
+  };
+}
+
+/**
+ * Serializes --per-run mode: one row per run for every test, all in the same
+ * CSV. Rows beyond `maxRows` (MAX_SAVED_RUNS) are skipped instead of computed;
+ * the dropped count is returned so the CLI can warn.
+ */
+export function emitPerRun(
+  configs: EvaluationConfig[],
+  runs: number,
+  maxRows: number = MAX_SAVED_RUNS,
+): { header: string[]; rows: string[][]; dropped: number } {
+  const rows: string[][] = [];
+  let dropped = 0;
+  for (const config of configs) {
+    for (let run = 1; run <= runs; run += 1) {
+      if (rows.length >= maxRows) {
+        dropped += 1;
+        continue;
+      }
+      rows.push(toRow(evaluatePerRunRow(config, run, runs)));
+    }
+  }
+  return { header: HEADER, rows, dropped };
 }
 
 /** Parses a positive-integer CLI flag value, or throws a one-line user error. */
@@ -121,6 +196,8 @@ export function evaluate(config: EvaluationConfig, runs: number = DEFAULT_RUNS):
     loadFactorWeight: config.loadFactorWeight,
     topK: config.topK ?? null,
     runs,
+    run: null,
+    winner: null,
     averageScore: result.assignments.length === 0 ? 0 : totalScore / result.assignments.length,
     unassignedPercent: (result.unassignable.length / config.students) * 100,
     jainFairnessIndex:
@@ -238,6 +315,8 @@ export const HEADER = [
   'loadFactorWeight',
   'topK',
   'runs',
+  'run',
+  'winner',
   'averageScore',
   'unassignedPercent',
   'jainFairnessIndex',
@@ -255,6 +334,8 @@ export const toRow = (row: EvaluationRow): string[] => [
   String(row.loadFactorWeight),
   row.topK === null ? 'inf' : String(row.topK),
   String(row.runs),
+  row.run === null ? '' : String(row.run),
+  row.winner ?? '',
   row.averageScore.toFixed(6),
   row.unassignedPercent.toFixed(2),
   row.jainFairnessIndex.toFixed(6),
@@ -280,13 +361,27 @@ if (typeof require !== 'undefined' && require.main === module) {
     const override = parseCountOverride();
     const configs = override ? applyCountOverride(baseConfigs, override) : baseConfigs;
     const runs = parseRuns();
-    const rows = configs.map((config) => toRow(evaluate(config, runs)));
+    const perRun = process.argv.includes('--per-run');
 
-    emitResults({
-      defaultName: 'evaluation-results.csv',
-      header: HEADER,
-      rows,
-    });
+    if (perRun) {
+      const { header, rows, dropped } = emitPerRun(configs, runs);
+      emitResults({
+        defaultName: 'evaluation-per-run-results.csv',
+        header,
+        rows,
+      });
+      if (dropped > 0) {
+        console.error(
+          `\nPer-run CSV capped at ${MAX_SAVED_RUNS} rows; ${dropped} run(s) not computed. Lower --runs or the test counts.`,
+        );
+      }
+    } else {
+      emitResults({
+        defaultName: 'evaluation-results.csv',
+        header: HEADER,
+        rows: configs.map((config) => toRow(evaluate(config, runs))),
+      });
+    }
     console.error(
       `\nEach test ran ${runs} time(s)${runs === DEFAULT_RUNS ? ' (default)' : ''} — set with --runs <n>`,
     );
