@@ -68,7 +68,14 @@ const USED_VALUE_FLAGS = new Set(['--runs', '--save-runs', '--students', '--tuto
 const USED_BOOL_FLAGS = new Set(['--no-timing', '--per-run']);
 
 /** Flags that belong to the piped CLI scripts; consumed here and ignored. */
-const IGNORED_VALUE_FLAGS = new Set(['--name', '--out', '--sizes', '--scenario', '--strategy']);
+const IGNORED_VALUE_FLAGS = new Set([
+  '--name',
+  '--out',
+  '--sizes',
+  '--scenario',
+  '--strategy',
+  '--capture-runs',
+]);
 const IGNORED_BOOL_FLAGS = new Set(['--no-file', '--table', '--csv', '--optimality-gap']);
 
 const ALL_VALUE_FLAGS = new Set([...USED_VALUE_FLAGS, ...IGNORED_VALUE_FLAGS]);
@@ -89,8 +96,9 @@ export function tuiUsage(): string {
     '  --students <n> --tutors <n>   count override for every test (both required)',
     '  --no-timing                zero wall-clock timing columns in saved CSVs',
     '',
-    'Ignored by the TUI (CLI-script flags): --name --out --no-file --table --csv',
-    '  --sizes --scenario --strategy',
+    'CLI-only (run the eval script for these): --capture-runs <n> (full capture',
+    '  of every run with all strategies + per-run time), --name --out --no-file',
+    '  --table --csv --sizes --scenario --strategy',
   ].join('\n');
 }
 
