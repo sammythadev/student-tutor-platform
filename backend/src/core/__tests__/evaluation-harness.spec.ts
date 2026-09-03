@@ -62,9 +62,7 @@ describe('evaluation harness --students/--tutors override', () => {
   });
 
   it('requires both flags together', () => {
-    withArgv(['--students', '120'], () =>
-      expect(() => parseCountOverride()).toThrow(/together/),
-    );
+    withArgv(['--students', '120'], () => expect(() => parseCountOverride()).toThrow(/together/));
     withArgv(['--tutors', '30'], () => expect(() => parseCountOverride()).toThrow(/together/));
   });
 

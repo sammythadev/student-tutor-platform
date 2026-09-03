@@ -57,7 +57,11 @@ export function parseRuns(): number {
  * da-stable, greedy-engine) on the config's population, reports the WINNER's
  * quality metrics, and records greedy's per-run wall-clock timing/stats.
  */
-export function evaluatePerRunRow(config: EvaluationConfig, run: number, runs: number): EvaluationRow {
+export function evaluatePerRunRow(
+  config: EvaluationConfig,
+  run: number,
+  runs: number,
+): EvaluationRow {
   const students = generateStudents(config.students, config.loadFactorWeight);
   const outcomes = runAllStrategies(students, config.tutors, config.capacityStrategy);
   const winner = outcomes.reduce((best, outcome) =>
@@ -151,7 +155,10 @@ export function parseCountOverride(): CountOverride | undefined {
 }
 
 /** Replaces the student/tutor counts of every config in a sweep. */
-function applyCountOverride(configs: EvaluationConfig[], override: CountOverride): EvaluationConfig[] {
+function applyCountOverride(
+  configs: EvaluationConfig[],
+  override: CountOverride,
+): EvaluationConfig[] {
   return configs.map((config) => ({ ...config, ...override }));
 }
 
