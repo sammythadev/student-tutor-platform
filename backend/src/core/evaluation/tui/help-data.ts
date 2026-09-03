@@ -122,13 +122,18 @@ export const CLI_FLAG_ROWS: HelpRow[] = [
       'override student/tutor counts for every harness test — both required (same as C in the run view)',
   },
   {
+    keys: '--save-runs <n>',
+    action:
+      'run each test n times and write EVERY run to the CSV as its own row (one file, max 1000 rows) — the discoverable way to save runs',
+  },
+  {
     keys: '--runs <n>',
-    action: 'repeats per test, default 5 (shown in the results table; same as R in the run view)',
+    action:
+      'repeats per test for the timing stats, default 5 (shown in the results table; same as R in the run view)',
   },
   {
     keys: '--per-run',
-    action:
-      'save one row per run with the winning algorithm, max 1000 rows per CSV (same as P in the run view)',
+    action: 'legacy toggle for --save-runs rows using the --runs count (same as P in the run view)',
   },
   { keys: '--sizes <10,25,50,100>', action: 'optimality-gap sweep sizes (CLI only)' },
   { keys: '--scenario / --strategy', action: 'narrow baseline runs (CLI only)' },

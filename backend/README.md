@@ -95,6 +95,9 @@ pnpm run tui -- eval --no-timing
 | `r`                | rerun the suite / refresh the results list     |
 | `s`                | save the results under a custom filename (run) |
 | `t`                | toggle timing columns in the table + saved CSV (run) |
+| `R`                | set runs per test (harness suites, default 5)  |
+| `C`                | set a students/tutors override for every test (harness suites; blank resets to auto) |
+| `P`                | toggle per-run mode — one row per run, winning algorithm in the winner column |
 | `?`                | open/close the full help reference (menu, run, browser) |
 | `Ctrl+O`           | open/close the help reference (notes; `?` stays typable) |
 | `j`/`k` or `↑`/`↓` | scroll the help panel on short terminals (help) |
@@ -139,6 +142,23 @@ saves free text to `docs/notes/`:
 | gap       | `optimality-gap-results.csv`      |
 | baselines | `baseline-comparison-results.csv` |
 | notes     | `docs/notes/<name>.txt`           |
+
+With per-run mode on (`P`), eval/topk/moderate instead save every run as its
+own row — `evaluation-per-run-results.csv`, `topk-per-run-results.csv`,
+`moderate-per-run-results.csv` — each row carrying its run index and the
+winning algorithm, capped at 1000 rows per file.
+
+### CLI run options
+
+The `pnpm run eval` CLI mirrors the same options the run view drives with
+`R`/`C`/`P`:
+
+| Flag                     | Effect                                              |
+| ------------------------ | --------------------------------------------------- |
+| `--save-runs <n>`        | run each test n times and write EVERY run to the CSV as its own row (one file, max 1000 rows) |
+| `--runs <n>`             | repeats per test for the timing stats, default 5    |
+| `--per-run`              | legacy toggle for per-run rows using the `--runs` count |
+| `--students <n> --tutors <n>` | override counts for every test (both required) |
 
 ## Notes
 

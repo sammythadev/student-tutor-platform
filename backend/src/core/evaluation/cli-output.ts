@@ -8,8 +8,9 @@ import { join, resolve } from 'path';
  * way from the terminal.
  *
  * Flags: --csv, --table, --name <file>, --out <path>, --no-file.
- * Harness-specific flags (--students/--tutors/--runs/--per-run) are parsed in
- * evaluation-harness.ts; the flags here are shared by all three eval scripts.
+ * Harness-specific flags (--students/--tutors/--runs/--save-runs/--per-run) are
+ * parsed in evaluation-harness.ts; the flags here are shared by all three eval
+ * scripts.
  */
 
 /**
