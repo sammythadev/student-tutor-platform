@@ -1,34 +1,63 @@
-import Link from 'next/link'
 import { CLOSE, CTA } from './content'
+import { ButtonGhost, ButtonPrimary, Container } from './mk'
 
-/* The same single action as the hero, after the argument that earns it. Two
-   equally weighted asks cut the response to both, so the second route out is a
-   text link rather than a matching button. */
+/* ──────────────────────────────────────────────────────────
+   The closing call.
+
+   196px of padding above and below — the target's largest single spacing token,
+   stepping to 160 at tablet and 128 on a phone. That padding is the whole design
+   of this section: a 52px centred heading, two actions, and nothing else in an
+   unusual amount of air.
+
+   The glow is one radial gradient behind the heading, clipped by the section's
+   overflow. The target pairs it with an inset white shadow on a full-bleed
+   element; both are measured, both are here.
+────────────────────────────────────────────────────────── */
+
 export default function FinalCta() {
   return (
-    <section aria-labelledby="close-title" className="mx-auto w-full max-w-6xl px-5 pb-20 md:px-8 lg:pb-28">
-      <div className="mk-panel-glow relative px-6 py-14 sm:px-12 lg:px-16 lg:py-20">
-        <h2 id="close-title" className="mk-h2 max-w-[24ch] text-mk-ink">
+    <section
+      aria-labelledby="close-title"
+      className="relative flex flex-col items-center overflow-hidden py-mk-lg lg:py-mk-xl"
+    >
+      {/* The arc.
+
+          This is the one piece of the closing section that carries it, and it is
+          not a radial gradient behind the heading: it is an enormous ellipse,
+          wider than the viewport, whose crest rises into the section from below.
+          Its fill runs near-white at the crest to black within a few hundred
+          pixels, and its edge carries the inset white glow measured on the
+          target (inset 0 0 86.4px rgb(255 255 255 / .6)). The heading then sits
+          in the dark below the crest.
+
+          Sized in vw so the curvature stays the same shape at every width — a
+          fixed-width ellipse flattens out on a phone and bulges on a wide
+          monitor. */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] overflow-hidden">
+        <div
+          className="absolute left-1/2 top-[86px] h-[1400px] w-[240vw] -translate-x-1/2 rounded-[50%]"
+          style={{
+            background:
+              'linear-gradient(to bottom, rgb(226 226 228 / 0.95) 0%, rgb(140 140 145 / 0.55) 4%, rgb(60 60 64 / 0.28) 9%, rgb(12 12 13 / 0.1) 16%, transparent 26%)',
+            boxShadow: 'inset 0 0 86.4px rgb(255 255 255 / 0.6)',
+          }}
+        />
+      </div>
+
+      <Container>
+        <h2 id="close-title" className="mx-auto max-w-[896px] text-center mk-h2 text-mk-ink">
           {CLOSE.headline}
         </h2>
-        <p className="mk-lead mt-5 max-w-[52ch]">{CLOSE.body}</p>
 
-        <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
-          <Link
-            href={CTA.primary.href}
-            className="inline-flex h-12 w-full items-center justify-center rounded-[10px] bg-mk-ink px-7 text-[15px] font-medium text-mk-panel transition-[background-color,transform] duration-150 ease-out hover:bg-mk-ink-2 active:scale-[0.98] sm:w-auto"
-          >
+        <p className="mk-lead mx-auto mt-5 max-w-[52ch] text-center">{CLOSE.body}</p>
+
+        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:mt-10">
+          <ButtonPrimary href={CTA.primary.href} className="w-full sm:w-auto">
             {CTA.primary.label}
-          </Link>
-          <Link
-            href={CTA.secondary.href}
-            className="group inline-flex items-center gap-1.5 text-[15px] font-medium text-mk-ink-2 underline decoration-mk-hairline underline-offset-4 transition-colors duration-150 hover:text-mk-ink hover:decoration-current"
-          >
-            {CTA.secondary.label}
-            <span aria-hidden className="transition-transform duration-200 ease-out group-hover:translate-x-0.5">&rarr;</span>
-          </Link>
+          </ButtonPrimary>
+          <ButtonGhost href={CTA.secondary.href}>{CTA.secondary.label}</ButtonGhost>
         </div>
-      </div>
+      </Container>
     </section>
   )
 }

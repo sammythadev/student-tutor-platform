@@ -1,8 +1,19 @@
 import type { Metadata, Viewport } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import { Caveat } from 'next/font/google'
 import { Providers } from '@/components/Providers'
 import './globals.css'
+
+/* The landing page's handwritten annotations. The face they are set in on the
+   reference is a licensed script; Caveat is the open-licensed stand-in, loaded as
+   a variable so only the annotation layer pays for it. */
+const caveat = Caveat({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-script-face',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Tutorly: ranked tutor matching, with the reasons shown',
@@ -39,7 +50,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable} ${caveat.variable}`}
     >
       <body className="font-sans antialiased bg-background text-foreground">
         <Providers>

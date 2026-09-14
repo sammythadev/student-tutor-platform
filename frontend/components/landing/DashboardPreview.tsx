@@ -149,7 +149,7 @@ function SubjectDonut() {
 
         {/* Hero number in the hole — swaps to the hovered slice. */}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-semibold tabular-nums text-white">
+          <span className="text-xl font-medium tabular-nums text-white">
             {active ? `${active.value}%` : TOTAL}
           </span>
           <span className="mt-0.5 max-w-[72px] text-center text-[10px] leading-tight text-white/45">
@@ -214,7 +214,7 @@ export function StatRow() {
     <dl className="flex divide-x divide-white/10 sm:hidden">
       {TILES.slice(0, 3).map(({ short, value }) => (
         <div key={short} className="min-w-0 flex-1 px-3 py-3">
-          <dd className="text-[15px] font-semibold leading-none tabular-nums text-white">{value}</dd>
+          <dd className="text-[15px] font-medium leading-none tabular-nums text-white">{value}</dd>
           <dt className="mt-1.5 truncate text-[10px] font-medium uppercase tracking-wider text-white/40">
             {short}
           </dt>
@@ -236,7 +236,7 @@ export function StatStrip() {
             <Icon className="size-3.5 text-white/50" strokeWidth={2} />
           </span>
           <div className="min-w-0">
-            <dd className="text-base font-semibold leading-none tabular-nums text-white">{value}</dd>
+            <dd className="text-base font-medium leading-none tabular-nums text-white">{value}</dd>
             <dt className="mt-1 truncate text-[11px] text-white/45">{label}</dt>
           </div>
         </div>
@@ -251,21 +251,36 @@ export function StatStrip() {
    console the beam strikes. Rendered rather than screenshotted,
    so the charts animate and stay crisp at any density.
 ────────────────────────────────────────────────────────── */
-export function DashboardPreview({ beam = '#6AA6FF' }: { beam?: string }) {
+export function DashboardPreview({
+  beam = '#6AA6FF',
+  chrome,
+  bare = false,
+}: {
+  beam?: string
+  /** Rendered into the window's own chrome row, in place of the title. The hero
+   *  frame passes its surface tabs here so the window keeps one title bar. */
+  chrome?: React.ReactNode
+  /** Drop the outer frame when an ancestor already provides one. */
+  bare?: boolean
+}) {
   return (
     <div
       data-dashboard-preview
-      className="overflow-hidden rounded-2xl border border-white/10 bg-black/40"
+      className={
+        bare
+          ? 'flex h-full flex-col overflow-hidden'
+          : 'overflow-hidden rounded-2xl border border-white/10 bg-black/40'
+      }
     >
       {/* Window chrome */}
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
-        <span className="flex gap-1.5" aria-hidden>
+        <span className="flex shrink-0 gap-1.5" aria-hidden>
           <span className="size-2 rounded-full bg-white/15" />
           <span className="size-2 rounded-full bg-white/15" />
           <span className="size-2 rounded-full bg-white/15" />
         </span>
-        <p className="ml-1 text-[11px] font-medium text-white/45">Tutorly · Dashboard</p>
-        <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-medium text-white/50">
+        {chrome ?? <p className="ml-1 text-[11px] font-medium text-white/45">Tutorly · Dashboard</p>}
+        <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-[11px] font-medium text-white/50 sm:inline-flex">
           <span className="size-1.5 rounded-full bg-emerald-400" /> Live
         </span>
       </div>
@@ -274,7 +289,7 @@ export function DashboardPreview({ beam = '#6AA6FF' }: { beam?: string }) {
         {/* Greeting row */}
         <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <div className="min-w-0">
-            <p className="text-base font-semibold text-white sm:text-lg">Good afternoon, Adaeze</p>
+            <p className="text-base font-medium text-white sm:text-lg">Good afternoon, Adaeze</p>
             <p className="mt-1 text-xs text-white/50">
               3 sessions upcoming · 12.5h this week · 6 day streak
             </p>
@@ -292,7 +307,7 @@ export function DashboardPreview({ beam = '#6AA6FF' }: { beam?: string }) {
           {TILES.map(({ icon: Icon, label, value }) => (
             <div key={label} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
               <Icon className="size-3.5 text-white/40" strokeWidth={2} />
-              <p className="mt-2 text-lg font-semibold tabular-nums leading-none text-white">{value}</p>
+              <p className="mt-2 text-lg font-medium tabular-nums leading-none text-white">{value}</p>
               <p className="mt-1.5 text-[10px] leading-tight text-white/45">{label}</p>
             </div>
           ))}
@@ -317,16 +332,16 @@ export function DashboardPreview({ beam = '#6AA6FF' }: { beam?: string }) {
               {MATCHES.map((m) => (
                 <li key={m.name} className="flex items-center gap-3">
                   <span
-                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold"
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-medium"
                     style={{ backgroundColor: `${m.color}26`, color: m.color }}
                   >
                     {m.name.slice(0, 2)}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
-                      <p className="truncate text-xs font-semibold text-white">{m.name}</p>
+                      <p className="truncate text-xs font-medium text-white">{m.name}</p>
                       <p className="truncate text-[11px] text-white/45">{m.subject}</p>
-                      <span className="ml-auto shrink-0 text-[11px] font-semibold tabular-nums text-white">
+                      <span className="ml-auto shrink-0 text-[11px] font-medium tabular-nums text-white">
                         {m.score}%
                       </span>
                     </div>
@@ -347,14 +362,14 @@ export function DashboardPreview({ beam = '#6AA6FF' }: { beam?: string }) {
                     <p className="text-[11px] font-medium text-white/70">{s.when}</p>
                     {s.live && (
                       <span
-                        className="ml-auto rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                        className="ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium"
                         style={{ color: beam, backgroundColor: `${beam}1f` }}
                       >
                         Join
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 truncate text-xs font-semibold text-white">{s.topic}</p>
+                  <p className="mt-1 truncate text-xs font-medium text-white">{s.topic}</p>
                   <p className="truncate text-[11px] text-white/45">with {s.who}</p>
                 </li>
               ))}

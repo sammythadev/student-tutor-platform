@@ -18,6 +18,7 @@
 @theme inline {
   --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, 'Roboto Mono', monospace;
+  --font-script: var(--font-script-face), ui-rounded, 'Segoe Script', cursive;
 
   /* Geist radius discipline: 6px functional UI, 12px cards */
   --radius-sm: 4px;
@@ -101,14 +102,61 @@
   --color-mk-ink:           var(--mk-ink);
   --color-mk-ink-2:         var(--mk-ink-2);
   --color-mk-ink-3:         var(--mk-ink-3);
+  --color-mk-ink-4:         var(--mk-ink-4);
   --color-mk-track:         var(--mk-track);
+  --color-mk-raised:        var(--mk-raised);
+  --color-mk-hairline-opaque: var(--mk-hairline-opaque);
+  --color-mk-inverse:       var(--mk-inverse);
+  --color-mk-inverse-fg:    var(--mk-inverse-fg);
+
+  /* Section rhythm: its own scale, an order of magnitude above the 4px base
+     unit. Measured off the target's --marketing-spacing-* set. The two that
+     carry the page are xl (the closing call's padding-block) and 2xl (the gap
+     between every body section). */
+  --spacing-mk-2xs: 32px;
+  --spacing-mk-xs:  48px;
+  --spacing-mk-sm:  64px;
+  --spacing-mk-md:  96px;
+  --spacing-mk-lg:  128px;
+  --spacing-mk-xl:  196px;
+  --spacing-mk-2xl: 280px;
+  --spacing-mk-gutter: 28px;
+  --spacing-mk-outer:  40px;
+  --spacing-mk-header: 80px;
+
+  /* Hairlines are rings, not borders, so they take no part in layout — that is
+     why the bento cells line up. Copied verbatim from the measurement. */
+  --shadow-mk-ring:        0 0 0 1px rgb(253 252 252 / 0.16);
+  --shadow-mk-ring-subtle: 0 0 0 1px rgb(253 252 252 / 0.12);
+  --shadow-mk-ring-bold:   0 0 0 1px rgb(253 252 252 / 0.18);
+  --shadow-mk-float:       0 2.767px 2.214px rgb(0 0 0 / 0.05), 0 6.65px 5.32px rgb(0 0 0 / 0.07), 0 12.522px 10.017px rgb(0 0 0 / 0.09), 0 22.336px 17.869px rgb(0 0 0 / 0.1), 0 41.778px 33.422px rgb(0 0 0 / 0.12), 0 100px 80px rgb(0 0 0 / 0.17);
+  --shadow-mk-dialog:      inset 0 0 0 1px rgb(253 252 252 / 0.16), 0 16px 24px rgb(0 0 0 / 0.6), 0 24px 40px rgb(0 0 0 / 0.2);
+
+  /* Easings, measured rather than chosen. The 150ms opacity fade is the page's
+     primitive — 66 elements carry it. The overshoot curve is the only one that
+     passes 1. */
+  --ease-mk-out:       cubic-bezier(0, 0, 0.2, 1);
+  --ease-mk-inout:     cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-mk-slide:     cubic-bezier(0.17, 0.93, 0.38, 1);
+  --ease-mk-overshoot: cubic-bezier(0.09, 1.12, 0.37, 1);
+  --ease-mk-sheet:     cubic-bezier(0.32, 0.72, 0, 1);
 
   /* Fluid display scale — one continuous ramp, so type never jumps at a
      breakpoint and there is no per-breakpoint size list to keep in sync. */
-  --text-mk-display: clamp(2rem, 1.05rem + 4.4vw, 4.5rem);
-  --text-mk-h2:      clamp(1.75rem, 1.28rem + 2.1vw, 2.75rem);
-  --text-mk-h3:      clamp(1.0625rem, 0.98rem + 0.45vw, 1.3125rem);
-  --text-mk-lead:    clamp(1rem, 0.95rem + 0.35vw, 1.1875rem);
+  /* Measured ladder, 390 -> 768 -> 1440. Every stop is a value read off the
+     target at that viewport, interpolated rather than listed per breakpoint:
+       display  36 -> 54 -> 64      h2     30 -> 42 -> 52
+       stmt     28 -> 40 -> 48      h3     24 -> 32 -> 32
+       lead     16 -> 18 -> 20      body   14 -> 16 -> 16
+     Weights are 400 and 500 only: the target ships no 600 anywhere, and its
+     64px hero headline is Medium. */
+  --text-mk-display:   var(--mk-fs-display);
+  --text-mk-h2:        var(--mk-fs-h2);
+  --text-mk-statement: var(--mk-fs-statement);
+  --text-mk-h3:        var(--mk-fs-h3);
+  --text-mk-lead:      var(--mk-fs-lead);
+  --text-mk-body:      var(--mk-fs-body);
+  --text-mk-small:     var(--mk-fs-small);
 }
 
 /* ─────────────────────────────────────────
@@ -218,21 +266,36 @@
   /* Nav */
   --nav-bg: rgba(250, 250, 250, 0.72);
 
-  /* ── Marketing layer — light ──
-     One accent. It carries state (criterion met, score filled, edge assigned)
-     and is never spent on ambient glow. */
-  --mk-accent:        #0060D6;
-  --mk-accent-soft:   rgba(0, 96, 214, 0.10);
-  --mk-accent-line:   rgba(0, 96, 214, 0.28);
-  --mk-panel:         #FFFFFF;
-  --mk-panel-hover:   #FAFAFA;
-  --mk-panel-sunken:  #F4F4F5;
-  --mk-hairline:      rgba(0, 0, 0, 0.09);
-  --mk-hairline-soft: rgba(0, 0, 0, 0.05);
-  --mk-ink:           #17171A;   /* 15.9:1 on --mk-panel */
-  --mk-ink-2:         #52525B;   /*  7.7:1 */
-  --mk-ink-3:         #656E7A;   /*  4.7:1 on #F4F4F5, the surface it sits on */
-  --mk-track:         rgba(0, 0, 0, 0.055);
+  /* -- Marketing layer -- light --
+     Clone target: liveblocks.io, measured 2026-09-03. The evidence for every
+     value is in .clone/liveblocks/tokens.md.
+
+     Two facts here are the whole design, and both are easy to lose. White IS
+     the accent: there is no saturated primary anywhere on the target and its
+     primary CTA is black-on-white. And the dominant ink is the mid grey
+     #918d8d, not near-white -- 36.3k ink units against 28.8k for white. A
+     clone that lightens body copy toward white and adds a blue button reads as
+     a different, cheaper page.
+
+     Dark-only, deliberately: the target ships no light scheme, so a light set
+     would have to be invented. Both blocks carry the same measured values. */
+  --mk-accent:        #ffffff;                 /* --color-marketing-surface-base-inverse */
+  --mk-accent-soft:   rgb(253 252 252 / 0.08);
+  --mk-accent-line:   rgb(253 252 252 / 0.16);
+  --mk-panel:         #100f0f;                 /* --color-marketing-surface-raised */
+  --mk-panel-hover:   #171515;
+  --mk-panel-sunken:  #000000;                 /* --color-marketing-surface-base */
+  --mk-raised:        #080707;                 /* --lb-marketing-color-surface-400 */
+  --mk-hairline:      rgb(253 252 252 / 0.16);
+  --mk-hairline-soft: rgb(253 252 252 / 0.12); /* --color-marketing-divider-subtle */
+  --mk-hairline-opaque: #272626;               /* --color-marketing-divider-bold-opaque */
+  --mk-ink:           #ffffff;                 /* --color-marketing */
+  --mk-ink-2:         #b7b4b4;                 /* --color-marketing-subtle   : hero lead */
+  --mk-ink-3:         #918d8d;                 /* --color-marketing-subtler  : body, dominant */
+  --mk-ink-4:         #635f5f;                 /* --color-marketing-subtlest : dim statement */
+  --mk-inverse:       #ffffff;
+  --mk-inverse-fg:    #000000;
+  --mk-track:         rgb(253 252 252 / 0.12);
 
   /* Radius base for shadcn derivation */
   --radius: 6px;
@@ -339,21 +402,36 @@
 
   --nav-bg: rgba(0, 0, 0, 0.72);
 
-  /* ── Marketing layer — dark ──
-     Canvas is the token black (#000), not the old #05060A: one fewer near-black
-     in the system, and the panels are what create depth. */
-  --mk-accent:        #6AA6FF;
-  --mk-accent-soft:   rgba(106, 166, 255, 0.13);
-  --mk-accent-line:   rgba(106, 166, 255, 0.28);
-  --mk-panel:         #0B0B0D;
-  --mk-panel-hover:   #121216;
-  --mk-panel-sunken:  #070708;
-  --mk-hairline:      rgba(255, 255, 255, 0.10);
-  --mk-hairline-soft: rgba(255, 255, 255, 0.06);
-  --mk-ink:           #EDEDED;   /* 18.4:1 on #000 */
-  --mk-ink-2:         #A1A1AA;   /*  8.2:1 */
-  --mk-ink-3:         #8A8A93;   /*  6.1:1 — replaces text-white/40 at 3.74:1 */
-  --mk-track:         rgba(255, 255, 255, 0.055);
+  /* -- Marketing layer -- dark --
+     Clone target: liveblocks.io, measured 2026-09-03. The evidence for every
+     value is in .clone/liveblocks/tokens.md.
+
+     Two facts here are the whole design, and both are easy to lose. White IS
+     the accent: there is no saturated primary anywhere on the target and its
+     primary CTA is black-on-white. And the dominant ink is the mid grey
+     #918d8d, not near-white -- 36.3k ink units against 28.8k for white. A
+     clone that lightens body copy toward white and adds a blue button reads as
+     a different, cheaper page.
+
+     Dark-only, deliberately: the target ships no light scheme, so a light set
+     would have to be invented. Both blocks carry the same measured values. */
+  --mk-accent:        #ffffff;                 /* --color-marketing-surface-base-inverse */
+  --mk-accent-soft:   rgb(253 252 252 / 0.08);
+  --mk-accent-line:   rgb(253 252 252 / 0.16);
+  --mk-panel:         #100f0f;                 /* --color-marketing-surface-raised */
+  --mk-panel-hover:   #171515;
+  --mk-panel-sunken:  #000000;                 /* --color-marketing-surface-base */
+  --mk-raised:        #080707;                 /* --lb-marketing-color-surface-400 */
+  --mk-hairline:      rgb(253 252 252 / 0.16);
+  --mk-hairline-soft: rgb(253 252 252 / 0.12); /* --color-marketing-divider-subtle */
+  --mk-hairline-opaque: #272626;               /* --color-marketing-divider-bold-opaque */
+  --mk-ink:           #ffffff;                 /* --color-marketing */
+  --mk-ink-2:         #b7b4b4;                 /* --color-marketing-subtle   : hero lead */
+  --mk-ink-3:         #918d8d;                 /* --color-marketing-subtler  : body, dominant */
+  --mk-ink-4:         #635f5f;                 /* --color-marketing-subtlest : dim statement */
+  --mk-inverse:       #ffffff;
+  --mk-inverse-fg:    #000000;
+  --mk-track:         rgb(253 252 252 / 0.12);
 
   --radius: 6px;
 }
@@ -727,6 +805,101 @@
 }
 .pressable:active { transform: scale(0.98); }
 
+/* Onboarding ambient blobs (responsive, contained by an overflow-hidden parent) */
+.ambient-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.blob-primary {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+.blob-accent {
+  background: color-mix(in srgb, var(--accent-mint-fg, var(--primary)) 18%, transparent);
+}
+
+/* Onboarding field entrance: soft rise, same ease as the stage slide.
+   Replays on stage change (subtree remounts) but not on keystrokes. */
+@keyframes onboard-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.onboard-field {
+  animation: onboard-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  min-width: 0;
+}
+
+/* Onboarding range sliders: a transparent 44px input overlaid on a 6px painted
+   bar so the grip is legally tappable and keyboard/touch friendly. Same
+   decoupling pattern as the marketing .mk-range. */
+.onboard-range-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--muted);
+  overflow: hidden;
+}
+.onboard-range-bar > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  border-radius: 999px;
+  background-color: var(--link);
+  width: calc(var(--range, 0) * (100% - 16px) + 8px);
+}
+.onboard-range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 2.75rem;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.onboard-range:focus { outline: none; }
+.onboard-range::-webkit-slider-runnable-track {
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+.onboard-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 15px; /* (44 − 16) / 2 — centres it on the 6px bar */
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 0 0 1px var(--border-strong);
+  transition: transform 150ms ease;
+}
+.onboard-range:hover::-webkit-slider-thumb { transform: scale(1.12); }
+.onboard-range:active::-webkit-slider-thumb { transform: scale(1.2); }
+.onboard-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 1px var(--border-strong), 0 0 0 4px var(--ring);
+}
+.onboard-range::-moz-range-track { height: 100%; background: transparent; }
+.onboard-range::-moz-range-progress { background: transparent; }
+.onboard-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--primary);
+}
+.onboard-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px var(--ring);
+}
+@media (prefers-reduced-motion: reduce) {
+  .onboard-range::-webkit-slider-thumb { transition: none; }
+  .onboard-range:hover::-webkit-slider-thumb,
+  .onboard-range:active::-webkit-slider-thumb { transform: none; }
+}
+
 .hover-lift {
   transition: transform 200ms var(--ease-out), box-shadow 200ms ease;
 }
@@ -777,41 +950,171 @@
    builds are the same markup with a different :root.
    ═════════════════════════════════════════════════════════ */
 
-/* Display type. `overflow-wrap: anywhere` matters at 320px, where a single
-   long word in a 4.5rem headline otherwise pushes the page sideways. */
+/* Display type. Weight 500, not 600 — measured. `overflow-wrap: anywhere`
+   matters at 320px, where one long word in a 4rem headline otherwise pushes the
+   page sideways. */
 .mk-display {
   font-size: var(--text-mk-display);
-  font-weight: 600;
-  line-height: 1.02;
-  letter-spacing: -0.035em;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   text-wrap: balance;
   overflow-wrap: anywhere;
   min-width: 0;
 }
 
+/* The centred display heading: hero-scale, used exactly twice on the target —
+   the carousel opener and the closing call. */
 .mk-h2 {
   font-size: var(--text-mk-h2);
-  font-weight: 600;
-  line-height: 1.08;
-  letter-spacing: -0.028em;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   text-wrap: balance;
   overflow-wrap: anywhere;
   min-width: 0;
+}
+
+/* The one a generic clone always gets wrong. Body sections do NOT open with a
+   display heading — they open with this: 20px/500 white, immediately followed by
+   a 20px/400 grey lead in the same 576px column. Small intro, large content. */
+.mk-h2-intro {
+  font-size: var(--text-mk-lead);
+  font-weight: 500;
+  line-height: 1.375;
+  letter-spacing: 0.004em;
+  color: var(--mk-ink);
+  text-wrap: pretty;
+}
+
+/* A large, deliberately dim line — 48px in the subtlest ink. Reads as texture
+   rather than as a heading, which is why it is not one. */
+.mk-statement {
+  font-size: var(--text-mk-statement);
+  font-weight: 500;
+  line-height: 1.05;
+  color: var(--mk-ink-4);
+  text-wrap: balance;
+}
+
+.mk-h3 {
+  font-size: var(--text-mk-h3);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 .mk-lead {
   font-size: var(--text-mk-lead);
-  line-height: 1.55;
-  color: var(--mk-ink-2);
+  font-weight: 400;
+  line-height: 1.375;
+  letter-spacing: 0.004em;
+  color: var(--mk-ink-3);
   text-wrap: pretty;
 }
 
-/* The one panel shape the page reuses. A hairline and a surface, no glow:
-   elevation is carried by the surface step, which survives both themes. */
+/* Inline emphasis inside a lead. The target lifts phrases to white/500 rather
+   than colouring them, which is the only reason a monochrome page can emphasise
+   anything at all. */
+.mk-lead em,
+.mk-lead strong {
+  color: var(--mk-ink);
+  font-weight: 500;
+  font-style: normal;
+}
+
+.mk-body {
+  font-size: var(--text-mk-body);
+  line-height: 1.375;
+  letter-spacing: 0.004em;
+  color: var(--mk-ink-3);
+}
+
+.mk-small {
+  font-size: var(--text-mk-small);
+  line-height: 1.375;
+  letter-spacing: 0.004em;
+  color: var(--mk-ink-3);
+}
+
+/* The one panel shape the page reuses. Ring, not border — 12px radius, measured.
+   No glow and no hover lift: elevation is carried by the surface step alone. */
 .mk-panel {
   background-color: var(--mk-panel);
-  border: 1px solid var(--mk-hairline);
-  border-radius: 14px;
+  box-shadow: var(--shadow-mk-ring-subtle);
+  border-radius: 12px;
+}
+
+/* The bento. One grid, `gap: 1px` over a divider-coloured fill, cells painted
+   in the panel colour — so every hairline is the parent showing through and no
+   cell owns a border. This is the target's actual mechanism; a per-cell border
+   version drifts by a pixel per row and it shows. */
+.mk-bento {
+  display: grid;
+  gap: 1px;
+  background-color: var(--mk-hairline-opaque);
+  box-shadow: var(--shadow-mk-ring-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.mk-bento > * {
+  background-color: var(--mk-panel-sunken);
+  padding: 16px;
+}
+@media (min-width: 768px) {
+  .mk-bento > * { padding: 20px; }
+}
+@media (min-width: 1024px) {
+  .mk-bento > * { padding: 28px; }
+}
+
+/* ── Hover, without punishing everything you are not pointing at ──
+
+   This used to drop every sibling to opacity 0.3. It came from the reference's
+   logo row, where fading nine wordmarks to bring one forward costs nothing --
+   but applied to a bento it turns reading into a fight: enter the section and
+   four paragraphs of body copy go grey, so any glance away from the cursor lands
+   on text that is now too dim to read. Dimming what the reader is *not* doing is
+   also the wrong direction; it is the hovered cell that should change.
+
+   So: the cell under the pointer gets a spotlight that follows the cursor and a
+   one-step-lighter ground. Siblings are left exactly as they were.
+
+   --mx/--my are written by SpotlightGrid on the hovered cell only (one delegated
+   listener for the whole grid). With no JS the cells still lift on :hover, so the
+   affordance degrades to plain CSS rather than to nothing. */
+.mk-spot > * {
+  position: relative;
+  isolation: isolate;
+  transition: background-color 260ms var(--ease-mk-out);
+}
+.mk-spot > *::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 260ms var(--ease-mk-out);
+  background: radial-gradient(
+    260px circle at var(--mx, 50%) var(--my, 50%),
+    var(--mk-accent-soft),
+    transparent 70%
+  );
+}
+.mk-spot > *:hover { background-color: var(--mk-panel); }
+.mk-spot > *:hover::before,
+.mk-spot > *[data-hot]::before { opacity: 1; }
+
+/* Lists brighten the item under the pointer instead of dimming its neighbours:
+   one line goes to full ink, nothing else moves. */
+.mk-lift > * { transition: color 200ms var(--ease-mk-out); }
+.mk-lift > *:hover { color: var(--mk-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-spot > *,
+  .mk-spot > *::before,
+  .mk-lift > * { transition: none; }
 }
 
 /* Reserved for the two moments that genuinely are the page's focus — the hero
@@ -848,6 +1151,96 @@
   background-color: var(--mk-accent);
   transform: scaleX(var(--fill, 0));
   transform-origin: left center;
+}
+
+/* Range input: a 44px grip over a 6px bar.
+
+   Measured at 390px, every weight slider on this page was a 326×6 drag target —
+   6px is the painted bar's height, and a 6px-tall target cannot be hit with a
+   thumb. So the paint and the grip are separated: `.mk-range-bar` is the visible
+   6px bar that sits in the layout, and `.mk-range` is a transparent 44px input
+   absolutely centred over it, contributing nothing to layout. The section
+   registration still sees the 6px it was measured around.
+
+   The track is full-height and transparent rather than 6px because Chrome lays
+   the runnable track out at the *top* of the input box under
+   `-webkit-appearance: none` instead of centring it — painting the bar there ran
+   it straight through the label above. With a full-height track the thumb's
+   margin-top is the only thing positioning it, which is deterministic. */
+.mk-range-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--mk-track);
+  overflow: hidden;
+}
+.mk-range-bar > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  border-radius: 999px;
+  background-color: var(--mk-accent);
+  /* The 14px terms end the fill under the thumb's centre, not at the track edge. */
+  width: calc(var(--range, 0) * (100% - 14px) + 7px);
+}
+
+.mk-range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 2.75rem;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.mk-range:focus { outline: none; }
+
+.mk-range::-webkit-slider-runnable-track {
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+.mk-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 15px;                 /* (44 − 14) / 2 — centres it on the bar */
+  border-radius: 999px;
+  background: var(--mk-accent);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55), var(--shadow-mk-float);
+  transition: transform 150ms var(--ease-mk-out);
+}
+.mk-range:hover::-webkit-slider-thumb { transform: scale(1.12); }
+.mk-range:active::-webkit-slider-thumb { transform: scale(1.2); }
+.mk-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55), 0 0 0 4px rgb(253 252 252 / 0.28);
+}
+
+/* Firefox centres the thumb on the track for us, so the track just has to be
+   the full height and carry no paint — the bar underneath is the paint. */
+.mk-range::-moz-range-track {
+  height: 100%;
+  background: transparent;
+}
+.mk-range::-moz-range-progress { background: transparent; }
+.mk-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgb(0 0 0 / 0.55);
+  border-radius: 999px;
+  background: var(--mk-accent);
+}
+.mk-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgb(253 252 252 / 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-range::-webkit-slider-thumb { transition: none; }
+  .mk-range:hover::-webkit-slider-thumb,
+  .mk-range:active::-webkit-slider-thumb { transform: none; }
 }
 
 /* Criterion dot: hollow until its criterion has weighed in. */
@@ -1107,3 +1500,70 @@
     height: var(--dh);
   }
 }
+
+/* ═════════════════════════════════════════════════════════
+   MARQUEE — the full-bleed tile row
+   The track duplicates its children once, so translating by exactly -50% lands
+   on an identical frame and the loop is seamless. Duration scales with the tile
+   count rather than being a magic number; hover pauses, and reduced-motion never
+   starts it (the class is not applied at all in that case).
+   ═════════════════════════════════════════════════════════ */
+@keyframes mk-marquee-x {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+.mk-marquee {
+  animation: mk-marquee-x 64s linear infinite;
+  will-change: transform;
+}
+
+.mk-marquee-paused {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-marquee { animation: none; }
+}
+
+/* ═════════════════════════════════════════════════════════
+   TYPE LADDER — discrete, measured at 390 / 768 / 1440
+   Every value below was read off the reference at that viewport. Steps rather
+   than a fluid ramp: the reference re-scales at breakpoints, so interpolating
+   between them lands text on sizes it never actually uses.
+       display  36 → 54 → 64      h2     30 → 42 → 52
+       statement 28 → 40 → 48     h3     24 → 32 → 32
+       lead     16 → 18 → 20      body   14 → 16 → 16
+       small    12 → 14 → 14
+   ═════════════════════════════════════════════════════════ */
+:root {
+  --mk-fs-display:   2.25rem;   /* 36 */
+  --mk-fs-h2:        1.875rem;  /* 30 */
+  --mk-fs-statement: 1.75rem;   /* 28 */
+  --mk-fs-h3:        1.5rem;    /* 24 */
+  --mk-fs-lead:      1rem;      /* 16 */
+  --mk-fs-body:      0.875rem;  /* 14 */
+  --mk-fs-small:     0.75rem;   /* 12 */
+}
+
+@media (min-width: 768px) {
+  :root {
+    --mk-fs-display:   3.375rem; /* 54 */
+    --mk-fs-h2:        2.625rem; /* 42 */
+    --mk-fs-statement: 2.5rem;   /* 40 */
+    --mk-fs-h3:        2rem;     /* 32 */
+    --mk-fs-lead:      1.125rem; /* 18 */
+    --mk-fs-body:      1rem;     /* 16 */
+    --mk-fs-small:     0.875rem; /* 14 */
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --mk-fs-display:   4rem;      /* 64 */
+    --mk-fs-h2:        3.25rem;   /* 52 */
+    --mk-fs-statement: 3rem;      /* 48 */
+    --mk-fs-lead:      1.25rem;   /* 20 */
+  }
+}
+

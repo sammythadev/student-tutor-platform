@@ -1,45 +1,49 @@
-import Atmosphere from '@/components/landing/Atmosphere'
 import Nav from '@/components/landing/Nav'
 import Hero from '@/components/landing/Hero'
-import ExplodedDashboard from '@/components/landing/ExplodedDashboard'
-import SubjectStrip from '@/components/landing/SubjectStrip'
-import Showcase from '@/components/landing/Showcase'
-import HowItWorks from '@/components/landing/HowItWorks'
-import Tune from '@/components/landing/Tune'
-import Faq from '@/components/landing/Faq'
+import ProofStrip from '@/components/landing/ProofStrip'
+import TileCarousel from '@/components/landing/TileCarousel'
+import CriteriaBento from '@/components/landing/CriteriaBento'
+import HowBento from '@/components/landing/HowBento'
+import TuneDemo from '@/components/landing/TuneDemo'
+import TrustSection from '@/components/landing/TrustSection'
 import FinalCta from '@/components/landing/FinalCta'
 import Footer from '@/components/landing/Footer'
 
 /* ──────────────────────────────────────────────────────────
    One landing page, at every width.
 
-   This used to be two files: a 1200-line desktop build and a 467-line phone
-   build, switched by a media query in JavaScript after mount. Both shipped in
-   the same bundle, phones painted the desktop hero and then swapped, and the
-   duplicated copy had already drifted. Breakpoint work is now CSS and
-   gsap.matchMedia(), so nothing is chosen at runtime and nothing ships twice.
+   Structure cloned from liveblocks.io — measured at 1440/768/390 rather than
+   inferred from a screenshot, with the evidence and the reduced token system in
+   .clone/liveblocks/. What was taken is the design system: the true-black canvas,
+   the 12-column/1200px spine, the 20px section intros against 8-column bodies,
+   the 1px-gap bento, the 400/500-only type ladder, the measured easings, and the
+   dim-the-siblings hover. What was not taken is anything Liveblocks owns — no
+   screenshots, no wordmarks, no compliance badges, no body copy, and not their
+   licensed Suisse Int'l (Geist Sans stands in, and the substitution is noted in
+   tokens.md).
 
-   It also used to spend four of its seven sections explaining the matching
-   engine: the greedy pass, the half-of-optimal bound, a 3D bipartite graph, and a
-   pinned hero that took the shortlist apart criterion by criterion. That is a
-   thesis, not a landing page. What opens the page now is the product assembling
-   itself, and the one place the scoring is still handed over is the slider panel
-   further down, where the reader can drive it.
+   Every string on this page is this project's own, from components/landing/content.ts.
+
+   Section order matches the target's spine one-for-one:
+     hero · proof · tiles · criteria · steps · demo · trust · close · footer
+
+   The Atmosphere layer that used to sit behind all of this is gone: the target's
+   canvas is flat #000 and its only ambient light is the one radial glow behind
+   the closing call, which FinalCta now owns.
 ────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
   return (
     <div className="relative min-h-dvh overflow-x-clip bg-mk-panel-sunken">
-      <Atmosphere />
       <Nav />
       <main className="relative">
         <Hero />
-        <ExplodedDashboard />
-        <SubjectStrip />
-        <Showcase />
-        <HowItWorks />
-        <Tune />
-        <Faq />
+        <ProofStrip />
+        <TileCarousel />
+        <CriteriaBento />
+        <HowBento />
+        <TuneDemo />
+        <TrustSection />
         <FinalCta />
       </main>
       <Footer />

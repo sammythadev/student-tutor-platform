@@ -69,10 +69,12 @@ export default function WeightSliders() {
 
   const changed = weights.some((w, i) => Math.abs(w - DEFAULTS[i]) > 0.005)
 
+  /* Frameless on purpose: the demo always sits inside the section's own hairline
+     card, and a second frame here would double the border. */
   return (
-    <div className="mk-panel-lit relative overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-mk-hairline bg-mk-panel-sunken px-4 py-2.5">
-        <p className="text-[11px] font-medium uppercase tracking-[0.09em] text-mk-ink-3">
+    <div className="relative overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-mk-hairline-opaque px-4 py-2.5">
+        <p className="text-mk-small font-medium text-mk-ink-3">
           Move a weight, read the new order
         </p>
         <button
@@ -84,7 +86,7 @@ export default function WeightSliders() {
             setWeights(DEFAULTS)
           }}
           disabled={!changed}
-          className="rounded-md px-2 py-1 text-[12px] font-medium text-mk-ink-2 transition-colors duration-150 hover:bg-mk-panel-hover hover:text-mk-ink disabled:pointer-events-none disabled:opacity-40"
+          className="inline-flex min-h-8 items-center rounded-md px-2.5 py-1 text-[12px] font-medium text-mk-ink-2 transition-colors duration-150 hover:bg-mk-panel-hover hover:text-mk-ink disabled:pointer-events-none disabled:opacity-40"
         >
           Back to defaults
         </button>
@@ -102,17 +104,29 @@ export default function WeightSliders() {
                   {weights[i].toFixed(2)}
                 </span>
               </div>
-              <input
-                id={`w-${crit.key}`}
-                type="range"
-                min={MIN}
-                max={0.8}
-                step={0.01}
-                value={Number(weights[i].toFixed(2))}
-                onChange={e => setWeight(i, Number(e.target.value))}
-                className="mt-2 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-mk-track accent-[var(--mk-accent)]"
-                aria-describedby={`w-${crit.key}-detail`}
-              />
+              {/* 6px of reserved layout, 44px of grip. The bar is painted by the
+                  wrapper and the input is a transparent overlay, so the touch
+                  target can be seven times the bar without moving anything. */}
+              <div
+                className="relative mt-2"
+                style={{ ['--range' as string]: ((weights[i] - MIN) / (0.8 - MIN)).toFixed(4) }}
+              >
+                <div className="mk-range-bar" aria-hidden>
+                  <i />
+                </div>
+                <input
+                  id={`w-${crit.key}`}
+                  type="range"
+                  min={MIN}
+                  max={0.8}
+                  step={0.01}
+                  value={Number(weights[i].toFixed(2))}
+                  onChange={e => setWeight(i, Number(e.target.value))}
+                  className="mk-range absolute inset-x-0 top-1/2 -translate-y-1/2"
+                  aria-describedby={`w-${crit.key}-detail`}
+                  aria-valuetext={`${Math.round(weights[i] * 100)} percent`}
+                />
+              </div>
               <p id={`w-${crit.key}-detail`} className="mt-1.5 text-[11px] leading-relaxed text-mk-ink-3">
                 {crit.detail}
               </p>
@@ -140,7 +154,7 @@ export default function WeightSliders() {
                     <i style={{ ['--fill' as string]: c.total.toFixed(3) }} aria-hidden />
                   </div>
                 </div>
-                <span className="mk-num text-right text-[13px] font-semibold text-mk-ink">
+                <span className="mk-num text-right text-[13px] font-medium text-mk-ink">
                   {Math.round(c.total * 100)}
                 </span>
               </li>
