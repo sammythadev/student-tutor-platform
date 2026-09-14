@@ -1,2 +1,0 @@
-multi-linenote with 
-CR stripped
