@@ -11,7 +11,6 @@ export interface EvaluationConfig {
   loadFactorWeight: number;
   capacityStrategy: CapacityStrategy;
   topK?: number;
-  truncation: number;
 }
 
 export interface EvaluationRow {
