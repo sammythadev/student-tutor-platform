@@ -1,0 +1,66 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "skills": {
+    "paths": [".opencode/skills", ".agents/skills", "frontend/.agents/skills"]
+  },
+  "agent": {
+    "frontend": {
+      "permission": {
+        "bash": {
+          "*": "allow",
+          "git push*": "ask",
+          "git reset --hard*": "deny",
+          "git push --force*": "deny"
+        }
+      }
+    },
+    "designer": {
+      "permission": {
+        "bash": {
+          "*": "allow",
+          "git push*": "ask",
+          "git reset --hard*": "deny",
+          "git push --force*": "deny"
+        }
+      }
+    },
+    "backend": {
+      "permission": {
+        "bash": {
+          "*": "allow",
+          "git push*": "ask",
+          "git reset --hard*": "deny",
+          "git push --force*": "deny"
+        }
+      }
+    },
+    "code-reviewer": {
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "allow",
+          "git commit*": "deny",
+          "git push*": "deny",
+          "git reset --hard*": "deny"
+        }
+      }
+    }
+  },
+  "mcp": {
+    "shadcn": {
+      "type": "local",
+      "command": ["npx", "-y", "shadcn@latest", "mcp"],
+      "enabled": true
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["npx", "-y", "chrome-devtools-mcp@1.8.0", "--isolated"],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp"],
+      "enabled": false
+    }
+  }
+}
