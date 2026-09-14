@@ -64,3 +64,33 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .pnpm-store/
 # clone-site skill: browser capture scratch
 .clone/
+
+# ── Kept on disk, deliberately not in git ──
+# Tool output: the code-graph tool's cache and rendered report. Regenerable by
+# re-running the tool, and version-incompatible between runs.
+graphify-out/
+# Scraped reference pages used while researching the landing page.
+/.research-cache/
+
+# Python bytecode from the vendored skill scripts under .agents/.
+__pycache__/
+
+# Binary Word deliverables and Word's own lock files (~$name.docx).
+*.docx
+~$*
+
+# The root pnpm-lock.yaml is the only lockfile this workspace keeps; a lockfile
+# inside a workspace package is redundant and drifts from it.
+backend/pnpm-lock.yaml
+
+# Evaluation/benchmark runs drop their output in whatever directory launched
+# them, so the harness leaves dumps at the package root. The curated tables live
+# in backend/docs/benchmarks/ instead.
+backend/evaluation-results.csv
+backend/optimality-gap-results.csv
+backend/all-tests-results.txt
+backend/test-output.txt
+backend/test-results.txt
+backend/coverage-output.txt
+backend/regen.txt
+backend/docs/benchmarks/baseline.csv .csv
