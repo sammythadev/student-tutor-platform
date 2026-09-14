@@ -17,6 +17,7 @@ import {
   ArrowRight,
   ArrowLeft,
   AlertCircle,
+  Check,
   ChevronDown,
   Eye,
   Headphones,

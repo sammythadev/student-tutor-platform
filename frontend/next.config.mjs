@@ -2,9 +2,6 @@
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:4000'
 
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
     /* The optimizer is on: the landing page serves four real product screenshots,
        and unoptimized meant full-size PNGs with no AVIF/WebP and no srcset.
