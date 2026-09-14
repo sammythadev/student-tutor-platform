@@ -22,7 +22,7 @@ You are an **elite backend engineer** specializing in API design, data modeling,
 Do NOT import patterns from other stacks. Discover this repo's reality:
 
 1. **Detect runtime.** Read `package.json` (root + `backend/`), `requirements.txt` / `go.mod` / `Cargo.toml` if present: framework (NestJS? Express? Fastify? Django? Rails?), ORM (Drizzle? Prisma? TypeORM? SQLAlchemy?), DB driver (`pg`, `DATABASE_URL`?), validation (`class-validator`, `zod`, `pydantic`?), auth (`passport-jwt`, OAuth?), docs (Swagger/OpenAPI?), package manager (`pnpm` only here — `npx only-allow pnpm` enforced).
-2. **Detect architecture.** Scan `src/`: `modules/<feature>/` layout? `controller → service → repository` split? Path aliases (`@/*`, `@modules/*`, `@database/*`)? Module shape folders (dtos, entities, guards, interceptors, repositories, services)? Read `agent-docs/project-structure.md` + `patterns.md` when they exist (this repo's backend has them — they override generic instincts).
+2. **Detect architecture.** Scan `src/`: `modules/<feature>/` layout? `controller → service → repository` split? Path aliases (`@/*`, `@modules/*`, `@database/*`)? Module shape folders (dtos, entities, guards, interceptors, repositories, services)? Read `docs/project-structure.md` + `docs/api.md` when they exist (this repo's backend has them — they override generic instincts).
 3. **Detect commands.** Lint, typecheck, test, migrate, seed from `package.json` scripts (here: `pnpm run lint`, `pnpm run typecheck`, `pnpm test`, `pnpm run test:e2e`, `pnpm run db:generate`, `pnpm run db:migrate`, `pnpm run db:studio`). Never run a command you haven't verified exists.
 4. **This repo snapshot** (re-verify): NestJS 11 on Express, TypeScript strict, Drizzle ORM + PostgreSQL, Swagger at `/api-docs`, kebab-case files / PascalCase classes / camelCase methods / UPPER_SNAKE constants, path aliases over deep relatives, `src/modules/<feature>/` shape. SWC builds; minified build is opt-in.
 
@@ -40,7 +40,7 @@ Do NOT import patterns from other stacks. Discover this repo's reality:
 ## Execution protocol
 
 1. **Search first.** Find the nearest existing module/DTO/exception/test/config and conform to it. Reuse > invent. Check `agent-docs/findings.md` + `lessons.md` for durable conventions and past traps.
-2. **Plan before code** (non-trivial tasks): 3–7 step plan in `tasks/todo.md` (backend) or the harness todo tool; verify against repo; track progress; re-plan on contradicting evidence (failing test, surprising schema, scope change).
+2. **Plan before code** (non-trivial tasks): 3–7 step plan (backend keeps no in-repo task log — use the harness todo tool or the task description); verify against repo; track progress; re-plan on contradicting evidence (failing test, surprising schema, scope change).
 3. **Implement in dependency order:** schema/migration → repository → service → controller/DTO → wiring (module registration, guards, filters) → tests → docs.
 4. **Concurrency + perf.** `Promise.all` for independent async work; paginate all list endpoints; bound memory (never load whole tables); keep event loop unblocked (no sync crypto/compression on hot paths).
 5. **Security pass on every diff:** auth bypass, IDOR (ownership check on every object access), injection, mass-assignment (DTO whitelists), open redirects, CORS/helmet regressions, token handling (no JWT in localStorage designs you control; short expiry + rotation where applicable).

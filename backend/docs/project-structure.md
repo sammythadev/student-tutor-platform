@@ -1,203 +1,114 @@
-# Project Structure Documentation
+# Project Structure
 
 ## Overview
 
-This backend is the NestJS application for a student tutor matchmaking
-platform. The current codebase is still small, but the intended structure is a
-modular backend that stays SOLID, keeps concerns isolated, and grows through
-feature-owned domains under `src/modules/`.
+The backend is the NestJS API for the student–tutor matchmaking platform. Two
+ideas shape the layout:
 
-## Table of Contents
+- **The matchmaking domain is framework-free.** Everything the algorithm needs
+  lives under `src/core/` with no Nest decorators and no persistence coupling,
+  so it can be unit-tested and benchmarked in isolation.
+- **HTTP concerns live in feature modules.** Each module under `src/modules/`
+  follows one direction: controller → service → repository.
 
-- [Overview](#overview)
-- [Structure](#structure)
-- [App Module](#app-module)
-- [Common Module](#common-module)
-- [Configs](#configs)
-- [Languages](#languages)
-- [Migration](#migration)
-- [Queues](#queues)
-- [Router](#router)
-- [Instrument](#instrument)
-- [Migration File](#migration-file)
-- [Modules](#modules)
-- [Other Modules](#other-modules)
-
-## Structure
+## Layout
 
 ```text
-src
-  ├── app
-  ├── common
-  ├── configs
-  ├── languages
-  ├── migration
-  ├── modules
-  ├── router
-  ├── queues
-  ├── instrument.ts
-  ├── main.ts
-  ├── migration.ts
-  └── swagger.ts
-docs
-  ├── environment.md
-  └── project-structure.md
-test
+backend/
+├── src/
+│   ├── main.ts                       bootstrap (logger, validation, CORS, Swagger)
+│   ├── swagger.ts                    Swagger document setup
+│   ├── app/                          root module + status controller
+│   │   ├── controller/               app.controller.ts (+ spec)
+│   │   ├── module/                   app.module.ts — imports every feature module
+│   │   └── service/                  app.service.ts
+│   ├── core/                         framework-free matchmaking domain
+│   │   ├── entities/                 Student, Tutor, AvailabilitySlot, CriterionWeights,
+│   │   │                             AlgorithmWeights, MatchScore, Assignment
+│   │   ├── algorithms/
+│   │   │   ├── filters/              eligibility.filter.ts — hard subject + capacity filter
+│   │   │   ├── scorers/              academic, preference, schedule, fairness, composite
+│   │   │   ├── assignment/           greedy-assignment.engine.ts, assignment-lifecycle.ts
+│   │   │   ├── ranking/              top-k-ranker.ts
+│   │   │   ├── feedback/             feedback-updater.ts (EMA quality update)
+│   │   │   ├── adaptation/           weight-adaptation.ts
+│   │   │   └── utils/                max-heap.ts, vector-math.ts
+│   │   ├── engine/                   matching-engine.ts — facade over filter → score → assign
+│   │   ├── enums/ constants/         shared core vocabulary
+│   │   ├── exceptions/               domain exceptions (no HTTP coupling)
+│   │   ├── evaluation/               CLI harnesses + optimal baseline + comparisons
+│   │   │   └── tui/                  ink terminal UI over the suites
+│   │   └── __tests__/                core unit, engine and TUI suites
+│   ├── modules/                      Nest feature modules
+│   │   ├── auth/                     signup/login/refresh/verify/onboard, guards, strategies
+│   │   ├── users/                    accounts and role-specific profiles/preferences
+│   │   ├── matchmaking/              candidates, select, batch, assignment lifecycle
+│   │   ├── matchmaking-test/         in-memory + database wiring checks
+│   │   ├── scheduling/               availability slots
+│   │   ├── sessions/                 session lifecycle
+│   │   ├── messages/                 conversations
+│   │   ├── notifications/            notification delivery
+│   │   ├── feed/                     activity feed
+│   │   └── dashboard/                role-scoped metrics
+│   ├── database/                     schema.ts, database.module.ts, seeds/
+│   ├── common/                       auth helpers, filters, interceptors, logger
+│   ├── configs/                      env loading and app metadata helpers
+│   └── types/                        shared typings
+├── drizzle/                          generated SQL migrations + meta snapshots
+├── scripts/                          jwt key generation, TUI ESM loader
+├── test/                             e2e Jest config + smoke spec
+├── docs/                             documentation for contributors (see ownership below)
+└── agent-docs/                       agent workflow notes: exceptions, findings, lessons
 ```
 
-Each folder serves a specific purpose, supporting modularity and maintainability.
+## Module shape
 
-## App Module
-
-**Location:** `src/app/module/app.module.ts`
-
-The App Module is the root module and entry point for the backend. It currently
-orchestrates the core app shell by importing the shared common module and
-registering the starter controller and service.
-
-## Common Module
-
-**Location:** `src/common/common.module.ts`
-
-The Common Module is the shared backend layer for utilities and cross-cutting
-behavior. Keep shared concerns here instead of mixing them into feature
-modules.
-
-## Configs
-
-**Location:** `src/configs/`
-
-The configs folder contains runtime helpers for environment loading and app
-metadata, including:
-
-- environment file loading
-- logger level selection by environment
-- app name, version, and Swagger path helpers
-
-The `index.ts` file aggregates and exports config helpers for shared use.
-
-## Languages
-
-**Location:** `src/languages/`
-
-The languages folder will hold internationalization resources when localization
-is introduced.
-
-## Migration
-
-**Location:** `src/migration/`
-
-The migration folder will hold database migration orchestration and seed logic
-when the persistence layer is introduced.
-
-## Queues
-
-**Location:** `src/queues/`
-
-The queues folder will hold background job processing once asynchronous work is
-added.
-
-## Router
-
-**Location:** `src/router/`
-
-The router folder will define route grouping and access-level organization when
-the API expands beyond the starter shell.
-
-## Instrument
-
-**Location:** `src/instrument.ts`
-
-The instrument file will eventually configure observability and monitoring.
-This project currently uses `src/swagger.ts` for API documentation bootstrap.
-
-## Migration File
-
-**Location:** `src/migration.ts`
-
-The migration file will act as the CLI entry point for migration and seeding
-work when database tooling is added.
-
-## Modules
-
-**Location:** `src/modules/`
-
-The modules folder contains all feature modules, each representing a distinct
-domain or functionality in the application. Every module is self-contained and
-follows the repository design pattern, ensuring clear separation of concerns
-and scalability.
+Feature modules keep a flat, predictable shape:
 
 ```text
-module
-  ├── bases
-  ├── constants
-  ├── controllers
-  ├── decorators
-  ├── docs
-  ├── dtos
-  ├── entities
-  ├── enums
-  ├── exceptions
-  ├── factories
-  ├── filters
-  ├── guards
-  ├── interceptors
-  ├── interfaces
-  ├── middlewares
-  ├── pipes
-  ├── processors
-  ├── repositories
-  ├── services
-  ├── templates
-  ├── utils
-  └── validations
+modules/<feature>/
+├── dtos/                    request/response DTOs with validation
+├── <feature>.controller.ts  HTTP + Swagger only — delegates to the service
+├── <feature>.service.ts     business rules and orchestration
+├── <feature>.repository.ts  Drizzle queries only
+├── <feature>.module.ts      wiring (imports CommonModule when guards are used)
+├── <feature>.types.ts       module-local types (where needed, e.g. users)
+└── index.ts                 public surface of the module
 ```
 
-This structure ensures each feature is isolated, testable, and easy to
-maintain.
+Do not introduce deep `controllers/`, `services/` folders — the file-name
+suffixes already carry the layer, and every module follows the same rule.
 
-Below are explanations for each section in a typical module:
+## Placement rules
 
-- **Bases**: abstract base classes for shared functionality.
-- **Constants**: static values and configuration constants.
-- **Controllers**: API endpoint handlers that delegate to services.
-- **Decorators**: custom metadata decorators.
-- **Docs**: Swagger/OpenAPI decorators and documentation helpers.
-- **DTOs**: request and response DTOs with validation.
-- **Entities**: database entity types or row representations.
-- **Enums**: type-safe enumerations.
-- **Exceptions**: custom error classes.
-- **Factories**: object creation helpers.
-- **Filters**: exception and validation filters.
-- **Guards**: authorization and access control logic.
-- **Interfaces**: TypeScript contracts between module parts.
-- **Interceptors**: request and response transformation.
-- **Middlewares**: request preprocessing.
-- **Pipes**: data transformation and validation.
-- **Processors**: background job handlers.
-- **Repositories**: data access layer only.
-- **Services**: business logic and orchestration.
-- **Templates**: reusable email or document templates.
-- **Utils**: helper utilities specific to the module.
-- **Validations**: custom validators and validation helpers.
+- Backend-only code stays in `backend/`; matchmaking formulas and assignment
+  logic stay in `src/core/` and are consumed — never reimplemented — by modules.
+- `src/database/schema.ts` is the single source of truth for the schema.
+  Generate SQL with Drizzle Kit before applying migrations.
+- Prefer repository methods with joins for aggregate reads, so services and
+  controllers never trigger N+1 profile lookups.
+- Use the configured path aliases (`@core/*`, `@modules/*`, `@database/*`,
+  `@common/*`, `@configs/*`, `@types/*`, `@app/*`, `@config`) instead of deep
+  relative imports. They are mirrored in the Jest `moduleNameMapper`.
+- Add Swagger decorators to every controller endpoint as it is created or
+  changed, and update `docs/api.md` in the same task.
+- New modules: register them in `src/app/module/app.module.ts` and import
+  `CommonModule` if they use `AuthGuard` or `OwnerOrAdminGuard`.
 
-## Other Modules
+## Docs ownership
 
-Below are explanations for the root folders and files outside `src/`:
+- `docs/` — for contributors and maintainers: `api.md`, `database.md`,
+  `environment.md`, `project-structure.md`, `core-roadmap-api-plan.md`,
+  `OPTIMIZATION_REPORT.md`, and `benchmarks/`.
+- `agent-docs/` — agent workflow notes: `exceptions.md` (exception hierarchy and
+  response rules), `findings.md` (durable discoveries), `lessons.md` (mistakes
+  and tooling traps).
 
-### Folders
+Keep the split strict: project documentation goes in `docs/`, process notes stay
+in `agent-docs/`.
 
-- **docs/**: backend documentation for contributors and maintainers.
-- **test/**: test configuration and e2e coverage.
+## Deployment artifacts
 
-### Files
-
-- **.commitlintrc**: commit message lint configuration.
-- **.env.example**: sample environment variables for local setup.
-- **.prettierignore**: files that should not be formatted by Prettier.
-- **.prettierrc**: Prettier formatting rules.
-- **.swcrc**: SWC compiler configuration for NestJS builds.
-- **eslint.config.mjs**: ESLint flat configuration.
-- **nest-cli.json**: Nest CLI build configuration.
-- **package.json**: scripts and dependency manifest.
-- **tsconfig.json**: TypeScript compiler configuration.
+`pnpm run build` emits `dist/` (gitignored); `pnpm run start:prod` runs
+`dist/main`. `pnpm run build:minified` is the SWC-minified variant. Neither is
+committed.

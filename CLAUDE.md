@@ -9,7 +9,7 @@ Student–tutor matchmaking platform (final-year research project). pnpm workspa
 - `backend/` — NestJS 11 (Express), TypeScript strict mode, Drizzle ORM + PostgreSQL, Swagger at `/api-docs`. pnpm only (`preinstall` enforces it).
 - `frontend/` — Next.js 16 (App Router), React 19, Tailwind CSS 4, Zustand, shadcn/ui-style components.
 
-`backend/AGENTS.md` and `backend/agent-docs/` (project-structure, database, exceptions, lessons) are the detailed operating guides for backend work — read them before substantial backend changes. `Algorithm.md` at the repo root is the authoritative matchmaking algorithm spec; do not invent alternative normalization, scoring, or ordering logic.
+`backend/AGENTS.md` (operating guide), `backend/docs/` (api, database, environment, project-structure, roadmap) and `backend/agent-docs/` (exceptions, findings, lessons) are the detailed guides for backend work — read them before substantial backend changes. `Algorithm.md` at the repo root is the authoritative matchmaking algorithm spec; do not invent alternative normalization, scoring, or ordering logic.
 
 ## Commands
 
@@ -74,4 +74,4 @@ Path aliases (`@/`, `@core/*`, `@modules/*`, `@database/*`, `@common/*`, `@confi
 - When adding/changing an API endpoint: add Swagger decorators and update `backend/docs/api.md` in the same task.
 - Env changes: seed `.env.example` first; never hard-code values an env var should drive; don't edit `.env` directly.
 - Keep backend work backend-only unless frontend changes are explicitly requested.
-- `tasks/todo.md` in backend is the task log; `agent-docs/findings.md` and `agent-docs/lessons.md` capture durable discoveries and lessons.
+- `agent-docs/findings.md` and `agent-docs/lessons.md` capture durable discoveries and lessons; there is no in-repo task log.

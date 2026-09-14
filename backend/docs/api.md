@@ -129,6 +129,13 @@ Admin-only endpoint that runs database-backed batch matchmaking for active stude
 
 Student-only endpoint for the current authenticated student. Returns paginated, populated tutor candidates ranked by the core algorithm.
 
+### `GET /matchmaking/candidates/students?page=1&limit=5`
+
+Tutor-only endpoint for the current authenticated tutor. Returns paginated, populated student candidates ranked by the core algorithm.
+
+- Auth: tutor bearer access token.
+- Errors: `401` for a missing or invalid bearer token, `403` for non-tutor roles.
+
 ### `POST /matchmaking/select`
 
 Student-only endpoint for manually selecting a tutor candidate.

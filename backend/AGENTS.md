@@ -18,14 +18,12 @@ Use this file as the default operating guide. This repo is the NestJS backend fo
 ## Read Order
 
 1. This file for default behavior.
-2. `agent-docs/project-structure.md` for layout, ownership, and placement rules.
+2. `docs/project-structure.md` for layout, ownership, and placement rules.
 3. Task-specific docs only when relevant:
-   - `agent-docs/patterns.md`
-   - `agent-docs/testing.md`
-   - `agent-docs/exceptions.md`
-   - `agent-docs/api.md`
-   - `agent-docs/database.md`
-   - `agent-docs/environment.md`
+   - `agent-docs/exceptions.md` — exception hierarchy and response rules
+   - `docs/api.md` — every endpoint: auth mode, body, errors
+   - `docs/database.md` — schema, indexes, migration workflow
+   - `docs/environment.md` — env files and variables
 4. `agent-docs/findings.md` for durable discoveries and decisions.
 5. `agent-docs/lessons.md` for reusable lessons, mistakes, and cautions.
 
@@ -37,7 +35,7 @@ Use this file as the default operating guide. This repo is the NestJS backend fo
 - Database: PostgreSQL via `DATABASE_URL`
 - Package manager: `pnpm` only
 - API docs: Swagger at `/api-docs`
-- Current code shape: starter app shell under `src/app`, runtime helpers under `src/configs`, with domain modules to be added under `src/modules`
+- Code shape: framework-free matchmaking domain under `src/core`, Nest feature modules under `src/modules`, Drizzle schema in `src/database`, root shell in `src/app`
 - Build mode: SWC-backed Nest build with a separate minified build option
 
 ## Operating Rules
@@ -62,7 +60,7 @@ Use this file as the default operating guide. This repo is the NestJS backend fo
 - Keep solutions aligned with security, maintainability, scalability, and readability.
 - If a decision is primarily for performance or to match an existing repo pattern, call it out in the task summary (add a short code comment only when the choice is non-obvious).
 - Provide concrete examples immediately when they clarify a recommendation.
-- This repo uses NestJS + Fastify workers + Drizzle + PostgreSQL; do not import Prisma/Mongo conventions or folder layouts from other codebases.
+- This repo uses NestJS on Express + Drizzle + PostgreSQL; do not import Prisma/Mongo conventions or folder layouts from other codebases.
 - Keep module layout aligned with `src/modules/<feature>/` (avoid introducing deep `controllers/`, `services/`, etc. folders unless the module already uses them).
 
 
@@ -77,11 +75,12 @@ Before substantial work, search the repository for existing patterns:
 
 ## Task Management
 
-Use `tasks/todo.md` as the task log for planning and closeout.
+There is no in-repo task log. Keep the plan in your harness's todo tool or the
+task description, and leave the outcome in the commit message.
 
 ### For each substantial task
 
-1. Write or refresh a short plan in `tasks/todo.md`.
+1. Write or refresh a short plan before editing code.
 2. Verify the plan against the repo before implementation.
 3. Track progress with brief status updates as major steps complete.
 4. Document the final result, important changes, and verification outcome.
@@ -101,10 +100,12 @@ Keep the task log compact. It should help execution, not become a second spec.
 
 ### Source layout
 
-- `src/app/*`: starter application shell
-- `src/common/*`: shared backend layer for future cross-cutting code
+- `src/core/*`: framework-free matchmaking domain — entities, algorithms (filters, scorers, assignment, ranking, feedback, adaptation), engine facade, evaluation harnesses
+- `src/modules/*`: Nest feature modules — `auth`, `users`, `matchmaking`, `matchmaking-test`, `scheduling`, `sessions`, `messages`, `notifications`, `feed`, `dashboard`
+- `src/database/*`: Drizzle schema, module wiring, seeds
+- `src/common/*`: guards, filters, interceptors, logger
 - `src/configs/*`: environment and bootstrap helpers
-- `src/modules/*`: feature modules as the domain grows
+- `src/app/*`: root module plus status controller/service
 - `src/types/*`: shared typings
 - `src/main.ts`: app bootstrap
 - `src/swagger.ts`: Swagger bootstrap helper
@@ -117,56 +118,21 @@ Keep the task log compact. It should help execution, not become a second spec.
 
 ### Module Structure
 
-Every feature module should live under `src/modules/<feature>/` and follow this shape when it grows:
+Every feature module lives under `src/modules/<feature>/` and is flat — the file-name suffix carries the layer, so do not add `controllers/`, `services/` subfolders:
 
 ```text
-module/
-├── bases
-├── constants
-├── controllers
-├── decorators
-├── docs
-├── dtos
-├── entities
-├── enums
-├── exceptions
-├── factories
-├── filters
-├── guards
-├── interceptors
-├── interfaces
-├── middlewares
-├── pipes
-├── processors
-├── repositories
-├── services
-├── templates
-├── utils
-└── validations
+modules/<feature>/
+├── dtos/                    request and response DTOs with validation
+├── <feature>.controller.ts  HTTP + Swagger only, delegates to the service
+├── <feature>.service.ts     business rules and orchestration
+├── <feature>.repository.ts  Drizzle queries only
+├── <feature>.module.ts      wiring; import CommonModule when guards are used
+├── <feature>.types.ts       module-local types where needed
+└── index.ts                 public surface of the module
 ```
 
-- `bases`: abstract base classes for shared functionality.
-- `constants`: static values and configuration constants.
-- `controllers`: API handlers that delegate to services.
-- `decorators`: custom metadata decorators.
-- `docs`: Swagger/OpenAPI decorators and documentation helpers.
-- `dtos`: request and response DTOs with validation.
-- `entities`: database entity types or row representations.
-- `enums`: type-safe enumerations.
-- `exceptions`: custom error classes.
-- `factories`: object creation helpers.
-- `filters`: exception and validation filters.
-- `guards`: authorization and access control.
-- `interceptors`: request and response transformation.
-- `interfaces`: TypeScript contracts between module parts.
-- `middlewares`: request preprocessing.
-- `pipes`: data transformation and validation.
-- `processors`: background job handlers.
-- `repositories`: data access layer only.
-- `services`: business logic and orchestration.
-- `templates`: email or document templates.
-- `utils`: helper utilities specific to the module.
-- `validations`: custom validators and validation helpers.
+Add a folder inside the module only when it earns its place (the existing
+modules carry `dtos/` and nothing else).
 
 ## Code Standards
 
@@ -213,8 +179,11 @@ When you learn something durable while searching or implementing, update the app
 
 ### Docs Ownership Split
 
-- `docs/` contains repository and API documentation for project users/contributors.
-- `agent-docs/` contains agent workflow, lessons, findings, and internal coding guidance.
+- `docs/` contains project documentation for contributors: `api.md`,
+  `database.md`, `environment.md`, `project-structure.md`,
+  `core-roadmap-api-plan.md`, `OPTIMIZATION_REPORT.md`, `benchmarks/`.
+- `agent-docs/` contains agent workflow notes only: `exceptions.md`,
+  `findings.md`, `lessons.md`.
 - Keep this separation strict: do not move agent process notes into `docs/`.
 
 ### API Documentation Is Mandatory
@@ -223,12 +192,11 @@ When creating or changing any API endpoint, update docs in the same task:
 
 1. Update `docs/api.md` with route, auth mode, request/response, and errors.
 2. Add Swagger decorators for every touched controller endpoint so `/api-docs` stays accurate.
-3. Update `docs/implementation-guide.md` if implementation workflow or conventions changed.
-4. Update related docs when applicable:
+3. Update related docs when applicable:
    - `docs/database.md` for schema/query contract changes
    - `docs/environment.md` for new env requirements
    - `docs/project-structure.md` for module/layout changes
-5. Keep Swagger decorators and DTOs aligned with those docs.
+4. Keep Swagger decorators and DTOs aligned with those docs.
 
 ### Update `agent-docs/findings.md` when
 
@@ -237,7 +205,7 @@ When creating or changing any API endpoint, update docs in the same task:
 - You make an architectural or tooling decision worth preserving.
 - You uncover a gotcha that will likely matter again.
 
-### Update `agent-docs/project-structure.md` when
+### Update `docs/project-structure.md` when
 
 - You add a new top-level folder or source area.
 - You add a new module shape, shared layer, or placement rule.
@@ -262,24 +230,24 @@ Keep these updates concise. Prefer short entries, checklists, and examples over 
 
 ## Documentation Map
 
-- `agent-docs/project-structure.md`: repo layout, module shape, where to put new code
-- `agent-docs/patterns.md`: implementation defaults for NestJS, DTOs, DI, repositories
-- `agent-docs/testing.md`: testing strategy and minimum expectations
+- `docs/project-structure.md`: repo layout, module shape, where to put new code
+- `docs/api.md`: endpoint reference — auth mode, bodies, errors — plus Swagger conventions
+- `docs/database.md`: schema, migrations, and query guidance
+- `docs/environment.md`: env files and required variables
+- `docs/core-roadmap-api-plan.md`: roadmap status, shipped vs still open
 - `agent-docs/exceptions.md`: exception hierarchy and response rules
-- `agent-docs/api.md`: Swagger, DTO, pagination, and endpoint conventions
-- `agent-docs/database.md`: schema, migrations, and query guidance
-- `agent-docs/environment.md`: env files and required variables
 - `agent-docs/findings.md`: durable discoveries, decisions, and repo facts
 - `agent-docs/lessons.md`: lessons learned, mistakes, and cautionary notes
 
 ## Task Routing
 
-- For endpoint work: read `project-structure.md`, `patterns.md`, `api.md`, `testing.md`.
-- For schema or data access work: read `database.md`, `patterns.md`, `testing.md`; keep Drizzle schema-first, generate migrations from schema, and migrate only after generated SQL has been inspected.
-- For error-handling work: read `exceptions.md` and `testing.md`.
-- For config or startup work: read `environment.md` and `project-structure.md`.
-- For unfamiliar areas: read `findings.md` and search the repo for similar code first.
-- For debugging or regressions: review `lessons.md`, inspect logs/errors/tests, then plan the fix.
+- For endpoint work: read `docs/project-structure.md`, `docs/api.md`, and the nearest existing module.
+- For schema or data access work: read `docs/database.md`; keep Drizzle schema-first, generate migrations from schema, and migrate only after generated SQL has been inspected.
+- For error-handling work: read `agent-docs/exceptions.md`.
+- For config or startup work: read `docs/environment.md` and `docs/project-structure.md`.
+- For unfamiliar areas: read `agent-docs/findings.md` and search the repo for similar code first.
+- For debugging or regressions: review `agent-docs/lessons.md`, inspect logs/errors/tests, then plan the fix.
+- Tests live in `src/core/__tests__/` (unit, engine, eval TUI), `src/app/controller/*.spec.ts`, and `test/app.e2e-spec.ts`.
 
 ## Commands
 
@@ -316,10 +284,10 @@ Before finishing a task, quickly check:
 1. Did I reuse the nearest existing pattern instead of inventing one?
 2. Did I update tests if behavior changed?
 3. Did I update `findings.md` for any durable discovery or decision?
-4. Did I update `project-structure.md` if the structure changed?
+4. Did I update `docs/project-structure.md` if the structure changed?
 5. Did I capture a reusable lesson or mistake in `lessons.md` if one surfaced?
-6. Did I update `tasks/todo.md` with the plan, progress, and result?
-7. If APIs changed, did I update `docs/api.md` (and `docs/implementation-guide.md` if needed)?
+6. Does the commit message or PR description carry the plan, result, and verification outcome?
+7. If APIs changed, did I update `docs/api.md` and the Swagger decorators?
 
 ## When Updating Docs
 

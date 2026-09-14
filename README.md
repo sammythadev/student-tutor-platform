@@ -1,57 +1,82 @@
-# Student Tutor Matchmaking Platform
+# Tutorly — Student · Tutor Matchmaking
 
-A monorepo (pnpm workspace) for a Nigerian secondary-school student-tutor matchmaking system. **Subject eligibility is a hard pre-filter** — tutors who do not teach the student's subject are excluded before any scoring. The core engine implements a **Priority-Queue Greedy** algorithm with lazy fairness recompute (guarantees ≥½ of the optimal assignment score).
+Final-year research project: a matchmaking platform for Nigerian
+secondary-school students and tutors.
 
----
+Two things make it more than a tutor directory. **Subject eligibility is a hard
+pre-filter** — a tutor who does not teach the student's subject is removed
+before any scoring happens, so no weighting can buy them back. And the
+assignment pass is a **priority-queue greedy engine with lazy fairness
+recompute**, which is guaranteed to reach at least half of the optimal total
+assignment score while staying fast enough for large cohorts.
 
-## Monorepo Layout
+The engine is framework-free (`backend/src/core/`), the API wraps it
+(`backend/src/modules/`), and the UI shows the ranking it produces
+(`frontend/`).
 
 ```
-project/
-├── backend/                     # NestJS 11 + Drizzle ORM + PostgreSQL
-│   ├── src/
-│   │   ├── core/                # Framework-free matchmaking engine (no Nest decorators)
-│   │   │   ├── entities/        #   Domain types (Student, Tutor, MatchScore, etc.)
-│   │   │   ├── algorithms/      #   Filters, scorers, assignment, ranking, feedback, adaptation
-│   │   │   │   ├── filters/     #     EligibilityFilter (hard subject + capacity pre-filter)
-│   │   │   │   ├── scorers/     #     AcademicScorer, ScheduleScorer, PreferenceScorer, FairnessScorer, CompositeScorer
-│   │   │   │   ├── assignment/  #     GreedyAssignmentEngine (lazy heap), AssignmentLifecycle
-│   │   │   │   ├── ranking/     #     TopKRanker (heap-based O(M log K) per student)
-│   │   │   │   ├── feedback/    #     FeedbackUpdater (EMA-based rating update)
-│   │   │   │   └── adaptation/  #     WeightAdaptation (proportional renormalization)
-│   │   │   ├── engine/          #   MatchingEngine (facade over the assignment units)
-│   │   │   ├── evaluation/      #   EvaluationHarness, OptimalBaseline (min-cost max-flow), BaselineComparison
-│   │   │   └── __tests__/       #   23 integration tests for core engine
-│   │   ├── modules/             # NestJS feature modules (auth, users, matchmaking, scheduling, etc.)
-│   │   ├── database/            # Drizzle schema + seeds + module
-│   │   ├── common/              # Shared backend layer
-│   │   ├── configs/             # Environment/bootstrap helpers
-│   │   └── types/               # Shared typings
-│   ├── test/                    # E2E test
-│   ├── docs/                    # API documentation, implementation guide, database docs
-│   └── agent-docs/              # Agent operating guides (project-structure, patterns, exceptions, etc.)
-├── frontend/                    # Next.js 16 (App Router) + React 19 + Tailwind CSS 4
-│   ├── app/
-│   │   ├── (auth)/              # signup, signin, onboard
-│   │   └── (app)/               # dashboard, tutors, tutor-dashboard, schedules, messages, feed, etc.
-│   ├── components/              # Reusable UI components (AppShell, Modal, Button, etc.)
-│   ├── lib/
-│   │   ├── api/                 # API client modules (auth, users, sessions, messages, etc.)
-│   │   └── store/               # Zustand auth store
-│   └── public/
-├── package.json                 # Root workspace config
-├── Algorithm.md                 # Authoritative matchmaking algorithm spec
-├── TEST_SUITE_REPORT.md         # Test coverage report
-└── CLAUDE.md                    # Claude Code operating guide
+pnpm install
+cd backend  && cp .env.example .env && pnpm run db:migrate && pnpm run start:dev   # :4000
+cd frontend && cp .env.example .env.local && pnpm run dev                          # :3000
 ```
 
----
+Full setup, including JWT key generation and seeding: [Development setup](#development-setup).
 
-## Core Matchmaking Engine
+## Monorepo layout
 
-The engine lives in `backend/src/core/` and is **framework-free** — no NestJS decorators, no persistence coupling. Nest modules consume its units directly (`GreedyAssignmentEngine`, `AssignmentLifecycle`, the scorers); `MatchingEngine` is a convenience facade over the same units for callers that want the whole pipeline in one call.
+A pnpm workspace (`pnpm-workspace.yaml`) with two packages.
 
-### Architecture Flow
+```
+.
+├── backend/                    NestJS 11 API + framework-free matchmaking core
+│   ├── src/core/               Domain: filters, scorers, assignment, ranking, evaluation
+│   ├── src/modules/            Feature modules (controller → service → repository)
+│   ├── src/database/           Drizzle schema, wiring, seeds
+│   ├── docs/                   API, database, environment, structure, benchmarks
+│   ├── agent-docs/             Agent operating notes (exceptions, findings, lessons)
+│   └── drizzle/                Generated SQL migrations
+├── frontend/                   Next.js 16 App Router client
+│   ├── app/(auth)/             Signup, signin, onboarding
+│   ├── app/(app)/              Authenticated shell and role pages
+│   ├── components/             ui primitives · landing · onboard · catalog · widgets
+│   └── lib/api/                Typed API clients
+├── Algorithm.md                Authoritative matchmaking algorithm spec
+├── diagrams/                   UML sources + renders (activity, class, sequence, use case)
+├── agents-framework/           Coding-agent personas this repo is developed with
+├── AGENTS.md, CLAUDE.md        Bootstrap guides for AI coding agents
+├── .claude/, .opencode/        Harness-specific agent definitions and permissions
+└── .agents/, frontend/.agents/ Vendored design/frontend skills the agent personas route to
+```
+
+Each package has its own README: [backend](backend/README.md) ·
+[frontend](frontend/README.md).
+
+## Documentation index
+
+| Doc | What it covers |
+|---|---|
+| [`Algorithm.md`](Algorithm.md) | Matching algorithm: scoring, normalization, assignment, guarantees |
+| [`backend/README.md`](backend/README.md) | Backend setup, modules, eval harnesses, TUI |
+| [`backend/docs/api.md`](backend/docs/api.md) | Every endpoint: auth, body, errors |
+| [`backend/docs/database.md`](backend/docs/database.md) | Tables, indexes, migration workflow |
+| [`backend/docs/environment.md`](backend/docs/environment.md) | Every environment variable |
+| [`backend/docs/project-structure.md`](backend/docs/project-structure.md) | Backend layout and placement rules |
+| [`backend/docs/core-roadmap-api-plan.md`](backend/docs/core-roadmap-api-plan.md) | Roadmap with shipped/pending status |
+| [`backend/docs/OPTIMIZATION_REPORT.md`](backend/docs/OPTIMIZATION_REPORT.md) | Performance work and results |
+| [`backend/docs/benchmarks/EVALUATION_FINDINGS.md`](backend/docs/benchmarks/EVALUATION_FINDINGS.md) | Evaluation findings; raw CSVs sit beside it |
+| [`backend/agent-docs/lessons.md`](backend/agent-docs/lessons.md) | Engineering lessons and tooling traps (incl. the eval TUI) |
+| [`frontend/README.md`](frontend/README.md) | Frontend setup, routes, conventions |
+| [`frontend/DESIGN.md`](frontend/DESIGN.md) | Design system: tokens, type, spacing, motion |
+| [`frontend/public/CREDITS.md`](frontend/public/CREDITS.md) | Image/asset attribution |
+| [`diagrams/`](diagrams) | UML sources (`.puml`) and renders (`.png`) |
+| [`agents-framework/README.md`](agents-framework/README.md) | The coding-agent personas used in this repo |
+
+## Core matchmaking engine
+
+`backend/src/core/` is framework-free — no Nest decorators, no persistence
+coupling. Nest modules consume its units (`GreedyAssignmentEngine`,
+`AssignmentLifecycle`, the scorers); `MatchingEngine` is a convenience facade
+over the same pipeline.
 
 ```
                      ┌──────────────────┐
@@ -81,7 +106,7 @@ The engine lives in `backend/src/core/` and is **framework-free** — no NestJS 
                      └──────────────────┘
 ```
 
-### Scoring Formula
+### Scoring formula
 
 ```
 M(s, t) = α·A(s, t) + β·P(s, t) + γ·S(s, t) + δ·F(t)
@@ -94,270 +119,161 @@ S = |Hs ∩ Ht| / |Hs|                         (schedule overlap)
 F = 1 - CurrentLoad / Capacity                (fairness, [0, 1])
 ```
 
-All sub-scores are clamped to `[0, 1]`. Zero-vector cosine similarity defaults to `0.5`.
+All sub-scores are clamped to `[0, 1]`; a zero-vector cosine similarity defaults
+to `0.5`.
 
-### Assignment Algorithm (Lazy Greedy)
+### Assignment algorithm (lazy greedy)
 
-1. Build max-heap of all eligible `(student, tutor)` pairs keyed by `M(s, t)`
-2. Pop highest key; if student already assigned or tutor at capacity → discard
-3. Recompute fairness `F(t)` with current load; if stale → re-push with correct key
-4. Otherwise assign, increment tutor load, repeat until heap empty
-5. Unassigned students go to waitlist
+1. Build a max-heap of every eligible `(student, tutor)` pair keyed by `M(s, t)`
+2. Pop the highest key; if the student is already assigned or the tutor is at
+   capacity, discard the pair
+3. Recompute fairness `F(t)` against current load; if the cached key is stale,
+   re-push with the corrected key
+4. Otherwise assign, increment the tutor's load, and continue until the heap is
+   empty
+5. Unassigned students go to the waitlist
 
-**Quality guarantee:** ≥½ of optimal total score (standard greedy matching bound).
+**Quality guarantee:** ≥ ½ of the optimal total score (standard greedy matching
+bound). `pnpm run eval:gap` measures the actual ratio against a min-cost max-flow
+optimum.
 
----
+## Evaluation
 
-## CLI: Evaluation Scripts
+The research claims are backed by runnable harnesses in
+`backend/src/core/evaluation/`, all producing CSVs in `backend/docs/benchmarks/`.
 
-Run from `backend/`. Each script generates the same synthetic Nigerian-secondary-school fixtures (`src/core/evaluation/fixtures.ts`) and benchmarks the engine. There are three entry points:
-
-| Script | Question it answers |
+| Command (from `backend/`) | Question |
 |---|---|
-| `evaluation-harness.ts` | How does the engine scale (quality, fairness, time, memory)? |
-| `optimal-baseline.ts` | How far below the *exact* optimum does greedy land? |
-| `baseline-comparison.ts` | Does greedy beat the simpler strategies real platforms use? |
+| `pnpm run eval` | How does the engine scale — quality, fairness, time, memory? |
+| `pnpm run eval:moderate` | Moderate-load band (1.5:1 … 4:1 student:tutor) |
+| `pnpm run eval:topk` | Quality/speed/memory tradeoff for K ∈ {10, 20, 50, ∞} |
+| `pnpm run eval:gap` | Greedy vs the exact min-cost max-flow optimum |
+| `pnpm run eval:baselines` | Greedy vs FCFS and deferred-acceptance (Gale-Shapley) |
+| `pnpm run eval:all` | All of the above |
 
-### Commands
-
-```bash
-# Full evaluation suite (realistic + moderate + stress sweep)
-pnpm run eval
-
-# Moderate-load band only (1.5:1, 2:1, 3:1, 4:1 student:tutor ratios)
-pnpm run eval:moderate
-
-# Top-K sweep — quality/speed/memory tradeoff for K ∈ {10, 20, 50, ∞}
-pnpm run eval:topk
-
-# Optimality gap — greedy vs min-cost max-flow optimum (sizes 10–100)
-pnpm run eval:gap
-
-# Baseline comparison — greedy vs FCFS / deferred-acceptance strategies (RQ6)
-pnpm run eval:baselines
-
-# Run everything
-pnpm run eval:all
-```
-
-### Optimal baseline (`eval:gap`)
-
-Solves the assignment exactly with **min-cost max-flow** and reports greedy's `scoreRatio` against it. Both sides are scored on the *static* (academic + preference + schedule) basis, since the flow model cannot represent live-load fairness. Exact solving is `O(V·E·maxflow)`, so this is small-size only.
-
-```bash
-pnpm run eval:gap                        # default sizes 10, 25, 50, 100
-pnpm run eval:gap --sizes 10,50,200      # custom sizes
-```
-
-| Column | Description |
-|---|---|
-| `greedyAssigned` / `optimalAssigned` | Students matched by each method |
-| `greedyStaticTotal` / `optimalStaticTotal` | Summed static score |
-| `scoreRatio` | `greedy / optimal` — the theoretical floor is 0.5 |
-| `greedyMs` / `optimalMs` | Wall-clock per method |
-
-### Baseline comparison (`eval:baselines`)
-
-Runs four assignment strategies over identical fixtures, so any difference comes from the strategy alone.
-
-| Strategy | Behaviour |
-|---|---|
-| `fcfs-filter` | First-come-first-served, first eligible tutor with capacity — no scoring |
-| `fcfs-best` | First-come-first-served self-selection — each student picks their own best tutor |
-| `da-stable` | Student-proposing deferred acceptance (Gale-Shapley) — both sides rank by the *static* composite score (fairness excluded from ranking, so utilities are load-independent); optimizes stability rather than total score |
-| `greedy-engine` | The proposed engine — global score-ordered heap with lazy fairness recompute |
-
-```bash
-pnpm run eval:baselines                          # all scenarios, all strategies
-pnpm run eval:baselines --scenario moderate      # scenarios matching a substring
-pnpm run eval:baselines --strategy greedy-engine # one strategy only
-```
-
-Scenarios: `realistic-1to1`, `moderate-1.5to1`, `moderate-2to1`, `moderate-3to1`, `stress-10to1`.
-
-### Flags
-
-Available on every eval command:
-
-| Flag | Effect |
-|---|---|
-| `--name <file>` | Name the output file (`.csv` appended if omitted); still saved to `docs/benchmarks/` |
-| `--out <path>` | Write to an explicit path, ignoring the default directory |
-| `--no-file` | Print only; skip writing the CSV |
-| `--table` | Force the aligned table |
-| `--csv` | Force raw CSV |
-| `--no-timing` | Zero the wall-clock timing columns (`elapsedMinMs/MeanMs/MaxMs`, `greedyMs/optimalMs`) in the saved CSV — quality metrics are deterministic, timing is not, so use this when you want benchmark files to change only when results actually change |
-
-Script-specific: `--moderate`, `--topk-sweep` (harness), `--sizes` (gap), `--scenario`, `--strategy` (baselines).
-
-Flags pass straight through the pnpm script and **override** any baked-in default, so `pnpm run eval:topk --name my-run` wins over the script's own `--name`.
-
-### Output
-
-Every run prints results **and** saves a CSV, then reports the path on the last line:
-
-```
-$ pnpm run eval:baselines --name rq6-final
-
-┌──────────────────┬───────────────┬ ... ┐
-│         scenario │      strategy │ ... │
-└──────────────────┴───────────────┴ ... ┘
-
-Saved 15 row(s) to: C:\...\backend\docs\benchmarks\rq6-final.csv
-```
-
-Results land in `backend/docs/benchmarks/` unless `--out` says otherwise. Default filenames:
-
-| Command | File |
-|---|---|
-| `eval` | `evaluation-results.csv` |
-| `eval:moderate` | `moderate-results.csv` |
-| `eval:topk` | `topk-sweep-results.csv` |
-| `eval:gap` | `optimality-gap-results.csv` |
-| `eval:baselines` | `baseline-comparison-results.csv` |
-
-Rendering adapts to context: an aligned table on an interactive terminal, raw CSV when piped or redirected — so `pnpm run eval > out.csv` stays machine-readable. The saved-path line goes to stderr and never pollutes redirected output.
-
-### Harness Metrics
-
-| Column | Description |
-|---|---|
-| `averageScore` | Mean match score across assignments |
-| `unassignedPercent` | % of students not assigned (capacity-bound) |
-| `jainFairnessIndex` | Jain's fairness index [0–1] across tutor loads |
-| `elapsedMinMs`/`MeanMs`/`MaxMs` | Wall-clock timing (5 runs) |
-| `pairsScored` | Total (student × tutor) pairs evaluated |
-| `peakHeapEntries` | Max heap size during run |
-
-### Eval TUI
-
-`pnpm run tui` (from `backend/`) launches an interactive terminal UI over the
-same suites — live per-scenario progress, highlighted results tables, a
-saved-results browser, and a notes scratchpad. Jump straight into a screen with
-an argument:
-
-```bash
-pnpm run tui                          # menu
-pnpm run tui -- eval                  # full harness
-pnpm run tui -- gap                   # optimality gap
-pnpm run tui -- baselines             # baseline comparison
-pnpm run tui -- all                   # eval + topk + gap + baselines
-pnpm run tui -- browser               # browse saved CSVs
-pnpm run tui -- notes                 # notes scratchpad
-pnpm run tui -- eval --no-timing      # zero timing columns from launch
-```
-
-Press `?` from the menu, run, or browser view for a full help reference covering
-every screen's keys plus the CLI flags; the notes editor uses `Ctrl+O` instead
-so `?` stays typable. In the run view, `t` toggles timing-column stripping in
-both the displayed table and the saved CSV (same effect as `--no-timing`).
-Suites auto-save their CSVs to `backend/docs/benchmarks/`. The full key
-reference is in `backend/README.md`.
-
----
-
-## Tests
-
-Run from `backend/`:
-
-```bash
-pnpm run test              # All unit tests (101 tests across 4 files)
-pnpm run test:core         # Core matchmaking units only (55 tests)
-pnpm run test:e2e          # E2E tests (1 smoke test)
-pnpm run test:coverage     # With coverage report
-pnpm run test:watch        # Watch mode
-pnpm jest path/to/file.spec.ts     # Single file
-pnpm jest -t "test name"           # By test name
-```
-
-| Test File | Tests | Scope |
-|---|---|---|
-| `src/core/__tests__/core-engine.spec.ts` | 23 | Scorers, assignment engine, lifecycle, ranking, adaptation, benchmark |
-| `src/core/__tests__/core-units.spec.ts` | 55 | Core matchmaking units (filters, scorers, assignment, ranking, feedback, adaptation) |
-| `src/core/__tests__/evaluation-tui.spec.ts` | 22 | Eval harness configs, gap/baselines helpers, CSV/table helpers, TUI suite registry + help data |
-| `src/app/controller/app.controller.spec.ts` | 1 | Backend health endpoint smoke test |
-| `test/app.e2e-spec.ts` | 1 | Full HTTP stack smoke test |
-
----
+`pnpm run tui` opens an interactive terminal UI over the same suites (live
+progress, results browser, notes scratchpad). Flags, metrics, the baseline
+strategies and the full key reference are documented in
+[`backend/README.md`](backend/README.md).
 
 ## Database
 
-Schema-first Drizzle ORM with PostgreSQL. Base identity in `users`; role data in `student_profiles` / `tutor_profiles`. Availability and preference weights stored as typed JSON.
+PostgreSQL via Drizzle ORM, schema-first: edit `backend/src/database/schema.ts`,
+generate SQL, inspect it, then migrate.
 
 ```bash
-pnpm run db:generate      # Generate SQL migrations from schema
-pnpm run db:migrate       # Apply migrations
-pnpm run db:seed          # Seed Nigerian secondary-school fixtures (~50 users)
-pnpm run db:studio        # Drizzle Studio GUI
+cd backend
+pnpm run db:generate      # SQL migrations from the schema
+pnpm run db:migrate       # apply them
+pnpm run db:seed          # Nigerian secondary-school fixtures
+pnpm run db:studio        # Drizzle Studio
 ```
 
----
+## API
 
-## API Endpoints
-
-Swagger UI at `/api-docs` (dev). See `backend/docs/api.md` for full reference.
+Swagger UI at `http://localhost:4000/api-docs` in development; the maintained
+reference is [`backend/docs/api.md`](backend/docs/api.md).
 
 | Module | Endpoints |
 |---|---|
-| **Auth** | `POST /auth/signup`, `/auth/login`, `/auth/refresh`, `/auth/verify`, `/auth/onboard`, `/auth/admin/signup`, `/auth/admin/signin` |
+| **Auth** | `POST /auth/signup`, `/auth/login`, `/auth/refresh`, `/auth/onboard`, `/auth/admin/signup`, `/auth/admin/signin`; `GET /auth/verify` |
 | **Users** | `POST /users`, `GET /users/:id`, `PATCH /users/me`, `PATCH /users/me/student-preferences`, `PATCH /users/me/tutor-preferences` |
-| **Matchmaking** | `POST /matchmaking/batch`, `GET /matchmaking/candidates`, `POST /matchmaking/select`, `GET /matchmaking/assignments/me`, `PATCH /matchmaking/assignments/:id/status`, `POST /matchmaking/assignments/:id/feedback` |
+| **Matchmaking** | `POST /matchmaking/batch`, `GET /matchmaking/candidates` (student), `GET /matchmaking/candidates/students` (tutor), `POST /matchmaking/select`, `GET /matchmaking/assignments/me`, `PATCH /matchmaking/assignments/:id/status`, `POST /matchmaking/assignments/:id/feedback` |
 | **Schedules** | `POST /schedules/availability`, `GET /schedules/users/:userId/availability` |
-| **Test** | `GET /test/matchmaking/core`, `GET /test/matchmaking/database-demo` |
-
----
+| **Dashboard** | `GET /dashboard/metrics`, `/dashboard/tutor-metrics`, `/dashboard/admin-metrics` |
+| **Wiring checks** | `GET /test/matchmaking/core`, `GET /test/matchmaking/database-demo` |
 
 ## Frontend
 
-Next.js 16 (App Router) with React 19, Tailwind CSS 4, Zustand store, GSAP animations.
+Next.js 16 App Router with route groups `(auth)` and `(app)`; Tailwind CSS 4
+with a token layer in `frontend/app/globals.css`; Zustand for auth state; typed
+Axios clients in `frontend/lib/api/`. The browser calls the relative path
+`/api/backend/*`, which Next rewrites to the backend origin.
 
 ```bash
 cd frontend
-pnpm run dev              # Dev server (loads .env.local)
-pnpm run build            # Production build
-pnpm run lint             # ESLint
+pnpm run dev        # :3000
+pnpm run build
+pnpm run lint
+pnpm run typecheck
 ```
 
-### Route Groups
+Routes, component layout, design conventions and the landing page's token
+system are covered in [`frontend/README.md`](frontend/README.md) and
+[`frontend/DESIGN.md`](frontend/DESIGN.md).
 
-- `(auth)/` — signup, signin, onboard
-- `(app)/` — dashboard (student/tutor), tutors, tutor-dashboard, schedules, messages, notifications, feed, profile, settings, admin
+## Development setup
 
-### Component Architecture
-
-- `components/` — AppShell, Modal, Button, Input, Badge, Toast, ThemeToggle, CalendarGrid, Pagination, etc.
-- `lib/store/` — Zustand `authStore`
-- `lib/api/` — typed API client modules (auth, users, sessions, messages, notifications, feed, dashboard)
-- `lib/axios.ts` — Axios instance with interceptor
-
----
-
-## Development Setup
+Prerequisites: Node.js 20+, pnpm, and a PostgreSQL database.
 
 ```bash
-# Prerequisites: Node.js 20+, pnpm
-pnpm install
+pnpm install                              # workspace root
 
-# Backend
+# Backend — http://localhost:4000
 cd backend
-cp .env.example .env.development   # Configure DATABASE_URL etc.
-pnpm run db:generate && pnpm run db:migrate && pnpm run db:seed
-pnpm run start:dev                  # http://localhost:3000 (NestJS + SWC watch)
+cp .env.example .env                      # set DATABASE_URL
+pnpm run jwt:generate && pnpm run jwt:apply   # RSA keys for access/refresh tokens
+pnpm run db:generate && pnpm run db:migrate
+pnpm run db:seed                          # optional fixtures
+pnpm run start:dev
 
-# Frontend (separate terminal)
+# Frontend — http://localhost:3000 (separate terminal)
 cd frontend
-pnpm run dev                        # http://localhost:3001 (Next.js)
+cp .env.example .env.local                # BACKEND_URL must point at :4000
+pnpm run dev
 ```
 
-### Other Backend Scripts
+The frontend dev script loads `.env.local` explicitly (`dotenv -e .env.local`),
+so create it before running `pnpm run dev`.
+
+## Tests
 
 ```bash
-pnpm run build              # nest build + tsc-alias
-pnpm run build:minified     # SWC minified production build
-pnpm run lint / lint:fix    # ESLint
-pnpm run typecheck          # tsc --noEmit
-pnpm run format             # Prettier
-pnpm run tui                # Interactive eval TUI (? opens help)
-pnpm run jwt:generate       # Generate JWT signing keys
-pnpm run jwt:apply          # Apply JWT keys to .env
+cd backend
+pnpm run test          # 102 unit tests across 4 suites
+pnpm run test:core     # core matchmaking units only
+pnpm run test:e2e      # HTTP smoke test
 ```
+
+| Suite | Tests | Scope |
+|---|---|---|
+| `src/core/__tests__/core-units.spec.ts` | 55 | Filters, scorers, assignment, ranking, feedback, adaptation |
+| `src/core/__tests__/core-engine.spec.ts` | 23 | Core engine behaviour and benchmarks |
+| `src/core/__tests__/evaluation-tui.spec.ts` | 23 | Eval configs, gap/baseline helpers, CSV/table helpers, TUI registry |
+| `src/app/controller/app.controller.spec.ts` | 1 | Status endpoint |
+| `test/app.e2e-spec.ts` | 1 | Full HTTP stack smoke test |
+
+The Nest module layer (auth, users, sessions, messages, …) is not yet covered by
+unit tests; the suites above target the algorithm and the evaluation tooling.
+The frontend has no test runner configured — `pnpm run typecheck`, `pnpm run
+lint` and `pnpm run deadcode` are its checks.
+
+## Working with AI coding agents
+
+This repository is developed with agent harnesses, and its configuration is
+committed rather than hidden:
+
+- `AGENTS.md` — the bootstrap/operating manual read by agents in this repo.
+- `agents-framework/` — human-readable copies of the personas (frontend,
+  designer, backend, reviewer, environment tuner, orchestrator).
+- `.opencode/agents/` and `.claude/agents/` — the same personas in each
+  harness's discovery format, with permissions in `opencode.json`.
+- `.agents/`, `frontend/.agents/`, `.claude/skills/` — vendored design and
+  frontend skills the designer/frontend personas route to.
+- `backend/AGENTS.md` and `backend/agent-docs/` — backend-specific operating
+  guide, plus exception conventions, discoveries and lessons.
+- `.mcp.json`, `opencode.json` — MCP servers (shadcn, Chrome DevTools) and
+  per-agent permissions.
+
+Contributors who are not using an agent harness can ignore all of it; nothing in
+the build or test flow depends on these files.
+
+## Conventions
+
+- Conventional Commits (commitlint + husky, configured in `backend/`).
+- Backend: strict typing, typed exceptions, controller → service → repository,
+  path aliases over deep relative imports.
+- Frontend: Server Components by default, `'use client'` only at the leaf,
+  primitives from `components/ui/`, tokens instead of literal colours.
+- Update the matching doc in the same change as the code: `backend/docs/api.md`
+  for endpoints, `frontend/DESIGN.md` for design-system changes.
