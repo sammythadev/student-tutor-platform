@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Button } from '@/components/Button'
-import { Input, Select, Textarea } from '@/components/Input'
+import { FieldError, Input, Select, Textarea } from '@/components/Input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   BookOpen,
   GraduationCap,
@@ -14,14 +16,32 @@ import {
   SlidersHorizontal,
   ArrowRight,
   ArrowLeft,
-  Check,
+  AlertCircle,
+  ChevronDown,
+  Eye,
+  Headphones,
+  Hand,
+  Layers,
+  Video,
+  MapPin,
+  User,
+  Users,
+  MessagesSquare,
+  Wallet,
+  Minus,
+  Plus,
   type LucideIcon,
 } from 'lucide-react'
 import { onboard, type TeachingStyle, type DeliveryMode, type FormatPreference, type LearningPace } from '@/lib/api/auth'
 import { apiErrorText } from '@/lib/api/errors'
+import { OptionCard } from '@/components/onboard/OptionCard'
+import { RangeSlider } from '@/components/onboard/RangeSlider'
+import { SteppedSlider } from '@/components/onboard/SteppedSlider'
+import { Stepper } from '@/components/onboard/Stepper'
+import { OnboardSummary, type SummaryItem } from '@/components/onboard/OnboardSummary'
+import { FilterChip } from '@/components/catalog/filter-chip'
 
 type Role = 'student' | 'tutor'
-type Screen = 'role' | 'form'
 
 interface Stage {
   title: string
@@ -30,15 +50,19 @@ interface Stage {
 }
 
 const STUDENT_STAGES: Stage[] = [
-  { title: 'Your studies', blurb: 'Your level and the subjects you want help with.', icon: GraduationCap },
-  { title: 'How you learn', blurb: 'The way you like sessions to run — we match tutors to it.', icon: Compass },
-  { title: 'Final details', blurb: 'A few optional extras to sharpen your matches.', icon: SlidersHorizontal },
+  { title: 'Your level', blurb: 'Your grade and exam board.', icon: GraduationCap },
+  { title: 'Subjects', blurb: 'What you need help with.', icon: BookOpen },
+  { title: 'Learning style', blurb: 'What helps you pick things up.', icon: Compass },
+  { title: 'Sessions', blurb: 'Online or in person, alone or in a group.', icon: Video },
+  { title: 'Budget', blurb: 'A monthly range, and a bio if you want one.', icon: Wallet },
 ]
 
 const TUTOR_STAGES: Stage[] = [
-  { title: 'Your expertise', blurb: 'What you teach and how experienced you are.', icon: GraduationCap },
-  { title: 'How you teach', blurb: 'Your approach — we match students who suit it.', icon: Presentation },
-  { title: 'Final details', blurb: 'A few optional extras students like to see.', icon: SlidersHorizontal },
+  { title: 'Subjects', blurb: 'What you are qualified to teach.', icon: GraduationCap },
+  { title: 'Experience', blurb: 'Years teaching, your rate, and how many students you take.', icon: SlidersHorizontal },
+  { title: 'Teaching style', blurb: 'Discussion-led or structured.', icon: Presentation },
+  { title: 'Sessions', blurb: 'Online or in person, and the languages you teach in.', icon: Video },
+  { title: 'About you', blurb: 'A short bio for your profile.', icon: Wallet },
 ]
 
 const SUBJECTS = [
@@ -56,18 +80,71 @@ const SUBJECTS = [
 
 const LANGUAGES = ['English', 'Yoruba', 'Hausa', 'Igbo', 'French', 'Arabic']
 
+const TIMEZONES = [
+  { value: 'Africa/Lagos', label: 'Africa/Lagos' },
+  { value: 'UTC', label: 'UTC' },
+  { value: 'America/New_York', label: 'America/New_York' },
+  { value: 'America/Chicago', label: 'America/Chicago' },
+  { value: 'America/Los_Angeles', label: 'America/Los_Angeles' },
+]
+
+const PACE_OPTIONS = [
+  { value: 'steady', label: 'Steady', hint: 'Unrushed and thorough. Room for questions.' },
+  { value: 'moderate', label: 'Moderate', hint: 'Steady progress every session.' },
+  { value: 'fast', label: 'Fast', hint: 'Exam prep and revision, moving quickly.' },
+]
+
+const GRADES = [
+  { value: '9', label: 'Grade 9' },
+  { value: '10', label: 'Grade 10' },
+  { value: '11', label: 'Grade 11' },
+  { value: '12', label: 'Grade 12' },
+  { value: 'college', label: 'College' },
+]
+
+const EXAMS = [
+  { value: 'waec', label: 'WAEC' },
+  { value: 'neco', label: 'NECO' },
+  { value: 'jamb', label: 'JAMB' },
+]
+
+const LEARNING_STYLES: { value: string; label: string; blurb: string; icon: LucideIcon }[] = [
+  { value: 'visual', label: 'Visual', blurb: 'Diagrams and video', icon: Eye },
+  { value: 'auditory', label: 'Auditory', blurb: 'Talking it through', icon: Headphones },
+  { value: 'kinesthetic', label: 'Hands on', blurb: 'Practice and past papers', icon: Hand },
+  { value: 'mixed', label: 'Mixed', blurb: 'A mix of all three', icon: Layers },
+]
+
+const TEACHING_STYLES: { value: string; label: string; blurb: string; icon: LucideIcon }[] = [
+  { value: 'interactive', label: 'Interactive', blurb: 'The student leads', icon: MessagesSquare },
+  { value: 'lecture', label: 'Lecture', blurb: 'You set the structure', icon: Presentation },
+]
+
+const DELIVERY_OPTIONS: { value: string; label: string; blurb: string; icon: LucideIcon }[] = [
+  { value: 'online', label: 'Online', blurb: 'Video call', icon: Video },
+  { value: 'in-person', label: 'In person', blurb: 'Face to face', icon: MapPin },
+]
+
+const FORMAT_OPTIONS: { value: string; label: string; blurb: string; icon: LucideIcon }[] = [
+  { value: 'one-on-one', label: 'One on one', blurb: 'One student at a time', icon: User },
+  { value: 'group', label: 'Group', blurb: 'Several students at once', icon: Users },
+]
+
+const naira = (v: number) => (v === 0 ? 'Any' : `₦${v.toLocaleString()}`)
+
 export default function OnboardingPage() {
   const router = useRouter()
   const reduce = useReducedMotion()
 
-  const [screen, setScreen] = useState<Screen>('role')
+  const [screen, setScreen] = useState<'role' | 'form'>('role')
   const [role, setRole] = useState<Role | null>(null)
   const [stage, setStage] = useState(0)
   const [direction, setDirection] = useState(1)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [showAllSubjects, setShowAllSubjects] = useState(false)
+  const [showCustomSubject, setShowCustomSubject] = useState(false)
 
-  // Student form state
   const [studentForm, setStudentForm] = useState({
     gradeLevel: '',
     subjects: [] as string[],
@@ -75,7 +152,7 @@ export default function OnboardingPage() {
     budget: '',
     examTypes: '',
     learningStylePreference: '',
-    learningPace: '',
+    learningPace: 'moderate',
     deliveryPreference: '',
     formatPreference: '',
     languages: [] as string[],
@@ -84,13 +161,13 @@ export default function OnboardingPage() {
     bio: '',
   })
 
-  // Tutor form state
   const [tutorForm, setTutorForm] = useState({
     expertise: [] as string[],
+    customExpertise: '',
     yearsExperience: '',
     hourlyRate: '',
     teachingStyle: '',
-    teachingPace: '',
+    teachingPace: 'moderate',
     deliveryStyle: '',
     formatStyle: '',
     languages: [] as string[],
@@ -107,6 +184,8 @@ export default function OnboardingPage() {
     setStage(0)
     setDirection(1)
     setErrors({})
+    setShowAllSubjects(false)
+    setShowCustomSubject(false)
     setScreen('form')
   }
 
@@ -156,22 +235,17 @@ export default function OnboardingPage() {
     }
   }
 
-  // Per-stage validation — only the required fields for the stage the user is leaving.
   const validateStage = (i: number): Record<string, string> => {
     const e: Record<string, string> = {}
     if (role === 'student') {
-      if (i === 0) {
-        if (!studentForm.gradeLevel) e.gradeLevel = 'Grade level is required'
-        if (studentForm.subjects.length === 0) e.subjects = 'Select at least one subject'
-      }
-      if (i === 1) {
-        if (!studentForm.learningStylePreference) e.learningStylePreference = 'Learning style is required'
-      }
+      if (i === 0 && !studentForm.gradeLevel) e.gradeLevel = 'Pick your grade level to continue'
+      if (i === 1 && studentForm.subjects.length === 0) e.subjects = 'Select at least one subject'
+      if (i === 2 && !studentForm.learningStylePreference) e.learningStylePreference = 'Pick how you learn best'
     } else {
-      if (i === 0) {
-        if (tutorForm.expertise.length === 0) e.expertise = 'Select at least one subject'
-        if (!tutorForm.yearsExperience) e.yearsExperience = 'Years of experience is required'
-        if (!tutorForm.hourlyRate) e.hourlyRate = 'Hourly rate is required'
+      if (i === 0 && tutorForm.expertise.length === 0) e.expertise = 'Select at least one subject'
+      if (i === 1) {
+        if (!tutorForm.yearsExperience) e.yearsExperience = 'Set your experience to continue'
+        if (!tutorForm.hourlyRate) e.hourlyRate = 'Set your hourly rate to continue'
       }
     }
     return e
@@ -226,7 +300,9 @@ export default function OnboardingPage() {
       ]
 
       await onboard('tutor', {
-        subjectsTaught: tutorForm.expertise,
+        subjectsTaught: tutorForm.customExpertise.trim()
+          ? [...tutorForm.expertise, tutorForm.customExpertise.trim()]
+          : tutorForm.expertise,
         gradeLevelsSupported: [9, 10, 11, 12],
         examTypesSupported: ['waec', 'neco', 'jamb'],
         availability: defaultAvailability,
@@ -304,13 +380,24 @@ export default function OnboardingPage() {
     ]
 
     return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center px-4 py-12">
-        <div className="fixed inset-0 pointer-events-none -z-10">
-          <div className="ambient-blob blob-primary absolute top-0 left-0 w-96 h-96" />
-          <div className="ambient-blob blob-accent absolute bottom-0 right-0 w-96 h-96" />
+      <div className="min-h-screen w-full max-w-full overflow-x-clip bg-canvas flex items-center justify-center px-3 py-12 sm:px-4">
+        <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10" aria-hidden="true">
+          {reduce ? (
+            <>
+              <div className="ambient-blob blob-primary absolute top-0 left-0 w-72 h-72 sm:w-96 sm:h-96" />
+            </>
+          ) : (
+            <>
+              <motion.div
+                className="ambient-blob blob-primary absolute top-0 left-0 w-72 h-72 sm:w-96 sm:h-96"
+                animate={{ x: [0, 32, 0], y: [0, 20, 0] }}
+                transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            </>
+          )}
         </div>
 
-        <div className="w-full max-w-2xl space-y-10">
+        <div className="w-full min-w-0 max-w-2xl space-y-8 sm:space-y-10">
           <div className="flex flex-col items-center gap-4">
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -320,16 +407,19 @@ export default function OnboardingPage() {
             </div>
             <h1 className="text-3xl font-bold text-ink-900 text-center">Let&apos;s get started</h1>
             <p className="text-center text-ink-600 text-base max-w-md">
-              Choose how you&apos;ll use Tutorly. It takes about a minute, split into three short steps.
+              Choose how you will use Tutorly. Five short steps, about a minute.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-5">
-            {roleCards.map(({ role: r, icon: Icon, title, blurb, tint, fg }) => (
-              <button
+          <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
+            {roleCards.map(({ role: r, icon: Icon, title, blurb, tint, fg }, i) => (
+              <motion.button
                 key={r}
+                initial={reduce ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                 onClick={() => handleSelectRole(r)}
-                className="glass-card p-7 text-left card-interactive hover:shadow-[var(--shadow-hover)] transition-all group"
+                className="glass-card w-full min-w-0 p-6 text-left card-interactive hover:shadow-[var(--shadow-md)] group sm:p-7"
               >
                 <div
                   className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-transform group-hover:scale-105"
@@ -343,13 +433,13 @@ export default function OnboardingPage() {
                   Continue
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
                 </div>
-              </button>
+              </motion.button>
             ))}
           </div>
 
           <div className="text-center">
             <Link href="/" className="text-sm text-ink-400 hover:text-ink-600 transition-colors">
-              ← Back to home
+              Back to home
             </Link>
           </div>
         </div>
@@ -360,118 +450,132 @@ export default function OnboardingPage() {
   /* ─────────────── Staged form ─────────────── */
   const active = stages[stage]
   const ActiveIcon = active.icon
+  const summaryItems: SummaryItem[] = role === 'student'
+    ? [
+        { label: 'Level', value: GRADES.find(g => g.value === studentForm.gradeLevel)?.label ?? null },
+        { label: 'Subjects', value: studentForm.subjects.length > 0 ? `${studentForm.subjects.length} picked` : null },
+        { label: 'Style', value: LEARNING_STYLES.find(s => s.value === studentForm.learningStylePreference)?.label ?? null },
+        { label: 'Pace', value: PACE_OPTIONS.find(p => p.value === studentForm.learningPace)?.label ?? null },
+        {
+          label: 'Budget',
+          value: studentForm.budget ? naira(Number(studentForm.budget)) : null,
+        },
+      ]
+    : [
+        {
+          label: 'Subjects',
+          value:
+            tutorForm.expertise.length + (tutorForm.customExpertise.trim() ? 1 : 0) > 0
+              ? `${tutorForm.expertise.length + (tutorForm.customExpertise.trim() ? 1 : 0)} picked`
+              : null,
+        },
+        {
+          label: 'Rate',
+          value: tutorForm.hourlyRate ? `${naira(Number(tutorForm.hourlyRate))}/hr` : null,
+        },
+        {
+          label: 'Experience',
+          value: tutorForm.yearsExperience ? `${tutorForm.yearsExperience} yrs` : null,
+        },
+        { label: 'Style', value: TEACHING_STYLES.find(s => s.value === tutorForm.teachingStyle)?.label ?? null },
+        { label: 'Capacity', value: tutorForm.capacity ? `${tutorForm.capacity} students` : null },
+      ]
 
   return (
-    <div className="min-h-screen bg-canvas px-4 py-12">
-      <div className="fixed inset-0 pointer-events-none -z-10">
-        <div className="ambient-blob blob-primary absolute top-0 left-0 w-96 h-96" />
+    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-canvas px-3 py-8 sm:px-4 sm:py-12">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10" aria-hidden="true">
+        {reduce ? (
+          <>
+            <div className="ambient-blob blob-primary absolute top-0 left-0 w-72 h-72 sm:w-96 sm:h-96" />
+          </>
+        ) : (
+          <>
+            <motion.div
+              className="ambient-blob blob-primary absolute top-0 left-0 w-72 h-72 sm:w-96 sm:h-96"
+              animate={{ x: [0, 32, 0], y: [0, 20, 0] }}
+              transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </>
+        )}
       </div>
 
-      <div className="w-full max-w-2xl mx-auto space-y-6">
-        {/* Header */}
+      <div className="w-full min-w-0 max-w-5xl mx-auto space-y-6">
         <div className="flex flex-col items-center gap-2 pt-2 text-center">
-          <h1 className="text-3xl font-bold text-ink-900">
+          <h1 className="text-2xl sm:text-3xl font-bold text-ink-900">
             {role === 'student' ? 'Set up your learner profile' : 'Set up your tutor profile'}
           </h1>
-          <p className="text-ink-600 text-base max-w-md">
-            Grouped into three quick steps — you can change any of this later in settings.
+          <p className="text-ink-600 text-sm sm:text-base max-w-md">
+            One question at a time. Change anything later in settings.
           </p>
         </div>
 
-        {/* Stepper */}
-        <nav aria-label="Progress" className="glass-card px-5 py-4">
-          <ol className="flex items-center">
-            {stages.map((s, i) => {
-              const done = i < stage
-              const current = i === stage
-              return (
-                <li key={s.title} className={`flex items-center ${i < stages.length - 1 ? 'flex-1' : ''}`}>
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    <span
-                      className="flex items-center justify-center rounded-full text-sm font-semibold shrink-0"
-                      style={{
-                        width: 32,
-                        height: 32,
-                        background: done ? 'var(--primary)' : current ? 'var(--primary-subtle)' : 'var(--surface-2)',
-                        color: done ? 'var(--primary-fg)' : current ? 'var(--primary)' : 'var(--text-muted)',
-                        border: current ? '1.5px solid var(--primary)' : '1px solid var(--border)',
-                        transition: 'background 200ms ease, color 200ms ease, border-color 200ms ease',
-                      }}
-                    >
-                      {done ? <Check className="w-4 h-4" strokeWidth={3} /> : i + 1}
-                    </span>
-                    <span
-                      className="text-sm font-semibold whitespace-nowrap hidden sm:inline"
-                      style={{ color: current || done ? 'var(--text-primary)' : 'var(--text-muted)' }}
-                    >
-                      {s.title}
-                    </span>
-                  </div>
-                  {i < stages.length - 1 && (
-                    <span
-                      className="mx-3 h-px flex-1 min-w-[16px]"
-                      style={{ background: done ? 'var(--primary)' : 'var(--border)', transition: 'background 200ms ease' }}
-                    />
-                  )}
-                </li>
-              )
-            })}
-          </ol>
-        </nav>
+        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
+          <OnboardSummary
+            items={summaryItems}
+            heading={role === 'student' ? 'Your learner preview' : 'Your tutor preview'}
+          />
 
-        {/* Form card — the stage transition is the one authored motion moment */}
-        <form onSubmit={handleAdvance} className="glass-card p-6 sm:p-8">
-          <div className="flex items-start gap-3.5 mb-6">
-            <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
-            >
-              <ActiveIcon className="w-5 h-5" strokeWidth={1.75} />
-            </div>
-            <div>
-              <div className="text-xs font-semibold sm:hidden mb-0.5" style={{ color: 'var(--text-muted)' }}>
-                Step {stage + 1} of {stages.length}
+          <div className="min-w-0 space-y-6">
+            <Stepper steps={stages} current={stage} />
+
+            <form onSubmit={handleAdvance} className="glass-card w-full min-w-0 max-w-full p-5 sm:p-8">
+              <div className="flex min-w-0 items-start gap-3.5 mb-6">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
+                >
+                  <ActiveIcon className="w-5 h-5" strokeWidth={1.75} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-ink-900 leading-tight">{active.title}</h2>
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{active.blurb}</p>
+                </div>
               </div>
-              <h2 className="text-lg font-semibold text-ink-900 leading-tight">{active.title}</h2>
-              <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{active.blurb}</p>
-            </div>
-          </div>
 
-          {/* overflow-x-clip contains the horizontal slide without trapping the
-              Dropdown popups (overflow-y stays visible, unlike overflow-hidden). */}
-          <div className="overflow-x-clip">
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div
-                key={`${role}-${stage}`}
-                custom={direction}
-                initial={reduce ? false : { opacity: 0, x: direction * 28 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={reduce ? { opacity: 0 } : { opacity: 0, x: direction * -28 }}
-                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                className="space-y-6"
-              >
-                {role === 'student' ? renderStudentStage() : renderTutorStage()}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+              <div className="overflow-x-clip">
+                <AnimatePresence mode="wait" custom={direction}>
+                  <motion.div
+                    key={`${role}-${stage}`}
+                    custom={direction}
+                    initial={reduce ? false : { opacity: 0, x: direction * 28 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={reduce ? { opacity: 0 } : { opacity: 0, x: direction * -28 }}
+                    transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full min-w-0 space-y-6"
+                  >
+                    {role === 'student' ? renderStudentStage() : renderTutorStage()}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
 
-          {errors.submit && (
-            <p className="mt-6 text-sm font-medium text-center" style={{ color: 'var(--accent-coral-fg)' }}>
-              {errors.submit}
-            </p>
-          )}
+              {errors.submit && (
+                <p className="mt-6 text-sm font-medium text-center" style={{ color: 'var(--accent-coral-fg)' }}>
+                  {errors.submit}
+                </p>
+              )}
 
-          <div className="flex gap-3 pt-8">
-            <Button type="button" variant="secondary" onClick={handleBack} disabled={loading} className="flex-1">
-              <ArrowLeft className="w-4 h-4" strokeWidth={2} />
-              Back
-            </Button>
-            <Button type="submit" loading={loading} className="flex-1">
-              {isLastStage ? 'Complete setup' : 'Continue'}
-              {!loading && <ArrowRight className="w-4 h-4" strokeWidth={2} />}
-            </Button>
+              <div className="flex flex-col gap-3 pt-8 min-[420px]:flex-row">
+                <div className="min-w-0 flex-1">
+                  <Button type="button" variant="secondary" onClick={handleBack} disabled={loading} className="w-full">
+                    <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+                    Back
+                  </Button>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Button type="submit" loading={loading} className="w-full">
+                    {isLastStage ? 'Complete setup' : 'Continue'}
+                    {!loading && <ArrowRight className="w-4 h-4" strokeWidth={2} />}
+                  </Button>
+                </div>
+              </div>
+              {!isLastStage && (
+                <p className="mt-3 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Step {stage + 1} of {stages.length}. Your progress saves as you go.
+                </p>
+              )}
+            </form>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )
@@ -482,55 +586,61 @@ export default function OnboardingPage() {
     if (stage === 0) {
       return (
         <>
-          <div className="grid sm:grid-cols-2 gap-5">
-            <Select
-              label="Current grade level"
-              name="gradeLevel"
-              value={studentForm.gradeLevel}
-              onChange={handleStudentChange}
-              error={errors.gradeLevel}
-              options={[
-                { value: '9', label: 'Grade 9' },
-                { value: '10', label: 'Grade 10' },
-                { value: '11', label: 'Grade 11' },
-                { value: '12', label: 'Grade 12' },
-                { value: 'college', label: 'College' },
-              ]}
-              placeholder="Select your grade"
-              helper="Matches tutors to your academic level"
-            />
-            <Select
-              label="Exam board"
-              name="examTypes"
-              value={studentForm.examTypes}
-              onChange={handleStudentChange}
-              options={[
-                { value: 'waec', label: 'WAEC' },
-                { value: 'neco', label: 'NECO' },
-                { value: 'jamb', label: 'JAMB' },
-              ]}
-              placeholder="Select exam"
-              helper="Finds tutors who specialise in your board"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                Subjects you need help with <span style={{ color: 'var(--accent-coral-fg)' }}>*</span>
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
-                >
-                  Pick all that apply
-                </span>
-              </label>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                Tutors specialise by subject — pick what you actually need.
-              </p>
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              Current grade level <span style={{ color: 'var(--accent-coral-fg)' }}>*</span>
+            </legend>
+            <div className="mt-2.5 flex flex-wrap gap-2" role="group" aria-label="Grade level">
+              {GRADES.map(g => (
+                <Chip
+                  key={g.value}
+                  label={g.label}
+                  selected={studentForm.gradeLevel === g.value}
+                  onClick={() => setStudentForm(prev => ({ ...prev, gradeLevel: g.value }))}
+                />
+              ))}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {SUBJECTS.map(subject => (
+            {errors.gradeLevel && (
+              <p className="mt-2 text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.gradeLevel}</p>
+            )}
+          </fieldset>
+
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              Exam board
+            </legend>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              Pick the one closest to you. Tutors filter by this.
+            </p>
+            <div className="mt-2.5 grid min-w-0 grid-cols-3 gap-2 sm:gap-2.5">
+              {EXAMS.map(ex => (
+                <OptionCard
+                  key={ex.value}
+                  title={ex.label}
+                  compact
+                  selected={studentForm.examTypes === ex.value}
+                  onClick={() => setStudentForm(prev => ({ ...prev, examTypes: ex.value }))}
+                />
+              ))}
+            </div>
+          </fieldset>
+        </>
+      )
+    }
+
+    if (stage === 1) {
+      const visible = showAllSubjects ? SUBJECTS : SUBJECTS.slice(0, 6)
+      return (
+        <>
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              Subjects you need help with <span style={{ color: 'var(--accent-coral-fg)' }}>*</span>
+            </legend>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              Start with 1 or 2. You can add more later.
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {visible.map(subject => (
                 <Chip
                   key={subject}
                   label={subject}
@@ -539,7 +649,32 @@ export default function OnboardingPage() {
                 />
               ))}
             </div>
-            <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowAllSubjects(v => !v)}
+              className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              style={{ color: 'var(--primary)' }}
+            >
+              {showAllSubjects ? 'Show fewer' : `Show all ${SUBJECTS.length} subjects`}
+              <ChevronDown className={`size-3.5 transition-transform ${showAllSubjects ? 'rotate-180' : ''}`} />
+            </button>
+            {errors.subjects && (
+              <p className="mt-2 text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.subjects}</p>
+            )}
+          </fieldset>
+
+          <Collapsible open={showCustomSubject} onOpenChange={setShowCustomSubject} className="onboard-field min-w-0">
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                style={{ color: 'var(--primary)' }}
+              >
+                {showCustomSubject ? 'Hide other subject' : 'Add another subject'}
+                <ChevronDown className={`size-3.5 transition-transform ${showCustomSubject ? 'rotate-180' : ''}`} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2.5">
               <Input
                 label="Other subject"
                 name="customSubject"
@@ -547,87 +682,92 @@ export default function OnboardingPage() {
                 placeholder="E.g. Further Mathematics"
                 value={studentForm.customSubject}
                 onChange={handleStudentChange}
+                aria-label="Other subject"
               />
-            </div>
-            {errors.subjects && (
-              <p className="text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.subjects}</p>
-            )}
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         </>
       )
     }
 
-    if (stage === 1) {
+    if (stage === 2) {
       return (
         <>
-          <div className="grid sm:grid-cols-2 gap-5">
-            <Select
-              label="How do you learn best?"
-              name="learningStylePreference"
-              value={studentForm.learningStylePreference}
-              onChange={handleStudentChange}
-              error={errors.learningStylePreference}
-              options={[
-                { value: 'visual', label: 'Visual (diagrams, videos)' },
-                { value: 'auditory', label: 'Auditory (discussion, lectures)' },
-                { value: 'kinesthetic', label: 'Kinesthetic (hands-on practice)' },
-                { value: 'mixed', label: 'Mixed approach' },
-              ]}
-              placeholder="Select your style"
-              helper="We match tutors who teach the way you learn"
-            />
-            <Select
-              label="How fast do you like to learn?"
-              name="learningPace"
-              value={studentForm.learningPace}
-              onChange={handleStudentChange}
-              options={[
-                { value: 'fast', label: 'Fast (move quickly)' },
-                { value: 'moderate', label: 'Moderate (balanced)' },
-                { value: 'steady', label: 'Steady (take my time)' },
-              ]}
-              placeholder="Select your pace"
-              helper="We pace tutoring to suit you"
-            />
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-5">
-            <Select
-              label="Delivery"
-              name="deliveryPreference"
-              value={studentForm.deliveryPreference}
-              onChange={handleStudentChange}
-              options={[
-                { value: 'online', label: 'Online' },
-                { value: 'in-person', label: 'In person' },
-              ]}
-              placeholder="Online or in person?"
-              helper="Determines which tutors appear"
-            />
-            <Select
-              label="Format"
-              name="formatPreference"
-              value={studentForm.formatPreference}
-              onChange={handleStudentChange}
-              options={[
-                { value: 'one-on-one', label: 'One-on-one' },
-                { value: 'group', label: 'Group' },
-              ]}
-              placeholder="Session format"
-              helper="One-on-one is focused; groups cost less"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                Preferred languages
-              </label>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                Learning in your preferred language makes it click faster.
-              </p>
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              How do you learn best? <span style={{ color: 'var(--accent-coral-fg)' }}>*</span>
+            </legend>
+            <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {LEARNING_STYLES.map(s => (
+                <OptionCard
+                  key={s.value}
+                  title={s.label}
+                  blurb={s.blurb}
+                  icon={s.icon}
+                  selected={studentForm.learningStylePreference === s.value}
+                  onClick={() => setStudentForm(prev => ({ ...prev, learningStylePreference: s.value }))}
+                />
+              ))}
             </div>
-            <div className="flex flex-wrap gap-2">
+            {errors.learningStylePreference && (
+              <p className="mt-2 text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.learningStylePreference}</p>
+            )}
+          </fieldset>
+
+          <SteppedSlider
+            label="Learning pace"
+            options={PACE_OPTIONS}
+            value={studentForm.learningPace || 'moderate'}
+            onChange={(v) => setStudentForm(prev => ({ ...prev, learningPace: v }))}
+          />
+        </>
+      )
+    }
+
+    if (stage === 3) {
+      return (
+        <>
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              How should sessions run?
+            </legend>
+            <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {DELIVERY_OPTIONS.map(o => (
+                <OptionCard
+                  key={o.value}
+                  title={o.label}
+                  blurb={o.blurb}
+                  icon={o.icon}
+                  selected={studentForm.deliveryPreference === o.value}
+                  onClick={() => setStudentForm(prev => ({ ...prev, deliveryPreference: o.value }))}
+                />
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              Session format
+            </legend>
+            <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {FORMAT_OPTIONS.map(o => (
+                <OptionCard
+                  key={o.value}
+                  title={o.label}
+                  blurb={o.blurb}
+                  icon={o.icon}
+                  selected={studentForm.formatPreference === o.value}
+                  onClick={() => setStudentForm(prev => ({ ...prev, formatPreference: o.value }))}
+                />
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              Preferred languages
+            </legend>
+            <div className="mt-2.5 flex flex-wrap gap-2">
               {LANGUAGES.map(lang => (
                 <Chip
                   key={lang}
@@ -637,209 +777,280 @@ export default function OnboardingPage() {
                 />
               ))}
             </div>
-          </div>
+          </fieldset>
         </>
       )
     }
 
+    const budgetNum = Number(studentForm.budget || 0)
     return (
       <>
-        <div className="grid sm:grid-cols-2 gap-5">
-          <Input
-            label="Monthly budget (₦)"
-            name="budget"
-            type="number"
-            placeholder="150"
-            value={studentForm.budget}
-            onChange={handleStudentChange}
-            helper="Filters tutors within your range"
-          />
-          <Select
-            label="Preferred timezone"
-            name="timezone"
-            value={studentForm.timezone}
-            onChange={handleStudentChange}
-            options={[
-              { value: 'Africa/Lagos', label: 'Africa/Lagos' },
-              { value: 'UTC', label: 'UTC' },
-              { value: 'America/New_York', label: 'America/New_York' },
-              { value: 'America/Chicago', label: 'America/Chicago' },
-              { value: 'America/Los_Angeles', label: 'America/Los_Angeles' },
-            ]}
-            placeholder="Select timezone"
-            helper="Aligns availability with your tutors"
-          />
-        </div>
+        <RangeSlider
+          label="Monthly budget"
+          min={0}
+          max={100000}
+          step={1000}
+          value={Number.isFinite(budgetNum) ? budgetNum : 0}
+          onChange={(v) => setStudentForm(prev => ({ ...prev, budget: v === 0 ? '' : String(v) }))}
+          format={naira}
+          hint="per month"
+        />
 
         <Input
           label="Region"
           name="region"
           type="text"
-          placeholder="E.g. Lagos, Abuja"
+          placeholder="E.g. Lagos"
           value={studentForm.region}
           onChange={handleStudentChange}
-          helper="Used for in-person tutoring matches"
+          helper="Only needed for in-person"
         />
 
         <Textarea
-          label="Short bio"
+          label="Short bio (optional)"
           name="bio"
           rows={3}
           placeholder="What are you working toward?"
           value={studentForm.bio}
           onChange={handleStudentChange}
-          helper="Tutors read this to tailor their approach"
+          helper="One sentence is enough"
         />
+
+        <Collapsible className="onboard-field min-w-0">
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Advanced: timezone
+              <ChevronDown className="size-3.5" />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2.5 max-w-full sm:max-w-sm">
+            <Select
+              label="Preferred timezone"
+              name="timezone"
+              value={studentForm.timezone}
+              onChange={handleStudentChange}
+              options={TIMEZONES}
+              placeholder="Africa/Lagos"
+            />
+          </CollapsibleContent>
+        </Collapsible>
       </>
     )
   }
 
   function renderTutorStage() {
     if (stage === 0) {
+      const visible = showAllSubjects ? SUBJECTS : SUBJECTS.slice(0, 6)
       return (
-        <>
-          <div className="space-y-3">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                Subjects you teach <span style={{ color: 'var(--accent-coral-fg)' }}>*</span>
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
-                >
-                  Pick all that apply
-                </span>
-              </label>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                Students search by subject — tap every subject you can teach.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {SUBJECTS.map(subject => (
-                <Chip
-                  key={subject}
-                  label={subject}
-                  selected={tutorForm.expertise.includes(subject)}
-                  onClick={() => toggleExpertise(subject)}
-                />
-              ))}
-            </div>
-            {errors.expertise && (
-              <p className="text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.expertise}</p>
-            )}
+        <fieldset className="onboard-field min-w-0">
+          <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+            Subjects you teach <span style={{ color: 'var(--accent-coral-fg)' }}>*</span>
+          </legend>
+          <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+            Start with your strongest 1 or 2.
+          </p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {visible.map(subject => (
+              <Chip
+                key={subject}
+                label={subject}
+                selected={tutorForm.expertise.includes(subject)}
+                onClick={() => toggleExpertise(subject)}
+              />
+            ))}
           </div>
+          <button
+            type="button"
+            onClick={() => setShowAllSubjects(v => !v)}
+            className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+            style={{ color: 'var(--primary)' }}
+          >
+            {showAllSubjects ? 'Show fewer' : `Show all ${SUBJECTS.length} subjects`}
+            <ChevronDown className={`size-3.5 transition-transform ${showAllSubjects ? 'rotate-180' : ''}`} />
+          </button>
+          {errors.expertise && (
+            <p className="mt-2 text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.expertise}</p>
+          )}
 
-          <div className="grid sm:grid-cols-2 gap-5">
-            <Select
-              label="Years of experience"
-              name="yearsExperience"
-              value={tutorForm.yearsExperience}
-              onChange={handleTutorChange}
-              error={errors.yearsExperience}
-              options={[
-                { value: '1', label: 'Less than 1 year' },
-                { value: '2', label: '2–5 years' },
-                { value: '5', label: '5–10 years' },
-                { value: '10', label: '10+ years' },
-              ]}
-              placeholder="Select experience"
-              helper="Students filter by experience"
-            />
-            <Input
-              label="Hourly rate (₦)"
-              name="hourlyRate"
-              type="number"
-              placeholder="25"
-              value={tutorForm.hourlyRate}
-              onChange={handleTutorChange}
-              error={errors.hourlyRate}
-              helper="Sets your rate clearly, up front"
-            />
-          </div>
-        </>
+          <Collapsible open={showCustomSubject} onOpenChange={setShowCustomSubject} className="mt-3 onboard-field min-w-0">
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                style={{ color: 'var(--primary)' }}
+              >
+                {showCustomSubject ? 'Hide other subject' : 'Add another subject you teach'}
+                <ChevronDown className={`size-3.5 transition-transform ${showCustomSubject ? 'rotate-180' : ''}`} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2.5">
+              <Input
+                label="Other subject"
+                name="customExpertise"
+                type="text"
+                placeholder="E.g. Further Mathematics"
+                value={tutorForm.customExpertise}
+                onChange={handleTutorChange}
+                aria-label="Other subject you teach"
+              />
+            </CollapsibleContent>
+          </Collapsible>
+        </fieldset>
       )
     }
 
     if (stage === 1) {
+      const yearsNum = Number(tutorForm.yearsExperience || 0)
+      const rateNum = Number(tutorForm.hourlyRate || 0)
+      const capacityNum = Number(tutorForm.capacity || 5)
       return (
         <>
-          <div className="grid sm:grid-cols-2 gap-5">
-            <Select
-              label="Teaching style"
-              name="teachingStyle"
-              value={tutorForm.teachingStyle}
-              onChange={handleTutorChange}
-              options={[
-                { value: 'interactive', label: 'Interactive (discussion-based)' },
-                { value: 'lecture', label: 'Lecture (structured delivery)' },
-              ]}
-              placeholder="Select style"
-              helper="Matched to how students learn"
+          <div>
+            <RangeSlider
+              label="Years of experience"
+              min={0}
+              max={20}
+              step={1}
+              value={Number.isFinite(yearsNum) ? yearsNum : 0}
+              onChange={(v) => setTutorForm(prev => ({ ...prev, yearsExperience: v === 0 ? '' : String(v) }))}
+              format={(v) => (v === 0 ? 'Just starting' : `${v} ${v === 1 ? 'yr' : 'yrs'}`)}
+              hint="experience"
             />
-            <Select
-              label="Teaching pace"
-              name="teachingPace"
-              value={tutorForm.teachingPace}
-              onChange={handleTutorChange}
-              options={[
-                { value: 'fast', label: 'Fast (move quickly)' },
-                { value: 'moderate', label: 'Moderate (balanced)' },
-                { value: 'steady', label: 'Steady (thorough, unrushed)' },
-              ]}
-              placeholder="Select pace"
-              helper="Matched to students who prefer it"
-            />
+            {errors.yearsExperience && (
+              <p className="mt-2 text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.yearsExperience}</p>
+            )}
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-5">
-            <Select
-              label="Delivery"
-              name="deliveryStyle"
-              value={tutorForm.deliveryStyle}
-              onChange={handleTutorChange}
-              options={[
-                { value: 'online', label: 'Online' },
-                { value: 'in-person', label: 'In person' },
-              ]}
-              placeholder="How do you teach?"
-              helper="Defines who sees you in search"
+          <div>
+            <RangeSlider
+              label="Hourly rate"
+              min={0}
+              max={50000}
+              step={500}
+              value={Number.isFinite(rateNum) ? rateNum : 0}
+              onChange={(v) => setTutorForm(prev => ({ ...prev, hourlyRate: v === 0 ? '' : String(v) }))}
+              format={(v) => (v === 0 ? 'Set rate' : `₦${v.toLocaleString()}`)}
+              hint="per hour"
             />
-            <Select
-              label="Format"
-              name="formatStyle"
-              value={tutorForm.formatStyle}
-              onChange={handleTutorChange}
-              options={[
-                { value: 'one-on-one', label: 'One-on-one' },
-                { value: 'group', label: 'Group' },
-              ]}
-              placeholder="Session format"
-              helper="One-on-one is premium; groups scale"
-            />
+            {errors.hourlyRate && (
+              <p className="mt-2 text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.hourlyRate}</p>
+            )}
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-5">
-            <Input
-              label="Student capacity"
-              name="capacity"
-              type="number"
-              min={1}
-              placeholder="5"
-              value={tutorForm.capacity}
-              onChange={handleTutorChange}
-              helper="Max students you'll take at once"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                Languages you teach in
-              </label>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                Being multilingual widens your student pool.
-              </p>
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              Student capacity
+            </legend>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              Max students you will take at once.
+            </p>
+            <div className="mt-2.5 inline-flex max-w-full flex-wrap items-center gap-3 rounded-xl border px-2 py-1.5" style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}>
+              <button
+                type="button"
+                onClick={() => setTutorForm(prev => ({ ...prev, capacity: String(Math.max(1, (Number(prev.capacity) || 1) - 1)) }))}
+                aria-label="Decrease capacity"
+                className="flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                style={{ background: 'var(--surface-2)', color: 'var(--text-primary)' }}
+              >
+                <Minus className="size-4" strokeWidth={2} />
+              </button>
+              <span className="min-w-16 text-center text-sm font-bold tabular-nums" style={{ color: 'var(--text-primary)' }} aria-live="polite">
+                {capacityNum}
+              </span>
+              <button
+                type="button"
+                onClick={() => setTutorForm(prev => ({ ...prev, capacity: String(Math.min(50, (Number(prev.capacity) || 0) + 1)) }))}
+                aria-label="Increase capacity"
+                className="flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
+              >
+                <Plus className="size-4" strokeWidth={2} />
+              </button>
             </div>
-            <div className="flex flex-wrap gap-2">
+          </fieldset>
+        </>
+      )
+    }
+
+    if (stage === 2) {
+      return (
+        <>
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              Teaching style
+            </legend>
+            <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {TEACHING_STYLES.map(s => (
+                <OptionCard
+                  key={s.value}
+                  title={s.label}
+                  blurb={s.blurb}
+                  icon={s.icon}
+                  selected={tutorForm.teachingStyle === s.value}
+                  onClick={() => setTutorForm(prev => ({ ...prev, teachingStyle: s.value }))}
+                />
+              ))}
+            </div>
+          </fieldset>
+
+          <SteppedSlider
+            label="Teaching pace"
+            options={PACE_OPTIONS}
+            value={tutorForm.teachingPace || 'moderate'}
+            onChange={(v) => setTutorForm(prev => ({ ...prev, teachingPace: v }))}
+          />
+        </>
+      )
+    }
+
+    if (stage === 3) {
+      return (
+        <>
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              How do you teach?
+            </legend>
+            <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {DELIVERY_OPTIONS.map(o => (
+                <OptionCard
+                  key={o.value}
+                  title={o.label}
+                  blurb={o.blurb}
+                  icon={o.icon}
+                  selected={tutorForm.deliveryStyle === o.value}
+                  onClick={() => setTutorForm(prev => ({ ...prev, deliveryStyle: o.value }))}
+                />
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              Session format
+            </legend>
+            <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {FORMAT_OPTIONS.map(o => (
+                <OptionCard
+                  key={o.value}
+                  title={o.label}
+                  blurb={o.blurb}
+                  icon={o.icon}
+                  selected={tutorForm.formatStyle === o.value}
+                  onClick={() => setTutorForm(prev => ({ ...prev, formatStyle: o.value }))}
+                />
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="onboard-field min-w-0">
+            <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              Languages you teach in
+            </legend>
+            <div className="mt-2.5 flex flex-wrap gap-2">
               {LANGUAGES.map(lang => (
                 <Chip
                   key={lang}
@@ -849,38 +1060,45 @@ export default function OnboardingPage() {
                 />
               ))}
             </div>
-          </div>
+          </fieldset>
         </>
       )
     }
 
     return (
       <>
-        <Select
-          label="Preferred timezone"
-          name="timezone"
-          value={tutorForm.timezone}
-          onChange={handleTutorChange}
-          options={[
-            { value: 'Africa/Lagos', label: 'Africa/Lagos' },
-            { value: 'UTC', label: 'UTC' },
-            { value: 'America/New_York', label: 'America/New_York' },
-            { value: 'America/Chicago', label: 'America/Chicago' },
-            { value: 'America/Los_Angeles', label: 'America/Los_Angeles' },
-          ]}
-          placeholder="Select timezone"
-          helper="Essential for accurate availability and scheduling"
-        />
-
         <Textarea
-          label="About you"
+          label="About you (optional)"
           name="bio"
           rows={4}
-          placeholder="Tell students about your teaching style and experience..."
+          placeholder="Your teaching style and experience in one or two sentences..."
           value={tutorForm.bio}
           onChange={handleTutorChange}
-          helper="A strong bio is the #1 reason students book a trial"
+          helper="A short bio gets more trial bookings"
         />
+
+        <Collapsible className="onboard-field min-w-0">
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Advanced: timezone
+              <ChevronDown className="size-3.5" />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2.5 max-w-full sm:max-w-sm">
+            <Select
+              label="Preferred timezone"
+              name="timezone"
+              value={tutorForm.timezone}
+              onChange={handleTutorChange}
+              options={TIMEZONES}
+              placeholder="Africa/Lagos"
+            />
+          </CollapsibleContent>
+        </Collapsible>
       </>
     )
   }
@@ -892,10 +1110,11 @@ export default function OnboardingPage() {
       <button
         type="button"
         onClick={onClick}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all pressable"
+        aria-pressed={selected}
+        className="flex min-h-11 items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all pressable focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         style={{
           border: selected ? '2px solid var(--primary)' : '1px solid var(--border)',
-          background: selected ? 'var(--primary-subtle)' : 'var(--surface-glass)',
+          background: selected ? 'var(--primary-subtle)' : 'var(--surface-2)',
           color: selected ? 'var(--primary)' : 'var(--text-secondary)',
         }}
       >

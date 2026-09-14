@@ -40,12 +40,7 @@ export function Input({ label, error, icon, helper, rightElement, className = ''
           </span>
         )}
       </div>
-      {error && (
-        <p className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
-          <AlertCircle className="size-3 shrink-0" />
-          {error}
-        </p>
-      )}
+      {error && <FieldError>{error}</FieldError>}
       {helper && !error && (
         <p className="text-xs text-muted-foreground">{helper}</p>
       )}
@@ -104,15 +99,29 @@ export function Textarea({ label, error, helper, rows = 4, className = '', id, .
     <div className="w-full space-y-2">
       {label && <Label htmlFor={fieldId}>{label}</Label>}
       <UiTextarea id={fieldId} rows={rows} className={className} data-error={error ? true : undefined} {...props} />
-      {error && (
-        <p className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
-          <AlertCircle className="size-3 shrink-0" />
-          {error}
-        </p>
-      )}
+      {error && <FieldError>{error}</FieldError>}
       {helper && !error && (
         <p className="text-xs text-muted-foreground">{helper}</p>
       )}
     </div>
+  )
+}
+
+/* ─── FieldError ─── */
+interface FieldErrorProps {
+  children: ReactNode
+  className?: string
+}
+
+/**
+ * Inline field error. The single source of truth for error text so chips,
+ * sliders and inputs all report problems in the same voice.
+ */
+export function FieldError({ children, className = '' }: FieldErrorProps) {
+  return (
+    <p className={`flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 ${className}`}>
+      <AlertCircle className="size-3 shrink-0" />
+      {children}
+    </p>
   )
 }
