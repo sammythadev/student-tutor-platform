@@ -3,10 +3,15 @@
 /**
  * Messaging — a conversation list and a thread, mobile-first.
  *
- * On phones the two are separate screens: the list fills the viewport, picking a
- * conversation replaces it with the thread, and the back arrow returns. From `md`
- * up they sit side by side. Everything below the header scrolls internally so the
- * composer never leaves the screen and the page itself never scrolls.
+ * On phones the two are separate screens that each fill the viewport: the list
+ * fills it, picking a conversation replaces it with the thread, and the back arrow
+ * returns. From `md` up they sit side by side.
+ *
+ * The shell hands this route the whole viewport (no page padding, and the app
+ * header is hidden on small screens so the thread gets the full height), which
+ * means both panes own their own scrolling and the composer never leaves the
+ * screen. Nothing here subtracts header heights from `100dvh` — the layout is
+ * driven by flex so a mobile browser's collapsing toolbar cannot break it.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -17,285 +22,132 @@ import {
   sendMessage,
   markRead,
   type ConversationItem,
-  type MessageItem,
 } from '@/lib/api/messages'
 import {
-  ArrowLeft, ArrowDown, Check, CheckCheck, MessageSquare, RotateCcw, Search, Send, X,
+  ArrowDown, ArrowLeft, ChevronDown, ChevronUp, MessageSquare, Search, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import StarBorder from '@/components/reactbits/StarBorder'
-
-/** A sent message that has not landed yet, or failed on the way. */
-type ThreadMessage = MessageItem & { pending?: boolean; failed?: boolean }
-
-/* Avatar tints. Deterministic per user, so the same person keeps the same colour
-   across the list and the thread — recognition, not decoration. */
-const TINTS = [
-  'bg-blue-500/12 text-blue-600 dark:text-blue-400',
-  'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400',
-  'bg-amber-500/12 text-amber-600 dark:text-amber-400',
-  'bg-violet-500/12 text-violet-600 dark:text-violet-400',
-  'bg-rose-500/12 text-rose-600 dark:text-rose-400',
-  'bg-cyan-500/12 text-cyan-600 dark:text-cyan-400',
-] as const
-
-function tintFor(id: string): string {
-  let hash = 0
-  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) | 0
-  return TINTS[Math.abs(hash) % TINTS.length]
-}
-
-/** Messages closer than this to the previous one join the same visual run. */
-const GROUP_WINDOW_MS = 5 * 60 * 1000
-/** How far off the bottom counts as "reading history" rather than "at the end". */
-const AT_BOTTOM_SLACK = 120
-
-const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
-
-function dayLabel(iso: string): string {
-  const d = new Date(iso)
-  const now = new Date()
-  if (sameDay(d, now)) return 'Today'
-  if (sameDay(d, new Date(now.getTime() - 86_400_000))) return 'Yesterday'
-  const withinWeek = now.getTime() - d.getTime() < 6 * 86_400_000
-  if (withinWeek) return d.toLocaleDateString([], { weekday: 'long' })
-  return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
-}
-
-const clockTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-
-/** List timestamps: time today, weekday this week, date beyond that. */
-function listStamp(iso: string): string {
-  const d = new Date(iso)
-  const now = new Date()
-  if (sameDay(d, now)) return clockTime(iso)
-  if (sameDay(d, new Date(now.getTime() - 86_400_000))) return 'Yesterday'
-  if (now.getTime() - d.getTime() < 6 * 86_400_000) return d.toLocaleDateString([], { weekday: 'short' })
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
-}
-
-function Avatar({
-  id, first, last, size = 'md', online,
-}: {
-  id: string
-  first: string
-  last: string
-  size?: 'sm' | 'md'
-  online?: boolean
-}) {
-  return (
-    <span className="relative inline-flex shrink-0">
-      <span
-        aria-hidden
-        className={cn(
-          'inline-flex items-center justify-center rounded-full font-semibold',
-          size === 'sm' ? 'size-9 text-xs' : 'size-11 text-sm',
-          tintFor(id),
-        )}
-      >
-        {(first[0] ?? '?')}{(last[0] ?? '')}
-      </span>
-      {online && (
-        <span
-          className="absolute right-0 bottom-0 size-3 rounded-full bg-emerald-500 ring-2 ring-card"
-          aria-label="Active now"
-        />
-      )}
-    </span>
-  )
-}
-
-/** Sticky so you always know which day you are reading while scrolling back. */
-function DayDivider({ iso }: { iso: string }) {
-  return (
-    <div className="sticky top-0 z-10 flex justify-center py-2">
-      <span className="rounded-full border bg-card/85 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground backdrop-blur-sm">
-        {dayLabel(iso)}
-      </span>
-    </div>
-  )
-}
-
-/**
- * One bubble in a run. `first`/`last` describe its position within the run: only
- * the last bubble of a run gets the pointed corner and carries the timestamp and
- * receipt, which is what keeps a long exchange from looking like a list of cards.
- */
-function Bubble({
-  msg, mine, first, last, onRetry,
-}: {
-  msg: ThreadMessage
-  mine: boolean
-  first: boolean
-  last: boolean
-  onRetry: (msg: ThreadMessage) => void
-}) {
-  return (
-    <div className={cn('flex flex-col', mine ? 'items-end' : 'items-start', first ? 'mt-3' : 'mt-0.5')}>
-      <div
-        className={cn(
-          'max-w-[85%] px-3.5 py-2 text-sm whitespace-pre-wrap break-words sm:max-w-[72%]',
-          'rounded-2xl',
-          mine
-            ? cn('bg-primary text-primary-foreground', last && 'rounded-br-md')
-            : cn('bg-muted text-foreground', last && 'rounded-bl-md'),
-          msg.pending && 'opacity-60',
-          msg.failed && 'ring-1 ring-destructive/60',
-        )}
-      >
-        {msg.content}
-      </div>
-
-      {/* Metadata stays visible on the last bubble of a run rather than appearing
-          on hover — a receipt you have to go looking for is not a receipt. */}
-      {(last || msg.failed) && (
-        <div className="mt-1 flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
-          {msg.failed ? (
-            <button
-              type="button"
-              onClick={() => onRetry(msg)}
-              className="inline-flex items-center gap-1 font-medium text-destructive transition-colors hover:underline"
-            >
-              <RotateCcw className="size-3" aria-hidden /> Not sent · Retry
-            </button>
-          ) : (
-            <>
-              <span className="tabular-nums">{msg.pending ? 'Sending…' : clockTime(msg.createdAt)}</span>
-              {mine && !msg.pending && (
-                msg.readAt
-                  ? <CheckCheck className="size-3.5 text-primary" aria-label="Read" />
-                  : <Check className="size-3.5" aria-label="Sent" />
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/**
- * Composer. Grows with the text up to five lines, then scrolls — a textarea that
- * grows without limit pushes the conversation off screen. Enter sends, Shift+Enter
- * breaks the line, which is what anyone who has used a chat app will try first.
- */
-function Composer({ onSend, peerName }: { onSend: (text: string) => void; peerName: string }) {
-  const [text, setText] = useState('')
-  const ref = useRef<HTMLTextAreaElement>(null)
-
-  const resize = useCallback(() => {
-    const el = ref.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${Math.min(el.scrollHeight, 132)}px`
-  }, [])
-
-  useEffect(resize, [text, resize])
-
-  const submit = () => {
-    const value = text.trim()
-    if (!value) return
-    onSend(value)
-    setText('')
-    ref.current?.focus()
-  }
-
-  return (
-    <form
-      className="flex items-end gap-2 border-t bg-card p-3 md:p-4"
-      onSubmit={(e) => {
-        e.preventDefault()
-        submit()
-      }}
-    >
-      <StarBorder
-        as="div"
-        className="min-w-0 flex-1"
-        radius={16}
-        thickness={1}
-        speed="7s"
-        color="var(--primary)"
-        backgroundColor="var(--background)"
-        textColor="var(--foreground)"
-        borderColor="var(--input)"
-        innerClassName="px-1"
-      >
-        <textarea
-          ref={ref}
-          rows={1}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              submit()
-            }
-          }}
-          placeholder={`Message ${peerName}`}
-          aria-label={`Message ${peerName}`}
-          className="block max-h-[132px] w-full resize-none bg-transparent px-3 py-2.5 text-sm leading-6 text-foreground outline-none placeholder:text-muted-foreground"
-        />
-      </StarBorder>
-      <button
-        type="submit"
-        disabled={!text.trim()}
-        aria-label="Send message"
-        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
-      >
-        <Send className="size-4" aria-hidden />
-      </button>
-    </form>
-  )
-}
+import { Button } from '@/components/ui/button'
+import { CustomSidebarTrigger } from '@/components/custom-sidebar-trigger'
+import { ChatAvatar } from '@/components/messages/chat-avatar'
+import { ChatComposer } from '@/components/messages/chat-composer'
+import { DayDivider, MessageBubble } from '@/components/messages/message-bubble'
+import {
+  AT_BOTTOM_SLACK,
+  GROUP_WINDOW_MS,
+  listStamp,
+  matchesQuery,
+  sameDay,
+  type ThreadMessage,
+} from '@/components/messages/chat-types'
 
 export default function MessagesPage() {
   const { user } = useAuthStore()
   const [conversations, setConversations] = useState<ConversationItem[]>([])
+  const [listError, setListError] = useState<string | null>(null)
+  const [loadingList, setLoadingList] = useState(true)
+  const [listNonce, setListNonce] = useState(0)
   const [peer, setPeer] = useState<ConversationItem | null>(null)
   const [messages, setMessages] = useState<ThreadMessage[]>([])
-  const [loadingList, setLoadingList] = useState(true)
   const [loadingThread, setLoadingThread] = useState(false)
+  const [threadError, setThreadError] = useState<string | null>(null)
+  const [threadNonce, setThreadNonce] = useState(0)
   const [query, setQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [threadQuery, setThreadQuery] = useState('')
+  const [threadSearchOpen, setThreadSearchOpen] = useState(false)
+  const [matchCursor, setMatchCursor] = useState(0)
+  const [replyingTo, setReplyingTo] = useState<ThreadMessage | null>(null)
+  const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [atBottom, setAtBottom] = useState(true)
 
   const scrollerRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
+  /** Conversations already marked read, so polling cannot re-PATCH every cycle. */
+  const markedRef = useRef<Set<string>>(new Set())
+  const scrolledQueryRef = useRef('')
 
-  const loadConversations = useCallback(
-    () =>
-      getConversations()
-        .then(setConversations)
-        .catch(() => undefined)
-        .finally(() => setLoadingList(false)),
-    [],
+  const peerId = peer?.userId
+
+  /* Read the open peer from the live list so the header and unread badge follow
+     polling instead of a second, staler copy of the same conversation. */
+  const activePeer = useMemo(
+    () => (peerId ? conversations.find((c) => c.userId === peerId) ?? peer : null),
+    [conversations, peerId, peer],
   )
+
+  const draft = peerId ? drafts[peerId] ?? '' : ''
+  const setDraft = useCallback(
+    (text: string) => {
+      if (!peerId) return
+      setDrafts((prev) => ({ ...prev, [peerId]: text }))
+    },
+    [peerId],
+  )
+
+  /* Thread state is reset where a conversation is opened or closed, not inside
+     the polling effect: an effect that only synchronises with the server should
+     never queue renders of its own. */
+  const selectPeer = useCallback((convo: ConversationItem) => {
+    setPeer(convo)
+    setMessages([])
+    setReplyingTo(null)
+    setThreadError(null)
+    setLoadingThread(true)
+    setAtBottom(true)
+    setThreadSearchOpen(false)
+    setThreadQuery('')
+    setMatchCursor(0)
+    scrolledQueryRef.current = ''
+  }, [])
+
+  const clearPeer = useCallback(() => {
+    setPeer(null)
+    setMessages([])
+    setReplyingTo(null)
+    setLoadingThread(false)
+    setThreadSearchOpen(false)
+    setThreadQuery('')
+    setMatchCursor(0)
+    scrolledQueryRef.current = ''
+  }, [])
+
+  const loadConversations = useCallback(() => {
+    getConversations()
+      .then((list) => {
+        setConversations(list)
+        setListError(null)
+      })
+      .catch(() =>
+        setListError('Could not reach your conversations. Check your connection and try again.'),
+      )
+      .finally(() => setLoadingList(false))
+  }, [])
 
   useEffect(() => {
     loadConversations()
     const id = setInterval(loadConversations, 15_000)
     return () => clearInterval(id)
-  }, [loadConversations])
-
-  const peerId = peer?.userId
+  }, [loadConversations, listNonce])
 
   /* Poll the open thread. Locally pending sends are preserved across refreshes so
-     a poll landing mid-flight cannot make a message the user just typed vanish. */
+     a poll landing mid-flight cannot make a message the user just typed vanish.
+     Opening a conversation empties the thread first, so one conversation can never
+     flash another one's contents while its request is in flight. */
   useEffect(() => {
-    if (!peerId) {
-      setMessages([])
-      return
-    }
+    if (!peerId) return
     let cancelled = false
-    setLoadingThread(true)
 
     const load = () =>
       getConversation(peerId)
         .then((fresh) => {
           if (cancelled) return
+          setThreadError(null)
           setMessages((prev) => [...fresh, ...prev.filter((m) => m.pending || m.failed)])
         })
-        .catch(() => undefined)
+        .catch(() => {
+          if (!cancelled) setThreadError('Could not load this conversation.')
+        })
         .finally(() => {
           if (!cancelled) setLoadingThread(false)
         })
@@ -306,16 +158,25 @@ export default function MessagesPage() {
       cancelled = true
       clearInterval(id)
     }
-  }, [peerId])
+  }, [peerId, threadNonce])
 
-  /* Clear the unread badge once the thread is actually on screen. */
+  /* Clear the unread badge once the thread is actually on screen. Keyed per
+     conversation + count so a poll that re-sends an equal object does not fire
+     another PATCH, while genuinely new messages still mark read. */
   useEffect(() => {
-    if (!peer?.unreadCount) return
-    const id = peer.userId
+    if (!activePeer?.unreadCount) return
+    const id = activePeer.userId
+    const key = `${id}:${activePeer.unreadCount}`
+    if (markedRef.current.has(key)) return
+    markedRef.current.add(key)
     markRead(id)
-      .then(() => setConversations((prev) => prev.map((c) => (c.userId === id ? { ...c, unreadCount: 0 } : c))))
-      .catch(() => undefined)
-  }, [peer])
+      .then(() =>
+        setConversations((prev) =>
+          prev.map((c) => (c.userId === id ? { ...c, unreadCount: 0 } : c)),
+        ),
+      )
+      .catch(() => markedRef.current.delete(key))
+  }, [activePeer])
 
   /* Follow new messages only while the reader is already at the end; yanking the
      view down while someone reads history is the classic chat-app annoyance. */
@@ -335,18 +196,29 @@ export default function MessagesPage() {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }
 
+  const jumpToMessage = useCallback((id: string) => {
+    const el = document.getElementById(`message-${id}`)
+    if (!el) return
+    setAtBottom(false)
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [])
+
   const deliver = useCallback(
-    async (draft: ThreadMessage) => {
+    async (pending: ThreadMessage) => {
       setMessages((prev) =>
-        prev.map((m) => (m.id === draft.id ? { ...m, pending: true, failed: false } : m)),
+        prev.map((m) => (m.id === pending.id ? { ...m, pending: true, failed: false } : m)),
       )
       try {
-        const saved = await sendMessage({ receiverId: draft.receiverId, content: draft.content })
-        setMessages((prev) => prev.map((m) => (m.id === draft.id ? saved : m)))
+        const saved = await sendMessage({
+          receiverId: pending.receiverId,
+          content: pending.content,
+          replyToId: pending.replyToId ?? undefined,
+        })
+        setMessages((prev) => prev.map((m) => (m.id === pending.id ? saved : m)))
         loadConversations()
       } catch {
         setMessages((prev) =>
-          prev.map((m) => (m.id === draft.id ? { ...m, pending: false, failed: true } : m)),
+          prev.map((m) => (m.id === pending.id ? { ...m, pending: false, failed: true } : m)),
         )
       }
     },
@@ -355,18 +227,32 @@ export default function MessagesPage() {
 
   const handleSend = (text: string) => {
     if (!peer || !user) return
-    const draft: ThreadMessage = {
-      id: `local-${Date.now()}`,
+    const target = replyingTo
+    const outgoing: ThreadMessage = {
+      id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       senderId: user.id,
       receiverId: peer.userId,
       content: text,
+      replyToId: target?.id ?? null,
+      /* Quote locally so the optimistic bubble shows what it answers right away;
+         the server response replaces this with the canonical quote. */
+      replyTo: target
+        ? {
+            id: target.id,
+            content: target.content,
+            senderId: target.senderId,
+            senderName: target.senderName ?? (target.senderId === user.id ? 'You' : peer.firstName),
+          }
+        : null,
       readAt: null,
       createdAt: new Date().toISOString(),
       pending: true,
     }
     setAtBottom(true)
-    setMessages((prev) => [...prev, draft])
-    deliver(draft)
+    setMessages((prev) => [...prev, outgoing])
+    setReplyingTo(null)
+    setDraft('')
+    deliver(outgoing)
   }
 
   const filtered = useMemo(() => {
@@ -378,6 +264,58 @@ export default function MessagesPage() {
   }, [conversations, query])
 
   const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0)
+
+  const matches = useMemo(
+    () => (threadQuery.trim() ? messages.filter((m) => matchesQuery(m.content, threadQuery)) : []),
+    [messages, threadQuery],
+  )
+
+  /* Typing a new term restarts navigation at the first hit. */
+  const changeThreadQuery = (text: string) => {
+    setThreadQuery(text)
+    setMatchCursor(0)
+  }
+
+  /* Land on the first hit as soon as a new term produces results. Keyed on the
+     term rather than on `messages`, so the 5s poll cannot yank the view back.
+     `atBottom` is left to the scroll handler that the scroll itself fires. */
+  useEffect(() => {
+    const term = threadQuery.trim()
+    if (!threadSearchOpen || !term || term === scrolledQueryRef.current) return
+    const first = messages.find((m) => matchesQuery(m.content, term))
+    if (!first) return
+    scrolledQueryRef.current = term
+    document.getElementById(`message-${first.id}`)?.scrollIntoView({ block: 'center' })
+  }, [threadQuery, threadSearchOpen, messages])
+
+  const stepMatch = useCallback(
+    (delta: number) => {
+      if (matches.length === 0) return
+      const next = (matchCursor + delta + matches.length) % matches.length
+      setMatchCursor(next)
+      document
+        .getElementById(`message-${matches[next].id}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    },
+    [matchCursor, matches],
+  )
+
+  const closeThreadSearch = () => {
+    setThreadSearchOpen(false)
+    setThreadQuery('')
+    setMatchCursor(0)
+    scrolledQueryRef.current = ''
+  }
+
+  const toggleThreadSearch = () => {
+    if (threadSearchOpen) {
+      closeThreadSearch()
+      return
+    }
+    setThreadSearchOpen(true)
+    setMatchCursor(0)
+    scrolledQueryRef.current = ''
+  }
 
   /* Precompute run boundaries once, so the bubbles stay dumb. */
   const rows = useMemo(
@@ -402,50 +340,76 @@ export default function MessagesPage() {
   )
 
   return (
-    // Fixed to the viewport minus the app header and the shell's own padding, so
-    // only the list and the thread scroll — never the page.
-    <div className="flex h-[calc(100dvh-5.5rem)] overflow-hidden rounded-xl border bg-card md:h-[calc(100dvh-6.5rem)]">
+    <div className="flex min-h-0 flex-1 overflow-hidden bg-card md:rounded-xl md:border">
       {/* ── Conversations ── */}
       <aside
         className={cn(
-          'w-full flex-col border-r md:flex md:w-80 lg:w-96',
+          'min-h-0 w-full flex-col border-r md:flex md:w-80 lg:w-96',
           peer ? 'hidden' : 'flex',
         )}
         aria-label="Conversations"
       >
-        <div className="shrink-0 border-b px-4 py-3">
-          <div className="flex items-baseline gap-2">
+        <div className="shrink-0 border-b px-3 py-3 md:px-4">
+          <div className="flex items-center gap-2">
+            {/* The app header is hidden on phones, so the list keeps the only way
+                back to navigation. It would be a duplicate on desktop. */}
+            <CustomSidebarTrigger className="md:hidden" />
             <h1 className="text-lg font-semibold text-foreground">Messages</h1>
             {totalUnread > 0 && (
               <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground tabular-nums">
                 {totalUnread}
               </span>
             )}
-          </div>
-          <div className="mt-3 flex items-center gap-2 rounded-lg border bg-background px-2.5 transition-colors focus-within:border-ring">
-            <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search conversations"
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
               aria-label="Search conversations"
-              className="h-9 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-            />
-            {query && (
+              className="ml-auto inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+            >
+              <Search className="size-4" aria-hidden />
+            </button>
+          </div>
+
+          {/* Full-width search on phones via the icon above; always visible from
+              `md` up, where there is room for it. */}
+          <div className={cn('mt-3 md:block', searchOpen ? 'block' : 'hidden')}>
+            <div className="flex items-center gap-2 rounded-lg border bg-background px-2.5 transition-colors focus-within:border-ring">
+              <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <input
+                type="search"
+                autoFocus={searchOpen}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search conversations"
+                aria-label="Search conversations"
+                className="h-11 w-full min-w-0 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground md:h-9 md:text-sm"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => setQuery('')}
-                aria-label="Clear search"
-                className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                onClick={() => {
+                  setSearchOpen(false)
+                  setQuery('')
+                }}
+                aria-label="Close search"
+                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:hidden"
               >
                 <X className="size-4" aria-hidden />
               </button>
-            )}
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {loadingList && conversations.length === 0 ? (
             Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex gap-3 px-4 py-3">
@@ -456,6 +420,22 @@ export default function MessagesPage() {
                 </div>
               </div>
             ))
+          ) : listError && conversations.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+              <p className="text-sm font-medium text-foreground">Conversations unavailable</p>
+              <p className="max-w-[30ch] text-xs text-muted-foreground">{listError}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-1"
+                onClick={() => {
+                  setLoadingList(true)
+                  setListNonce((n) => n + 1)
+                }}
+              >
+                Try again
+              </Button>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
               <span className="flex size-12 items-center justify-center rounded-2xl bg-muted">
@@ -479,14 +459,14 @@ export default function MessagesPage() {
                   <li key={convo.userId}>
                     <button
                       type="button"
-                      onClick={() => setPeer(convo)}
+                      onClick={() => selectPeer(convo)}
                       aria-current={active}
                       className={cn(
-                        'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors',
+                        'flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition-colors',
                         active ? 'bg-accent' : 'hover:bg-muted/60',
                       )}
                     >
-                      <Avatar id={convo.userId} first={convo.firstName} last={convo.lastName} />
+                      <ChatAvatar id={convo.userId} first={convo.firstName} last={convo.lastName} />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-baseline gap-2">
                           <span
@@ -528,7 +508,7 @@ export default function MessagesPage() {
 
       {/* ── Thread ── */}
       <section
-        className={cn('min-w-0 flex-1 flex-col md:flex', peer ? 'flex' : 'hidden')}
+        className={cn('min-h-0 min-w-0 flex-1 flex-col md:flex', peer ? 'flex' : 'hidden')}
         aria-label="Conversation"
       >
         {!peer ? (
@@ -543,23 +523,84 @@ export default function MessagesPage() {
           </div>
         ) : (
           <>
-            <header className="flex h-16 shrink-0 items-center gap-3 border-b px-3 md:px-5">
+            <header className="flex h-14 shrink-0 items-center gap-2 border-b px-2 md:h-16 md:gap-3 md:px-5">
               <button
                 type="button"
-                onClick={() => setPeer(null)}
+                onClick={clearPeer}
                 aria-label="Back to conversations"
-                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
               >
                 <ArrowLeft className="size-4" aria-hidden />
               </button>
-              <Avatar id={peer.userId} first={peer.firstName} last={peer.lastName} size="sm" online />
+              <ChatAvatar id={peer.userId} first={peer.firstName} last={peer.lastName} size="sm" />
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-sm font-semibold text-foreground">
                   {peer.firstName} {peer.lastName}
                 </h2>
-                <p className="text-[11px] text-muted-foreground">Active now</p>
               </div>
+              <button
+                type="button"
+                onClick={toggleThreadSearch}
+                aria-pressed={threadSearchOpen}
+                aria-label="Search in this conversation"
+                className={cn(
+                  'inline-flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors',
+                  threadSearchOpen
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                <Search className="size-4" aria-hidden />
+              </button>
             </header>
+
+            {threadSearchOpen && (
+              <div className="flex shrink-0 items-center gap-1.5 border-b bg-muted/30 px-2 py-1.5 md:px-4">
+                <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <input
+                  type="search"
+                  autoFocus
+                  value={threadQuery}
+                  onChange={(e) => changeThreadQuery(e.target.value)}
+                  placeholder="Search in conversation"
+                  aria-label="Search in conversation"
+                  className="h-10 min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground md:h-9 md:text-sm"
+                />
+                <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums" aria-live="polite">
+                  {threadQuery.trim()
+                    ? matches.length === 0
+                      ? 'No results'
+                      : `${Math.min(matchCursor + 1, matches.length)}/${matches.length}`
+                    : ''}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => stepMatch(-1)}
+                  disabled={matches.length === 0}
+                  aria-label="Previous match"
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+                >
+                  <ChevronUp className="size-4" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => stepMatch(1)}
+                  disabled={matches.length === 0}
+                  aria-label="Next match"
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+                >
+                  <ChevronDown className="size-4" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={closeThreadSearch}
+                  aria-label="Close search"
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              </div>
+            )}
 
             <div className="relative min-h-0 flex-1">
               <div
@@ -581,10 +622,26 @@ export default function MessagesPage() {
                       </div>
                     ))}
                   </div>
+                ) : threadError && messages.length === 0 ? (
+                  <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+                    <p className="text-sm font-medium text-foreground">Conversation unavailable</p>
+                    <p className="max-w-[30ch] text-xs text-muted-foreground">{threadError}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-1"
+                      onClick={() => {
+                        setLoadingThread(true)
+                        setThreadNonce((n) => n + 1)
+                      }}
+                    >
+                      Try again
+                    </Button>
+                  </div>
                 ) : messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
                     <p className="text-sm font-medium text-foreground">No messages yet</p>
-                    <p className="max-w-[28ch] text-xs text-muted-foreground">
+                    <p className="max-w-[30ch] text-xs text-muted-foreground">
                       Say hello to {peer.firstName} — mention the subject and what you want to cover.
                     </p>
                   </div>
@@ -592,12 +649,15 @@ export default function MessagesPage() {
                   rows.map(({ msg, newDay, first, last }) => (
                     <div key={msg.id}>
                       {newDay && <DayDivider iso={msg.createdAt} />}
-                      <Bubble
+                      <MessageBubble
                         msg={msg}
                         mine={msg.senderId === user?.id}
                         first={first}
                         last={last}
+                        query={threadSearchOpen ? threadQuery : ''}
                         onRetry={deliver}
+                        onReply={setReplyingTo}
+                        onJumpTo={jumpToMessage}
                       />
                     </div>
                   ))
@@ -618,7 +678,14 @@ export default function MessagesPage() {
               )}
             </div>
 
-            <Composer onSend={handleSend} peerName={peer.firstName} />
+            <ChatComposer
+              value={draft}
+              onChange={setDraft}
+              onSend={handleSend}
+              peerName={peer.firstName}
+              replyingTo={replyingTo}
+              onCancelReply={() => setReplyingTo(null)}
+            />
           </>
         )}
       </section>
