@@ -21,7 +21,13 @@ export class MessagesController {
   @Post()
   @ApiOperation({ summary: 'Send a direct message to another user' })
   @ApiBody({ type: SendMessageDto })
-  @ApiResponse({ status: 201, description: 'Message sent.', type: MessageResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Message sent, including its reply preview or null.',
+    type: MessageResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid payload, including a non-UUID replyToId.' })
+  @ApiResponse({ status: 404, description: 'Reply target not found in this conversation.' })
   send(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() dto: SendMessageDto,

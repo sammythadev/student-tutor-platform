@@ -10,13 +10,16 @@ import {
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '@common/auth';
 import {
   BookSessionDto,
+  BookSessionSeriesDto,
   ProposeSessionDto,
+  RespondSessionSeriesDto,
   SessionParamDto,
   SessionResponseDto,
   TransferSessionDto,
   UpdateSessionStatusDto,
 } from './dtos/session.dto';
 import { SessionsService } from './sessions.service';
+import type { SessionSeriesWithSessions } from './sessions.types';
 
 @Controller('sessions')
 @ApiTags('Sessions')
@@ -40,6 +43,65 @@ export class SessionsController {
     @Body() dto: BookSessionDto,
   ): Promise<SessionResponseDto> {
     return this.sessionsService.bookSession(currentUser.id, currentUser.role, dto);
+  }
+
+  @Post('series')
+  @ApiOperation({
+    summary:
+      'Request a recurring block — daily, weekdays or weekly — as one series and one real session per occurrence, all pending',
+  })
+  @ApiBody({ type: BookSessionSeriesDto })
+  @ApiResponse({
+    status: 201,
+    description:
+      'The series row and every occurrence as a pending session. Every session is answered, rescheduled or cancelled on its own; the series adds bulk accept/decline/cancel.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad pattern, horizon, window, or a clash with an existing session.',
+  })
+  bookSeries(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Body() dto: BookSessionSeriesDto,
+  ): Promise<SessionSeriesWithSessions> {
+    return this.sessionsService.bookSeries(currentUser.id, currentUser.role, dto);
+  }
+
+  @Get('series/:id')
+  @ApiOperation({ summary: 'Read a recurring block and its sessions (participants only)' })
+  @ApiParam({ name: 'id', description: 'Session series UUID' })
+  @ApiResponse({ status: 200, description: 'The series and its sessions, oldest first.' })
+  @ApiResponse({ status: 404, description: 'Unknown series, or the caller is not a participant.' })
+  getSeries(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param() params: SessionParamDto,
+  ): Promise<SessionSeriesWithSessions> {
+    return this.sessionsService.getSeries(params.id, currentUser.id);
+  }
+
+  @Patch('series/:id/respond')
+  @ApiOperation({ summary: 'Accept or decline every pending session in a recurring block' })
+  @ApiParam({ name: 'id', description: 'Session series UUID' })
+  @ApiBody({ type: RespondSessionSeriesDto })
+  @ApiResponse({ status: 200, description: 'The series and its updated sessions.' })
+  @ApiResponse({ status: 403, description: 'The initiator cannot answer their own request.' })
+  respondSeries(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param() params: SessionParamDto,
+    @Body() dto: RespondSessionSeriesDto,
+  ): Promise<SessionSeriesWithSessions> {
+    return this.sessionsService.respondToSeries(params.id, currentUser.id, dto.accept);
+  }
+
+  @Patch('series/:id/cancel')
+  @ApiOperation({ summary: 'Stop the remaining sessions of a recurring block' })
+  @ApiParam({ name: 'id', description: 'Session series UUID' })
+  @ApiResponse({ status: 200, description: 'The series and its sessions after cancelling.' })
+  cancelSeries(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param() params: SessionParamDto,
+  ): Promise<SessionSeriesWithSessions> {
+    return this.sessionsService.cancelSeries(params.id, currentUser.id);
   }
 
   @Get('me')

@@ -1,5 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { and, asc, count, desc, eq, getTableColumns, isNull, or, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { DATABASE, type AppDatabase, messages, users, tutorProfiles } from '@database';
 import type { SendMessageDto } from './dtos/message.dto';
 
@@ -14,18 +15,17 @@ export class MessagesRepository {
         senderId,
         receiverId: dto.receiverId,
         content: dto.content,
+        replyToId: dto.replyToId ?? null,
       })
       .returning({ id: messages.id });
 
     const msg = await this.findById(created.id);
-    if (!msg) throw new Error('Message could not be loaded after creation');
+    if (!msg) throw new InternalServerErrorException('Message could not be loaded after creation');
     return msg;
   }
 
   async getConversation(userId: string, otherUserId: string) {
-    const rows = await this.db
-      .select()
-      .from(messages)
+    return this.messageQuery()
       .where(
         or(
           and(eq(messages.senderId, userId), eq(messages.receiverId, otherUserId)),
@@ -33,8 +33,6 @@ export class MessagesRepository {
         ),
       )
       .orderBy(asc(messages.createdAt));
-
-    return Promise.all(rows.map((r) => this.enrichMessage(r)));
   }
 
   async getConversationList(userId: string) {
@@ -108,28 +106,57 @@ export class MessagesRepository {
       .where(and(eq(messages.senderId, senderId), eq(messages.receiverId, receiverId)));
   }
 
-  private async findById(id: string) {
-    const [row] = await this.db.select().from(messages).where(eq(messages.id, id)).limit(1);
-    if (!row) return null;
-    return this.enrichMessage(row);
+  async findReplyTarget(id: string): Promise<{ senderId: string; receiverId: string } | null> {
+    const [row] = await this.db
+      .select({ senderId: messages.senderId, receiverId: messages.receiverId })
+      .from(messages)
+      .where(eq(messages.id, id))
+      .limit(1);
+    return row ?? null;
   }
 
-  private async enrichMessage(row: typeof messages.$inferSelect) {
-    const [sender] = await this.db
-      .select({
-        firstName: users.firstName,
-        lastName: users.lastName,
-        isVerified: tutorProfiles.isVerified,
-      })
-      .from(users)
-      .leftJoin(tutorProfiles, eq(tutorProfiles.userId, users.id))
-      .where(eq(users.id, row.senderId))
-      .limit(1);
+  private async findById(id: string) {
+    const [row] = await this.messageQuery().where(eq(messages.id, id)).limit(1);
+    return row ?? null;
+  }
 
-    return {
-      ...row,
-      senderName: sender ? `${sender.firstName} ${sender.lastName}` : undefined,
-      senderIsVerified: sender?.isVerified === 1,
-    };
+  private messageQuery() {
+    const original = alias(messages, 'reply_message');
+    const originalSender = alias(users, 'reply_sender');
+
+    // One joined read for both send responses and threads, including off-page reply targets.
+    return this.db
+      .select({
+        ...getTableColumns(messages),
+        senderName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        senderIsVerified: sql<boolean>`coalesce(${tutorProfiles.isVerified} = 1, false)`,
+        replyTo: {
+          id: original.id,
+          content: original.content,
+          senderId: original.senderId,
+          senderName: sql<string>`${originalSender.firstName} || ' ' || ${originalSender.lastName}`,
+        },
+      })
+      .from(messages)
+      .leftJoin(users, eq(users.id, messages.senderId))
+      .leftJoin(tutorProfiles, eq(tutorProfiles.userId, messages.senderId))
+      .leftJoin(
+        original,
+        and(
+          eq(original.id, messages.replyToId),
+          // Defense in depth: never enrich a corrupt cross-conversation reference.
+          or(
+            and(
+              eq(original.senderId, messages.senderId),
+              eq(original.receiverId, messages.receiverId),
+            ),
+            and(
+              eq(original.senderId, messages.receiverId),
+              eq(original.receiverId, messages.senderId),
+            ),
+          ),
+        ),
+      )
+      .leftJoin(originalSender, eq(originalSender.id, original.senderId));
   }
 }

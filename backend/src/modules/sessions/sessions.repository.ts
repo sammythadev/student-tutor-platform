@@ -1,15 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import {
   DATABASE,
   type AppDatabase,
   sessions,
+  sessionSeries,
   users,
   tutorProfiles,
   studentProfiles,
 } from '@database';
 import type { BookSessionDto, ProposeSessionDto, UpdateSessionStatusDto } from './dtos/session.dto';
-import type { SessionWithParticipants } from './sessions.types';
+import type { SessionSeriesRecord, SessionWithParticipants } from './sessions.types';
 
 @Injectable()
 export class SessionsRepository {
@@ -43,17 +45,177 @@ export class SessionsRepository {
     const [row] = await this.db.select().from(sessions).where(eq(sessions.id, id)).limit(1);
 
     if (!row) return null;
-    return this.enrichSession(row);
+    const [session] = await this.withSeries([await this.enrichSession(row)]);
+    return session;
   }
 
   async findForUser(userId: string): Promise<SessionWithParticipants[]> {
+    const tutor = alias(users, 'session_tutor');
+    const student = alias(users, 'session_student');
     const rows = await this.db
-      .select()
+      .select({
+        session: sessions,
+        tutor: {
+          id: tutor.id,
+          firstName: tutor.firstName,
+          lastName: tutor.lastName,
+          avatarUrl: tutor.avatarUrl,
+        },
+        student: {
+          id: student.id,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          avatarUrl: student.avatarUrl,
+        },
+        tutorIsVerified: tutorProfiles.isVerified,
+      })
       .from(sessions)
+      .leftJoin(tutor, eq(tutor.id, sessions.tutorId))
+      .leftJoin(student, eq(student.id, sessions.studentId))
+      .leftJoin(tutorProfiles, eq(tutorProfiles.userId, tutor.id))
       .where(or(eq(sessions.studentId, userId), eq(sessions.tutorId, userId)))
       .orderBy(desc(sessions.startAt));
 
-    return Promise.all(rows.map((r) => this.enrichSession(r)));
+    return this.withSeries(
+      rows.map(({ session, tutor: tutorUser, student: studentUser, tutorIsVerified }) => ({
+        ...session,
+        tutorName: tutorUser ? `${tutorUser.firstName} ${tutorUser.lastName}` : undefined,
+        tutorAvatarUrl: tutorUser?.avatarUrl ?? null,
+        tutorIsVerified: tutorIsVerified === 1,
+        studentName: studentUser ? `${studentUser.firstName} ${studentUser.lastName}` : undefined,
+        studentAvatarUrl: studentUser?.avatarUrl ?? null,
+      })),
+    );
+  }
+
+  /**
+   * Attaches the recurring request behind each session. One query for the whole page:
+   * a series is only a schedule, and every session already carries the id it belongs to.
+   */
+  private async withSeries(rows: SessionWithParticipants[]): Promise<SessionWithParticipants[]> {
+    const ids = [
+      ...new Set(rows.map((row) => row.seriesId).filter((id): id is string => id !== null)),
+    ];
+    if (ids.length === 0) return rows;
+
+    const series = await this.db.select().from(sessionSeries).where(inArray(sessionSeries.id, ids));
+    const byId = new Map(series.map((entry) => [entry.id, entry]));
+    return rows.map((row) => {
+      const match = row.seriesId ? byId.get(row.seriesId) : undefined;
+      if (!match) return row;
+      return {
+        ...row,
+        seriesRecurrence: match.recurrence,
+        seriesWeekdays: match.weekdays,
+        seriesWeeks: match.weeks,
+        seriesTimeOfDay: match.timeOfDay,
+      };
+    });
+  }
+
+  async findSeriesById(id: string): Promise<SessionSeriesRecord | null> {
+    const [series] = await this.db
+      .select()
+      .from(sessionSeries)
+      .where(eq(sessionSeries.id, id))
+      .limit(1);
+    return series ?? null;
+  }
+
+  /** Every session of a series, in the order the occurrences were requested. */
+  async findSeriesSessions(seriesId: string): Promise<SessionWithParticipants[]> {
+    const rows = await this.db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.seriesId, seriesId))
+      .orderBy(asc(sessions.seriesIndex), asc(sessions.startAt));
+    return Promise.all(rows.map((row) => this.enrichSession(row)));
+  }
+
+  /**
+   * Creates the recurring request and every occurrence in one transaction: a series
+   * that exists without its sessions (or the reverse) would be a lie the UI shows.
+   */
+  async createSeries(
+    initiatorId: string,
+    series: Omit<typeof sessionSeries.$inferInsert, 'createdById'>,
+    occurrences: { startAt: Date; endAt: Date }[],
+  ): Promise<{ series: SessionSeriesRecord; sessions: SessionWithParticipants[] }> {
+    const created = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(sessionSeries)
+        .values({ ...series, createdById: initiatorId })
+        .returning();
+      await tx.insert(sessions).values(
+        occurrences.map((occurrence, index) => ({
+          studentId: series.studentId,
+          tutorId: series.tutorId,
+          initiatorId,
+          subject: series.subject,
+          startAt: occurrence.startAt,
+          endAt: occurrence.endAt,
+          status: 'pending' as const,
+          meetingUrl: series.meetingUrl,
+          notes: series.notes,
+          seriesId: row.id,
+          seriesIndex: index + 1,
+        })),
+      );
+      return row;
+    });
+
+    return { series: created, sessions: await this.findSeriesSessions(created.id) };
+  }
+
+  /** Sessions of this tutor that overlap a window, so a series can be checked in one read. */
+  async findOverlappingSessions(
+    tutorId: string,
+    from: Date,
+    to: Date,
+  ): Promise<{ startAt: Date; endAt: Date }[]> {
+    return this.db
+      .select({ startAt: sessions.startAt, endAt: sessions.endAt })
+      .from(sessions)
+      .where(
+        and(
+          eq(sessions.tutorId, tutorId),
+          or(eq(sessions.status, 'pending'), eq(sessions.status, 'upcoming')),
+          sql`${sessions.endAt} > ${from}`,
+          sql`${sessions.startAt} < ${to}`,
+        ),
+      );
+  }
+
+  /**
+   * Answers every still-pending session in a series at once. Declining a recurring
+   * request must not require twelve taps, and the reviewer still answers each day
+   * afterwards if they want to.
+   */
+  async updateSeriesPendingStatus(
+    seriesId: string,
+    status: 'upcoming' | 'cancelled',
+  ): Promise<number> {
+    const updated = await this.db
+      .update(sessions)
+      .set({ status, updatedAt: new Date() })
+      .where(and(eq(sessions.seriesId, seriesId), eq(sessions.status, 'pending')))
+      .returning({ id: sessions.id });
+    return updated.length;
+  }
+
+  /** Stops whatever is left of a series; completed sessions are history and stay put. */
+  async cancelSeriesSessions(seriesId: string): Promise<number> {
+    const cancelled = await this.db
+      .update(sessions)
+      .set({ status: 'cancelled', updatedAt: new Date() })
+      .where(
+        and(
+          eq(sessions.seriesId, seriesId),
+          inArray(sessions.status, ['pending', 'upcoming', 'starting-soon']),
+        ),
+      )
+      .returning({ id: sessions.id });
+    return cancelled.length;
   }
 
   async updateStatus(

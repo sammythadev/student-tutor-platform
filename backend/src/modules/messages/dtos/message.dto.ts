@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
 
 export class SendMessageDto {
   @ApiProperty({ format: 'uuid', description: 'Recipient user ID' })
@@ -10,12 +10,35 @@ export class SendMessageDto {
   @IsString()
   @MaxLength(2000)
   content!: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      'Original message ID in this exact conversation (either participant may be its sender)',
+  })
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsUUID()
+  replyToId?: string;
 }
 
 export class GetConversationDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
   userId!: string;
+}
+
+export class MessageReplyDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty()
+  content!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  senderId!: string;
+
+  @ApiPropertyOptional()
+  senderName?: string;
 }
 
 export class MessageResponseDto {
@@ -30,6 +53,12 @@ export class MessageResponseDto {
 
   @ApiProperty()
   content!: string;
+
+  @ApiProperty({ type: String, format: 'uuid', nullable: true })
+  replyToId!: string | null;
+
+  @ApiProperty({ type: () => MessageReplyDto, nullable: true })
+  replyTo!: MessageReplyDto | null;
 
   @ApiPropertyOptional()
   readAt!: Date | null;
