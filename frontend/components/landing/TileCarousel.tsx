@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion, useInView, useReducedMotion } from 'motion/react'
 import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -29,14 +29,21 @@ import { Container } from './mk'
    Tiles are 396px square at 12px radius, measured. Their inner content staggers
    in when the tile first enters view, which is the reference's own behaviour.
 ────────────────────────────────────────────────────────── */
-
 function Tile({
   title, sub, hue, bg, kind, index,
 }: (typeof SHOWCASE_TILES)[number] & { index: number }) {
+  const slideRef = useRef<HTMLLIElement>(null)
   const reduced = useReducedMotion()
+  /* One observer watches the whole slide — the surface and the art animate off
+     the same signal, so the two can never disagree again. `once` keeps it
+     cheap: after the first reveal the static markup stays put and costs
+     nothing to keep on screen. */
+  const inView = useInView(slideRef, { amount: 0.2, once: true })
+  const shown = reduced || inView
 
   return (
     <li
+      ref={slideRef}
       className="relative w-[280px] shrink-0 overflow-hidden rounded-xl sm:w-[340px] lg:w-[396px]"
       style={{ aspectRatio: '1 / 1', backgroundColor: bg }}
     >
@@ -58,16 +65,13 @@ function Tile({
         />
       </div>
 
-      {/* The tile's own surface, drawn from its `kind`. It staggers in the first
-          time the tile enters view -- and only the wrapper animates, so a ten-tile
-          row costs ten transforms rather than a few hundred. */}
+      {/* The tile's own surface, drawn from its `kind`. */}
       <motion.div
         aria-hidden
-        className="absolute inset-x-4 bottom-0 top-[86px] overflow-hidden rounded-t-xl border border-b-0 border-black/[0.07] bg-white p-3.5 lg:inset-x-5 lg:top-[96px]"
-        initial={reduced ? undefined : { opacity: 0, y: 10 }}
-        whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-60px' }}
+        initial={false}
+        animate={shown ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
         transition={{ duration: 0.42, ease: [0, 0, 0.2, 1], delay: 0.04 * (index % 4) }}
+        className="absolute inset-x-4 bottom-0 top-[86px] overflow-hidden rounded-t-xl border border-b-0 border-black/[0.07] bg-white p-3.5 lg:inset-x-5 lg:top-[96px]"
       >
         <TileArt kind={kind} hue={hue} />
       </motion.div>
