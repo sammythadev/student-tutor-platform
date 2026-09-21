@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 
 /**
  * Price range slider for filter rails. Uses a native range input styled with

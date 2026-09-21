@@ -27,15 +27,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const id = `${Date.now()}-${Math.random()}`
     const toast: ToastMessage = { id, message, type, duration }
     
+    /* Auto-dismiss is owned by <Toast>, which is the only place that knows how to
+       play the exit slide first. A second timer here would delete the toast at the
+       same instant and cut the animation short. */
     setToasts(prev => [...prev, toast])
-
-    if (duration > 0) {
-      const timer = setTimeout(() => {
-        removeToast(id)
-      }, duration)
-
-      return () => clearTimeout(timer)
-    }
   }, [])
 
   const removeToast = useCallback((id: string) => {
@@ -45,7 +40,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
-      <div className="fixed z-50 flex flex-col gap-3 pointer-events-none items-center md:items-end bottom-4 left-1/2 -translate-x-1/2 md:bottom-6 md:right-6 md:left-auto md:translate-x-0">
+      {/* z-[100]: toasts must clear the Radix overlay layer. Dialogs, sheets and
+          popovers all sit at z-50 and portal into <body>, which paints after the
+          provider's node at equal depth — so a toast raised from inside a modal
+          used to land behind it. */}
+      <div className="fixed z-[100] w-[calc(100%-2rem)] max-w-[420px] flex flex-col gap-3 pointer-events-none items-center md:items-end bottom-4 left-1/2 -translate-x-1/2 md:bottom-6 md:right-6 md:left-auto md:translate-x-0">
         {toasts.map(toast => (
           <Toast
             key={toast.id}

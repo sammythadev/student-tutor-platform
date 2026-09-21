@@ -1,41 +1,53 @@
 'use client'
 
-import { Progress } from '@/components/ui/progress'
+import { Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface StepperProps {
   steps: { title: string }[]
   current: number
+  onStepChange: (step: number) => void
+  disabled?: boolean
 }
 
-/**
- * Position in the wizard: one slim Progress track plus a counter. Step names
- * live in the stage heading underneath, so nothing gets truncated into its
- * neighbour and only one progress indicator is ever on screen.
- */
-export function Stepper({ steps, current }: StepperProps) {
-  const active = steps[current]
-  const pct = ((current + 1) / steps.length) * 100
-
+/** Completed steps are editable; future steps cannot bypass validation. */
+export function Stepper({ steps, current, onStepChange, disabled }: StepperProps) {
   return (
-    <nav aria-label="Setup progress" className="w-full min-w-0 max-w-full">
-      <div className="flex min-w-0 items-center gap-3">
-        <Progress
-          value={pct}
-          className="h-1.5 min-w-0 flex-1 bg-[var(--muted)]"
-          indicatorClassName="bg-[var(--link)]"
-          aria-label={`Step ${current + 1} of ${steps.length}: ${active.title}`}
-          aria-valuetext={`${Math.round(pct)}% complete`}
-        />
-        <span className="shrink-0 text-xs font-semibold tabular-nums" style={{ color: 'var(--text-muted)' }}>
-          {current + 1} of {steps.length}
-        </span>
+    <nav aria-label="Setup progress" className="min-w-0">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
+        <p className="font-medium text-foreground">Step {current + 1} of {steps.length}</p>
+        <p className="text-muted-foreground">
+          {current === steps.length - 1 ? 'Finish your profile' : `Next: ${steps[current + 1].title}`}
+        </p>
       </div>
-      <ol className="sr-only">
-        {steps.map((s, i) => (
-          <li key={s.title} aria-current={i === current ? 'step' : undefined}>
-            {s.title}
-          </li>
-        ))}
+      <ol className="grid grid-cols-5 gap-2 sm:gap-3">
+        {steps.map((step, index) => {
+          const complete = index < current
+          const active = index === current
+          return (
+            <li key={step.title} aria-current={active ? 'step' : undefined} className="min-w-0">
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={disabled || !complete}
+                onClick={() => onStepChange(index)}
+                aria-label={`${step.title}, ${complete ? 'completed, go back to edit' : active ? 'current step' : 'upcoming step'}`}
+                className={cn(
+                  'h-auto min-h-11 w-full flex-col items-start gap-2 whitespace-normal rounded-lg p-2 text-left disabled:opacity-100',
+                  active ? 'bg-secondary text-foreground' : 'text-muted-foreground',
+                )}
+              >
+                <span className={cn('flex size-6 items-center justify-center rounded-full border text-xs font-semibold',
+                  complete ? 'border-primary bg-primary text-primary-foreground' : active ? 'border-primary text-foreground' : 'border-input')}
+                >
+                  {complete ? <Check className="size-3.5" aria-hidden="true" /> : index + 1}
+                </span>
+                <span className="text-[10px] leading-4 sm:text-xs">{step.title}</span>
+              </Button>
+            </li>
+          )
+        })}
       </ol>
     </nav>
   )

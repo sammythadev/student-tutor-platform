@@ -2,11 +2,12 @@
 
 import type * as React from "react";
 import { cn } from "@/lib/utils";
-import { FilterChip } from "@/components/catalog/filter-chip";
+import { SubjectFilter } from "@/components/catalog/subject-filter";
 import { RatingPicker } from "@/components/catalog/rating-picker";
 import { PriceSlider } from "@/components/catalog/price-slider";
 import { Button } from "@/components/ui/button";
-import { SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export type SortKey = "score" | "rating" | "price_asc" | "price_desc";
 
@@ -32,10 +33,7 @@ function Section({
   );
 }
 
-/**
- * Left sticky filter rail for catalog pages (marketplace grammar).
- * Sections are optional — render what the page's data supports.
- */
+/** Responsive catalog filters; all controls share their caller's state. */
 export function CatalogFilters({
   subjects,
   selectedSubject,
@@ -65,83 +63,66 @@ export function CatalogFilters({
   onReset: () => void;
   className?: string;
 }) {
+  const controls = (
+    <>
+      <Section title="Minimum rating">
+        <RatingPicker value={minRating} onChange={onMinRating} />
+      </Section>
+      <Section title="Hourly rate">
+        <PriceSlider min={0} max={rateMax} value={maxRate} onChange={onMaxRate} />
+      </Section>
+      <Section title="Sort by">
+        <div className="flex flex-col gap-1">
+          {SORT_OPTIONS.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => onSortBy(option.key)}
+              aria-pressed={sortBy === option.key}
+              className={cn(
+                "flex min-h-11 cursor-pointer items-center rounded-md px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                sortBy === option.key
+                  ? "bg-accent font-semibold text-foreground"
+                  : "text-[var(--text-secondary)] hover:bg-accent hover:text-foreground"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </Section>
+    </>
+  );
+
   return (
     <aside className={cn("catalog-rail", className)} aria-label="Filters">
-      <div className="flex items-center justify-between">
-        <p className="catalog-rail-section-title mb-0">Filters</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium text-[var(--text-secondary)]">
+          {hasFilters ? "Filters active" : "Filters"}
+        </p>
         {hasFilters && (
-          <Button
-            variant="ghost"
-            size="xs"
-            className="gap-1 text-muted-foreground"
-            onClick={onReset}
-          >
-            <X className="size-3" aria-hidden="true" /> Clear
+          <Button variant="ghost" className="min-h-11 gap-1" onClick={onReset}>
+            <X className="size-4" aria-hidden="true" /> Clear
           </Button>
         )}
       </div>
-
-      <div className="space-y-5 rounded-lg border bg-background p-4">
+      <div className="space-y-4 rounded-lg border bg-background p-4">
         {subjects.length > 1 && (
           <Section title="Subject">
-            <div className="flex flex-wrap gap-1.5">
-              {subjects.map((subject) => (
-                <FilterChip
-                  key={subject}
-                  active={selectedSubject === subject}
-                  onClick={() => onSubject(subject)}
-                >
-                  {subject === "All" ? "All" : subject}
-                </FilterChip>
-              ))}
-            </div>
+            <SubjectFilter subjects={subjects} value={selectedSubject} onChange={onSubject} />
           </Section>
         )}
-
-        <Section title="Minimum rating">
-          <RatingPicker value={minRating} onChange={onMinRating} />
-        </Section>
-
-        <Section title="Hourly rate">
-          <PriceSlider
-            min={0}
-            max={rateMax}
-            value={maxRate}
-            onChange={onMaxRate}
-          />
-        </Section>
-
-        <Section title="Sort by">
-          <div className="flex flex-col gap-1">
-            {SORT_OPTIONS.map((option) => (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => onSortBy(option.key)}
-                className={cn(
-                  "flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
-                  sortBy === option.key
-                    ? "bg-accent font-semibold text-foreground"
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                )}
-              >
-                <span
-                  className={cn(
-                    "size-1.5 rounded-full",
-                    sortBy === option.key ? "bg-primary" : "bg-transparent"
-                  )}
-                  aria-hidden="true"
-                />
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </Section>
-      </div>
-
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <SlidersHorizontal className="size-3.5" aria-hidden="true" />
-        Results update as you filter
+        <Collapsible className="lg:hidden">
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="h-11 w-full justify-start">
+              <SlidersHorizontal className="size-4" aria-hidden="true" />
+              More filters
+              <ChevronDown className="ml-auto size-4" aria-hidden="true" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 pt-4">{controls}</CollapsibleContent>
+        </Collapsible>
+        <div className="hidden space-y-4 lg:block">{controls}</div>
       </div>
     </aside>
   );

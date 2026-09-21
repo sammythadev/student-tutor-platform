@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { Button } from '@/components/ui/button'
 import { CardContent } from '@/components/ui/card'
 import {
@@ -13,12 +12,12 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { PageHero } from '@/components/catalog/page-hero'
-import { FilterChip } from '@/components/catalog/filter-chip'
+import { SubjectFilter } from '@/components/catalog/subject-filter'
 import { CatalogCard } from '@/components/catalog/catalog-card'
 import { MessageModal } from '@/components/MessageModal'
 import { getStudentCandidates, type StudentCandidate } from '@/lib/api/users'
 import { apiErrorText } from '@/lib/api/errors'
-import { AlertCircle, MessageSquare, Search, X } from 'lucide-react'
+import { AlertCircle, Search, X } from 'lucide-react'
 
 function SkeletonCard() {
   return (
@@ -39,12 +38,12 @@ function SkeletonCard() {
 }
 
 export default function FindStudentsPage() {
-  const reduce = useReducedMotion()
   const [students, setStudents] = useState<StudentCandidate[]>([])
   const [search, setSearch] = useState('')
   const [subject, setSubject] = useState('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [messageTarget, setMessageTarget] = useState<StudentCandidate | null>(null)
 
   useEffect(() => {
@@ -63,7 +62,7 @@ export default function FindStudentsPage() {
     }
     load()
     return () => { alive = false }
-  }, [])
+  }, [loadAttempt])
 
   const subjects = useMemo(() => {
     const unique = new Set<string>()
@@ -86,28 +85,19 @@ export default function FindStudentsPage() {
   function clearFilters() { setSearch(''); setSubject('All') }
 
   return (
-    <div className="space-y-6 py-3">
+    <div className="space-y-4 py-1 md:space-y-6 md:py-3">
       <PageHero
         title="Students matched to you"
-        description={loading
-          ? 'Scoring candidates…'
-          : `${filtered.length} student${filtered.length === 1 ? '' : 's'} ranked by match score against your subjects, grade levels and availability.`}
+        description="Students ranked by subject, grade and availability."
       />
 
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="flex items-center gap-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-600 dark:text-rose-400" role="alert"
-          >
-            <AlertCircle className="size-4 shrink-0" />
-            <span className="flex-1 leading-relaxed">{error}</span>
-            <button type="button" onClick={() => setError(null)} aria-label="Dismiss" className="cursor-pointer rounded-md p-1 hover:bg-rose-500/10"><X className="size-4" /></button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {error && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive" role="alert">
+          <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1 leading-relaxed">{error}</span>
+          <Button variant="outline" className="h-11" onClick={() => { setLoading(true); setLoadAttempt(attempt => attempt + 1) }} disabled={loading}>Retry</Button>
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
@@ -123,39 +113,43 @@ export default function FindStudentsPage() {
         )}
       </div>
 
-      {subjects.length > 1 && (
-        <div className="flex flex-wrap gap-1.5">
-          {subjects.map(option => (
-            <FilterChip key={option} active={subject === option} onClick={() => setSubject(option)}>
-              {option === 'All' ? 'All subjects' : option}
-            </FilterChip>
-          ))}
-        </div>
+      {/* Subject filter — chips on desktop, dropdown on mobile */}
+      <SubjectFilter
+        subjects={subjects}
+        value={subject}
+        onChange={setSubject}
+        allLabel="All subjects"
+      />
+
+      {!loading && !error && (
+        <p className="text-sm text-muted-foreground">
+          {filtered.length} of {students.length} loaded students match your filters
+        </p>
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="catalog-grid">
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={`candidate-skeleton-${i}`} />)}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : error ? null : filtered.length === 0 ? (
         <CardContent className="rounded-lg border bg-background p-8">
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon"><Search aria-hidden="true" /></EmptyMedia>
               <EmptyTitle>{students.length === 0 ? 'No candidates right now' : 'No students match your filters'}</EmptyTitle>
-              <EmptyDescription className="text-xs">
+              <EmptyDescription className="text-sm">
                 {students.length === 0
                   ? 'Students are matched to you by subject and grade level. Check back once more students join.'
                   : 'Try a different subject.'}
               </EmptyDescription>
             </EmptyHeader>
-            {students.length > 0 && (
-              <EmptyContent><Button variant="outline" size="sm" onClick={clearFilters}>Clear all filters</Button></EmptyContent>
+            {(search !== '' || subject !== 'All') && (
+              <EmptyContent><Button variant="outline" className="h-11" onClick={clearFilters}>Clear all filters</Button></EmptyContent>
             )}
           </Empty>
         </CardContent>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="catalog-grid">
           {filtered.map((student) => {
             const personSubjects = [...new Set([...(student.subjects ?? []), student.requiredSubject].filter(Boolean))] as string[]
             return (
@@ -165,7 +159,7 @@ export default function FindStudentsPage() {
                   id: student.studentId,
                   name: `${student.firstName} ${student.lastName}`,
                   tagline: `Grade ${student.gradeLevel} · ${student.region ?? 'Remote'}`,
-                  subjects: personSubjects.slice(0, 4),
+                  subjects: personSubjects,
                   price: student.budget != null ? `₦${Number(student.budget).toLocaleString()}` : undefined,
                   priceSuffix: '/mo',
                   matchPct: Math.round((student.score ?? 0) * 100),

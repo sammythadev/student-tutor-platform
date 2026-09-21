@@ -6,11 +6,11 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export function CustomSidebarTrigger() {
+export function CustomSidebarTrigger({ className }: { className?: string }) {
 	return (
 		<Tooltip delayDuration={1000}>
 			<TooltipTrigger asChild>
-				<SidebarTrigger />
+				<SidebarTrigger className={className} />
 			</TooltipTrigger>
 			<TooltipContent className="px-2 py-1" side="right">
 				Toggle Sidebar{" "}

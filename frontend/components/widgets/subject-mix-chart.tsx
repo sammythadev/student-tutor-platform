@@ -17,7 +17,7 @@ import {
 	ChartLegendContent,
 } from "@/components/ui/chart";
 import { DashboardCard } from "@/components/dashboard-card";
-import { ChartEmpty } from "@/components/widgets/chart-empty";
+import { ChartEmpty, ChartState, type ChartRequestState } from "@/components/widgets/chart-empty";
 import type { SubjectDistribution } from "@/lib/api/dashboard";
 
 const PIE_COLORS = [
@@ -52,10 +52,13 @@ export function SubjectMixChart({
 	distribution,
 	title = "Subjects",
 	description = "Session mix by subject.",
-}: {
+	emptyAction = { label: "Find a tutor", href: "/tutors" },
+	...requestState
+}: ChartRequestState & {
 	distribution: SubjectDistribution[];
 	title?: string;
 	description?: string;
+	emptyAction?: { label: string; href: string };
 }) {
 	const reduce = useReducedMotion();
 
@@ -88,12 +91,12 @@ export function SubjectMixChart({
 					<CardDescription>{description}</CardDescription>
 				</CardHeader>
 				<CardContent className="my-auto">
+					<ChartState {...requestState}>
 					{isEmpty ? (
 						<ChartEmpty
-							action={{ label: "Find a tutor", href: "/tutors" }}
-							description="Finish a session and the subjects you spend time on split out here."
+							action={emptyAction}
+							description="Upcoming and completed sessions appear here, grouped by subject."
 							icon={PieChartIcon}
-							shape="ring"
 							title="No subject mix yet"
 						/>
 					) : (
@@ -132,6 +135,7 @@ export function SubjectMixChart({
 							</p>
 						</>
 					)}
+					</ChartState>
 				</CardContent>
 			</DashboardCard>
 		</motion.div>

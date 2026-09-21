@@ -90,6 +90,7 @@ export default function SettingsPage() {
   const [tutorFormData, setTutorFormData] = useState({
     bio: tutorProfile?.bio ?? '',
     hourlyRate: tutorProfile?.hourlyRate ?? '',
+    experienceYears: tutorProfile?.experienceYears ?? '',
     subjectsTaught: tutorProfile?.subjectsTaught?.join(', ') ?? '',
     teachingStyle: tutorProfile?.teachingStyle ?? '',
     teachingPace: tutorProfile?.teachingPace ?? '',
@@ -130,6 +131,7 @@ export default function SettingsPage() {
         setTutorFormData({
           bio: data.tutorProfile.bio ?? '',
           hourlyRate: data.tutorProfile.hourlyRate ?? '',
+          experienceYears: data.tutorProfile.experienceYears ?? '',
           subjectsTaught: data.tutorProfile.subjectsTaught?.join(', ') ?? '',
           teachingStyle: data.tutorProfile.teachingStyle ?? '',
           teachingPace: data.tutorProfile.teachingPace ?? '',
@@ -184,6 +186,8 @@ export default function SettingsPage() {
         const { updateTutorPreferences } = await import('@/lib/api/users')
         await updateTutorPreferences({
           bio: tutorFormData.bio,
+          hourlyRate: tutorFormData.hourlyRate !== '' ? Number(tutorFormData.hourlyRate) : undefined,
+          experienceYears: tutorFormData.experienceYears !== '' ? Number(tutorFormData.experienceYears) : undefined,
           subjectsTaught: tutorFormData.subjectsTaught.split(',').map(s => s.trim()).filter(Boolean),
           teachingStyle: (tutorFormData.teachingStyle || undefined) as TeachingStyle | undefined,
           teachingPace: (tutorFormData.teachingPace || undefined) as LearningPace | undefined,
@@ -203,9 +207,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 py-3">
+    <div className="space-y-4 py-1 md:space-y-6 md:py-3">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">Manage your account and preferences</p>
       </div>
 
@@ -214,7 +218,7 @@ export default function SettingsPage() {
       )}
 
       <div className="flex flex-col gap-6 md:flex-row">
-        <nav className="flex-shrink-0 space-y-1 md:w-56">
+        <nav className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:mx-0 md:w-56 md:flex-col md:gap-0 md:space-y-1 md:overflow-visible md:px-0 md:pb-0">
           {tabs.map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
@@ -224,7 +228,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex w-full cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left text-sm font-semibold transition-colors',
+                  'flex shrink-0 cursor-pointer items-center gap-3 whitespace-nowrap rounded-md px-4 py-3 text-left text-sm font-semibold transition-colors md:w-full',
                   isActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -323,8 +327,8 @@ export default function SettingsPage() {
                     <Input id="learningGoals" name="learningGoals" value={studentFormData.learningGoals} onChange={event => setStudentFormData(prev => ({ ...prev, learningGoals: event.target.value }))} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="budget">Budget (₦)</Label>
-                    <Input id="budget" name="budget" type="number" value={studentFormData.budget} onChange={event => setStudentFormData(prev => ({ ...prev, budget: event.target.value }))} />
+                    <Label htmlFor="budget">Monthly Budget (₦)</Label>
+                    <Input id="budget" name="budget" type="number" min="0" value={studentFormData.budget} onChange={event => setStudentFormData(prev => ({ ...prev, budget: event.target.value }))} placeholder="No limit" />
                   </div>
                   <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Student Preferences'}</Button>
                 </div>
@@ -371,9 +375,15 @@ export default function SettingsPage() {
                     <Label htmlFor="tBio">Bio</Label>
                     <Input id="tBio" name="bio" value={tutorFormData.bio} onChange={event => setTutorFormData(prev => ({ ...prev, bio: event.target.value }))} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="hourlyRate">Hourly Rate (₦) - Updating not supported via this form yet</Label>
-                    <Input id="hourlyRate" name="hourlyRate" value={tutorFormData.hourlyRate} disabled />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="hourlyRate">Hourly Rate (₦)</Label>
+                      <Input id="hourlyRate" name="hourlyRate" type="number" min="1" value={tutorFormData.hourlyRate} onChange={event => setTutorFormData(prev => ({ ...prev, hourlyRate: event.target.value }))} placeholder="E.g. 5000" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="experienceYears">Experience (years)</Label>
+                      <Input id="experienceYears" name="experienceYears" type="number" min="0" value={tutorFormData.experienceYears} onChange={event => setTutorFormData(prev => ({ ...prev, experienceYears: event.target.value }))} placeholder="E.g. 3" />
+                    </div>
                   </div>
                   <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Tutor Preferences'}</Button>
                 </div>
@@ -415,11 +425,18 @@ export default function SettingsPage() {
             <Card className="rounded-lg shadow-none">
               <CardHeader>
                 <CardTitle className="text-base">Privacy & Security</CardTitle>
+                <CardDescription>Control access to your account.</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Password and two-factor authentication endpoints are not implemented yet.
-                </p>
+                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                    <Lock className="size-5" />
+                  </span>
+                  <p className="text-sm font-semibold text-foreground">Coming soon</p>
+                  <p className="max-w-xs text-sm text-muted-foreground">
+                    Password changes and two-factor authentication will live here.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           )}

@@ -45,8 +45,8 @@ export function StarRating({ rating, count, size = 'sm', showCount = true, inter
     onRate?.(i)
   }
 
-  const starColor = 'var(--accent-sun-fg)'
-  const starDim = 'color-mix(in srgb, var(--accent-sun-fg), transparent 60%)'
+  const starColor = 'var(--star-gold)'
+  const starDim = 'color-mix(in srgb, var(--star-gold), transparent 60%)'
 
   return (
     <div className="inline-flex items-center gap-1.5">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'motion/react'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis } from 'recharts'
@@ -26,7 +26,7 @@ import { DashboardCard } from '@/components/dashboard-card'
 import { DashboardHero } from '@/components/dashboard-hero'
 import { useTimeOfDayGreeting } from '@/lib/greeting'
 import { SubjectMixChart } from '@/components/widgets/subject-mix-chart'
-import { ChartEmpty } from '@/components/widgets/chart-empty'
+import { ChartEmpty, ChartState, type ChartRequestState } from '@/components/widgets/chart-empty'
 import {
   Empty,
   EmptyContent,
@@ -376,7 +376,7 @@ function CustomGradientBar(
   )
 }
 
-function WeeklyHoursChart({ bars }: { bars: WeeklyBar[] }) {
+function WeeklyHoursChart({ bars, loading, error, onRetry }: { bars: WeeklyBar[] } & ChartRequestState) {
   const reduce = useReducedMotion()
   const rows = bars.map(bar => ({ ...bar }))
 
@@ -408,37 +408,38 @@ function WeeklyHoursChart({ bars }: { bars: WeeklyBar[] }) {
           <CardDescription>Completed session time, current week.</CardDescription>
         </CardHeader>
         <CardContent>
-          {isEmpty ? (
-            <ChartEmpty
-              action={{ label: 'Find a tutor', href: '/tutors' }}
-              description="Hours land here once a session you booked is marked complete."
-              icon={BookOpen}
-              shape="bars"
-              title="No learning hours yet"
-            />
-          ) : (
-            <ChartContainer config={WEEK_CHART_CONFIG} className="aspect-auto h-60 w-full">
-              <BarChart accessibilityLayer data={rows}>
-                <XAxis
-                  axisLine={false}
-                  dataKey="day"
-                  interval={0}
-                  tickFormatter={(value) => String(value)}
-                  tickLine={false}
-                  tickMargin={10}
-                />
-                <ChartTooltip
-                  content={<ChartTooltipContent hideLabel />}
-                  cursor={false}
-                />
-                <Bar
-                  dataKey="hours"
-                  fill="var(--color-hours)"
-                  shape={<CustomGradientBar />}
-                />
-              </BarChart>
-            </ChartContainer>
-          )}
+          <ChartState loading={loading} error={error} onRetry={onRetry}>
+            {isEmpty ? (
+              <ChartEmpty
+                action={{ label: 'Find a tutor', href: '/tutors' }}
+                description="No completed session time was recorded for the current week."
+                icon={BookOpen}
+                title="No learning hours this week"
+              />
+            ) : (
+              <ChartContainer config={WEEK_CHART_CONFIG} className="aspect-auto h-60 w-full">
+                <BarChart accessibilityLayer data={rows}>
+                  <XAxis
+                    axisLine={false}
+                    dataKey="day"
+                    interval={0}
+                    tickFormatter={(value) => String(value)}
+                    tickLine={false}
+                    tickMargin={10}
+                  />
+                  <ChartTooltip
+                    content={<ChartTooltipContent hideLabel />}
+                    cursor={false}
+                  />
+                  <Bar
+                    dataKey="hours"
+                    fill="var(--color-hours)"
+                    shape={<CustomGradientBar />}
+                  />
+                </BarChart>
+              </ChartContainer>
+            )}
+          </ChartState>
         </CardContent>
       </DashboardCard>
     </motion.div>
@@ -451,7 +452,7 @@ const CHANNEL_CHART_CONFIG = {
   booked: { label: 'Booked', color: 'var(--chart-1)' },
 } satisfies ChartConfig
 
-function ChannelSeriesChart({ series }: { series: ChannelPoint[] }) {
+function ChannelSeriesChart({ series, loading, error, onRetry }: { series: ChannelPoint[] } & ChartRequestState) {
   const reduce = useReducedMotion()
   const rows = series.map(point => ({ ...point }))
   const totalCompleted = rows.reduce((sum, r) => sum + r.completed, 0)
@@ -478,51 +479,52 @@ function ChannelSeriesChart({ series }: { series: ChannelPoint[] }) {
           <CardDescription>Completed vs booked sessions, last 7 days.</CardDescription>
         </CardHeader>
         <CardContent>
-          {isEmpty ? (
-            <ChartEmpty
-              action={{ label: 'Browse tutors', href: '/tutors' }}
-              description="Book your first session and this tracks what you have coming up against what you have finished."
-              icon={Calendar}
-              shape="line"
-              title="Nothing booked in the last 7 days"
-            />
-          ) : (
-            <ChartContainer config={CHANNEL_CHART_CONFIG} className="aspect-auto h-60 w-full p-0">
-              <LineChart
-                accessibilityLayer
-                data={rows}
-                margin={{ left: 12, right: 12, top: 8 }}
-              >
-                <CartesianGrid className="stroke-border" vertical={false} />
-                <XAxis
-                  axisLine={false}
-                  dataKey="day"
-                  interval={0}
-                  tickFormatter={(value) => String(value)}
-                  tickLine={false}
-                  tickMargin={8}
-                />
-                <ChartTooltip
-                  content={<ChartTooltipContent hideLabel />}
-                  cursor={false}
-                />
-                <Line
-                  dataKey="booked"
-                  dot={false}
-                  stroke="var(--color-booked)"
-                  strokeWidth={2}
-                  type="step"
-                />
-                <Line
-                  dataKey="completed"
-                  dot={false}
-                  stroke="var(--color-completed)"
-                  strokeWidth={2}
-                  type="step"
-                />
-              </LineChart>
-            </ChartContainer>
-          )}
+          <ChartState loading={loading} error={error} onRetry={onRetry}>
+            {isEmpty ? (
+              <ChartEmpty
+                action={{ label: 'Find a tutor', href: '/tutors' }}
+                description="No booked or completed sessions were recorded in the last 7 days."
+                icon={Calendar}
+                title="No sessions in the last 7 days"
+              />
+            ) : (
+              <ChartContainer config={CHANNEL_CHART_CONFIG} className="aspect-auto h-60 w-full p-0">
+                <LineChart
+                  accessibilityLayer
+                  data={rows}
+                  margin={{ left: 12, right: 12, top: 8 }}
+                >
+                  <CartesianGrid className="stroke-border" vertical={false} />
+                  <XAxis
+                    axisLine={false}
+                    dataKey="day"
+                    interval={0}
+                    tickFormatter={(value) => String(value)}
+                    tickLine={false}
+                    tickMargin={8}
+                  />
+                  <ChartTooltip
+                    content={<ChartTooltipContent hideLabel />}
+                    cursor={false}
+                  />
+                  <Line
+                    dataKey="booked"
+                    dot={false}
+                    stroke="var(--color-booked)"
+                    strokeWidth={2}
+                    type="step"
+                  />
+                  <Line
+                    dataKey="completed"
+                    dot={false}
+                    stroke="var(--color-completed)"
+                    strokeWidth={2}
+                    type="step"
+                  />
+                </LineChart>
+              </ChartContainer>
+            )}
+          </ChartState>
         </CardContent>
       </DashboardCard>
     </motion.div>
@@ -792,8 +794,15 @@ export function StudentDashboard() {
   const [assignmentAttempt, setAssignmentAttempt] = useState(0)
 
   const [joinTarget, setJoinTarget] = useState<UpcomingSession | null>(null)
+  const dismissedSessionIds = useRef(new Set<string>())
+
+  const mounted = useRef(false)
+  const requestSequence = useRef(0)
 
   const refreshMetrics = useCallback(async () => {
+    if (!mounted.current) return
+    const request = ++requestSequence.current
+    const isCurrent = () => mounted.current && request === requestSequence.current
     setLoading(true)
     setError(null)
     try {
@@ -801,22 +810,24 @@ export function StudentDashboard() {
         getDashboardMetrics(),
         getTutorCandidates({ page: 1, limit: 3 }).catch(() => ({ candidates: [] as TutorCandidate[] })),
       ])
+      if (!isCurrent()) return
       setMetrics(dashboard)
       setTutors(candidates.candidates)
     } catch (err: unknown) {
-      setError(apiErrorText(err))
+      if (isCurrent()) setError(apiErrorText(err))
     } finally {
-      setLoading(false)
+      if (isCurrent()) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    let alive = true
-    refreshMetrics().finally(() => {
-      if (!alive) return
-    })
-    return () => { alive = false }
-    // refreshMetrics is stable (useCallback with no deps); run once on mount.
+    mounted.current = true
+    const timer = setTimeout(() => { void refreshMetrics() }, 0)
+    return () => {
+      clearTimeout(timer)
+      mounted.current = false
+      requestSequence.current += 1
+    }
   }, [refreshMetrics])
 
   useEffect(() => {
@@ -843,6 +854,7 @@ export function StudentDashboard() {
     const interval = setInterval(() => {
       const now = Date.now()
       const ongoing = metrics.upcomingSessions.find(session => {
+        if (dismissedSessionIds.current.has(session.id)) return false
         const start = new Date(session.startAt).getTime()
         const end = session.endAt ? new Date(session.endAt).getTime() : start + 3_600_000
         return isJoinable({ status: sessionStatus(session.status) }) && start <= now && now <= end
@@ -867,7 +879,7 @@ export function StudentDashboard() {
   }, [assignment, tutors])
 
   return (
-    <div className="space-y-6 py-3">
+    <div className="space-y-4 py-1 md:space-y-6 md:py-3">
       {/* Page hero */}
       <DashboardHero
         greeting={greeting}
@@ -901,7 +913,8 @@ export function StudentDashboard() {
           role="alert"
         >
           <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <span>{error}</span>
+          <span className="min-w-0 flex-1">{error}</span>
+          <Button variant="outline" size="sm" onClick={refreshMetrics} disabled={loading}>Retry</Button>
         </div>
       )}
 
@@ -926,7 +939,12 @@ export function StudentDashboard() {
 
       {/* Chart + learning profile */}
       <div className="grid grid-cols-1 gap-px bg-border p-px md:grid-cols-2 lg:grid-cols-3">
-        <WeeklyHoursChart bars={weeklyBars} />
+        <WeeklyHoursChart
+          bars={weeklyBars}
+          loading={loading && !metrics}
+          error={metrics ? null : error}
+          onRetry={refreshMetrics}
+        />
 
         <motion.div
           className="md:col-span-2 lg:col-span-1"
@@ -996,8 +1014,18 @@ export function StudentDashboard() {
 
       {/* Efferd chart blocks: channel flow + subject mix + activity + recent sessions */}
       <div className="grid grid-cols-1 gap-px bg-border p-px md:grid-cols-2 lg:grid-cols-4">
-        <ChannelSeriesChart series={metrics?.channelSeries ?? []} />
-        <SubjectMixChart distribution={metrics?.subjectDistribution ?? []} />
+        <ChannelSeriesChart
+          series={metrics?.channelSeries ?? []}
+          loading={loading && !metrics}
+          error={metrics ? null : error}
+          onRetry={refreshMetrics}
+        />
+        <SubjectMixChart
+          distribution={metrics?.subjectDistribution ?? []}
+          loading={loading && !metrics}
+          error={metrics ? null : error}
+          onRetry={refreshMetrics}
+        />
         <RecentSessionsTable sessions={metrics?.recentSessions ?? []} />
         <ActivityFeed activity={metrics?.activity ?? []} />
       </div>
@@ -1130,7 +1158,10 @@ export function StudentDashboard() {
       {joinTarget && (
         <SessionJoinModal
           isOpen
-          onClose={() => setJoinTarget(null)}
+          onClose={() => {
+            dismissedSessionIds.current.add(joinTarget.id)
+            setJoinTarget(null)
+          }}
           session={toSessionItem(joinTarget, user?.id ?? '')}
           onAttended={() => {
             setJoinTarget(null)

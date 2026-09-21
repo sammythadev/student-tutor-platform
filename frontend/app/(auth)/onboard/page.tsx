@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Button } from '@/components/Button'
-import { FieldError, Input, Select, Textarea } from '@/components/Input'
+import { Input, Select, Textarea } from '@/components/Input'
+import { Button as UiButton } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
@@ -40,7 +41,6 @@ import { RangeSlider } from '@/components/onboard/RangeSlider'
 import { SteppedSlider } from '@/components/onboard/SteppedSlider'
 import { Stepper } from '@/components/onboard/Stepper'
 import { OnboardSummary, type SummaryItem } from '@/components/onboard/OnboardSummary'
-import { FilterChip } from '@/components/catalog/filter-chip'
 
 type Role = 'student' | 'tutor'
 
@@ -142,9 +142,20 @@ export default function OnboardingPage() {
   const [stage, setStage] = useState(0)
   const [direction, setDirection] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [complete, setComplete] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showAllSubjects, setShowAllSubjects] = useState(false)
   const [showCustomSubject, setShowCustomSubject] = useState(false)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const errorRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (screen === 'form') headingRef.current?.focus()
+  }, [screen, stage])
+
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) errorRef.current?.focus()
+  }, [errors])
 
   const [studentForm, setStudentForm] = useState({
     gradeLevel: '',
@@ -242,11 +253,23 @@ export default function OnboardingPage() {
       if (i === 0 && !studentForm.gradeLevel) e.gradeLevel = 'Pick your grade level to continue'
       if (i === 1 && studentForm.subjects.length === 0) e.subjects = 'Select at least one subject'
       if (i === 2 && !studentForm.learningStylePreference) e.learningStylePreference = 'Pick how you learn best'
+      if (i === 4 && studentForm.budget !== '') {
+        const budget = Number(studentForm.budget)
+        if (!Number.isInteger(budget) || budget < 0 || budget > 100000) {
+          e.budget = 'Enter a monthly amount between ₦0 and ₦100,000'
+        }
+      }
     } else {
       if (i === 0 && tutorForm.expertise.length === 0) e.expertise = 'Select at least one subject'
       if (i === 1) {
-        if (!tutorForm.yearsExperience) e.yearsExperience = 'Set your experience to continue'
-        if (!tutorForm.hourlyRate) e.hourlyRate = 'Set your hourly rate to continue'
+        const years = Number(tutorForm.yearsExperience)
+        const rate = Number(tutorForm.hourlyRate)
+        if (tutorForm.yearsExperience === '' || !Number.isInteger(years) || years < 0 || years > 100) {
+          e.yearsExperience = 'Enter whole years of experience between 0 and 100'
+        }
+        if (tutorForm.hourlyRate === '' || !Number.isFinite(rate) || rate < 1) {
+          e.hourlyRate = 'Enter an hourly rate of at least ₦1'
+        }
       }
     }
     return e
@@ -271,7 +294,7 @@ export default function OnboardingPage() {
         subjects: allSubjects,
         gradeLevel: Number(studentForm.gradeLevel),
         examType: studentForm.examTypes || 'waec',
-        budget: studentForm.budget ? Number(studentForm.budget) : undefined,
+        budget: Number(studentForm.budget) > 0 ? Number(studentForm.budget) : undefined,
         requestedAvailability: defaultAvailability,
         learningStylePreference: studentForm.learningStylePreference,
         learningPace: (studentForm.learningPace || undefined) as LearningPace | undefined,
@@ -282,10 +305,11 @@ export default function OnboardingPage() {
         timezone: studentForm.timezone || 'Africa/Lagos',
         bio: studentForm.bio || undefined,
       })
+      setComplete(true)
       router.push('/dashboard')
     } catch (err) {
+      setComplete(false)
       setErrors({ submit: apiErrorText(err) })
-    } finally {
       setLoading(false)
     }
   }
@@ -310,7 +334,7 @@ export default function OnboardingPage() {
         hourlyRate: Number(tutorForm.hourlyRate),
         bio: tutorForm.bio || undefined,
         timezone: tutorForm.timezone || 'Africa/Lagos',
-        experienceYears: Number(tutorForm.yearsExperience) || 1,
+        experienceYears: Number(tutorForm.yearsExperience),
         languages: tutorForm.languages.length > 0 ? tutorForm.languages : ['English'],
         capacity: Number(tutorForm.capacity) || 5,
         teachingStyle: (tutorForm.teachingStyle || undefined) as TeachingStyle | undefined,
@@ -318,10 +342,11 @@ export default function OnboardingPage() {
         deliveryStyle: (tutorForm.deliveryStyle || undefined) as DeliveryMode | undefined,
         formatStyle: (tutorForm.formatStyle || undefined) as FormatPreference | undefined,
       })
+      setComplete(true)
       router.push('/tutor-dashboard')
     } catch (err) {
+      setComplete(false)
       setErrors({ submit: apiErrorText(err) })
-    } finally {
       setLoading(false)
     }
   }
@@ -359,6 +384,22 @@ export default function OnboardingPage() {
     setStage(s => s - 1)
   }
 
+  if (complete) {
+    return (
+      <div className="min-h-[100dvh] bg-canvas px-4 flex items-center justify-center">
+        <motion.div role="status" initial={reduce ? false : { opacity: 0, transform: 'translateY(8px)' }}
+          animate={{ opacity: 1, transform: 'translateY(0px)' }}
+          transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+          className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-card p-8 text-center">
+          <Check aria-hidden="true" className="mx-auto size-8 text-foreground" />
+          <h1 className="text-2xl font-semibold text-foreground">Your profile is ready</h1>
+          <p className="text-sm text-muted-foreground">Opening your dashboard…</p>
+          <Link className="inline-flex min-h-11 items-center text-sm font-medium text-foreground underline underline-offset-4" href={role === 'tutor' ? '/tutor-dashboard' : '/dashboard'}>Go to dashboard</Link>
+        </motion.div>
+      </div>
+    )
+  }
+
   /* ─────────────── Role selection ─────────────── */
   if (screen === 'role') {
     const roleCards: { role: Role; icon: LucideIcon; title: string; blurb: string; tint: string; fg: string }[] = [
@@ -381,22 +422,7 @@ export default function OnboardingPage() {
     ]
 
     return (
-      <div className="min-h-screen w-full max-w-full overflow-x-clip bg-canvas flex items-center justify-center px-3 py-12 sm:px-4">
-        <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10" aria-hidden="true">
-          {reduce ? (
-            <>
-              <div className="ambient-blob blob-primary absolute top-0 left-0 w-72 h-72 sm:w-96 sm:h-96" />
-            </>
-          ) : (
-            <>
-              <motion.div
-                className="ambient-blob blob-primary absolute top-0 left-0 w-72 h-72 sm:w-96 sm:h-96"
-                animate={{ x: [0, 32, 0], y: [0, 20, 0] }}
-                transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-              />
-            </>
-          )}
-        </div>
+      <div className="min-h-[100dvh] w-full max-w-full overflow-x-clip bg-canvas flex items-center justify-center px-3 py-12 sm:px-4">
 
         <div className="w-full min-w-0 max-w-2xl space-y-8 sm:space-y-10">
           <div className="flex flex-col items-center gap-4">
@@ -416,9 +442,10 @@ export default function OnboardingPage() {
             {roleCards.map(({ role: r, icon: Icon, title, blurb, tint, fg }, i) => (
               <motion.button
                 key={r}
-                initial={reduce ? false : { opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                initial={reduce ? false : { opacity: 0, transform: 'translateY(8px)' }}
+                animate={{ opacity: 1, transform: 'translateY(0px)' }}
+                whileTap={reduce ? undefined : { transform: 'scale(0.98)' }}
+                transition={{ duration: 0.2, delay: reduce ? 0 : i * 0.05, ease: [0.23, 1, 0.32, 1] }}
                 onClick={() => handleSelectRole(r)}
                 className="glass-card w-full min-w-0 p-6 text-left card-interactive hover:shadow-[var(--shadow-md)] group sm:p-7"
               >
@@ -483,22 +510,7 @@ export default function OnboardingPage() {
       ]
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-canvas px-3 py-8 sm:px-4 sm:py-12">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10" aria-hidden="true">
-        {reduce ? (
-          <>
-            <div className="ambient-blob blob-primary absolute top-0 left-0 w-72 h-72 sm:w-96 sm:h-96" />
-          </>
-        ) : (
-          <>
-            <motion.div
-              className="ambient-blob blob-primary absolute top-0 left-0 w-72 h-72 sm:w-96 sm:h-96"
-              animate={{ x: [0, 32, 0], y: [0, 20, 0] }}
-              transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          </>
-        )}
-      </div>
+    <div className="min-h-[100dvh] w-full max-w-full overflow-x-clip bg-canvas px-3 py-8 sm:px-4 sm:py-12">
 
       <div className="w-full min-w-0 max-w-5xl mx-auto space-y-6">
         <div className="flex flex-col items-center gap-2 pt-2 text-center">
@@ -517,7 +529,12 @@ export default function OnboardingPage() {
           />
 
           <div className="min-w-0 space-y-6">
-            <Stepper steps={stages} current={stage} />
+            <Stepper steps={stages} current={stage} disabled={loading} onStepChange={(next) => {
+              if (next >= stage || loading) return
+              setErrors({})
+              setDirection(-1)
+              setStage(next)
+            }} />
 
             <form onSubmit={handleAdvance} className="glass-card w-full min-w-0 max-w-full p-5 sm:p-8">
               <div className="flex min-w-0 items-start gap-3.5 mb-6">
@@ -528,34 +545,36 @@ export default function OnboardingPage() {
                   <ActiveIcon className="w-5 h-5" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-ink-900 leading-tight">{active.title}</h2>
+                  <h2 ref={headingRef} tabIndex={-1} className="text-xl font-semibold tracking-tight text-foreground leading-tight outline-none">{active.title}</h2>
                   <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{active.blurb}</p>
                 </div>
               </div>
 
-              <div className="overflow-x-clip">
+              {Object.keys(errors).length > 0 && (
+                <div ref={errorRef} tabIndex={-1} className="mb-6 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <Alert variant="destructive">
+                    <AlertCircle className="size-4" />
+                    <AlertDescription>{Object.values(errors).join('. ')}</AlertDescription>
+                  </Alert>
+                </div>
+              )}
+              <fieldset disabled={loading} className="min-w-0 space-y-6">
                 <AnimatePresence mode="wait" custom={direction}>
                   <motion.div
                     key={`${role}-${stage}`}
                     custom={direction}
-                    initial={reduce ? false : { opacity: 0, x: direction * 28 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={reduce ? { opacity: 0 } : { opacity: 0, x: direction * -28 }}
-                    transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                    initial={reduce ? false : { opacity: 0, transform: `translateX(${direction * 8}px)` }}
+                    animate={{ opacity: 1, transform: 'translateX(0px)' }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: reduce ? 0 : 0.18, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full min-w-0 space-y-6"
                   >
                     {role === 'student' ? renderStudentStage() : renderTutorStage()}
                   </motion.div>
                 </AnimatePresence>
-              </div>
+              </fieldset>
 
-              {errors.submit && (
-                <p className="mt-6 text-sm font-medium text-center" style={{ color: 'var(--accent-coral-fg)' }}>
-                  {errors.submit}
-                </p>
-              )}
-
-              <div className="flex flex-col gap-3 pt-8 min-[420px]:flex-row">
+              <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 border-t border-border pt-6 mt-8">
                 <div className="min-w-0 flex-1">
                   <Button type="button" variant="secondary" onClick={handleBack} disabled={loading} className="w-full">
                     <ArrowLeft className="w-4 h-4" strokeWidth={2} />
@@ -563,15 +582,15 @@ export default function OnboardingPage() {
                   </Button>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Button type="submit" loading={loading} className="w-full">
-                    {isLastStage ? 'Complete setup' : 'Continue'}
+                  <Button type="submit" disabled={loading} aria-busy={loading} className="w-full min-h-11">
+                    {loading ? 'Saving profile…' : isLastStage ? 'Complete setup' : 'Continue'}
                     {!loading && <ArrowRight className="w-4 h-4" strokeWidth={2} />}
                   </Button>
                 </div>
               </div>
               {!isLastStage && (
                 <p className="mt-3 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Step {stage + 1} of {stages.length}. Your progress saves as you go.
+                  Your answers stay here while you move between steps.
                 </p>
               )}
             </form>
@@ -587,7 +606,7 @@ export default function OnboardingPage() {
     if (stage === 0) {
       return (
         <>
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               Current grade level <span style={{ color: 'var(--accent-coral-fg)' }}>*</span>
             </legend>
@@ -606,7 +625,7 @@ export default function OnboardingPage() {
             )}
           </fieldset>
 
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               Exam board
             </legend>
@@ -633,7 +652,7 @@ export default function OnboardingPage() {
       const visible = showAllSubjects ? SUBJECTS : SUBJECTS.slice(0, 6)
       return (
         <>
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               Subjects you need help with <span style={{ color: 'var(--accent-coral-fg)' }}>*</span>
             </legend>
@@ -664,7 +683,7 @@ export default function OnboardingPage() {
             )}
           </fieldset>
 
-          <Collapsible open={showCustomSubject} onOpenChange={setShowCustomSubject} className="onboard-field min-w-0">
+          <Collapsible open={showCustomSubject} onOpenChange={setShowCustomSubject} className="min-w-0">
             <CollapsibleTrigger asChild>
               <button
                 type="button"
@@ -694,7 +713,7 @@ export default function OnboardingPage() {
     if (stage === 2) {
       return (
         <>
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               How do you learn best? <span style={{ color: 'var(--accent-coral-fg)' }}>*</span>
             </legend>
@@ -728,7 +747,7 @@ export default function OnboardingPage() {
     if (stage === 3) {
       return (
         <>
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               How should sessions run?
             </legend>
@@ -746,7 +765,7 @@ export default function OnboardingPage() {
             </div>
           </fieldset>
 
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               Session format
             </legend>
@@ -764,7 +783,7 @@ export default function OnboardingPage() {
             </div>
           </fieldset>
 
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               Preferred languages
             </legend>
@@ -786,12 +805,27 @@ export default function OnboardingPage() {
     const budgetNum = Number(studentForm.budget || 0)
     return (
       <>
+        <Input
+          label="Monthly budget amount (₦)"
+          name="budget"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={100000}
+          step={1}
+          placeholder="No budget limit"
+          value={studentForm.budget}
+          onChange={handleStudentChange}
+          error={errors.budget}
+          aria-invalid={Boolean(errors.budget)}
+          helper="Enter up to ₦100,000 per month, or use the slider. Leave blank or enter 0 for no limit."
+        />
         <RangeSlider
-          label="Monthly budget"
+          label="Adjust monthly budget"
           min={0}
           max={100000}
           step={1000}
-          value={Number.isFinite(budgetNum) ? budgetNum : 0}
+          value={Number.isFinite(budgetNum) ? Math.min(100000, Math.max(0, budgetNum)) : 0}
           onChange={(v) => setStudentForm(prev => ({ ...prev, budget: v === 0 ? '' : String(v) }))}
           format={naira}
           hint="per month"
@@ -817,7 +851,7 @@ export default function OnboardingPage() {
           helper="One sentence is enough"
         />
 
-        <Collapsible className="onboard-field min-w-0">
+        <Collapsible className="min-w-0">
           <CollapsibleTrigger asChild>
             <button
               type="button"
@@ -847,7 +881,7 @@ export default function OnboardingPage() {
     if (stage === 0) {
       const visible = showAllSubjects ? SUBJECTS : SUBJECTS.slice(0, 6)
       return (
-        <fieldset className="onboard-field min-w-0">
+        <fieldset className="min-w-0">
           <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
             Subjects you teach <span style={{ color: 'var(--accent-coral-fg)' }}>*</span>
           </legend>
@@ -877,7 +911,7 @@ export default function OnboardingPage() {
             <p className="mt-2 text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.expertise}</p>
           )}
 
-          <Collapsible open={showCustomSubject} onOpenChange={setShowCustomSubject} className="mt-3 onboard-field min-w-0">
+          <Collapsible open={showCustomSubject} onOpenChange={setShowCustomSubject} className="mt-3 min-w-0">
             <CollapsibleTrigger asChild>
               <button
                 type="button"
@@ -905,44 +939,40 @@ export default function OnboardingPage() {
     }
 
     if (stage === 1) {
-      const yearsNum = Number(tutorForm.yearsExperience || 0)
-      const rateNum = Number(tutorForm.hourlyRate || 0)
       const capacityNum = Number(tutorForm.capacity || 5)
       return (
         <>
-          <div>
-            <RangeSlider
-              label="Years of experience"
-              min={0}
-              max={20}
-              step={1}
-              value={Number.isFinite(yearsNum) ? yearsNum : 0}
-              onChange={(v) => setTutorForm(prev => ({ ...prev, yearsExperience: v === 0 ? '' : String(v) }))}
-              format={(v) => (v === 0 ? 'Just starting' : `${v} ${v === 1 ? 'yr' : 'yrs'}`)}
-              hint="experience"
-            />
-            {errors.yearsExperience && (
-              <p className="mt-2 text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.yearsExperience}</p>
-            )}
-          </div>
+          <Input
+            label="Years of experience"
+            name="yearsExperience"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={100}
+            step={1}
+            placeholder="E.g. 3"
+            value={tutorForm.yearsExperience}
+            onChange={handleTutorChange}
+            error={errors.yearsExperience}
+            aria-invalid={Boolean(errors.yearsExperience)}
+            helper="Enter 0 if you are just starting."
+          />
+          <Input
+            label="Hourly rate (₦)"
+            name="hourlyRate"
+            type="number"
+            inputMode="decimal"
+            min={1}
+            step="any"
+            placeholder="E.g. 5000"
+            value={tutorForm.hourlyRate}
+            onChange={handleTutorChange}
+            error={errors.hourlyRate}
+            aria-invalid={Boolean(errors.hourlyRate)}
+            helper="Your price for a one-hour session, in naira."
+          />
 
-          <div>
-            <RangeSlider
-              label="Hourly rate"
-              min={0}
-              max={50000}
-              step={500}
-              value={Number.isFinite(rateNum) ? rateNum : 0}
-              onChange={(v) => setTutorForm(prev => ({ ...prev, hourlyRate: v === 0 ? '' : String(v) }))}
-              format={(v) => (v === 0 ? 'Set rate' : `₦${v.toLocaleString()}`)}
-              hint="per hour"
-            />
-            {errors.hourlyRate && (
-              <p className="mt-2 text-xs font-medium" style={{ color: 'var(--accent-coral-fg)' }}>{errors.hourlyRate}</p>
-            )}
-          </div>
-
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               Student capacity
             </legend>
@@ -980,7 +1010,7 @@ export default function OnboardingPage() {
     if (stage === 2) {
       return (
         <>
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               Teaching style
             </legend>
@@ -1011,7 +1041,7 @@ export default function OnboardingPage() {
     if (stage === 3) {
       return (
         <>
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               How do you teach?
             </legend>
@@ -1029,7 +1059,7 @@ export default function OnboardingPage() {
             </div>
           </fieldset>
 
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               Session format
             </legend>
@@ -1047,7 +1077,7 @@ export default function OnboardingPage() {
             </div>
           </fieldset>
 
-          <fieldset className="onboard-field min-w-0">
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
               Languages you teach in
             </legend>
@@ -1078,7 +1108,7 @@ export default function OnboardingPage() {
           helper="A short bio gets more trial bookings"
         />
 
-        <Collapsible className="onboard-field min-w-0">
+        <Collapsible className="min-w-0">
           <CollapsibleTrigger asChild>
             <button
               type="button"
@@ -1104,24 +1134,25 @@ export default function OnboardingPage() {
     )
   }
 
-  /* ─────────────── Local components ─────────────── */
+}
 
+  /* Shared outside the page so selecting an option preserves keyboard focus. */
   function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
     return (
-      <button
+      <UiButton
         type="button"
+        variant="outline"
         onClick={onClick}
         aria-pressed={selected}
         className="flex min-h-11 items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all pressable focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         style={{
-          border: selected ? '2px solid var(--primary)' : '1px solid var(--border)',
+          border: selected ? '1px solid var(--primary)' : '1px solid var(--border-strong)',
           background: selected ? 'var(--primary-subtle)' : 'var(--surface-2)',
           color: selected ? 'var(--primary)' : 'var(--text-secondary)',
         }}
       >
-        {selected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+        <Check aria-hidden="true" className={`w-3.5 h-3.5 ${selected ? 'opacity-100' : 'opacity-0'}`} strokeWidth={2} />
         {label}
-      </button>
+      </UiButton>
     )
   }
-}

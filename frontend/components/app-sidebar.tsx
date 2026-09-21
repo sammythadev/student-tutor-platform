@@ -12,12 +12,15 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { footerNavLinks, isNavPathActive, navGroups } from "@/components/app-shared";
+import { footerNavLinks, getNavGroups, isNavPathActive } from "@/components/app-shared";
 import { NavGroup } from "@/components/nav-group";
+import { useAuthStore } from "@/lib/store/authStore";
 import { usePathname } from "next/navigation";
 
 export function AppSidebar() {
 	const pathname = usePathname();
+	const role = useAuthStore((s) => s.user?.role);
+	const navGroups = getNavGroups(role);
 
 	return (
 		<Sidebar

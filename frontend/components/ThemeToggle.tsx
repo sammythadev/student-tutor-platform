@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { useTheme } from '@/lib/theme-context'
 import { Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -12,14 +12,16 @@ import {
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  /* Client-only render guard without a setState-in-effect: subscribes to the
+     mount state instead of flipping it after paint. */
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
 
   if (!mounted) {
-    return <div className="size-9" />
+    return <div className="size-11" />
   }
 
   const next = theme === 'dark' ? 'light' : 'dark'

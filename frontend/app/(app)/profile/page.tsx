@@ -19,7 +19,7 @@ import { getMe, updateMe, updateStudentPreferences, updateTutorPreferences, type
 import { apiErrorText } from '@/lib/api/errors'
 import { useAuthStore, type UserProfile, type StudentProfile, type TutorProfile } from '@/lib/store/authStore'
 import { accentFor, initials, type Accent } from '@/lib/ui'
-import { BookOpen, Calendar, Edit2, MapPin, MessageCircle, Save, Target, X, Award, Clock, Users, Star, CheckCircle2 } from 'lucide-react'
+import { BookOpen, Calendar, Edit2, MapPin, MessageCircle, Save, Target, X, Award, Clock, Users, Star, CheckCircle2, Wallet } from 'lucide-react'
 import { useToast } from '@/lib/toast-context'
 import { StarRating } from '@/components/StarRating'
 import { cn } from '@/lib/utils'
@@ -59,7 +59,7 @@ export default function ProfilePage() {
 
   const [form, setForm] = useState({
     firstName: '', lastName: '', bio: '', learningGoals: '', region: '', subjects: '', gradeLevel: '',
-    experienceYears: '', hourlyRate: '',
+    experienceYears: '', hourlyRate: '', budget: '',
   })
 
   useEffect(() => {
@@ -83,6 +83,7 @@ export default function ProfilePage() {
       gradeLevel: s?.gradeLevel?.toString() ?? '',
       experienceYears: t?.experienceYears?.toString() ?? '',
       hourlyRate: t?.hourlyRate?.toString() ?? '',
+      budget: s?.budget?.toString() ?? '',
     })
   }
 
@@ -107,6 +108,11 @@ export default function ProfilePage() {
     ? (tutor?.subjectsTaught ?? [])
     : student?.subjects?.length ? student.subjects : (student?.requiredSubject ? [student.requiredSubject] : [])
 
+  const naira = (v: number | string | null | undefined) =>
+    v != null && v !== '' && Number.isFinite(Number(v)) && Number(v) > 0 ? `₦${Number(v).toLocaleString()}` : null
+  const tutorRate = role === 'tutor' ? naira(tutor?.hourlyRate) : null
+  const studentBudget = role === 'student' ? naira(student?.budget) : null
+
   async function handleSave() {
     setSaving(true)
     try {
@@ -123,6 +129,7 @@ export default function ProfilePage() {
           learningGoals: form.learningGoals || undefined,
           subjects: subjectsArr,
           gradeLevel: form.gradeLevel ? Number(form.gradeLevel) : undefined,
+          budget: form.budget !== '' ? Number(form.budget) : undefined,
         })
       } else {
         await updateTutorPreferences({
@@ -150,7 +157,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6 py-3">
+    <div className="space-y-4 py-1 md:space-y-6 md:py-3">
       {/* Hero card */}
       <DashboardCard className="gap-0">
         <CardContent className="flex flex-col gap-6 p-6 md:flex-row md:items-start md:p-8">
@@ -216,6 +223,10 @@ export default function ProfilePage() {
                         <Label>Grade Level</Label>
                         <Input value={form.gradeLevel} onChange={e => setForm(f => ({ ...f, gradeLevel: e.target.value }))} />
                       </div>
+                      <div className="space-y-2">
+                        <Label>Monthly Budget (₦)</Label>
+                        <Input type="number" min="0" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="No limit" />
+                      </div>
                     </>
                   )}
                   {role === 'tutor' && (
@@ -245,18 +256,21 @@ export default function ProfilePage() {
                 <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                   {student?.bio ?? tutor?.bio ?? 'No profile bio added yet.'}
                 </p>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
                   {[
                     { label: 'Sessions', value: String(sessions.length), icon: Calendar },
                     { label: role === 'tutor' ? 'Students' : 'Upcoming', value: String(role === 'tutor' ? currentPeople.length : upcoming.length), icon: Users },
                     { label: 'Completed', value: String(completed.length), icon: CheckCircle2 },
+                    ...(role === 'tutor'
+                      ? [{ label: 'Rate / hr', value: tutorRate ?? 'Not set', icon: Wallet }]
+                      : [{ label: 'Budget / mo', value: studentBudget ?? 'Not set', icon: Wallet }]),
                   ].map(stat => {
                     const Icon = stat.icon
                     return (
-                      <div key={stat.label} className="flex items-center gap-3 rounded-lg bg-muted px-4 py-3">
-                        <Icon className="size-4 text-violet-500/70" />
-                        <div>
-                          <p className="text-xl font-semibold text-foreground">{stat.value}</p>
+                      <div key={stat.label} className="flex min-w-0 items-center gap-3 rounded-lg bg-muted px-4 py-3">
+                        <Icon className="size-4 shrink-0 text-violet-500/70" />
+                        <div className="min-w-0">
+                          <p className="truncate text-xl font-semibold text-foreground">{stat.value}</p>
                           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
                         </div>
                       </div>
@@ -280,7 +294,7 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-4 rounded-lg bg-muted p-4">
+                  <div className="rounded-lg bg-muted p-4">
                     <div className="flex items-start gap-3">
                       <span className="flex size-8 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400">
                         <Target className="size-4" />
@@ -291,7 +305,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-4 rounded-lg bg-muted p-4">
+                  <div className="rounded-lg bg-muted p-4">
                     <div className="flex items-start gap-3">
                       <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                         <BookOpen className="size-4" />
@@ -304,7 +318,47 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-4 rounded-lg bg-muted p-4 md:col-span-2">
+                  {role === 'tutor' ? (
+                    <>
+                      <div className="rounded-lg bg-muted p-4">
+                        <div className="flex items-start gap-3">
+                          <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                            <Wallet className="size-4" />
+                          </span>
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Hourly rate</p>
+                            <p className="mt-1 text-sm font-medium text-foreground">{tutorRate ? `${tutorRate}/hr` : 'Not set'}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-muted p-4">
+                        <div className="flex items-start gap-3">
+                          <span className="flex size-8 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                            <Award className="size-4" />
+                          </span>
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Experience</p>
+                            <p className="mt-1 text-sm font-medium text-foreground">
+                              {tutor?.experienceYears != null ? `${tutor.experienceYears} ${tutor.experienceYears === 1 ? 'yr' : 'yrs'}` : 'Not set'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="rounded-lg bg-muted p-4">
+                      <div className="flex items-start gap-3">
+                        <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                          <Wallet className="size-4" />
+                        </span>
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Monthly budget</p>
+                          <p className="mt-1 text-sm font-medium text-foreground">{studentBudget ? `${studentBudget}/mo` : 'Not set'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div className={`rounded-lg bg-muted p-4 ${role === 'tutor' ? 'md:col-span-2' : ''}`}>
                     <div className="flex items-start gap-3">
                       <span className="flex size-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
                         <MapPin className="size-4" />
@@ -330,7 +384,7 @@ export default function ProfilePage() {
                     const status = session.status
                     const otherName = role === 'tutor' ? session.studentName : session.tutorName
                     return (
-                      <div key={session.id} className="flex items-center gap-4 rounded-lg border p-4">
+                      <div key={session.id} className="flex items-center gap-3 rounded-lg border p-4">
                         <span className={cn('flex size-10 items-center justify-center rounded-lg text-xs font-semibold', IDENTITY_BG[accentFor(session.id)])}>
                           {initials(...(otherName ?? 'S').split(' '))}
                         </span>
@@ -360,15 +414,15 @@ export default function ProfilePage() {
                 <CardTitle className="text-base">{role === 'tutor' ? 'Students' : 'Current Tutors'}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {currentPeople.map(person => (
-                    <div key={`${person.name}-${person.subject}`} className="flex items-center gap-3">
-                      <span className={cn('flex size-10 items-center justify-center rounded-xl text-xs font-semibold', IDENTITY_BG[accentFor(person.name)])}>
+                    <div key={`${person.name}-${person.subject}`} className="flex items-center gap-3 rounded-lg bg-muted p-4">
+                      <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl text-xs font-semibold', IDENTITY_BG[accentFor(person.name)])}>
                         {initials(...person.name.split(' '))}
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-foreground">{person.name}</p>
-                        <p className="text-xs text-muted-foreground">{person.subject}</p>
+                        <p className="truncate text-xs text-muted-foreground">{person.subject}</p>
                       </div>
                     </div>
                   ))}
@@ -391,7 +445,7 @@ export default function ProfilePage() {
                   ].map((item, i) => {
                     const Icon = item.icon
                     return (
-                      <div key={i} className="flex items-center gap-3 rounded-lg bg-muted p-3">
+                      <div key={i} className="flex items-center gap-3 rounded-lg bg-muted p-4">
                         <Icon className={cn('size-4', item.tint)} />
                         <span className="text-xs font-semibold text-foreground">{item.label}</span>
                       </div>

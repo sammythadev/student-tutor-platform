@@ -71,6 +71,11 @@ export function NavUser() {
 								{email}
 							</span>
 						)}
+						{user?.role && (
+							<span className="mt-1 block text-xs font-semibold capitalize text-foreground">
+								{user.role}
+							</span>
+						)}
 					</div>
 				</DropdownMenuLabel>
 				<DropdownMenuSeparator />

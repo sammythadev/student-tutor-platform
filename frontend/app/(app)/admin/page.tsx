@@ -82,7 +82,7 @@ export default function AdminPage() {
   ]
 
   return (
-    <div className="space-y-6 py-3">
+    <div className="space-y-4 py-1 md:space-y-6 md:py-3">
       <DashboardHero
         greeting="Platform overview"
         subtitle="Aggregate figures read live from the matchmaking database."

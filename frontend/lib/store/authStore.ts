@@ -97,6 +97,10 @@ interface AuthState {
   isAuthenticated: () => boolean
   fullName: () => string
   initials: () => string
+
+  // Rehydration flag for hydration gates (e.g. course routes)
+  hasHydrated: boolean
+  finishHydration: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -137,8 +141,11 @@ export const useAuthStore = create<AuthState>()(
       initials: () => {
         const u = get().user
         if (!u) return '?'
-        return `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase()
+        return `${u.firstName?.[0] ?? ''}${u.lastName?.[0] ?? ''}`.toUpperCase() || '?'
       },
+
+      hasHydrated: false,
+      finishHydration: () => set({ hasHydrated: true }),
     }),
     {
       name: 'auth-store', // localStorage key — must match what axios.ts reads
@@ -149,6 +156,9 @@ export const useAuthStore = create<AuthState>()(
         studentProfile: s.studentProfile,
         tutorProfile: s.tutorProfile,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.finishHydration()
+      },
     },
   ),
 )

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Button } from '@/components/ui/button'
 import { CardContent } from '@/components/ui/card'
 import {
@@ -19,8 +18,7 @@ import { BookSessionModal } from '@/components/BookSessionModal'
 import { MessageModal } from '@/components/MessageModal'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
 import { apiErrorText } from '@/lib/api/errors'
-import { matchStrength } from '@/lib/ui'
-import { AlertCircle, BookOpen, CheckCircle2, MessageSquare, Search, Sparkles, Star, Wallet, X } from 'lucide-react'
+import { AlertCircle, Search, X } from 'lucide-react'
 import { useToast } from '@/lib/toast-context'
 import { Pagination } from '@/components/Pagination'
 import { TutorProfileModal } from '@/components/TutorProfileModal'
@@ -52,7 +50,6 @@ function SkeletonCard() {
 }
 
 export function FindTutors() {
-  const reduce = useReducedMotion()
   const [candidates, setCandidates] = useState<TutorCandidate[]>([])
   const [liked, setLiked] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
@@ -62,6 +59,7 @@ export function FindTutors() {
   const [sortBy, setSortBy] = useState<SortKey>('score')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [bookTarget, setBookTarget] = useState<TutorCandidate | null>(null)
   const [messageTarget, setMessageTarget] = useState<TutorCandidate | null>(null)
   const [profileTarget, setProfileTarget] = useState<TutorCandidate | null>(null)
@@ -84,7 +82,7 @@ export function FindTutors() {
     }
     load()
     return () => { alive = false }
-  }, [])
+  }, [loadAttempt])
 
   const subjects = useMemo(() => {
     const unique = new Set<string>()
@@ -115,15 +113,9 @@ export function FindTutors() {
   const safePage   = Math.min(page, totalPages)
   const paginated  = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
 
-  useEffect(() => { setPage(1) }, [search, subject, minRating, maxRate, sortBy])
 
-  const hasFilters = minRating > 0 || maxRate > 0 || sortBy !== 'score'
+  const hasFilters = search !== '' || minRating > 0 || maxRate > 0 || sortBy !== 'score' || subject !== 'All'
 
-  const showFeatured = !loading && !hasFilters && search === '' && subject === 'All' && filtered.length > 2
-  const featured = showFeatured ? filtered[0] : null
-  const gridItems = featured && safePage === 1
-    ? paginated.filter(p => p.tutorId !== featured.tutorId)
-    : paginated
 
   const toggleLike = (id: string) => setLiked(prev => {
     const next = new Set(prev)
@@ -132,44 +124,30 @@ export function FindTutors() {
   })
 
   function clearFilters() {
-    setSearch(''); setSubject('All'); setMinRating(0); setMaxRate(0); setSortBy('score')
+    setSearch(''); setSubject('All'); setMinRating(0); setMaxRate(0); setSortBy('score'); setPage(1)
   }
 
   return (
-    <div className="space-y-6 py-3">
+    <div className="space-y-4 py-1 md:space-y-6 md:py-3">
       <PageHero
         title="Find your tutor"
-        description={loading
-          ? 'Ranking tutors against your learning profile…'
-          : total > candidates.length
-            ? `${filtered.length} of ${candidates.length} loaded match your filters · ${total} eligible in total`
-            : `${filtered.length} of ${total} tutors ranked for how well they fit you`}
+        description="Tutors ranked for your learning profile."
       />
 
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="flex items-center gap-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-600 dark:text-rose-400"
-            role="alert"
-          >
-            <AlertCircle className="size-4 shrink-0" />
-            <span className="flex-1 leading-relaxed">{error}</span>
-            <button type="button" onClick={() => setError(null)} aria-label="Dismiss" className="cursor-pointer rounded-md p-1 hover:bg-rose-500/10">
-              <X className="size-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {error && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive" role="alert">
+          <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1 leading-relaxed">{error}</span>
+          <Button variant="outline" className="h-11" onClick={() => { setLoading(true); setLoadAttempt(attempt => attempt + 1) }} disabled={loading}>Retry</Button>
+        </div>
+      )}
 
       {/* Search row */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <input
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => { setSearch(e.target.value); setPage(1) }}
           placeholder="Search tutors or subjects…"
           aria-label="Search tutors or subjects"
           className="h-11 w-full rounded-lg border bg-background pl-11 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -177,7 +155,7 @@ export function FindTutors() {
         {search && (
           <button
             type="button"
-            onClick={() => setSearch('')}
+            onClick={() => { setSearch(''); setPage(1) }}
             aria-label="Clear search"
             className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
           >
@@ -186,104 +164,31 @@ export function FindTutors() {
         )}
       </div>
 
-      {/* Featured recommendation */}
-      {featured && (() => {
-        const matchPct = Math.round((featured.score ?? 0) * 100)
-        const strength = matchStrength(featured.score ?? 0)
-        const isEligible = featured.isEligible !== false
-        const fSubjects = [...new Set(featured.subjectsTaught ?? [])] as string[]
-        return (
-          <motion.section
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="catalog-card overflow-hidden"
-          >
-            <div className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:gap-8 md:p-8">
-              <div className="flex min-w-0 flex-1 items-start gap-4">
-                <div className="flex size-16 shrink-0 cursor-pointer items-center justify-center rounded-lg text-xl font-semibold bg-primary/10 text-primary">
-                  {featured.firstName?.[0]}{featured.lastName?.[0]}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="size-3.5 text-amber-500" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                      Top match for you
-                    </span>
-                  </div>
-                  <button type="button" onClick={() => setProfileTarget(featured)} className="mt-1 block cursor-pointer text-left">
-                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                      {featured.firstName} {featured.lastName}
-                    </h2>
-                  </button>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <Star className="size-3.5 fill-amber-500 text-amber-500" />
-                      <span className="font-semibold text-foreground">{Number(featured.avgRating ?? 0).toFixed(1)}</span>
-                      {featured.ratingCount ? <span>({featured.ratingCount})</span> : null}
-                    </span>
-                    <span aria-hidden>·</span>
-                    <span className="inline-flex items-center gap-1">
-                      <Wallet className="size-3.5" />
-                      <span className="font-semibold tabular-nums text-foreground">₦{Number(featured.hourlyRate ?? 0).toLocaleString()}</span>/hr
-                    </span>
-                    {featured.isVerified && (
-                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="size-3.5" /> Verified
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {fSubjects.slice(0, 3).map(s => (
-                      <span key={s} className="rounded-full border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">{s}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-3 md:flex-col md:items-stretch md:gap-3">
-                <div className="flex items-center gap-2 md:justify-center">
-                  <span className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                    {strength.label} · {matchPct}%
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2 md:w-48">
-                  <Button onClick={() => setBookTarget(featured)} disabled={!isEligible}>
-                    <BookOpen className="size-4" /> Book Session
-                  </Button>
-                  <Button variant="outline" onClick={() => setMessageTarget(featured)}>
-                    <MessageSquare className="size-4" /> Message
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </motion.section>
-        )
-      })()}
 
       {/* Catalog layout: rail + grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
         <CatalogFilters
           subjects={subjects}
           selectedSubject={subject}
-          onSubject={setSubject}
+          onSubject={value => { setSubject(value); if (value !== subject) setPage(1) }}
           minRating={minRating}
-          onMinRating={setMinRating}
+          onMinRating={value => { setMinRating(value); if (value !== minRating) setPage(1) }}
           maxRate={maxRate}
-          onMaxRate={setMaxRate}
+          onMaxRate={value => { setMaxRate(value); if (value !== maxRate) setPage(1) }}
           rateMax={RATE_MAX}
           sortBy={sortBy}
-          onSortBy={setSortBy}
+          onSortBy={value => { setSortBy(value); if (value !== sortBy) setPage(1) }}
           hasFilters={hasFilters}
           onReset={clearFilters}
         />
 
         <div className="min-w-0 space-y-5">
           {/* Result count + active filter chips */}
-          {!loading && filtered.length > 0 && (
+          {!loading && !error && (
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">{filtered.length}</span>{" "}
-                {filtered.length === 1 ? 'tutor matches' : 'tutors match'} your filters
+                {filtered.length} of {candidates.length} loaded tutors match your filters
+                {total > candidates.length && ` · ${total} eligible in total`}
               </p>
               {hasFilters && (
                 <button
@@ -298,29 +203,31 @@ export function FindTutors() {
           )}
 
           {loading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="catalog-grid">
               {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : error ? null : filtered.length === 0 ? (
             <CardContent className="rounded-lg border bg-background p-8">
               <Empty>
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
                     <Search aria-hidden="true" />
                   </EmptyMedia>
-                  <EmptyTitle>No tutors match your filters</EmptyTitle>
-                  <EmptyDescription className="text-xs">
-                    Try widening your rating or price range.
+                  <EmptyTitle>{candidates.length === 0 ? 'No tutors available right now' : 'No tutors match your filters'}</EmptyTitle>
+                  <EmptyDescription className="text-sm">
+                    {candidates.length === 0 ? 'Tutors who fit your learning profile will appear here. Check back for new matches.' : 'Try widening your rating or price range.'}
                   </EmptyDescription>
                 </EmptyHeader>
-                <EmptyContent>
-                  <Button variant="outline" size="sm" onClick={clearFilters}>Clear all filters</Button>
-                </EmptyContent>
+                {hasFilters && (
+                  <EmptyContent>
+                    <Button variant="outline" className="h-11" onClick={clearFilters}>Clear all filters</Button>
+                  </EmptyContent>
+                )}
               </Empty>
             </CardContent>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {gridItems.map((person) => (
+            <div className="catalog-grid">
+              {paginated.map((person) => (
                 <CatalogCard
                   key={person.tutorId}
                   data={{
@@ -328,7 +235,7 @@ export function FindTutors() {
                     name: `${person.firstName} ${person.lastName}`,
                     rating: person.avgRating,
                     ratingCount: person.ratingCount,
-                    subjects: [...new Set(person.subjectsTaught ?? [])].slice(0, 4) as string[],
+                    subjects: [...new Set(person.subjectsTaught ?? [])] as string[],
                     bio: person.bio ?? undefined,
                     price: person.hourlyRate != null ? `₦${Number(person.hourlyRate).toLocaleString()}` : undefined,
                     priceSuffix: '/hr',

@@ -19,28 +19,32 @@ export function Pagination({ page, total, limit, onPageChange }: PaginationProps
   for (let i = start; i <= end; i++) pages.push(i)
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <nav aria-label="Pagination" className="flex flex-wrap items-center justify-center gap-2">
       <button
+        type="button"
+        aria-label="Previous page"
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
-        className="flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 disabled:opacity-30"
-        style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+        className="flex size-11 items-center justify-center rounded-lg border bg-background text-[var(--text-secondary)] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="size-4" aria-hidden="true" />
       </button>
 
       {start > 1 && (
         <>
-          <button onClick={() => onPageChange(1)} className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-semibold transition-all duration-200" style={{ color: 'var(--text-secondary)' }}>1</button>
-          {start > 2 && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>...</span>}
+          <button type="button" aria-label="Page 1" onClick={() => onPageChange(1)} className="flex size-11 items-center justify-center rounded-lg text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">1</button>
+          {start > 2 && <span className="text-xs text-[var(--text-secondary)]" aria-hidden="true">...</span>}
         </>
       )}
 
       {pages.map(p => (
         <button
           key={p}
+          type="button"
+          aria-label={`Page ${p}`}
+          aria-current={p === page ? 'page' : undefined}
           onClick={() => onPageChange(p)}
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-semibold transition-all duration-200"
+          className="flex size-11 items-center justify-center rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           style={p === page ? { background: 'var(--primary)', color: 'var(--primary-fg)' } : { color: 'var(--text-secondary)' }}
         >
           {p}
@@ -49,19 +53,20 @@ export function Pagination({ page, total, limit, onPageChange }: PaginationProps
 
       {end < totalPages && (
         <>
-          {end < totalPages - 1 && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>...</span>}
-          <button onClick={() => onPageChange(totalPages)} className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-semibold transition-all duration-200" style={{ color: 'var(--text-secondary)' }}>{totalPages}</button>
+          {end < totalPages - 1 && <span className="text-xs text-[var(--text-secondary)]" aria-hidden="true">...</span>}
+          <button type="button" aria-label={`Page ${totalPages}`} onClick={() => onPageChange(totalPages)} className="flex size-11 items-center justify-center rounded-lg text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">{totalPages}</button>
         </>
       )}
 
       <button
+        type="button"
+        aria-label="Next page"
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
-        className="flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 disabled:opacity-30"
-        style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+        className="flex size-11 items-center justify-center rounded-lg border bg-background text-[var(--text-secondary)] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="size-4" aria-hidden="true" />
       </button>
-    </div>
+    </nav>
   )
 }

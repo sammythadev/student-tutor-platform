@@ -34,7 +34,7 @@ export function OptionCard({ title, blurb, icon: Icon, selected, onClick, ariaLa
             ? 'border-[var(--primary)] bg-[var(--primary-subtle)] shadow-sm'
             : 'border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--primary)]/50 hover:shadow-sm'
         )}
-        style={selected ? { borderWidth: 2 } : undefined}
+        style={{ borderWidth: 1 }}
       >
         <span
           className="flex min-w-0 items-center justify-center gap-1 text-xs font-semibold sm:text-sm"
@@ -59,7 +59,7 @@ export function OptionCard({ title, blurb, icon: Icon, selected, onClick, ariaLa
           ? 'border-[var(--primary)] bg-[var(--primary-subtle)] shadow-sm'
           : 'border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--primary)]/50 hover:shadow-sm'
       )}
-      style={selected ? { borderWidth: 2 } : undefined}
+      style={{ borderWidth: 1 }}
     >
       {Icon && (
         <span
