@@ -230,7 +230,9 @@ describe('SessionsService.respondToSeries', () => {
   });
 
   it('declines the block for a no, and stops an empty series', async () => {
-    const repository = createRepository({ updateSeriesPendingStatus: jest.fn().mockResolvedValue(0) });
+    const repository = createRepository({
+      updateSeriesPendingStatus: jest.fn().mockResolvedValue(0),
+    });
     const { service } = await buildService(repository);
 
     await expect(service.respondToSeries(seriesId, tutorId, false)).rejects.toThrow(

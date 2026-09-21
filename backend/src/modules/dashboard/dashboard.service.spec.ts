@@ -58,6 +58,7 @@ function createRepository(overrides: Partial<MockedRepository> = {}): MockedRepo
     sumCompletedHours: jest.fn().mockResolvedValue(0),
     getStudentCourses: jest.fn().mockResolvedValue([]),
     getTutorCourses: jest.fn().mockResolvedValue([]),
+    getAdminMetrics: jest.fn().mockResolvedValue({}),
     ...overrides,
   };
 }
