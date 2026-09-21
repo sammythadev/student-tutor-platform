@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { motion, useSpring } from 'motion/react'
+import { useEffect, useRef } from 'react'
+import { motion, useMotionTemplate, useSpring } from 'motion/react'
 import Annotation from './Annotation'
+import { useAmbientMotion } from './useAmbientMotion'
 
 /* ──────────────────────────────────────────────────────────
    The "workflow" surface inside the hero frame.
@@ -30,49 +31,51 @@ const ROUTES = [
   { name: 'Mr Okafor', tint: '#f2db88', ink: '#181203', path: [[27, 62], [38, 44], [24, 40], [33, 66]] },
 ] as const
 
-function Cursor({ route, delay }: { route: (typeof ROUTES)[number]; delay: number }) {
+function Cursor({ route, delay, active }: {
+  route: (typeof ROUTES)[number]
+  delay: number
+  active: boolean
+}) {
   const x = useSpring(route.path[0][0], SPRING)
   const y = useSpring(route.path[0][1], SPRING)
-  const [leg, setLeg] = useState(0)
+  const transform = useMotionTemplate`translate3d(${x}%, ${y}%, 0)`
+  const leg = useRef(0)
 
   useEffect(() => {
-    const id = window.setInterval(() => setLeg((n) => n + 1), 2200)
-    const start = window.setTimeout(() => setLeg(1), delay)
-    return () => {
-      window.clearInterval(id)
-      window.clearTimeout(start)
+    if (!active) return
+    let timer: number
+    const advance = () => {
+      leg.current = (leg.current + 1) % route.path.length
+      const [nx, ny] = route.path[leg.current]
+      x.set(nx)
+      y.set(ny)
+      timer = window.setTimeout(advance, 2200)
     }
-  }, [delay])
-
-  useEffect(() => {
-    const [nx, ny] = route.path[leg % route.path.length]
-    x.set(nx)
-    y.set(ny)
-  }, [leg, route.path, x, y])
+    timer = window.setTimeout(advance, delay)
+    return () => {
+      window.clearTimeout(timer)
+      x.stop()
+      y.stop()
+    }
+  }, [active, delay, route.path, x, y])
 
   return (
     <motion.div
-      className="pointer-events-none absolute z-20"
-      style={{ left: useSpringPercent(x), top: useSpringPercent(y) }}
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-20"
+      style={{ transform }}
     >
       <svg viewBox="0 0 16 18" className="size-4 drop-shadow" style={{ color: route.tint }}>
         <path d="M1 1l13 7.5-5.6 1.4L5.5 16z" fill="currentColor" />
       </svg>
       <span
-        className="mt-0.5 block whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-medium"
+        className="mt-0.5 block w-fit whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-medium"
         style={{ backgroundColor: route.tint, color: route.ink }}
       >
         {route.name}
       </span>
     </motion.div>
   )
-}
-
-/* Motion values are numbers; the style needs a percentage string. */
-function useSpringPercent(value: ReturnType<typeof useSpring>) {
-  const [pct, setPct] = useState(() => `${value.get()}%`)
-  useEffect(() => value.on('change', (v) => setPct(`${v}%`)), [value])
-  return pct
 }
 
 function Node({
@@ -108,6 +111,7 @@ function Node({
 
 export default function CanvasSurface() {
   const host = useRef<HTMLDivElement>(null)
+  const { active } = useAmbientMotion(host)
 
   return (
     <div ref={host} className="relative h-full w-full overflow-hidden bg-[#050505]">
@@ -156,8 +160,8 @@ export default function CanvasSurface() {
       <div aria-hidden className="absolute left-[68%] top-[38%] h-px w-[8%] bg-white/12" />
       <Node className="left-[76%] top-[40%] h-16 w-28" tone="accent" />
 
-      <Cursor route={ROUTES[0]} delay={600} />
-      <Cursor route={ROUTES[1]} delay={1500} />
+      <Cursor route={ROUTES[0]} delay={600} active={active} />
+      <Cursor route={ROUTES[1]} delay={1500} active={active} />
 
       <Annotation direction="down-left" className="absolute right-[6%] top-[16%] w-[180px]">
         Scored live

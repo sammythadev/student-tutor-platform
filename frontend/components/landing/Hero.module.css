@@ -1,0 +1,25 @@
+/* A single, CSS-only entrance keeps the hero server-rendered and usable before
+   hydration. The headline stays opaque so its paint is never delayed. */
+@media (prefers-reduced-motion: no-preference) {
+  .headline {
+    animation: settle 360ms var(--ease-out-quart) both;
+  }
+
+  .lead {
+    animation: reveal 360ms var(--ease-out-quart) 50ms both;
+  }
+
+  .actions {
+    animation: reveal 360ms var(--ease-out-quart) 100ms both;
+  }
+}
+
+@keyframes settle {
+  from { transform: translateY(8px); }
+  to { transform: translateY(0); }
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

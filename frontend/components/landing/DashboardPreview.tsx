@@ -60,14 +60,14 @@ function WeekBars() {
           <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
             <div className="flex h-12 w-full items-end">
               <motion.div
-                className="w-full rounded-t"
-                style={{ backgroundColor: '#4F8EF7' }}
-                initial={reduce ? false : { height: 0 }}
-                animate={{ height: inView ? `${(d.hours / WEEK_PEAK) * 100}%` : 0 }}
-                transition={{ duration: 0.6, delay: reduce ? 0 : 0.4 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full origin-bottom rounded-t"
+                style={{ backgroundColor: '#4F8EF7', height: `${(d.hours / WEEK_PEAK) * 100}%` }}
+                initial={reduce ? false : { scaleY: 0 }}
+                animate={{ scaleY: reduce || inView ? 1 : 0 }}
+                transition={{ duration: reduce ? 0 : 0.6, delay: reduce ? 0 : 0.4 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
               />
             </div>
-            <span className="text-[9px] text-white/35">{d.day}</span>
+            <span className="text-[9px] text-mk-ink-3">{d.day}</span>
           </div>
         ))}
       </div>
@@ -89,13 +89,11 @@ function SubjectDonut() {
   const active = hovered === null ? null : SERIES[hovered]
 
   // Running start offset per slice, in turns from 12 o'clock.
-  let cursor = 0
-  const slices = SERIES.map((s) => {
-    const fraction = s.value / TOTAL
-    const start = cursor
-    cursor += fraction
-    return { ...s, fraction, start }
-  })
+  const slices = SERIES.map((s, i) => ({
+    ...s,
+    fraction: s.value / TOTAL,
+    start: SERIES.slice(0, i).reduce((sum, item) => sum + item.value / TOTAL, 0),
+  }))
 
   return (
     <div
@@ -107,15 +105,17 @@ function SubjectDonut() {
         <svg ref={ref} viewBox="0 0 120 120" className="size-[124px]" role="img"
              aria-label={`Subject mix: ${SERIES.map(s => `${s.label} ${s.value}%`).join(', ')}`}>
           {/* Track */}
-          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="13" />
+          <circle cx="60" cy="60" r="52" fill="none" stroke="color-mix(in srgb, var(--mk-ink) 7%, transparent)" strokeWidth="13" />
 
           <motion.g
             style={{ transformOrigin: '60px 60px' }}
             animate={spinning && !reduce ? { rotate: 360 } : { rotate: 0 }}
             transition={
-              spinning && !reduce
-                ? { duration: 9, ease: 'linear', repeat: Infinity }
-                : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }
+              reduce
+                ? { duration: 0 }
+                : spinning
+                  ? { duration: 9, ease: 'linear', repeat: Infinity }
+                  : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }
             }
           >
             {slices.map((s, i) => {
@@ -127,17 +127,16 @@ function SubjectDonut() {
                   cx="60" cy="60" r="52"
                   fill="none"
                   stroke={s.color}
-                  strokeWidth={hovered === i ? 15 : 13}
+                  strokeWidth={13}
                   strokeLinecap="butt"
                   pathLength={1}
                   strokeDasharray={`${len} ${1 - len}`}
                   transform={`rotate(${s.start * 360 - 90} 60 60)`}
                   initial={reduce ? { strokeDashoffset: 0 } : { strokeDashoffset: len }}
-                  animate={{ strokeDashoffset: inView ? 0 : len, opacity: dim ? 0.35 : 1 }}
+                  animate={{ strokeDashoffset: reduce || inView ? 0 : len, opacity: dim ? 0.35 : 1 }}
                   transition={{
-                    strokeDashoffset: { duration: 0.9, delay: reduce ? 0 : 0.12 * i, ease: [0.16, 1, 0.3, 1] },
+                    strokeDashoffset: { duration: reduce ? 0 : 0.9, delay: reduce ? 0 : 0.12 * i, ease: [0.16, 1, 0.3, 1] },
                     opacity: { duration: 0.18 },
-                    strokeWidth: { duration: 0.18 },
                   }}
                   onMouseEnter={() => setHovered(i)}
                   className="cursor-default"
@@ -149,10 +148,10 @@ function SubjectDonut() {
 
         {/* Hero number in the hole — swaps to the hovered slice. */}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-medium tabular-nums text-white">
+          <span className="text-xl font-medium tabular-nums text-mk-ink">
             {active ? `${active.value}%` : TOTAL}
           </span>
-          <span className="mt-0.5 max-w-[72px] text-center text-[10px] leading-tight text-white/45">
+          <span className="mt-0.5 max-w-[72px] text-center text-[10px] leading-tight text-mk-ink-3">
             {active ? active.label : 'sessions'}
           </span>
         </div>
@@ -167,8 +166,8 @@ function SubjectDonut() {
             onMouseEnter={() => setHovered(i)}
           >
             <span className="size-2 shrink-0 rounded-[2px]" style={{ backgroundColor: s.color }} />
-            <span className={hovered === i ? 'text-white' : 'text-white/60'}>{s.label}</span>
-            <span className="ml-auto tabular-nums text-white/40">{s.value}%</span>
+            <span className={hovered === i ? 'text-mk-ink' : 'text-mk-ink-2'}>{s.label}</span>
+            <span className="ml-auto tabular-nums text-mk-ink-3">{s.value}%</span>
           </li>
         ))}
       </ul>
@@ -188,10 +187,10 @@ function Cell({
   title, children, className, action,
 }: { title: string; children: React.ReactNode; className?: string; action?: string }) {
   return (
-    <section className={`flex flex-col rounded-xl border border-white/10 bg-white/[0.03] p-4 ${className ?? ''}`}>
+    <section className={`flex flex-col rounded-xl border border-mk-ink/10 bg-mk-ink/[0.03] p-4 ${className ?? ''}`}>
       <div className="mb-3 flex items-baseline gap-3">
-        <h3 className="text-[11px] font-medium uppercase tracking-widest text-white/40">{title}</h3>
-        {action && <span className="ml-auto text-[11px] text-white/30">{action}</span>}
+        <h3 className="text-[11px] font-medium uppercase tracking-widest text-mk-ink-3">{title}</h3>
+        {action && <span className="ml-auto text-[11px] text-mk-ink-3">{action}</span>}
       </div>
       {children}
     </section>
@@ -211,11 +210,11 @@ function Cell({
 ────────────────────────────────────────────────────────── */
 export function StatRow() {
   return (
-    <dl className="flex divide-x divide-white/10 sm:hidden">
+    <dl className="flex divide-x divide-mk-ink/10 sm:hidden">
       {TILES.slice(0, 3).map(({ short, value }) => (
         <div key={short} className="min-w-0 flex-1 px-3 py-3">
-          <dd className="text-[15px] font-medium leading-none tabular-nums text-white">{value}</dd>
-          <dt className="mt-1.5 truncate text-[10px] font-medium uppercase tracking-wider text-white/40">
+          <dd className="text-[15px] font-medium leading-none tabular-nums text-mk-ink">{value}</dd>
+          <dt className="mt-1.5 truncate text-[10px] font-medium uppercase tracking-wider text-mk-ink-3">
             {short}
           </dt>
         </div>
@@ -230,14 +229,14 @@ export function StatStrip() {
       {TILES.map(({ icon: Icon, label, value }) => (
         <div
           key={label}
-          className="flex items-center gap-3 border-l border-white/10 px-4 py-3.5 first:border-l-0"
+          className="flex items-center gap-3 border-l border-mk-ink/10 px-4 py-3.5 first:border-l-0"
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06]">
-            <Icon className="size-3.5 text-white/50" strokeWidth={2} />
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-mk-ink/[0.06]">
+            <Icon className="size-3.5 text-mk-ink-3" strokeWidth={2} />
           </span>
           <div className="min-w-0">
-            <dd className="text-base font-medium leading-none tabular-nums text-white">{value}</dd>
-            <dt className="mt-1 truncate text-[11px] text-white/45">{label}</dt>
+            <dd className="text-base font-medium leading-none tabular-nums text-mk-ink">{value}</dd>
+            <dt className="mt-1 truncate text-[11px] text-mk-ink-3">{label}</dt>
           </div>
         </div>
       ))}
@@ -252,10 +251,12 @@ export function StatStrip() {
    so the charts animate and stay crisp at any density.
 ────────────────────────────────────────────────────────── */
 export function DashboardPreview({
-  beam = '#6AA6FF',
+  beam,
   chrome,
   bare = false,
 }: {
+  /** Optional brand tint for the live "Join" badge. Defaults to the theme-aware
+   *  syntax accent so the badge clears contrast in both themes. */
   beam?: string
   /** Rendered into the window's own chrome row, in place of the title. The hero
    *  frame passes its surface tabs here so the window keeps one title bar. */
@@ -263,40 +264,46 @@ export function DashboardPreview({
   /** Drop the outer frame when an ancestor already provides one. */
   bare?: boolean
 }) {
+  const joinStyle = beam
+    ? { color: beam, backgroundColor: `${beam}1f` }
+    : {
+        color: 'var(--mk-syntax-class)',
+        backgroundColor: 'color-mix(in srgb, var(--mk-syntax-class) 12%, transparent)',
+      }
   return (
     <div
       data-dashboard-preview
       className={
         bare
           ? 'flex h-full flex-col overflow-hidden'
-          : 'overflow-hidden rounded-2xl border border-white/10 bg-black/40'
+          : 'overflow-hidden rounded-2xl border border-mk-ink/10 bg-mk-panel-sunken/40'
       }
     >
       {/* Window chrome */}
-      <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
+      <div className="flex items-center gap-2 border-b border-mk-ink/10 px-4 py-2.5">
         <span className="flex shrink-0 gap-1.5" aria-hidden>
-          <span className="size-2 rounded-full bg-white/15" />
-          <span className="size-2 rounded-full bg-white/15" />
-          <span className="size-2 rounded-full bg-white/15" />
+          <span className="size-2 rounded-full bg-mk-ink/15" />
+          <span className="size-2 rounded-full bg-mk-ink/15" />
+          <span className="size-2 rounded-full bg-mk-ink/15" />
         </span>
-        {chrome ?? <p className="ml-1 text-[11px] font-medium text-white/45">Tutorly · Dashboard</p>}
-        <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-[11px] font-medium text-white/50 sm:inline-flex">
+        {chrome ?? <p className="ml-1 text-[11px] font-medium text-mk-ink-3">Tutorly · Dashboard</p>}
+        <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-[11px] font-medium text-mk-ink-3 sm:inline-flex">
           <span className="size-1.5 rounded-full bg-emerald-400" /> Live
         </span>
       </div>
 
       <div className="space-y-4 p-4 lg:p-5">
         {/* Greeting row */}
-        <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-mk-ink/10 bg-mk-ink/[0.03] p-4">
           <div className="min-w-0">
-            <p className="text-base font-medium text-white sm:text-lg">Good afternoon, Adaeze</p>
-            <p className="mt-1 text-xs text-white/50">
+            <p className="text-base font-medium text-mk-ink sm:text-lg">Good afternoon, Adaeze</p>
+            <p className="mt-1 text-xs text-mk-ink-3">
               3 sessions upcoming · 12.5h this week · 6 day streak
             </p>
           </div>
           <div className="flex shrink-0 gap-2">
-            <span className="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-black">My schedule</span>
-            <span className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-white/80">
+            <span className="rounded-md bg-mk-ink px-3 py-1.5 text-xs font-medium text-mk-inverse-fg">My schedule</span>
+            <span className="rounded-md border border-mk-ink/15 px-3 py-1.5 text-xs font-medium text-mk-ink-2">
               Find a tutor
             </span>
           </div>
@@ -305,10 +312,10 @@ export function DashboardPreview({
         {/* Stat tiles */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {TILES.map(({ icon: Icon, label, value }) => (
-            <div key={label} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-              <Icon className="size-3.5 text-white/40" strokeWidth={2} />
-              <p className="mt-2 text-lg font-medium tabular-nums leading-none text-white">{value}</p>
-              <p className="mt-1.5 text-[10px] leading-tight text-white/45">{label}</p>
+            <div key={label} className="rounded-xl border border-mk-ink/10 bg-mk-ink/[0.03] p-3">
+              <Icon className="size-3.5 text-mk-ink-3" strokeWidth={2} />
+              <p className="mt-2 text-lg font-medium tabular-nums leading-none text-mk-ink">{value}</p>
+              <p className="mt-1.5 text-[10px] leading-tight text-mk-ink-3">{label}</p>
             </div>
           ))}
         </div>
@@ -339,13 +346,13 @@ export function DashboardPreview({
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
-                      <p className="truncate text-xs font-medium text-white">{m.name}</p>
-                      <p className="truncate text-[11px] text-white/45">{m.subject}</p>
-                      <span className="ml-auto shrink-0 text-[11px] font-medium tabular-nums text-white">
+                      <p className="truncate text-xs font-medium text-mk-ink">{m.name}</p>
+                      <p className="truncate text-[11px] text-mk-ink-3">{m.subject}</p>
+                      <span className="ml-auto shrink-0 text-[11px] font-medium tabular-nums text-mk-ink">
                         {m.score}%
                       </span>
                     </div>
-                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
+                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-mk-ink/10">
                       <div className="h-full rounded-full" style={{ width: `${m.score}%`, backgroundColor: m.color }} />
                     </div>
                   </div>
@@ -357,20 +364,20 @@ export function DashboardPreview({
           <Cell title="Upcoming" action="3 booked" className="lg:col-span-2">
             <ul className="space-y-2.5">
               {UPCOMING.map((s) => (
-                <li key={s.when} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5">
+                <li key={s.when} className="rounded-lg border border-mk-ink/10 bg-mk-ink/[0.03] px-3 py-2.5">
                   <div className="flex items-center gap-2">
-                    <p className="text-[11px] font-medium text-white/70">{s.when}</p>
+                    <p className="text-[11px] font-medium text-mk-ink-2">{s.when}</p>
                     {s.live && (
                       <span
                         className="ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium"
-                        style={{ color: beam, backgroundColor: `${beam}1f` }}
+                        style={joinStyle}
                       >
                         Join
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 truncate text-xs font-medium text-white">{s.topic}</p>
-                  <p className="truncate text-[11px] text-white/45">with {s.who}</p>
+                  <p className="mt-1 truncate text-xs font-medium text-mk-ink">{s.topic}</p>
+                  <p className="truncate text-[11px] text-mk-ink-3">with {s.who}</p>
                 </li>
               ))}
             </ul>

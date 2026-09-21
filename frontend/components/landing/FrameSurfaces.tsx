@@ -21,10 +21,10 @@ export function ScoredList() {
   })).sort((a, b) => b.total - a.total)
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-hidden bg-[#050505] p-4 lg:p-5">
+    <div className="flex h-full flex-col gap-3 overflow-hidden bg-[var(--mk-preview)] p-4 lg:p-5">
       <div className="flex items-center justify-between">
-        <p className="text-[13px] font-medium text-white">Physics · SS2 · Tuesday 16:00</p>
-        <p className="text-[11px] text-white/45">
+        <p className="text-[13px] font-medium text-mk-ink">Physics · SS2 · Tuesday 16:00</p>
+        <p className="text-[11px] text-mk-ink-3 dark:text-white/45">
           {scored.length} eligible of {CANDIDATES.length}
         </p>
       </div>
@@ -33,21 +33,21 @@ export function ScoredList() {
         {scored.map((c, i) => (
           <li
             key={c.name}
-            className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl bg-white/[0.035] px-3 py-2.5 shadow-[0_0_0_1px_rgb(253_252_252/0.06)]"
+            className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl bg-mk-ink/[0.035] px-3 py-2.5 shadow-[0_0_0_1px_color-mix(in_srgb,var(--mk-ink)_6%,transparent)]"
           >
-            <span className="text-[12px] font-medium tabular-nums text-white/40">{i + 1}</span>
+            <span className="text-[12px] font-medium tabular-nums text-mk-ink-3 dark:text-white/40">{i + 1}</span>
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-medium text-white">{c.name}</p>
-              <p className="truncate text-[11px] text-white/45">{c.teaches}</p>
+              <p className="truncate text-[13px] font-medium text-mk-ink">{c.name}</p>
+              <p className="truncate text-[11px] text-mk-ink-3 dark:text-white/45">{c.teaches}</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-white/10 sm:block">
+              <span className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-mk-ink/10 sm:block">
                 <span
                   className="block h-full rounded-full"
                   style={{ width: `${c.total * 100}%`, backgroundColor: HUES[i % HUES.length] }}
                 />
               </span>
-              <span className="text-[13px] font-medium tabular-nums text-white">
+              <span className="text-[13px] font-medium tabular-nums text-mk-ink">
                 {Math.round(c.total * 100)}
               </span>
             </div>
@@ -55,7 +55,7 @@ export function ScoredList() {
         ))}
       </ol>
 
-      <p className="text-[11px] text-white/40">
+      <p className="text-[11px] text-mk-ink-3 dark:text-white/40">
         Weighted sum of the four criteria. Subject and level filtered first.
       </p>
     </div>
@@ -71,14 +71,14 @@ const SLOTS: readonly [number, number, 'booked' | 'overlap' | 'held'][] = [
   [2, 4, 'overlap'], [3, 1, 'held'], [3, 2, 'held'], [4, 3, 'overlap'], [5, 0, 'overlap'],
 ]
 
-const FILL = { booked: '#6cefce', overlap: 'rgb(253 252 252 / 0.12)', held: '#efd26c' } as const
+const FILL = { booked: '#6cefce', overlap: 'var(--mk-track)', held: '#efd26c' } as const
 
 export function WeekGrid() {
   return (
-    <div className="flex h-full flex-col gap-3 overflow-hidden bg-[#050505] p-4 lg:p-5">
+    <div className="flex h-full flex-col gap-3 overflow-hidden bg-[var(--mk-preview)] p-4 lg:p-5">
       <div className="flex items-center justify-between">
-        <p className="text-[13px] font-medium text-white">Hours you both have open</p>
-        <span className="flex items-center gap-3 text-[11px] text-white/45">
+        <p className="text-[13px] font-medium text-mk-ink">Hours you both have open</p>
+        <span className="flex items-center gap-3 text-[11px] text-mk-ink-3 dark:text-white/45">
           <span className="inline-flex items-center gap-1.5">
             <i className="block size-2 rounded-sm" style={{ backgroundColor: FILL.booked }} /> Booked
           </span>
@@ -91,13 +91,13 @@ export function WeekGrid() {
       <div className="grid min-h-0 flex-1 grid-cols-[2.5rem_repeat(6,minmax(0,1fr))] grid-rows-[auto_repeat(6,minmax(0,1fr))] gap-1">
         <span />
         {DAYS.map((d) => (
-          <span key={`head-${d}`} className="text-center text-[11px] text-white/45">
+          <span key={`head-${d}`} className="text-center text-[11px] text-mk-ink-3 dark:text-white/45">
             {d}
           </span>
         ))}
 
         {HOURS.flatMap((h, hi) => [
-          <span key={`hour-${h}`} className="pr-1 text-right text-[11px] tabular-nums text-white/35">
+          <span key={`hour-${h}`} className="pr-1 text-right text-[11px] tabular-nums text-mk-ink-3 dark:text-white/35">
             {h}:00
           </span>,
           ...DAYS.map((d, di) => {
@@ -107,7 +107,7 @@ export function WeekGrid() {
                 key={`${d}-${h}`}
                 className="rounded-md"
                 style={{
-                  backgroundColor: slot ? FILL[slot[2]] : 'rgb(253 252 252 / 0.035)',
+                  backgroundColor: slot ? FILL[slot[2]] : 'color-mix(in srgb, var(--mk-ink) 3.5%, transparent)',
                   opacity: slot && slot[2] !== 'overlap' ? 0.85 : 1,
                 }}
               />

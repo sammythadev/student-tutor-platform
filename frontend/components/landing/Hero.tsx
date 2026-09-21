@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { CTA, HERO } from './content'
 import { ButtonGhost, ButtonPrimary, Container } from './mk'
 import ProductFrame from './ProductFrame'
+import HeroBackdrop from './HeroBackdrop'
+import Annotation from './Annotation'
+import styles from './Hero.module.css'
 
 /* ──────────────────────────────────────────────────────────
    Centred hero, measured proportions.
@@ -45,59 +48,39 @@ function Announcement() {
 }
 
 /* Hand-drawn pointer at the product frame. The target sets its label in a script
-   face; that one is licensed, so this uses the system cursive stack and keeps
-   the gesture — the arrow itself is drawn here rather than imported. */
-function Annotation() {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute -bottom-24 right-6 hidden w-[210px] select-none text-mk-ink-2 xl:block"
-    >
-      <span className="block text-right text-[15px] leading-tight [font-family:ui-rounded,'Segoe_Script','Bradley_Hand',cursive]">
-        {HERO.annotation}
-      </span>
-      <svg viewBox="0 0 74 52" className="ml-auto mt-1 h-[52px] w-[74px]">
-        <path
-          d="M68 4C64 18 52 32 34 42"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.3"
-          strokeLinecap="round"
-        />
-        <path
-          d="M40 30c-2.5 6.5-4.5 10-6 12.5 4.5-.5 8 0 12 1"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  )
-}
+   face; that one is licensed, so the label is set in Caveat (the open stand-in
+   layout.tsx loads as --font-script) and Annotation draws the arrow itself. */
 
 export default function Hero() {
   return (
-    <section aria-labelledby="hero-title" className="relative pt-[105px] lg:pt-[185px]">
+    <section aria-labelledby="hero-title" className="relative isolate pt-[105px] lg:pt-[185px]">
+      {/* Hero-only light field. `isolate` keeps its negative z-index contained to
+          this section so it can never paint over the sections below. */}
+      <HeroBackdrop />
+
       <Container>
         <div className="relative flex flex-col items-center text-center">
           <Announcement />
 
-          <h1 id="hero-title" className="mk-display mt-6 max-w-[896px] text-mk-ink lg:mt-[34px]">
+          <h1 id="hero-title" className={`${styles.headline} mk-display mt-6 max-w-[896px] text-mk-ink lg:mt-[34px]`}>
             {HERO.headline}
           </h1>
 
-          <p className="mk-lead mt-4 max-w-[896px] text-mk-ink-2">{HERO.lead}</p>
+          <p className={`${styles.lead} mk-lead mt-4 max-w-[896px] text-mk-ink-2`}>{HERO.lead}</p>
 
-          <div className="mt-8 flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row lg:mt-10">
+          <div className={`${styles.actions} mt-8 flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row lg:mt-10`}>
             <ButtonPrimary href={CTA.primary.href} className="w-full sm:w-auto">
               {CTA.primary.label}
             </ButtonPrimary>
             <ButtonGhost href={CTA.secondary.href}>{CTA.secondary.label}</ButtonGhost>
           </div>
 
-          <Annotation />
+          <Annotation
+            direction="down-left"
+            className="absolute -bottom-24 right-6 hidden w-[210px] xl:block"
+          >
+            {HERO.annotation}
+          </Annotation>
         </div>
       </Container>
 

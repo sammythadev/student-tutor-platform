@@ -22,13 +22,13 @@ import WeightSliders from './WeightSliders'
 ────────────────────────────────────────────────────────── */
 
 const SYNTAX = {
-  keyword: '#9f8dfc',
-  klass: '#00c1d6',
-  string: '#70e1c8',
-  number: '#ffc266',
-  comment: 'rgb(237 236 238 / 0.4)',
-  punct: '#bf7af0',
-  text: '#edecee',
+  keyword: 'var(--mk-syntax-keyword)',
+  klass: 'var(--mk-syntax-class)',
+  string: 'var(--mk-syntax-string)',
+  number: 'var(--mk-syntax-number)',
+  comment: 'var(--mk-syntax-comment)',
+  punct: 'var(--mk-syntax-punct)',
+  text: 'var(--mk-syntax-text)',
 } as const
 
 /* A deliberately small tokeniser: enough for JSON and a few JS lines, and it
@@ -117,8 +117,8 @@ export default function TuneDemo() {
                   key={s.key}
                   value={s.key}
                   className={cn(
-                    'inline-flex min-h-9 items-center justify-center rounded-md px-3 py-1.5 text-mk-small font-medium',
-                    'transition-colors duration-300 ease-mk-out lg:min-h-0',
+                    'inline-flex min-h-11 items-center justify-center rounded-md px-3 py-1.5 text-mk-small font-medium',
+                    'transition-colors duration-300 ease-mk-out',
                     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink',
                     active === s.key
                       ? 'bg-mk-panel text-mk-ink shadow-mk-ring-subtle'

@@ -31,7 +31,7 @@ export default function HowBento() {
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0"
-              style={{ backgroundImage: 'radial-gradient(70% 120% at 18% 0%, rgb(253 252 252 / 0.05) 0%, transparent 70%)' }}
+              style={{ backgroundImage: 'radial-gradient(70% 120% at 18% 0%, color-mix(in srgb, var(--mk-ink) 5%, transparent) 0%, transparent 70%)' }}
             />
             <div className="relative grid gap-8 sm:grid-cols-2 sm:gap-mk-gutter">
               <h3 className="mk-h3 max-w-[16ch] text-mk-ink">{HOW_BLOCK_TITLE}</h3>

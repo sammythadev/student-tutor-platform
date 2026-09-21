@@ -126,11 +126,11 @@
 
   /* Hairlines are rings, not borders, so they take no part in layout — that is
      why the bento cells line up. Copied verbatim from the measurement. */
-  --shadow-mk-ring:        0 0 0 1px rgb(253 252 252 / 0.16);
-  --shadow-mk-ring-subtle: 0 0 0 1px rgb(253 252 252 / 0.12);
-  --shadow-mk-ring-bold:   0 0 0 1px rgb(253 252 252 / 0.18);
+  --shadow-mk-ring:        0 0 0 1px var(--mk-hairline);
+  --shadow-mk-ring-subtle: 0 0 0 1px var(--mk-hairline-soft);
+  --shadow-mk-ring-bold:   0 0 0 1px var(--mk-ring-bold);
   --shadow-mk-float:       0 2.767px 2.214px rgb(0 0 0 / 0.05), 0 6.65px 5.32px rgb(0 0 0 / 0.07), 0 12.522px 10.017px rgb(0 0 0 / 0.09), 0 22.336px 17.869px rgb(0 0 0 / 0.1), 0 41.778px 33.422px rgb(0 0 0 / 0.12), 0 100px 80px rgb(0 0 0 / 0.17);
-  --shadow-mk-dialog:      inset 0 0 0 1px rgb(253 252 252 / 0.16), 0 16px 24px rgb(0 0 0 / 0.6), 0 24px 40px rgb(0 0 0 / 0.2);
+  --shadow-mk-dialog:      inset 0 0 0 1px var(--mk-hairline), var(--mk-dialog-shadow);
 
   /* Easings, measured rather than chosen. The 150ms opacity fade is the page's
      primitive — 66 elements carry it. The overshoot curve is the only one that
@@ -168,7 +168,9 @@
   /* Backgrounds */
   --background:       #FAFAFA;   /* background-1 */
   --card:             #FFFFFF;   /* elevated */
+  --card-foreground:  #171717;
   --popover:          #FFFFFF;
+  --popover-foreground: #171717;
   --surface:          #FFFFFF;
   --canvas:           #FAFAFA;
   --surface-2:        #F2F2F2;   /* recessed / component bg */
@@ -189,6 +191,9 @@
   --text-primary:    #171717;
   --text-secondary:  #4D4D4D;
   --text-muted:      #8F8F8F;
+
+  /* Rating stars */
+  --star-gold: #F59E0B;
 
   /* Primary action — monochrome inversion (Geist) */
   --primary:              #171717;
@@ -266,37 +271,39 @@
   /* Nav */
   --nav-bg: rgba(250, 250, 250, 0.72);
 
-  /* -- Marketing layer -- light --
-     Clone target: liveblocks.io, measured 2026-09-03. The evidence for every
-     value is in .clone/liveblocks/tokens.md.
-
-     Two facts here are the whole design, and both are easy to lose. White IS
-     the accent: there is no saturated primary anywhere on the target and its
-     primary CTA is black-on-white. And the dominant ink is the mid grey
-     #918d8d, not near-white -- 36.3k ink units against 28.8k for white. A
-     clone that lightens body copy toward white and adds a blue button reads as
-     a different, cheaper page.
-
-     Dark-only, deliberately: the target ships no light scheme, so a light set
-     would have to be invented. Both blocks carry the same measured values. */
-  --mk-accent:        #ffffff;                 /* --color-marketing-surface-base-inverse */
-  --mk-accent-soft:   rgb(253 252 252 / 0.08);
-  --mk-accent-line:   rgb(253 252 252 / 0.16);
-  --mk-panel:         #100f0f;                 /* --color-marketing-surface-raised */
-  --mk-panel-hover:   #171515;
-  --mk-panel-sunken:  #000000;                 /* --color-marketing-surface-base */
-  --mk-raised:        #080707;                 /* --lb-marketing-color-surface-400 */
-  --mk-hairline:      rgb(253 252 252 / 0.16);
-  --mk-hairline-soft: rgb(253 252 252 / 0.12); /* --color-marketing-divider-subtle */
-  --mk-hairline-opaque: #272626;               /* --color-marketing-divider-bold-opaque */
-  --mk-ink:           #ffffff;                 /* --color-marketing */
-  --mk-ink-2:         #b7b4b4;                 /* --color-marketing-subtle   : hero lead */
-  --mk-ink-3:         #918d8d;                 /* --color-marketing-subtler  : body, dominant */
-  --mk-ink-4:         #635f5f;                 /* --color-marketing-subtlest : dim statement */
-  --mk-inverse:       #ffffff;
-  --mk-inverse-fg:    #000000;
-  --mk-track:         rgb(253 252 252 / 0.12);
-
+  /* Marketing light counterpart: retain the measured layout and monochrome
+     hierarchy from .clone/liveblocks; the original dark palette remains below. */
+  --mk-accent:        #171515;
+  --mk-accent-soft:   rgb(23 21 21 / 0.06);
+  --mk-accent-line:   rgb(23 21 21 / 0.16);
+  --mk-panel:         #f5f4f4;
+  --mk-panel-hover:   #eeecec;
+  --mk-panel-sunken:  #ffffff;
+  --mk-raised:        #faf9f9;
+  --mk-hairline:      rgb(23 21 21 / 0.16);
+  --mk-hairline-soft: rgb(23 21 21 / 0.12);
+  --mk-hairline-opaque: #dedcdc;
+  --mk-ink:           #171515;
+  --mk-ink-2:         #484444;
+  --mk-ink-3:         #666060;
+  --mk-ink-4:         #656060;
+  --mk-inverse:       #171515;
+  --mk-inverse-fg:    #ffffff;
+  --mk-track:         rgb(23 21 21 / 0.12);
+  --mk-preview:       #fafafa;
+  --mk-syntax-keyword: #6544b5;
+  --mk-syntax-class:   #007481;
+  --mk-syntax-string:  #16715d;
+  --mk-syntax-number:  #8b5500;
+  --mk-syntax-comment: #716c75;
+  --mk-syntax-punct:   #80439b;
+  --mk-syntax-text:    #28252b;
+  --mk-frame-wash: radial-gradient(120% 90% at 8% 4%, #f2a1c2 0%, #edc4d5 34%, #f7e5ec 62%, #fcf7f9 100%), radial-gradient(70% 60% at 92% 96%, #ff5fa2 0%, rgba(255,95,162,0) 58%);
+  --mk-cta-arc: linear-gradient(to bottom, rgb(80 76 82 / 0.22) 0%, rgb(140 136 145 / 0.14) 4%, rgb(180 176 184 / 0.08) 9%, rgb(230 226 234 / 0.04) 16%, transparent 26%);
+  --mk-cta-shadow: inset 0 0 86.4px rgb(80 76 82 / 0.12);
+  --mk-ring-bold: rgb(23 21 21 / 0.18);
+  --mk-dialog-shadow: 0 16px 24px rgb(0 0 0 / 0.08), 0 24px 40px rgb(0 0 0 / 0.04);
+  --mk-focus-glow: rgb(23 21 21 / 0.25);
   /* Radius base for shadcn derivation */
   --radius: 6px;
   --sidebar-foreground: hsl(240 5.3% 26.1%);
@@ -317,7 +324,9 @@
 
   --background:       #000000;
   --card:             #0A0A0A;
+  --card-foreground:  #EDEDED;
   --popover:          #111111;
+  --popover-foreground: #EDEDED;
   --surface:          #0A0A0A;
   --canvas:           #000000;
   --surface-2:        #141414;
@@ -335,6 +344,9 @@
   --text-primary:    #EDEDED;
   --text-secondary:  #A1A1A1;
   --text-muted:      #707070;
+
+  /* Rating stars — brighter in dark mode for contrast on #0A0A0A */
+  --star-gold: #FBBF24;
 
   --primary:              #EDEDED;
   --primary-hover:        #FFFFFF;
@@ -432,6 +444,20 @@
   --mk-inverse:       #ffffff;
   --mk-inverse-fg:    #000000;
   --mk-track:         rgb(253 252 252 / 0.12);
+  --mk-preview:       #050505;
+  --mk-syntax-keyword: #9f8dfc;
+  --mk-syntax-class:   #00c1d6;
+  --mk-syntax-string:  #70e1c8;
+  --mk-syntax-number:  #ffc266;
+  --mk-syntax-comment: rgb(237 236 238 / 0.4);
+  --mk-syntax-punct:   #bf7af0;
+  --mk-syntax-text:    #edecee;
+  --mk-frame-wash: radial-gradient(120% 90% at 8% 4%, #e0186d 0%, #7c0f3c 34%, #2a0714 62%, #0b0206 100%), radial-gradient(70% 60% at 92% 96%, #ff5fa2 0%, rgba(255,95,162,0) 58%);
+  --mk-cta-arc: linear-gradient(to bottom, rgb(226 226 228 / 0.95) 0%, rgb(140 140 145 / 0.55) 4%, rgb(60 60 64 / 0.28) 9%, rgb(12 12 13 / 0.1) 16%, transparent 26%);
+  --mk-cta-shadow: inset 0 0 86.4px rgb(255 255 255 / 0.6);
+  --mk-ring-bold: rgb(253 252 252 / 0.18);
+  --mk-dialog-shadow: 0 16px 24px rgb(0 0 0 / 0.6), 0 24px 40px rgb(0 0 0 / 0.2);
+  --mk-focus-glow: rgb(253 252 252 / 0.28);
 
   --radius: 6px;
 }
@@ -747,17 +773,24 @@
 .catalog-card {
   background: var(--surface-raised);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  transition: box-shadow 180ms ease, transform 120ms ease, border-color 180ms ease;
+  border: 1px solid var(--border);
 }
-.catalog-card:hover {
-  box-shadow: var(--shadow-card-hover);
+.catalog-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
 }
-.catalog-card:active { transform: scale(0.99); }
+
+@media (min-width: 768px) {
+  .catalog-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  }
+}
 
 .catalog-filter-chip {
   display: inline-flex;
   align-items: center;
+  min-height: 2.75rem;
   gap: 0.375rem;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
@@ -784,20 +817,24 @@
 }
 
 .catalog-rail {
-  position: sticky;
-  top: calc(var(--spacing-header, 3.5rem) + 1rem);
   display: flex;
+  align-self: start;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .catalog-rail-section-title {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .catalog-rail {
+    position: sticky;
+    top: calc(var(--spacing-header, 3.5rem) + 1rem);
+  }
 }
 
 .pressable {
@@ -1216,7 +1253,7 @@
 .mk-range:hover::-webkit-slider-thumb { transform: scale(1.12); }
 .mk-range:active::-webkit-slider-thumb { transform: scale(1.2); }
 .mk-range:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55), 0 0 0 4px rgb(253 252 252 / 0.28);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55), 0 0 0 4px var(--mk-focus-glow);
 }
 
 /* Firefox centres the thumb on the track for us, so the track just has to be
@@ -1234,7 +1271,7 @@
   background: var(--mk-accent);
 }
 .mk-range:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 4px rgb(253 252 252 / 0.28);
+  box-shadow: 0 0 0 4px var(--mk-focus-glow);
 }
 
 @media (prefers-reduced-motion: reduce) {

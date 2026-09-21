@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useId, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { TRUST_QUOTES } from './content'
@@ -32,7 +32,7 @@ export default function QuoteRotator() {
   const [direction, setDirection] = useState<1 | -1>(1)
   const reduced = useReducedMotion()
   const liveId = useId()
-  const touchStart = useRef<number | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
 
   const go = useCallback((next: number, dir: 1 | -1) => {
     setDirection(dir)
@@ -57,14 +57,18 @@ export default function QuoteRotator() {
   /* Horizontal swipe, with a 48px threshold and a vertical-dominance check so a
      scroll gesture that drifts sideways does not change the quote. */
   const onTouchStart = (e: React.TouchEvent<HTMLElement>) => {
-    touchStart.current = e.touches[0].clientX
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY }
   }
   const onTouchEnd = (e: React.TouchEvent<HTMLElement>) => {
     const start = touchStart.current
     touchStart.current = null
     if (start === null) return
-    const dx = e.changedTouches[0].clientX - start
+    const end = e.changedTouches[0]
+    const dx = end.clientX - start.x
+    const dy = end.clientY - start.y
     if (Math.abs(dx) < 48) return
+    if (Math.abs(dy) > Math.abs(dx)) return
     if (dx < 0) next()
     else prev()
   }
@@ -74,10 +78,11 @@ export default function QuoteRotator() {
 
   return (
     <figure
-      tabIndex={-1}
+      tabIndex={0}
       onKeyDown={onKeyDown}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
+      aria-label="Quote carousel. Use left and right arrow keys to change quote."
       className="max-w-[672px] focus-visible:outline-2 focus-visible:outline-offset-8 focus-visible:outline-mk-hairline"
       aria-roledescription="quote carousel"
     >
@@ -130,7 +135,8 @@ export default function QuoteRotator() {
 }
 
 /* One dot per quote, each a real button labelled with its source — a dot row
-   that is only a progress indicator wastes four ready-made shortcuts. */
+   that is only a progress indicator wastes four ready-made shortcuts. The pip
+   is fixed-size; only its colour and scale change, never its width. */
 function Dots({ index, onSelect }: { index: number; onSelect: (next: number, dir: 1 | -1) => void }) {
   return (
     <div className="mr-2 flex items-center gap-1.5">
@@ -141,14 +147,14 @@ function Dots({ index, onSelect }: { index: number; onSelect: (next: number, dir
           onClick={() => onSelect(i, i > index ? 1 : -1)}
           aria-label={`Show quote ${i + 1} of ${COUNT}: ${q.source}`}
           aria-current={i === index}
-          className="group grid size-8 place-items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink"
+          className="group grid size-11 place-items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink"
         >
           <span
             className={cn(
-              'block h-1.5 rounded-full transition-all duration-300 ease-mk-out',
+              'block h-1.5 w-4 origin-center rounded-full transition-[background-color,transform] duration-300 ease-mk-out',
               i === index
-                ? 'w-4 bg-mk-ink'
-                : 'w-1.5 bg-mk-ink-4 group-hover:bg-mk-ink-3',
+                ? 'scale-x-100 bg-mk-ink'
+                : 'scale-x-[0.375] bg-mk-ink-4 group-hover:bg-mk-ink-3',
             )}
           />
         </button>

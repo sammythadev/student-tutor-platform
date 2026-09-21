@@ -31,11 +31,17 @@ import { ScoredList, WeekGrid } from './FrameSurfaces'
    primitive. Under reduced motion the pill and the fade both resolve instantly.
 ────────────────────────────────────────────────────────── */
 
-const SURFACES: Record<string, () => React.JSX.Element> = {
-  dashboard: () => <DashboardPreview bare />,
-  workflow: () => <CanvasSurface />,
-  shortlist: () => <ScoredList />,
-  schedule: () => <WeekGrid />,
+function ActiveSurface({ active }: { active: string }) {
+  switch (active) {
+    case 'workflow':
+      return <CanvasSurface />
+    case 'shortlist':
+      return <ScoredList />
+    case 'schedule':
+      return <WeekGrid />
+    default:
+      return <DashboardPreview bare />
+  }
 }
 
 function Grain() {
@@ -62,10 +68,7 @@ export default function ProductFrame() {
       <div
         className="relative overflow-hidden rounded-xl p-3 lg:aspect-[1200/664] lg:p-5"
         style={{
-          backgroundImage: [
-            'radial-gradient(120% 90% at 8% 4%, #e0186d 0%, #7c0f3c 34%, #2a0714 62%, #0b0206 100%)',
-            'radial-gradient(70% 60% at 92% 96%, #ff5fa2 0%, rgba(255,95,162,0) 58%)',
-          ].join(','),
+          backgroundImage: 'var(--mk-frame-wash)',
         }}
       >
         <Grain />
@@ -77,9 +80,9 @@ export default function ProductFrame() {
         >
           <div className="flex items-center gap-2 border-b border-mk-hairline-opaque px-4 py-2.5">
             <span className="flex shrink-0 gap-1.5" aria-hidden>
-              <span className="size-2 rounded-full bg-white/15" />
-              <span className="size-2 rounded-full bg-white/15" />
-              <span className="size-2 rounded-full bg-white/15" />
+              <span className="size-2 rounded-full bg-mk-ink/15" />
+              <span className="size-2 rounded-full bg-mk-ink/15" />
+              <span className="size-2 rounded-full bg-mk-ink/15" />
             </span>
 
             <Tabs.List aria-label="Product surface" className="ml-1 flex min-w-0 items-center gap-0.5 overflow-x-auto">
@@ -88,17 +91,17 @@ export default function ProductFrame() {
                   key={tab.key}
                   value={tab.key}
                   className={cn(
-                    'relative inline-flex min-h-10 shrink-0 items-center justify-center rounded-md px-2.5 py-1',
+                    'relative isolate inline-flex min-h-10 shrink-0 items-center justify-center rounded-md px-2.5 py-1',
                     'text-[11px] font-medium transition-colors duration-300 ease-mk-out lg:min-h-0',
-                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white',
-                    active === tab.key ? 'text-white' : 'text-white/45 hover:text-white/80',
+                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink',
+                    active === tab.key ? 'text-mk-ink' : 'text-mk-ink-3 hover:text-mk-ink',
                   )}
                 >
                   {active === tab.key ? (
                     <motion.span
                       aria-hidden
                       layoutId="mk-frame-tab"
-                      className="absolute inset-0 -z-10 rounded-md bg-white/[0.08]"
+                      className="absolute inset-0 -z-10 rounded-md bg-mk-ink/[0.08]"
                       transition={
                         reduced
                           ? { duration: 0 }
@@ -111,7 +114,7 @@ export default function ProductFrame() {
               ))}
             </Tabs.List>
 
-            <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-[11px] font-medium text-white/50 sm:inline-flex">
+            <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-[11px] font-medium text-mk-ink-3 sm:inline-flex">
               <span className="size-1.5 rounded-full bg-emerald-400" /> Live
             </span>
           </div>
@@ -126,7 +129,7 @@ export default function ProductFrame() {
                 exit={reduced ? undefined : { opacity: 0 }}
                 transition={{ duration: reduced ? 0 : 0.15, ease: [0, 0, 0.2, 1] }}
               >
-                {(SURFACES[active] ?? SURFACES.dashboard)()}
+                <ActiveSurface active={active} />
               </motion.div>
             </AnimatePresence>
           </div>

@@ -1,9 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { motion, useReducedMotion } from 'motion/react'
+import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useAmbientMotion } from './useAmbientMotion'
 import { SHOWCASE, SHOWCASE_TILES } from './content'
 import TileArt from './TileArt'
 import { Container } from './mk'
@@ -20,8 +23,8 @@ import { Container } from './mk'
 
    Embla drives it: `dragFree` with `containScroll: false` and a loop, which is
    the drag-to-scroll feel the reference has and which a CSS-only marquee cannot
-   give (a marquee is not grabbable). Autoplay is a slow scrollTo loop rather than
-   a plugin, so hover, drag and reduced-motion all stop it by the same switch.
+   give (a marquee is not grabbable). Autoplay advances slowly with the public
+   scrollNext API; independent pause reasons never override the reader's choice.
 
    Tiles are 396px square at 12px radius, measured. Their inner content staggers
    in when the tile first enters view, which is the reference's own behaviour.
@@ -73,49 +76,31 @@ function Tile({
 }
 
 export default function TileCarousel() {
-  const reduced = useReducedMotion()
+  const host = useRef<HTMLElement>(null)
+  const { active, reduced } = useAmbientMotion(host)
   const [emblaRef, embla] = useEmblaCarousel({
     loop: true,
     dragFree: true,
     align: 'start',
     containScroll: false,
+    duration: 55,
   })
   const [paused, setPaused] = useState(false)
-
-  /* Autoplay as a slow, continuous scroll rather than slide-by-slide, so the row
-     reads as a moving band. One rAF loop, cancelled on hover, drag and unmount. */
-  const drift = useCallback(() => {
-    if (!embla) return undefined
-    let raf = 0
-    let stopped = false
-    const engine = embla.internalEngine()
-
-    const step = () => {
-      if (!stopped) {
-        engine.location.add(-0.45)
-        engine.target.set(engine.location)
-        engine.scrollLooper.loop(-1)
-        engine.slideLooper.loop()
-        engine.translate.to(engine.location.get())
-        raf = requestAnimationFrame(step)
-      }
-    }
-    raf = requestAnimationFrame(step)
-    return () => {
-      stopped = true
-      cancelAnimationFrame(raf)
-    }
-  }, [embla])
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const running = active && !paused && !hovered && !focused && !dragging
 
   useEffect(() => {
-    if (!embla || reduced || paused) return
-    return drift()
-  }, [embla, reduced, paused, drift])
+    if (!embla || !running) return
+    const id = window.setInterval(() => embla.scrollNext(), 4500)
+    return () => window.clearInterval(id)
+  }, [embla, running])
 
   useEffect(() => {
     if (!embla) return
-    const onDown = () => setPaused(true)
-    const onUp = () => setPaused(false)
+    const onDown = () => setDragging(true)
+    const onUp = () => setDragging(false)
     embla.on('pointerDown', onDown)
     embla.on('pointerUp', onUp)
     return () => {
@@ -124,8 +109,24 @@ export default function TileCarousel() {
     }
   }, [embla])
 
+  const navigate = (direction: 'previous' | 'next') => {
+    if (direction === 'previous') embla?.scrollPrev(Boolean(reduced))
+    else embla?.scrollNext(Boolean(reduced))
+  }
+
   return (
-    <section aria-labelledby="showcase-title" className="my-mk-2xl">
+    <section
+      ref={host}
+      aria-labelledby="showcase-title"
+      aria-roledescription="carousel"
+      className="my-mk-2xl"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={event => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false)
+      }}
+    >
       <Container>
         <h2 id="showcase-title" className="mx-auto max-w-[896px] text-center mk-h2 text-mk-ink">
           {SHOWCASE.headline}
@@ -133,12 +134,46 @@ export default function TileCarousel() {
         </h2>
       </Container>
 
-      <div
-        ref={emblaRef}
-        className="mt-mk-md overflow-hidden"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-      >
+      <Container className="mt-6 flex flex-wrap items-center justify-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-11 min-w-24 text-mk-ink transition-colors hover:bg-mk-panel-hover"
+          aria-controls="showcase-tiles"
+          aria-pressed={paused}
+          aria-label={paused ? 'Play tile autoplay' : 'Pause tile autoplay'}
+          onClick={() => setPaused(value => !value)}
+        >
+          {paused ? <Play aria-hidden /> : <Pause aria-hidden />}
+          {paused ? 'Play' : 'Pause'}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-11 text-mk-ink transition-colors hover:bg-mk-panel-hover"
+          aria-label="Previous tiles"
+          aria-controls="showcase-tiles"
+          disabled={!embla}
+          onClick={() => navigate('previous')}
+        >
+          <ArrowLeft aria-hidden />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-11 text-mk-ink transition-colors hover:bg-mk-panel-hover"
+          aria-label="Next tiles"
+          aria-controls="showcase-tiles"
+          disabled={!embla}
+          onClick={() => navigate('next')}
+        >
+          <ArrowRight aria-hidden />
+        </Button>
+      </Container>
+
+      <div ref={emblaRef} id="showcase-tiles" className="mt-mk-md overflow-hidden">
         <ul
           aria-label="What you get"
           className={cn('flex gap-4 lg:gap-mk-gutter', !reduced && 'cursor-grab active:cursor-grabbing')}

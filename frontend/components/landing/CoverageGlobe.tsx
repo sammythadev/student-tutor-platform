@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import createGlobe from 'cobe'
+import { useTheme } from 'next-themes'
 
 /* ──────────────────────────────────────────────────────────
    The globe cell.
@@ -33,6 +34,8 @@ const MARKERS: { location: [number, number]; size: number }[] = [
 
 export default function CoverageGlobe() {
   const canvas = useRef<HTMLCanvasElement>(null)
+  const { resolvedTheme } = useTheme()
+  const light = resolvedTheme === 'light'
 
   useEffect(() => {
     const el = canvas.current
@@ -84,13 +87,13 @@ export default function CoverageGlobe() {
           the base out-read the map, so the continents looked like holes; what
           actually fixed the void was pinning the sway so the terminator stops
           moving. With the lit face held, the map can stay bright. */
-      dark: 0.78,
-      diffuse: 0.58,
+      dark: light ? 0.25 : 0.78,
+      diffuse: light ? 0.9 : 0.58,
       mapSamples: 16000,
-      mapBrightness: 10,
-      baseColor: [0.3, 0.3, 0.33],
-      markerColor: [0.42, 0.94, 0.81], // --lb-marketing-color-green-400
-      glowColor: [0.19, 0.2, 0.23],
+      mapBrightness: light ? 6 : 10,
+      baseColor: light ? [0.88, 0.87, 0.87] : [0.3, 0.3, 0.33],
+      markerColor: light ? [0.02, 0.45, 0.4] : [0.42, 0.94, 0.81], // --lb-marketing-color-green-400
+      glowColor: light ? [0.75, 0.72, 0.78] : [0.19, 0.2, 0.23],
       markers: MARKERS,
       onRender: (state) => {
         if (!reduced) t += 0.0022
@@ -110,7 +113,7 @@ export default function CoverageGlobe() {
       globe.destroy()
       window.removeEventListener('resize', onResize)
     }
-  }, [])
+  }, [light])
 
   return (
     <canvas

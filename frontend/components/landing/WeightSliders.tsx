@@ -1,11 +1,8 @@
 'use client'
 
-import { useLayoutEffect, useRef, useState } from 'react'
-import { gsap } from 'gsap'
-import { Flip } from 'gsap/Flip'
+import { useState } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { CANDIDATES, CRITERIA } from './content'
-
-gsap.registerPlugin(Flip)
 
 /* ──────────────────────────────────────────────────────────
    The weights, in the reader's hands.
@@ -16,11 +13,8 @@ gsap.registerPlugin(Flip)
    approximation of it — the draft it corrects bumped one weight and asserted the
    total was still 1 without showing how.
 
-   Flip is the right tool here and the wrong tool in the hero. Here the reader
-   caused the change and the DOM order is the current, correct ranking at every
-   moment, so reordering the DOM tells the truth. In the hero the ranking is only
-   partial until the scroll finishes, so the markup has to stay final and the rows
-   move on transforms instead.
+   The DOM always follows the current ranking. Position-only layout animation
+   bridges an actual rank change, not every input event; scores stay synchronous.
 ────────────────────────────────────────────────────────── */
 
 const DEFAULTS = CRITERIA.map(c => c.weight) as number[]
@@ -29,36 +23,17 @@ const MIN = 0.05
 
 export default function WeightSliders() {
   const [weights, setWeights] = useState<number[]>(DEFAULTS)
-  const list = useRef<HTMLOListElement>(null)
-  const flipState = useRef<Flip.FlipState | null>(null)
+  const reduced = useReducedMotion()
 
   /* Bump one weight, then rescale the rest proportionally so the total is 1. */
   const setWeight = (index: number, next: number) => {
-    if (list.current) {
-      flipState.current = Flip.getState(list.current.querySelectorAll('[data-w-row]'))
-    }
     setWeights(prev => {
-      const target = gsap.utils.clamp(MIN, 1 - MIN * (prev.length - 1), next)
+      const target = Math.min(1 - MIN * (prev.length - 1), Math.max(MIN, next))
       const restTotal = prev.reduce((sum, w, i) => (i === index ? sum : sum + w), 0)
       const scale = restTotal === 0 ? 0 : (1 - target) / restTotal
       return prev.map((w, i) => (i === index ? target : w * scale))
     })
   }
-
-  useLayoutEffect(() => {
-    const state = flipState.current
-    if (!state) return
-    flipState.current = null
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
-    Flip.from(state, {
-      duration: 0.45,
-      ease: 'power2.inOut',
-      absolute: true,
-      /* Only positions animate. Nothing here touches layout properties. */
-      props: 'none',
-    })
-  }, [weights])
 
   const scored = ELIGIBLE
     .map(c => ({
@@ -67,6 +42,7 @@ export default function WeightSliders() {
     }))
     .sort((a, b) => b.total - a.total)
 
+  const order = scored.map(c => c.name).join('|')
   const changed = weights.some((w, i) => Math.abs(w - DEFAULTS[i]) > 0.005)
 
   /* Frameless on purpose: the demo always sits inside the section's own hairline
@@ -79,14 +55,9 @@ export default function WeightSliders() {
         </p>
         <button
           type="button"
-          onClick={() => {
-            if (list.current) {
-              flipState.current = Flip.getState(list.current.querySelectorAll('[data-w-row]'))
-            }
-            setWeights(DEFAULTS)
-          }}
+          onClick={() => setWeights(DEFAULTS)}
           disabled={!changed}
-          className="inline-flex min-h-8 items-center rounded-md px-2.5 py-1 text-[12px] font-medium text-mk-ink-2 transition-colors duration-150 hover:bg-mk-panel-hover hover:text-mk-ink disabled:pointer-events-none disabled:opacity-40"
+          className="inline-flex min-h-11 items-center rounded-md px-2.5 py-1 text-[12px] font-medium text-mk-ink-2 transition-colors duration-150 hover:bg-mk-panel-hover hover:text-mk-ink disabled:pointer-events-none disabled:opacity-40"
         >
           Back to defaults
         </button>
@@ -138,10 +109,13 @@ export default function WeightSliders() {
           <p className="mb-3 text-[12px] font-medium text-mk-ink-2">
             Ranked for the same student
           </p>
-          <ol ref={list} className="flex flex-col gap-1.5">
+          <ol className="flex flex-col gap-1.5">
             {scored.map((c, i) => (
-              <li
+              <motion.li
                 key={c.name}
+                layout={reduced ? false : 'position'}
+                layoutDependency={order}
+                transition={{ layout: { duration: reduced ? 0 : 0.22, ease: [0.77, 0, 0.175, 1] } }}
                 data-w-row
                 className="grid grid-cols-[1.25rem_minmax(0,1fr)_2.25rem] items-center gap-x-3 rounded-lg bg-mk-panel-sunken px-2.5 py-2.5"
               >
@@ -157,12 +131,12 @@ export default function WeightSliders() {
                 <span className="mk-num text-right text-[13px] font-medium text-mk-ink">
                   {Math.round(c.total * 100)}
                 </span>
-              </li>
+              </motion.li>
             ))}
           </ol>
           <p className="mt-3 text-[11px] leading-relaxed text-mk-ink-3">
             Push one up and the others give way, so the four always add to 1.00.
-            That is what keeps one student's scores comparable with another's.
+            That is what keeps one student&apos;s scores comparable with another&apos;s.
           </p>
         </div>
       </div>

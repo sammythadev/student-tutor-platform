@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { motion, useMotionValue, useSpring } from 'motion/react'
+import { motion, useSpring } from 'motion/react'
 
 /* ──────────────────────────────────────────────────────────
    "Move your cursor" — the reference's two-pane presence demo.
@@ -47,6 +47,7 @@ function Marker({ x, y, name, tint, ink }: {
 function LocalPane() {
   const host = useRef<HTMLDivElement>(null)
   const [live, setLive] = useState(false)
+  const liveRef = useRef(false)
   const x = useSpring(0, SPRING)
   const y = useSpring(0, SPRING)
 
@@ -56,12 +57,18 @@ function LocalPane() {
       onPointerMove={(e) => {
         const box = host.current?.getBoundingClientRect()
         if (!box) return
-        setLive(true)
+        if (!liveRef.current) {
+          liveRef.current = true
+          setLive(true)
+        }
         x.set(e.clientX - box.left)
         y.set(e.clientY - box.top)
       }}
-      onPointerLeave={() => setLive(false)}
-      className="relative h-[190px] flex-1 touch-none overflow-hidden lg:h-[210px]"
+      onPointerLeave={() => {
+        liveRef.current = false
+        setLive(false)
+      }}
+      className="relative h-[190px] flex-1 touch-pan-y overflow-hidden lg:h-[210px]"
     >
       <Marker x={x} y={y} name="You" tint="#6cefce" ink="#04120d" />
       <p className="absolute inset-x-0 bottom-4 text-center text-mk-small text-mk-ink-4">
@@ -76,16 +83,14 @@ function RemotePane() {
   const host = useRef<HTMLDivElement>(null)
   const x = useSpring(90, SPRING)
   const y = useSpring(70, SPRING)
-  const raw = useMotionValue(0)
 
   return (
     <div
       ref={host}
-      className="relative h-[190px] flex-1 overflow-hidden lg:h-[210px]"
+      className="relative h-[190px] flex-1 touch-pan-y overflow-hidden lg:h-[210px]"
       onPointerEnter={() => {
         const box = host.current?.getBoundingClientRect()
         if (!box) return
-        raw.set(raw.get() + 1)
         x.set(box.width * (0.3 + Math.random() * 0.4))
         y.set(box.height * (0.25 + Math.random() * 0.4))
       }}

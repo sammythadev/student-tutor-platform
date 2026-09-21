@@ -109,7 +109,7 @@ export function ButtonPrimary({
       href={href}
       className={cn(
         'inline-flex h-11 items-center justify-center rounded-lg bg-mk-inverse px-4 text-mk-small font-medium text-mk-inverse-fg',
-        'transition-colors duration-300 ease-mk-out hover:bg-mk-ink-2',
+        'transition-[color,background-color,transform] duration-160 ease-mk-out hover:bg-mk-ink-2 motion-safe:active:scale-[0.97]',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink',
         'lg:text-base',
         className,
@@ -137,7 +137,7 @@ export function ButtonGhost({
       href={href}
       className={cn(
         'group inline-flex h-11 items-center gap-1.5 rounded-lg px-3 text-mk-small font-medium text-mk-ink',
-        'transition-colors duration-300 ease-mk-out hover:bg-mk-accent-soft',
+        'transition-[color,background-color,transform] duration-160 ease-mk-out hover:bg-mk-accent-soft motion-safe:active:scale-[0.97]',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink',
         'lg:text-base',
         className,
@@ -152,7 +152,7 @@ export function ButtonGhost({
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="transition-transform duration-300 ease-mk-out group-hover:translate-x-0.5"
+          className="transition-transform duration-160 ease-mk-out motion-safe:group-hover:translate-x-0.5"
         />
       </svg>
     </Link>

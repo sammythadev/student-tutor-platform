@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { BRAND, CTA, NAV } from './content'
 import { Container } from './mk'
 
@@ -41,7 +42,7 @@ function Wordmark() {
 export default function Nav() {
   const [open, setOpen] = useState(false)
   const [lifted, setLifted] = useState(false)
-  const panel = useRef<HTMLDivElement>(null)
+  const panel = useRef<HTMLElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -51,8 +52,15 @@ export default function Nav() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  /* Escape closes, focus returns to the trigger, and the page underneath cannot
-     scroll while a full-height panel covers it. */
+  // This is a compact disclosure, not a modal: keep page scrolling and normal Tab order.
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 1024px)')
+    const closeOnDesktop = () => { if (desktop.matches) setOpen(false) }
+    desktop.addEventListener('change', closeOnDesktop)
+    return () => desktop.removeEventListener('change', closeOnDesktop)
+  }, [])
+
+  /* Escape and outside presses dismiss the whole navbar disclosure. */
   useEffect(() => {
     if (!open) return
 
@@ -62,37 +70,37 @@ export default function Nav() {
         trigger.current?.focus()
         return
       }
-      if (e.key !== 'Tab') return
-      const focusables = panel.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')
-      if (!focusables?.length) return
-      const first = focusables[0]
-      const last = focusables[focusables.length - 1]
-      if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
     }
 
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const onOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !panel.current?.contains(event.target)) setOpen(false)
+    }
     document.addEventListener('keydown', onKey)
-    panel.current?.querySelector<HTMLElement>('a[href], button')?.focus()
-
+    document.addEventListener('pointerdown', onOutside)
     return () => {
-      document.body.style.overflow = prev
       document.removeEventListener('keydown', onKey)
+      document.removeEventListener('pointerdown', onOutside)
     }
   }, [open])
 
   return (
     <header
+      ref={panel}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
+      }}
       className={cn(
         'fixed inset-x-0 top-0 z-50 h-16 lg:h-mk-header',
         'transition-colors duration-300 ease-mk-out',
-        lifted && 'bg-mk-panel-sunken/80 shadow-mk-ring-subtle backdrop-blur-xl',
+        open ? 'bg-mk-panel-sunken shadow-mk-ring-subtle' : lifted && 'bg-mk-panel-sunken/80 shadow-mk-ring-subtle backdrop-blur-xl',
       )}
     >
       <Container className="flex h-full items-center justify-between gap-6">
         <div className="flex items-center gap-8">
           <Wordmark />
+          <div className="flex size-11 shrink-0 items-center justify-center [&_button]:size-11">
+            <ThemeToggle />
+          </div>
           <nav aria-label="Main" className="hidden items-center lg:flex">
             {NAV.map((item) => (
               <Link
@@ -126,6 +134,7 @@ export default function Nav() {
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
+          aria-controls="mobile-navigation"
           aria-label={open ? 'Close menu' : 'Open menu'}
           className="-mr-2.5 grid size-11 place-items-center rounded-md text-mk-ink transition-colors duration-300 ease-mk-out hover:bg-mk-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink lg:hidden"
         >
@@ -146,24 +155,25 @@ export default function Nav() {
         </button>
       </Container>
 
-      {/* Mobile sheet. 500ms on the target's own sheet curve. */}
-      <div
-        ref={panel}
+      {/* Content-sized disclosure shares the opaque navbar surface. */}
+      <nav
+        id="mobile-navigation"
+        aria-label="Mobile navigation"
         hidden={!open}
-        className="fixed inset-x-0 top-16 z-40 border-t border-mk-hairline-soft bg-mk-panel-sunken/95 backdrop-blur-xl lg:hidden"
+        className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-mk-hairline-soft bg-mk-panel-sunken shadow-mk-ring-subtle lg:hidden"
       >
-        <Container className="flex flex-col py-4">
+        <Container className="flex flex-col pb-3 pt-1">
           {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setOpen(false)}
-              className="rounded-md py-3 text-base font-medium text-mk-ink-3 transition-colors duration-300 ease-mk-out hover:text-mk-ink"
+              className="flex min-h-11 items-center rounded-md text-sm font-medium text-mk-ink-3 transition-colors duration-150 hover:text-mk-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink"
             >
               {item.label}
             </Link>
           ))}
-          <div className="mt-3 flex flex-col gap-2 border-t border-mk-hairline-soft pt-4">
+          <div className="mt-2 grid grid-cols-2 gap-3 border-t border-mk-hairline-soft pt-3">
             <Link
               href={CTA.signIn.href}
               onClick={() => setOpen(false)}
@@ -180,7 +190,7 @@ export default function Nav() {
             </Link>
           </div>
         </Container>
-      </div>
+      </nav>
     </header>
   )
 }

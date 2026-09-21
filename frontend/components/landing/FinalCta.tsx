@@ -18,7 +18,7 @@ export default function FinalCta() {
   return (
     <section
       aria-labelledby="close-title"
-      className="relative flex flex-col items-center overflow-hidden py-mk-lg lg:py-mk-xl"
+      className="relative isolate flex flex-col items-center overflow-hidden py-mk-lg lg:py-mk-xl"
     >
       {/* The arc.
 
@@ -38,8 +38,8 @@ export default function FinalCta() {
           className="absolute left-1/2 top-[86px] h-[1400px] w-[240vw] -translate-x-1/2 rounded-[50%]"
           style={{
             background:
-              'linear-gradient(to bottom, rgb(226 226 228 / 0.95) 0%, rgb(140 140 145 / 0.55) 4%, rgb(60 60 64 / 0.28) 9%, rgb(12 12 13 / 0.1) 16%, transparent 26%)',
-            boxShadow: 'inset 0 0 86.4px rgb(255 255 255 / 0.6)',
+              'var(--mk-cta-arc)',
+            boxShadow: 'var(--mk-cta-shadow)',
           }}
         />
       </div>
