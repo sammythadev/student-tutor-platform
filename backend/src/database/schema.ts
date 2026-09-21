@@ -1,6 +1,10 @@
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
+  boolean,
   check,
+  date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -37,6 +41,12 @@ export const scheduleSlotStatusEnum = pgEnum('schedule_slot_status', [
   'booked',
   'cancelled',
 ]);
+/**
+ * How a series repeats. `weekdays` reads the explicit day list, `daily` is every
+ * day, and `weekly` repeats on the day(s) in `weekdays` too — the difference the
+ * UI shows is the preset, and both are validated against the same list.
+ */
+export const sessionRecurrenceEnum = pgEnum('session_recurrence', ['daily', 'weekdays', 'weekly']);
 export const sessionStatusEnum = pgEnum('session_status', [
   'pending',
   'upcoming',
@@ -226,6 +236,23 @@ export const tutorSubjects = pgTable(
   ],
 );
 
+export const courseSubjects = pgTable(
+  'course_subjects',
+  {
+    courseId: uuid('course_id')
+      .notNull()
+      .references(() => courses.id, { onDelete: 'cascade' }),
+    subjectId: uuid('subject_id')
+      .notNull()
+      .references(() => subjects.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ name: 'course_subjects_pk', columns: [table.courseId, table.subjectId] }),
+    index('course_subjects_subject_course_idx').on(table.subjectId, table.courseId),
+  ],
+);
+
 export const scheduleSlots = pgTable(
   'schedule_slots',
   {
@@ -317,13 +344,65 @@ export const sessions = pgTable(
     notes: text('notes'),
     proposedStartAt: timestamp('proposed_start_at', { withTimezone: true }),
     proposedEndAt: timestamp('proposed_end_at', { withTimezone: true }),
+    // A recurring request is materialised as one ordinary session per occurrence, all
+    // sharing a series row. Every existing flow — accept, propose, decline, complete,
+    // cancel — then keeps working on a single day, and the series is only a grouping
+    // key plus the schedule the occurrences were generated from.
+    seriesId: uuid('series_id').references(() => sessionSeries.id, { onDelete: 'set null' }),
+    // 1-based position within the series, so "session 3 of 12" needs no window count.
+    seriesIndex: integer('series_index'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('sessions_student_status_start_idx').on(table.studentId, table.status, table.startAt),
     index('sessions_tutor_status_start_idx').on(table.tutorId, table.status, table.startAt),
+    index('sessions_series_start_idx').on(table.seriesId, table.startAt),
     check('sessions_time_order_chk', sql`${table.endAt} > ${table.startAt}`),
+  ],
+);
+
+/**
+ * The recurring request behind a block of sessions: who asked for what, on which
+ * pattern, over which horizon. Deleting it leaves the sessions intact (`set null`),
+ * because cancelling a series is a status change on those sessions, not a delete.
+ */
+export const sessionSeries = pgTable(
+  'session_series',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tutorId: uuid('tutor_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
+    subject: text('subject').notNull(),
+    recurrence: sessionRecurrenceEnum('recurrence').notNull(),
+    /** 0 = Sunday … 6 = Saturday, sorted; empty for an every-day series. */
+    weekdays: integer('weekdays')
+      .array()
+      .notNull()
+      .default(sql`'{}'::integer[]`),
+    /** Local wall-clock time of day, `HH:MM`, that every occurrence starts at. */
+    timeOfDay: text('time_of_day').notNull(),
+    durationMinutes: integer('duration_minutes').notNull(),
+    startsOn: date('starts_on').notNull(),
+    endsOn: date('ends_on').notNull(),
+    weeks: integer('weeks').notNull(),
+    notes: text('notes'),
+    meetingUrl: text('meeting_url'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('session_series_tutor_created_idx').on(table.tutorId, table.createdAt, table.id),
+    index('session_series_student_created_idx').on(table.studentId, table.createdAt, table.id),
+    check('session_series_weeks_chk', sql`${table.weeks} BETWEEN 1 AND 12`),
+    check('session_series_duration_chk', sql`${table.durationMinutes} BETWEEN 15 AND 180`),
+    check('session_series_order_chk', sql`${table.endsOn} >= ${table.startsOn}`),
+    check('session_series_time_chk', sql`${table.timeOfDay} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`),
   ],
 );
 
@@ -385,12 +464,16 @@ export const messages = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
+    replyToId: uuid('reply_to_id').references((): AnyPgColumn => messages.id, {
+      onDelete: 'set null',
+    }),
     readAt: timestamp('read_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('messages_sender_receiver_idx').on(table.senderId, table.receiverId),
     index('messages_receiver_read_idx').on(table.receiverId, table.readAt),
+    index('messages_reply_to_idx').on(table.replyToId),
   ],
 );
 
@@ -425,6 +508,130 @@ export const notifications = pgTable(
   ],
 );
 
+export const courseProviderEnum = pgEnum('course_provider', ['tutor', 'admin']);
+
+export const courses = pgTable(
+  'courses',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tutorId: uuid('tutor_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    // Who provided the course: an admin authors Tutorly-provided material, a
+    // tutor authors their own. Stored rather than derived from the owner's role
+    // so the label stays stable and the library read can use an index.
+    provider: courseProviderEnum('provider').notNull().default('tutor'),
+    title: text('title').notNull(),
+    description: text('description'),
+    // A tutor's course is private to them and the students they set it for. Only a
+    // published course is discoverable by accounts the author has no relationship
+    // with; platform material (`provider = 'admin'`) is always discoverable.
+    published: boolean('published').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check('courses_title_chk', sql`char_length(btrim(${table.title})) BETWEEN 1 AND 120`),
+    check(
+      'courses_description_chk',
+      sql`${table.description} IS NULL OR char_length(${table.description}) <= 2000`,
+    ),
+    index('courses_tutor_updated_idx').on(table.tutorId, table.updatedAt, table.id),
+    index('courses_provider_updated_idx').on(table.provider, table.updatedAt, table.id),
+    index('courses_published_updated_idx').on(table.published, table.updatedAt, table.id),
+    // Titles are unique **per tutor**, case- and whitespace-insensitive: every tutor
+    // may own their own "Chemistry", while one tutor cannot create the same course
+    // twice by accident. Published copies stay distinguishable by author.
+    uniqueIndex('courses_tutor_title_unique_idx').on(
+      table.tutorId,
+      sql`lower(btrim(${table.title}))`,
+    ),
+  ],
+);
+
+export const courseTopics = pgTable(
+  'course_topics',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    courseId: uuid('course_id')
+      .notNull()
+      .references(() => courses.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    content: text('content'),
+    position: integer('position').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check('course_topics_title_chk', sql`char_length(btrim(${table.title})) BETWEEN 1 AND 160`),
+    check(
+      'course_topics_content_chk',
+      sql`${table.content} IS NULL OR char_length(${table.content}) <= 20000`,
+    ),
+    check('course_topics_position_chk', sql`${table.position} >= 0`),
+    uniqueIndex('course_topics_course_position_unique_idx').on(table.courseId, table.position),
+    uniqueIndex('course_topics_course_id_unique_idx').on(table.courseId, table.id),
+  ],
+);
+
+export const courseEnrollments = pgTable(
+  'course_enrollments',
+  {
+    courseId: uuid('course_id')
+      .notNull()
+      .references(() => courses.id, { onDelete: 'cascade' }),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    // Which tutor set this course for the student. Usually the course author, but a
+    // tutor may also set a Tutorly outline (or another tutor's published course) for
+    // their own student. Stored rather than inferred from `courses.tutor_id`, because
+    // keying the roster on the author silently hid every course a tutor assigned that
+    // they did not author.
+    addedBy: uuid('added_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    assignedAt: timestamp('assigned_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ name: 'course_enrollments_pk', columns: [table.courseId, table.studentId] }),
+    index('course_enrollments_student_assigned_idx').on(
+      table.studentId,
+      table.assignedAt,
+      table.courseId,
+    ),
+    // "The courses I set for this student" — the roster's read path.
+    index('course_enrollments_added_by_idx').on(table.addedBy, table.assignedAt, table.courseId),
+  ],
+);
+
+export const courseTopicCompletions = pgTable(
+  'course_topic_completions',
+  {
+    courseId: uuid('course_id').notNull(),
+    topicId: uuid('topic_id').notNull(),
+    studentId: uuid('student_id').notNull(),
+    completedAt: timestamp('completed_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      name: 'course_topic_completions_pk',
+      columns: [table.courseId, table.topicId, table.studentId],
+    }),
+    foreignKey({
+      name: 'course_completions_topic_fk',
+      columns: [table.courseId, table.topicId],
+      foreignColumns: [courseTopics.courseId, courseTopics.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'course_completions_enrollment_fk',
+      columns: [table.courseId, table.studentId],
+      foreignColumns: [courseEnrollments.courseId, courseEnrollments.studentId],
+    }).onDelete('cascade'),
+    index('course_completions_course_student_idx').on(table.courseId, table.studentId),
+  ],
+);
+
 // ─── Inferred types ───────────────────────────────────────────────────────────
 export type UserRecord = typeof users.$inferSelect;
 export type NewUserRecord = typeof users.$inferInsert;
@@ -445,3 +652,11 @@ export type MessageRecord = typeof messages.$inferSelect;
 export type NewMessageRecord = typeof messages.$inferInsert;
 export type NotificationRecord = typeof notifications.$inferSelect;
 export type NewNotificationRecord = typeof notifications.$inferInsert;
+export type CourseRecord = typeof courses.$inferSelect;
+export type NewCourseRecord = typeof courses.$inferInsert;
+export type CourseTopicRecord = typeof courseTopics.$inferSelect;
+export type NewCourseTopicRecord = typeof courseTopics.$inferInsert;
+export type CourseEnrollmentRecord = typeof courseEnrollments.$inferSelect;
+export type NewCourseEnrollmentRecord = typeof courseEnrollments.$inferInsert;
+export type CourseTopicCompletionRecord = typeof courseTopicCompletions.$inferSelect;
+export type NewCourseTopicCompletionRecord = typeof courseTopicCompletions.$inferInsert;
