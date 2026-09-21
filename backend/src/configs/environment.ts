@@ -146,6 +146,45 @@ export function getCorsOrigin(): string[] {
   return origin ? origin.split(',').map((o) => o.trim()) : ['http://localhost:3000'];
 }
 
+/**
+ * Parses an optional boolean env var. Only the literals below are accepted so a
+ * typo (`DB_AUTO_SETUP=yes`) fails closed instead of silently enabling setup.
+ */
+function parseBooleanFlag(value: string | undefined): boolean | undefined {
+  const normalized = value?.trim().toLowerCase();
+
+  if (normalized === 'true' || normalized === '1') return true;
+  if (normalized === 'false' || normalized === '0') return false;
+
+  return undefined;
+}
+
+/**
+ * Whether the application should apply pending migrations when it boots.
+ * Off unless `DB_AUTO_SETUP` is explicitly true, so migrations on production
+ * remain a deliberate, reviewable step.
+ */
+export function isDatabaseAutoSetupEnabled(): boolean {
+  return parseBooleanFlag(process.env.DB_AUTO_SETUP) === true;
+}
+
+/**
+ * Whether boot-time setup should also seed demo data. Requires
+ * `DB_AUTO_SETUP` to be enabled and is off unless `DB_AUTO_SEED` is true —
+ * seeding writes demo accounts, so it should stay opt-in.
+ */
+export function isDatabaseAutoSeedEnabled(): boolean {
+  return isDatabaseAutoSetupEnabled() && parseBooleanFlag(process.env.DB_AUTO_SEED) === true;
+}
+
+/**
+ * Directory holding the drizzle migration files, resolved against the process
+ * working directory.
+ */
+export function getMigrationsFolder(): string {
+  return process.env.DB_MIGRATIONS_FOLDER?.trim() || resolve(process.cwd(), 'drizzle');
+}
+
 export function getDatabaseUrl(): string {
   const databaseUrl = process.env.DATABASE_URL;
 

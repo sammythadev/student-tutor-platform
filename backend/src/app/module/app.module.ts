@@ -13,6 +13,7 @@ import { FeedModule } from '@modules/feed/feed.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { MessagesModule } from '@modules/messages/messages.module';
 import { NotificationsModule } from '@modules/notifications/notifications.module';
+import { CoursesModule } from '@modules/courses/courses.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { NotificationsModule } from '@modules/notifications/notifications.module
     DashboardModule,
     MessagesModule,
     NotificationsModule,
+    CoursesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

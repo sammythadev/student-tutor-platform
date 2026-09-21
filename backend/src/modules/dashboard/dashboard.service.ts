@@ -1,6 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { DashboardRepository } from './dashboard.repository';
-import type { DashboardMetricsDto, KpiDto, TutorDashboardMetricsDto } from './dtos/dashboard.dto';
+import { buildActivityStrip, computeStreaks, coursePercent, isCourseFinished } from './learning';
+import type { CourseLearningRow } from './dashboard.types';
+import type {
+  CourseLearningDto,
+  CourseRosterDto,
+  DashboardMetricsDto,
+  KpiDto,
+  LearningSummaryDto,
+  TutorDashboardMetricsDto,
+} from './dtos/dashboard.dto';
 
 /** Week-over-week percentage change; null when no prior window exists to compare. */
 function pctDelta(current: number, previous: number): number | null {
@@ -19,6 +28,86 @@ function dayWindow(daysBack: number): { start: Date; end: Date } {
 export class DashboardService {
   constructor(private readonly dashboardRepository: DashboardRepository) {}
 
+  /**
+   * Streaks, hours, topics and the fourteen-day strip — collected from real activity
+   * (completed topics and attended sessions), never from the `student_profiles` counters
+   * that no flow ever updates.
+   */
+  private async buildLearning(
+    userId: string,
+    role: 'student' | 'tutor',
+  ): Promise<LearningSummaryDto> {
+    const [activity, topicsCompleted, totalHours] = await Promise.all([
+      this.dashboardRepository.getLearningActivity(userId, role),
+      this.dashboardRepository.countTopicCompletions(userId, role),
+      this.dashboardRepository.sumCompletedHours(userId, role),
+    ]);
+
+    const today = new Date();
+    const streaks = computeStreaks(
+      activity.map((row) => row.date),
+      today,
+    );
+    const lastActive = activity.length > 0 ? activity[activity.length - 1].date : null;
+
+    return {
+      currentStreak: streaks.current,
+      longestStreak: streaks.longest,
+      activeDays: streaks.activeDays,
+      totalHours: Number(totalHours.toFixed(1)),
+      topicsCompleted,
+      coursesInProgress: 0,
+      coursesFinished: 0,
+      lastActiveAt: lastActive ? `${lastActive}T00:00:00.000Z` : null,
+      days: buildActivityStrip(activity, today, 14).map((day) => ({
+        ...day,
+        active: day.hours > 0 || day.topics > 0,
+      })),
+    };
+  }
+
+  /** The student's own progress on each course they were set. */
+  private mapStudentCourses(rows: CourseLearningRow[]): CourseLearningDto[] {
+    return rows.map((row) => {
+      const percent = coursePercent(row.completedTopics, row.totalTopics);
+      return {
+        courseId: row.courseId,
+        title: row.title,
+        provider: row.provider,
+        published: row.published,
+        authorName: row.authorName,
+        setterName: row.setterName,
+        subjects: row.subjects,
+        totalTopics: row.totalTopics,
+        completedTopics: row.completedTopics,
+        percent,
+        finished: isCourseFinished(row.completedTopics, row.totalTopics),
+        lastActivityAt: row.lastActivityAt ? row.lastActivityAt.toISOString() : null,
+      };
+    });
+  }
+
+  /** What a tutor's students have done on each course the tutor teaches. */
+  private mapTutorCourses(rows: CourseLearningRow[]): CourseRosterDto[] {
+    return rows.map((row) => {
+      const seats = row.totalTopics * row.studentCount;
+      return {
+        courseId: row.courseId,
+        title: row.title,
+        provider: row.provider,
+        published: row.published,
+        authorName: row.authorName,
+        subjects: row.subjects,
+        studentCount: row.studentCount,
+        totalTopics: row.totalTopics,
+        completions: row.completedTopics,
+        avgPercent: seats > 0 ? Math.round((row.completedTopics / seats) * 100) : 0,
+        finishedStudents: row.finishedStudents,
+        lastActivityAt: row.lastActivityAt ? row.lastActivityAt.toISOString() : null,
+      };
+    });
+  }
+
   async getStudentMetrics(userId: string): Promise<DashboardMetricsDto> {
     const thisWeek = dayWindow(7);
     const lastWeek = dayWindow(14);
@@ -26,7 +115,6 @@ export class DashboardService {
     const [
       upcomingSessions,
       weeklyBars,
-      profile,
       completedCount,
       totalCount,
       channelSeries,
@@ -36,7 +124,6 @@ export class DashboardService {
     ] = await Promise.all([
       this.dashboardRepository.getUpcomingSessions(userId, 'student'),
       this.dashboardRepository.getWeeklyHours(userId, 'student'),
-      this.dashboardRepository.getStudentProfile(userId),
       this.dashboardRepository.countCompletedSessions(userId, 'student'),
       this.dashboardRepository.countAllUserSessions(userId, 'student'),
       this.dashboardRepository.getChannelSeries(userId, 'student'),
@@ -46,18 +133,55 @@ export class DashboardService {
     ]);
 
     // Week-over-week windows for the Delta badges.
-    const [completedThisWeek, completedLastWeek, totalThisWeek, totalLastWeek, hoursThisWeek, hoursLastWeek] =
-      await Promise.all([
-        this.dashboardRepository.countCompletedBetween(userId, 'student', thisWeek.start, thisWeek.end),
-        this.dashboardRepository.countCompletedBetween(userId, 'student', lastWeek.end, lastWeek.start),
-        this.dashboardRepository.countAllBetween(userId, 'student', thisWeek.start, thisWeek.end),
-        this.dashboardRepository.countAllBetween(userId, 'student', lastWeek.end, lastWeek.start),
-        this.dashboardRepository.sumCompletedHoursBetween(userId, 'student', thisWeek.start, thisWeek.end),
-        this.dashboardRepository.sumCompletedHoursBetween(userId, 'student', lastWeek.end, lastWeek.start),
-      ]);
+    const [
+      completedThisWeek,
+      completedLastWeek,
+      totalThisWeek,
+      totalLastWeek,
+      hoursThisWeek,
+      hoursLastWeek,
+    ] = await Promise.all([
+      this.dashboardRepository.countCompletedBetween(
+        userId,
+        'student',
+        thisWeek.start,
+        thisWeek.end,
+      ),
+      this.dashboardRepository.countCompletedBetween(
+        userId,
+        'student',
+        lastWeek.end,
+        lastWeek.start,
+      ),
+      this.dashboardRepository.countAllBetween(userId, 'student', thisWeek.start, thisWeek.end),
+      this.dashboardRepository.countAllBetween(userId, 'student', lastWeek.end, lastWeek.start),
+      this.dashboardRepository.sumCompletedHoursBetween(
+        userId,
+        'student',
+        thisWeek.start,
+        thisWeek.end,
+      ),
+      this.dashboardRepository.sumCompletedHoursBetween(
+        userId,
+        'student',
+        lastWeek.end,
+        lastWeek.start,
+      ),
+    ]);
 
-    const totalHoursLearned = profile?.totalHoursLearned ?? '0';
-    const streakDays = profile?.streakDays ?? 0;
+    // Courses are the second half of "learning": streaks come from activity, the course
+    // cards come from the enrollments this student actually has.
+    const [learning, courseRows] = await Promise.all([
+      this.buildLearning(userId, 'student'),
+      this.dashboardRepository.getStudentCourses(userId),
+    ]);
+    const courses = this.mapStudentCourses(courseRows);
+    learning.coursesInProgress = courses.filter(
+      (course) => course.completedTopics > 0 && !course.finished,
+    ).length;
+    learning.coursesFinished = courses.filter((course) => course.finished).length;
+
+    const streakDays = learning.currentStreak;
 
     const kpis: KpiDto[] = [
       {
@@ -78,7 +202,7 @@ export class DashboardService {
       },
       {
         label: 'Hours Learned',
-        value: `${Number(totalHoursLearned).toFixed(1)}h`,
+        value: `${learning.totalHours.toFixed(1)}h`,
         trend: '+' + weeklyBars.reduce((a, b) => a + b.hours, 0).toFixed(1) + 'h this week',
         isUp: true,
         color: 'mint',
@@ -87,7 +211,12 @@ export class DashboardService {
       {
         label: 'Day Streak',
         value: String(streakDays),
-        trend: streakDays > 0 ? `${streakDays} days` : 'Start today',
+        trend:
+          streakDays > 0
+            ? `${streakDays} days`
+            : learning.longestStreak > 0
+              ? `Best: ${learning.longestStreak}`
+              : 'Start today',
         isUp: streakDays > 0,
         color: 'sun',
         deltaPct: null,
@@ -99,11 +228,13 @@ export class DashboardService {
       weeklyBars,
       upcomingSessions,
       streakDays,
-      totalHoursLearned: String(totalHoursLearned),
+      totalHoursLearned: String(learning.totalHours),
       channelSeries,
       activity,
       recentSessions,
       subjectDistribution,
+      learning,
+      courses,
     };
   }
 
@@ -151,6 +282,16 @@ export class DashboardService {
       this.dashboardRepository.countAllBetween(userId, 'tutor', lastWeek.end, lastWeek.start),
     ]);
 
+    const [learning, courseRows] = await Promise.all([
+      this.buildLearning(userId, 'tutor'),
+      this.dashboardRepository.getTutorCourses(userId),
+    ]);
+    const courses = this.mapTutorCourses(courseRows);
+    learning.coursesInProgress = courses.filter(
+      (course) => course.completions > 0 && course.avgPercent < 100,
+    ).length;
+    learning.coursesFinished = courses.filter((course) => course.avgPercent >= 100).length;
+
     const kpis: KpiDto[] = [
       {
         label: 'Total Students',
@@ -197,6 +338,8 @@ export class DashboardService {
       activity,
       recentSessions,
       subjectDistribution,
+      learning,
+      courses,
     };
   }
 

@@ -9,6 +9,7 @@ import {
   tutorProfiles,
   users,
 } from '@database';
+import type { ActivityRow, CourseLearningRow } from './dashboard.types';
 
 @Injectable()
 export class DashboardRepository {
@@ -112,12 +113,7 @@ export class DashboardRepository {
   }
 
   /** All sessions (any status) whose start_at falls in [start, end). */
-  async countAllBetween(
-    userId: string,
-    role: string,
-    start: Date,
-    end: Date,
-  ): Promise<number> {
+  async countAllBetween(userId: string, role: string, start: Date, end: Date): Promise<number> {
     const [result] = await this.db
       .select({ count: sql<number>`count(*)::int` })
       .from(sessions)
@@ -192,9 +188,7 @@ export class DashboardRepository {
     const rows = await this.db
       .select()
       .from(sessions)
-      .where(
-        role === 'student' ? eq(sessions.studentId, userId) : eq(sessions.tutorId, userId),
-      )
+      .where(role === 'student' ? eq(sessions.studentId, userId) : eq(sessions.tutorId, userId))
       .orderBy(sql`${sessions.createdAt} desc`)
       .limit(limit);
 
@@ -206,25 +200,16 @@ export class DashboardRepository {
             lastName: users.lastName,
           })
           .from(users)
-          .where(
-            role === 'student' ? eq(users.id, s.tutorId) : eq(users.id, s.studentId),
-          )
+          .where(role === 'student' ? eq(users.id, s.tutorId) : eq(users.id, s.studentId))
           .limit(1);
         const hours =
           s.endAt && s.startAt
-            ? Number(
-                (
-                  (s.endAt.getTime() - s.startAt.getTime()) /
-                  3600000
-                ).toFixed(1),
-              )
+            ? Number(((s.endAt.getTime() - s.startAt.getTime()) / 3600000).toFixed(1))
             : 0;
         return {
           id: s.id,
           subject: s.subject,
-          counterpart: other
-            ? `${other.firstName} ${other.lastName}`
-            : 'Unknown',
+          counterpart: other ? `${other.firstName} ${other.lastName}` : 'Unknown',
           startAt: s.startAt,
           status: s.status,
           hours,
@@ -260,9 +245,10 @@ export class DashboardRepository {
       map.set(r.day, { completed: r.completed, booked: r.booked });
     }
     const DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return DAY_ORDER.map((d) => map.get(d) ?? { completed: 0, booked: 0 }).map(
-      (v, i) => ({ day: DAY_ORDER[i], ...v }),
-    );
+    return DAY_ORDER.map((d) => map.get(d) ?? { completed: 0, booked: 0 }).map((v, i) => ({
+      day: DAY_ORDER[i],
+      ...v,
+    }));
   }
 
   /** Session mix by subject (for the pie chart), ranked by count desc. */
@@ -339,6 +325,177 @@ export class DashboardRepository {
     return result.rows[0]?.count ?? 0;
   }
 
+  /**
+   * Every day that saw learning, with the hours and topics behind it.
+   *
+   * For a student, a day counts when they completed a topic or attended a session. For a
+   * tutor it is the mirror: a session they taught, or a topic completed by a student on a
+   * course they authored or set — which is the only honest answer to "did I teach this
+   * week". Two years is the horizon: enough for any streak history, bounded enough that
+   * the scan stays cheap.
+   */
+  async getLearningActivity(userId: string, role: string): Promise<ActivityRow[]> {
+    const completions =
+      role === 'student'
+        ? sql`
+          select date_trunc('day', completed_at) as day, 1 as topics, 0::float as hours
+          from course_topic_completions
+          where student_id = ${userId}`
+        : sql`
+          select date_trunc('day', completion.completed_at) as day, 1 as topics, 0::float as hours
+          from course_topic_completions completion
+          inner join course_enrollments enrollment
+            on enrollment.course_id = completion.course_id
+            and enrollment.student_id = completion.student_id
+          inner join courses course on course.id = completion.course_id
+          where course.tutor_id = ${userId} or enrollment.added_by = ${userId}`;
+
+    const attended =
+      role === 'student'
+        ? sql`
+          select date_trunc('day', start_at) as day, 0 as topics,
+                 extract(epoch from (end_at - start_at)) / 3600 as hours
+          from sessions
+          where status = 'completed' and student_id = ${userId}`
+        : sql`
+          select date_trunc('day', start_at) as day, 0 as topics,
+                 extract(epoch from (end_at - start_at)) / 3600 as hours
+          from sessions
+          where status = 'completed' and tutor_id = ${userId}`;
+
+    const result = await this.db.execute<ActivityRow>(sql`
+      select to_char(day, 'YYYY-MM-DD') as date,
+             round(sum(hours)::numeric, 1)::float as hours,
+             sum(topics)::int as topics
+      from (${completions} union all ${attended}) activity
+      where day >= now() - interval '730 days'
+      group by day
+      order by day
+    `);
+    return result.rows.map((row) => ({
+      date: row.date,
+      hours: Number(row.hours),
+      topics: Number(row.topics),
+    }));
+  }
+
+  /**
+   * Topics completed: the student's own, or — for a tutor — every completion by a student
+   * on a course they authored or set.
+   */
+  async countTopicCompletions(userId: string, role: string): Promise<number> {
+    const result = await this.db.execute<{ count: number }>(
+      role === 'student'
+        ? sql`select count(*)::int as count from course_topic_completions where student_id = ${userId}`
+        : sql`
+          select count(*)::int as count
+          from course_topic_completions completion
+          inner join course_enrollments enrollment
+            on enrollment.course_id = completion.course_id
+            and enrollment.student_id = completion.student_id
+          inner join courses course on course.id = completion.course_id
+          where course.tutor_id = ${userId} or enrollment.added_by = ${userId}`,
+    );
+    return result.rows[0]?.count ?? 0;
+  }
+
+  /** Total hours of attended sessions, all time — the profile counter that was never written. */
+  async sumCompletedHours(userId: string, role: string): Promise<number> {
+    const result = await this.db.execute<{ hours: number }>(sql`
+      select coalesce(sum(extract(epoch from (end_at - start_at)) / 3600), 0)::float as hours
+      from sessions
+      where status = 'completed'
+        and ${role === 'student' ? sql`student_id = ${userId}` : sql`tutor_id = ${userId}`}
+    `);
+    return Number(result.rows[0]?.hours ?? 0);
+  }
+
+  /**
+   * The courses a student is on, with their own progress on each. Ordered by the most
+   * recent completed topic, so the course being worked on right now is first.
+   */
+  async getStudentCourses(userId: string): Promise<CourseLearningRow[]> {
+    const result = await this.db.execute<CourseLearningRow>(sql`
+      select course.id as "courseId",
+             course.title,
+             course.provider::text as provider,
+             course.published,
+             concat(author.first_name, ' ', author.last_name) as "authorName",
+             concat(setter.first_name, ' ', setter.last_name) as "setterName",
+             coalesce((
+               select array_agg(subject.name order by subject.name)
+               from course_subjects link
+               inner join subjects subject on subject.id = link.subject_id
+               where link.course_id = course.id
+             ), '{}') as subjects,
+             (select count(*)::int from course_topics topic where topic.course_id = course.id) as "totalTopics",
+             (select count(*)::int from course_topic_completions completion
+               where completion.course_id = course.id and completion.student_id = enrollment.student_id) as "completedTopics",
+             0::int as "studentCount",
+             0::int as "finishedStudents",
+             (select max(completion.completed_at) from course_topic_completions completion
+               where completion.course_id = course.id and completion.student_id = enrollment.student_id) as "lastActivityAt"
+      from course_enrollments enrollment
+      inner join courses course on course.id = enrollment.course_id
+      left join users author on author.id = course.tutor_id
+      left join users setter on setter.id = enrollment.added_by
+      where enrollment.student_id = ${userId}
+      order by "lastActivityAt" desc nulls last, course.title
+    `);
+    return result.rows.map(normalizeCourseRow);
+  }
+
+  /**
+   * The courses a tutor teaches: those they authored, plus any course another author
+   * published and this tutor set for a student — assigning an outline still makes it
+   * theirs to track, and it would vanish from their dashboard otherwise.
+   */
+  async getTutorCourses(userId: string): Promise<CourseLearningRow[]> {
+    const result = await this.db.execute<CourseLearningRow>(sql`
+      select course.id as "courseId",
+             course.title,
+             course.provider::text as provider,
+             course.published,
+             concat(author.first_name, ' ', author.last_name) as "authorName",
+             null::text as "setterName",
+             coalesce((
+               select array_agg(subject.name order by subject.name)
+               from course_subjects link
+               inner join subjects subject on subject.id = link.subject_id
+               where link.course_id = course.id
+             ), '{}') as subjects,
+             (select count(*)::int from course_topics topic where topic.course_id = course.id) as "totalTopics",
+             (select count(*)::int from course_topic_completions completion
+               where completion.course_id = course.id) as "completedTopics",
+             (select count(distinct enrollment.student_id)::int from course_enrollments enrollment
+               where enrollment.course_id = course.id) as "studentCount",
+             (select count(*)::int from (
+               select enrollment.student_id
+               from course_enrollments enrollment
+               where enrollment.course_id = course.id
+                 and (select count(*)::int from course_topics topic where topic.course_id = course.id) > 0
+                 and (select count(distinct completion.topic_id)::int from course_topic_completions completion
+                       where completion.course_id = course.id
+                         and completion.student_id = enrollment.student_id)
+                     >= (select count(*)::int from course_topics topic where topic.course_id = course.id)
+             ) finished) as "finishedStudents",
+             greatest(
+               (select max(completion.completed_at) from course_topic_completions completion
+                 where completion.course_id = course.id),
+               course.updated_at
+             ) as "lastActivityAt"
+      from courses course
+      left join users author on author.id = course.tutor_id
+      where course.tutor_id = ${userId}
+         or exists (
+           select 1 from course_enrollments enrollment
+           where enrollment.course_id = course.id and enrollment.added_by = ${userId}
+         )
+      order by "lastActivityAt" desc nulls last, course.title
+    `);
+    return result.rows.map(normalizeCourseRow);
+  }
+
   /** Admin: total user counts */
   async getAdminMetrics() {
     const totalUsersResult = await this.db.execute<{ count: number }>(
@@ -361,4 +518,21 @@ export class DashboardRepository {
       avgRating: avgRatingRowResult.rows[0]?.avg ?? null,
     };
   }
+}
+
+/**
+ * Raw driver values arrive loosely typed — `int` as string, `timestamptz` never as a
+ * JSON-friendly string. Normalise once here so nothing downstream has to guess.
+ */
+function normalizeCourseRow(row: CourseLearningRow): CourseLearningRow {
+  return {
+    ...row,
+    published: Boolean(row.published),
+    subjects: row.subjects ?? [],
+    totalTopics: Number(row.totalTopics ?? 0),
+    completedTopics: Number(row.completedTopics ?? 0),
+    studentCount: Number(row.studentCount ?? 0),
+    finishedStudents: Number(row.finishedStudents ?? 0),
+    lastActivityAt: row.lastActivityAt ? new Date(row.lastActivityAt) : null,
+  };
 }

@@ -41,6 +41,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "ts-node -r tsconfig-paths/register src/database/seeds/nigerian-secondary.seed.ts",
+    "db:seed:courses": "ts-node -r tsconfig-paths/register src/database/seeds/courses.seed.ts",
     "db:studio": "drizzle-kit studio",
     "commitlint": "commitlint --edit",
     "jwt:generate": "node scripts/generate-jwt-keys.js",
