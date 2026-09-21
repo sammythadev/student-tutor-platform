@@ -70,6 +70,11 @@ no app chrome, `(app)` renders the authenticated shell.
 | `/tutors` | `(app)` | Ranked tutor catalog with filters |
 | `/tutor-dashboard` | `(app)` | Tutor home |
 | `/tutor-dashboard/find-students` | `(app)` | Student requests for a tutor |
+| `/courses` | `(app)` | Course list: owned courses for a tutor, enrolled courses with progress for a student |
+| `/courses/new` | `(app)` | Tutor-only course builder |
+| `/courses/[courseId]` | `(app)` | Course detail; the tutor edits the outline, students tick topic completion |
+| `/courses/students` | `(app)` | Tutor/admin: every student they set a course for, with per-course progress and the assign dialog |
+| `/courses/tutors` | `(app)` | Student: every tutor who set them a course, with progress and the next session |
 | `/schedules` | `(app)` | Availability and upcoming sessions |
 | `/messages` | `(app)` | Conversations |
 | `/notifications` | `(app)` | Notification center |
@@ -92,6 +97,7 @@ components/
   landing/                landing sections; content.ts is the copy source of truth
   onboard/                onboarding question primitives (OptionCard, Stepper, sliders)
   catalog/                tutor catalog cards, filters, hero
+  courses/                course list, editor (subjects + publish), detail, assign-course dialog, tutor/student trackers
   widgets/                dashboard widgets and charts
   reactbits/              decorative animation components
   <flat>.tsx              shared app components (AppShell, Modal, Button, …)
@@ -133,7 +139,8 @@ was rebuilt against a measured reference system, and the token set in
 This package has **no test runner configured** — there is no Jest, Vitest,
 Playwright or Testing Library setup, and no test script. The checks that exist
 are `pnpm run typecheck`, `pnpm run lint` and `pnpm run deadcode`. Backend
-coverage lives in `../backend` (`pnpm run test`, 102 unit tests).
+coverage lives in `../backend` (`pnpm run test`, 202 tests across 10 suites —
+184 run, the 18 course integration tests need `COURSES_TEST_DATABASE_URL`).
 
 Note on lint: Next.js 16 removed `next lint` and no longer lints during
 `next build`, so ESLint is wired directly through `eslint.config.mjs`

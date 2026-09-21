@@ -166,6 +166,7 @@ cd backend
 pnpm run db:generate      # SQL migrations from the schema
 pnpm run db:migrate       # apply them
 pnpm run db:seed          # Nigerian secondary-school fixtures
+pnpm run db:seed:courses  # Tutorly-provided and tutor-authored course outlines
 pnpm run db:studio        # Drizzle Studio
 ```
 
@@ -215,6 +216,7 @@ cp .env.example .env                      # set DATABASE_URL
 pnpm run jwt:generate && pnpm run jwt:apply   # RSA keys for access/refresh tokens
 pnpm run db:generate && pnpm run db:migrate
 pnpm run db:seed                          # optional fixtures
+pnpm run db:seed:courses                  # optional course outlines (Tutorly + tutors)
 pnpm run start:dev
 
 # Frontend — http://localhost:3000 (separate terminal)
@@ -230,8 +232,8 @@ so create it before running `pnpm run dev`.
 
 ```bash
 cd backend
-pnpm run test          # 102 unit tests across 4 suites
-pnpm run test:core     # core matchmaking units only
+pnpm run test          # 202 tests across 10 suites (184 run, 18 need a test database)
+pnpm run test:core     # core matchmaking units only (101 tests)
 pnpm run test:e2e      # HTTP smoke test
 ```
 
@@ -241,12 +243,21 @@ pnpm run test:e2e      # HTTP smoke test
 | `src/core/__tests__/core-engine.spec.ts` | 23 | Core engine behaviour and benchmarks |
 | `src/core/__tests__/evaluation-tui.spec.ts` | 23 | Eval configs, gap/baseline helpers, CSV/table helpers, TUI registry |
 | `src/app/controller/app.controller.spec.ts` | 1 | Status endpoint |
+| `src/modules/courses/courses.service.spec.ts` | 53 | Course scoping, role rules, topic-limit and permutation guards |
+| `src/modules/courses/courses.integration.spec.ts` | 18 | Migrated-database HTTP contracts for every course endpoint (skips without `COURSES_TEST_DATABASE_URL`) |
+| `src/modules/messages/messages.service.spec.ts` | 15 | Reply validation and conversation rules |
+| `src/modules/sessions/sessions.repository.spec.ts` | 9 | Session query shape and owner scoping |
+| `src/modules/messages/messages.repository.spec.ts` | 3 | Message SQL and thread joins |
+| `src/modules/messages/messages.controller.spec.ts` | 2 | Message controller wiring |
 | `test/app.e2e-spec.ts` | 1 | Full HTTP stack smoke test |
 
-The Nest module layer (auth, users, sessions, messages, …) is not yet covered by
-unit tests; the suites above target the algorithm and the evaluation tooling.
-The frontend has no test runner configured — `pnpm run typecheck`, `pnpm run
-lint` and `pnpm run deadcode` are its checks.
+The core suites cover the algorithm and the evaluation tooling. The Nest module
+layer is covered where behaviour was added — `courses`, plus focused `messages`
+and `sessions` specs. The courses HTTP suite is the only one that needs
+PostgreSQL: point `COURSES_TEST_DATABASE_URL` at a **disposable** database (never
+`DATABASE_URL`, which the suite migrates) or it skips and the other nine suites
+still run. The frontend has no test runner configured — `pnpm run typecheck`,
+`pnpm run lint` and `pnpm run deadcode` are its checks.
 
 ## Working with AI coding agents
 
