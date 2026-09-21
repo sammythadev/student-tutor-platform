@@ -1,5 +1,13 @@
 # Findings
 
+## Message replies (2026-09)
+
+- `messages.reply_to_id`: nullable UUID self-FK (`ON DELETE SET NULL`), index `messages_reply_to_idx`; migration `0009_late_amphibian.sql` generated + inspected, **not applied** to any live DB.
+- Thread/send reads use one joined query (`messageQuery()`) with `alias(messages, 'reply_message')` + `alias(users, 'reply_sender')`; replaces the old per-row `enrichMessage` N+1 on `getConversation`. Reply `senderName` is a separate `sql` fragment — Drizzle's nullifyMap only nullifies object paths keyed on plain Column fields (path length 2), so a nested object's `sql` member would stay `''` instead of `null` without the explicit join-null handling; for robustness the nested `replyTo` shape is asserted in specs.
+- Cross-conversation reply targets are rejected with `NotFoundException` (same error as missing → no existence disclosure); the joined read adds an exact-pair condition as defense in depth, and `replyTo` becomes null for corrupt references instead of leaking foreign content.
+- **Drizzle node-postgres positional row mapping**: with a mocked `query` driver, row values must be **positional arrays** matching select-field order (`rows: [[receiverId, senderId]]`); object rows decode to `undefined` fields silently. Same rule applies to `.returning()` (single-value array) and full row lists — see `messages.controller.spec.ts` row comments.
+- **Nest `Test.createTestingModule` + `overrideGuard(AuthGuard)`**: guard-level `CurrentUser` comes from `request.authUser`; a `@UseGuards(AuthGuard)` class-level guard can be swapped for a stub via `.overrideGuard()` + `.useClass()`; the stub must set `request.authUser` exactly like `AuthGuard` does.
+- ValidationPipe (`transform: true, whitelist: true`) strips unknown fields; explicit `replyToId: null` is rejected `400` (no null-coalescing to "no reply").
 Durable discoveries, decisions, and repo facts worth preserving.
 
 ## Eval TUI architecture (2026-08)

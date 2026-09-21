@@ -7,15 +7,15 @@ service.
 
 ## Stack
 
-| Concern | Choice |
-|---|---|
-| Framework | NestJS 11 on Express (SWC-backed build) |
-| Language | TypeScript, strict mode |
-| Database | PostgreSQL via Drizzle ORM (schema-first, generated SQL migrations) |
-| Auth | JWT access + refresh tokens (RSA keys, `jwt:generate` / `jwt:apply`) |
-| API docs | Swagger UI at `/api-docs` (dev) |
-| Package manager | pnpm only — `preinstall` runs `only-allow pnpm` |
-| Eval UI | Interactive terminal UI (ink) over the evaluation suites |
+| Concern         | Choice                                                               |
+| --------------- | -------------------------------------------------------------------- |
+| Framework       | NestJS 11 on Express (SWC-backed build)                              |
+| Language        | TypeScript, strict mode                                              |
+| Database        | PostgreSQL via Drizzle ORM (schema-first, generated SQL migrations)  |
+| Auth            | JWT access + refresh tokens (RSA keys, `jwt:generate` / `jwt:apply`) |
+| API docs        | Swagger UI at `/api-docs` (dev)                                      |
+| Package manager | pnpm only — `preinstall` runs `only-allow pnpm`                      |
+| Eval UI         | Interactive terminal UI (ink) over the evaluation suites             |
 
 ## Layout
 
@@ -40,7 +40,7 @@ src/
     __tests__/                core unit + integration suites
   modules/                    Nest feature modules (controller → service → repository)
     auth/ users/ matchmaking/ matchmaking-test/ scheduling/
-    sessions/ messages/ notifications/ feed/ dashboard/
+    sessions/ messages/ courses/ notifications/ feed/ dashboard/
   database/                   schema.ts, module wiring, seeds/
   common/                     guards, filters, interceptors, logger
   configs/                    env loading and app metadata helpers
@@ -68,8 +68,16 @@ pnpm run jwt:apply                 # copies those keys into .env
 pnpm run db:generate               # generate SQL from src/database/schema.ts
 pnpm run db:migrate                # apply it
 pnpm run db:seed                   # optional: Nigerian secondary-school fixture data
+pnpm run db:seed:courses           # optional: Tutorly-provided + tutor-authored course outlines
 pnpm run start:dev                 # http://localhost:4000, Swagger at /api-docs
 ```
+
+Both seed steps and `db:migrate` can instead run automatically on boot: set
+`DB_AUTO_SETUP=true` to apply pending migrations before the server starts
+listening, and `DB_AUTO_SEED=true` to also run the demo seeds. Both default to
+`false`, so production keeps migrating as a deliberate step; a failed boot-time
+setup is logged and never blocks startup. Seeds are idempotent, so a repeated
+boot is a no-op.
 
 `PORT=4000` and `CORS_ORIGIN=http://localhost:3000` are the defaults the
 frontend expects — its `/api/backend/*` rewrite points at port 4000.
@@ -78,40 +86,42 @@ frontend expects — its `/api/backend/*` rewrite points at port 4000.
 
 Full reference: [`docs/environment.md`](docs/environment.md).
 
-| Variable | Notes |
-|---|---|
-| `NODE_ENV` | Switches logging behaviour |
-| `PORT` | API port (`4000` to match the frontend proxy) |
-| `CORS_ORIGIN` | Allowed browser origin |
-| `DATABASE_URL` | PostgreSQL connection string |
+| Variable                                    | Notes                                                  |
+| ------------------------------------------- | ------------------------------------------------------ |
+| `NODE_ENV`                                  | Switches logging behaviour                             |
+| `PORT`                                      | API port (`4000` to match the frontend proxy)          |
+| `CORS_ORIGIN`                               | Allowed browser origin                                 |
+| `DATABASE_URL`                              | PostgreSQL connection string                           |
+| `DB_AUTO_SETUP`, `DB_AUTO_SEED`             | Migrate (and optionally seed) on boot; off by default  |
+| `DB_MIGRATIONS_FOLDER`                      | Migration directory, defaults to `./drizzle`           |
 | `LOG_LEVEL`, `LOG_ENABLED`, `LOG_FILE_PATH` | Logger verbosity, kill switch, optional file transport |
-| `APP_NAME`, `APP_VERSION`, `SWAGGER_PATH` | Metadata and docs route |
-| `JWT_*_TOKEN_{PRIVATE,PUBLIC}_KEY` | RSA keys, stored with escaped newlines |
-| `JWT_*_TOKEN_TTL_SECONDS` | Token lifetimes |
-| `ADMIN_SIGNUP_CODE` | Bootstrap code required by admin signup |
+| `APP_NAME`, `APP_VERSION`, `SWAGGER_PATH`   | Metadata and docs route                                |
+| `JWT_*_TOKEN_{PRIVATE,PUBLIC}_KEY`          | RSA keys, stored with escaped newlines                 |
+| `JWT_*_TOKEN_TTL_SECONDS`                   | Token lifetimes                                        |
+| `ADMIN_SIGNUP_CODE`                         | Bootstrap code required by admin signup                |
 
 Seed `.env.example` first when introducing a variable; never edit `.env` in a
 shared change.
 
 ### Scripts
 
-| Command | What it does |
-|---|---|
-| `pnpm run start:dev` | Watch-mode dev server |
-| `pnpm run build` | `nest build` + `tsc-alias` |
-| `pnpm run build:minified` | SWC minified production build |
-| `pnpm run start:prod` | Run `dist/main` |
-| `pnpm run lint` / `lint:fix` | ESLint (incl. `tsconfig.tui.json` project) |
-| `pnpm run typecheck` | `tsc --noEmit` for the main and TUI projects |
-| `pnpm run test` | Jest unit tests (`rootDir: src`) |
-| `pnpm run test:core` | Core matchmaking units only |
-| `pnpm run test:coverage` | Jest with coverage |
-| `pnpm run test:e2e` | E2E suite (`test/jest-e2e.json`) |
-| `pnpm run eval`, `eval:moderate`, `eval:topk`, `eval:gap`, `eval:baselines`, `eval:all` | Evaluation harnesses (below) |
-| `pnpm run tui` | Interactive eval terminal UI |
-| `pnpm run db:generate` / `db:migrate` / `db:seed` / `db:studio` | Drizzle workflow |
-| `pnpm run jwt:generate` / `jwt:apply` | RSA token-key management |
-| `pnpm run format` / `format:check` | Prettier (source, tests, docs, README) |
+| Command                                                                                 | What it does                                 |
+| --------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `pnpm run start:dev`                                                                    | Watch-mode dev server                        |
+| `pnpm run build`                                                                        | `nest build` + `tsc-alias`                   |
+| `pnpm run build:minified`                                                               | SWC minified production build                |
+| `pnpm run start:prod`                                                                   | Run `dist/main`                              |
+| `pnpm run lint` / `lint:fix`                                                            | ESLint (incl. `tsconfig.tui.json` project)   |
+| `pnpm run typecheck`                                                                    | `tsc --noEmit` for the main and TUI projects |
+| `pnpm run test`                                                                         | Jest unit tests (`rootDir: src`)             |
+| `pnpm run test:core`                                                                    | Core matchmaking units only                  |
+| `pnpm run test:coverage`                                                                | Jest with coverage                           |
+| `pnpm run test:e2e`                                                                     | E2E suite (`test/jest-e2e.json`)             |
+| `pnpm run eval`, `eval:moderate`, `eval:topk`, `eval:gap`, `eval:baselines`, `eval:all` | Evaluation harnesses (below)                 |
+| `pnpm run tui`                                                                          | Interactive eval terminal UI                 |
+| `pnpm run db:generate` / `db:migrate` / `db:seed` / `db:seed:courses` / `db:studio`     | Drizzle workflow                             |
+| `pnpm run jwt:generate` / `jwt:apply`                                                   | RSA token-key management                     |
+| `pnpm run format` / `format:check`                                                      | Prettier (source, tests, docs, README)       |
 
 ## Database
 
@@ -159,14 +169,14 @@ All suites generate the same synthetic fixtures
 (`src/core/evaluation/fixtures.ts`) so differences come from the algorithm, and
 all of them save CSV output to `docs/benchmarks/`.
 
-| Script | Question it answers |
-|---|---|
-| `pnpm run eval` | How does the engine scale (quality, fairness, time, memory)? |
-| `pnpm run eval:moderate` | Moderate-load band only (1.5:1 … 4:1 student:tutor) |
-| `pnpm run eval:topk` | Quality/speed/memory tradeoff for K ∈ {10, 20, 50, ∞} |
-| `pnpm run eval:gap` | How far below the exact optimum does greedy land? (min-cost max-flow) |
+| Script                    | Question it answers                                                              |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `pnpm run eval`           | How does the engine scale (quality, fairness, time, memory)?                     |
+| `pnpm run eval:moderate`  | Moderate-load band only (1.5:1 … 4:1 student:tutor)                              |
+| `pnpm run eval:topk`      | Quality/speed/memory tradeoff for K ∈ {10, 20, 50, ∞}                            |
+| `pnpm run eval:gap`       | How far below the exact optimum does greedy land? (min-cost max-flow)            |
 | `pnpm run eval:baselines` | Does greedy beat the strategies real platforms use? (FCFS / deferred acceptance) |
-| `pnpm run eval:all` | Everything above |
+| `pnpm run eval:all`       | Everything above                                                                 |
 
 Flags available across the eval commands: `--name <file>`, `--out <path>`,
 `--no-file`, `--table`, `--csv`, `--no-timing`, plus script-specific
@@ -196,17 +206,17 @@ pnpm run tui -- notes              # notes scratchpad
 pnpm run tui -- eval --no-timing   # zero timing columns from launch
 ```
 
-| Key | Action |
-|---|---|
-| `↑`/`↓` or `j`/`k` | move the selection |
-| `Enter` | run the selected suite / open a CSV |
-| `r` | rerun / refresh the results list |
-| `s` | save results under a custom filename (run view) |
-| `t` | toggle timing columns in the table and saved CSV (run view) |
-| `?` | full help reference (menu, run, browser) |
-| `Ctrl+O` | help reference in the notes editor, so `?` stays typable |
-| `Ctrl+S` | save the scratchpad (notes) |
-| `b` / `n` / `m` / `q` | browser / notes / back / quit |
+| Key                   | Action                                                      |
+| --------------------- | ----------------------------------------------------------- |
+| `↑`/`↓` or `j`/`k`    | move the selection                                          |
+| `Enter`               | run the selected suite / open a CSV                         |
+| `r`                   | rerun / refresh the results list                            |
+| `s`                   | save results under a custom filename (run view)             |
+| `t`                   | toggle timing columns in the table and saved CSV (run view) |
+| `?`                   | full help reference (menu, run, browser)                    |
+| `Ctrl+O`              | help reference in the notes editor, so `?` stays typable    |
+| `Ctrl+S`              | save the scratchpad (notes)                                 |
+| `b` / `n` / `m` / `q` | browser / notes / back / quit                               |
 
 Suites auto-save to `docs/benchmarks/`; the scratchpad writes to `docs/notes/`.
 `docs/benchmarks/` holds curated result tables that the findings docs cite, so
@@ -215,25 +225,34 @@ prefer naming experimental runs rather than overwriting them.
 ## Testing
 
 ```bash
-pnpm run test              # 102 unit tests across 4 suites
-pnpm run test:core         # core matchmaking units only
+pnpm run test              # 202 tests across 10 suites (184 run, 18 integration tests skip without a test database)
+pnpm run test:core         # core matchmaking units only (101 tests)
 pnpm run test:e2e          # 1 smoke spec over the full HTTP stack
 pnpm run test:coverage
 pnpm jest path/to/file.spec.ts   # single file
 pnpm jest -t "test name"         # by test name
 ```
 
-| Suite | Scope |
-|---|---|
-| `src/core/__tests__/core-units.spec.ts` | Filters, scorers, assignment, ranking, feedback, adaptation |
-| `src/core/__tests__/core-engine.spec.ts` | End-to-end core engine behaviour and benchmarks |
-| `src/core/__tests__/evaluation-tui.spec.ts` | Eval configs, gap/baseline helpers, CSV/table helpers, TUI registry |
-| `src/app/controller/app.controller.spec.ts` | Status endpoint |
-| `test/app.e2e-spec.ts` | HTTP smoke test |
+| Suite                                              | Scope                                                                                                       |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `src/core/__tests__/core-units.spec.ts`            | Filters, scorers, assignment, ranking, feedback, adaptation                                                 |
+| `src/core/__tests__/core-engine.spec.ts`           | End-to-end core engine behaviour and benchmarks                                                             |
+| `src/core/__tests__/evaluation-tui.spec.ts`        | Eval configs, gap/baseline helpers, CSV/table helpers, TUI registry                                         |
+| `src/app/controller/app.controller.spec.ts`        | Status endpoint                                                                                             |
+| `src/modules/courses/courses.service.spec.ts`      | Course scoping, role rules, topic-limit and permutation guards                                              |
+| `src/modules/courses/courses.integration.spec.ts`  | Migrated-database HTTP contracts for every course endpoint; skips unless `COURSES_TEST_DATABASE_URL` is set |
+| `src/modules/sessions/sessions.repository.spec.ts` | Session query shape and owner scoping                                                                       |
+| `src/modules/messages/messages.service.spec.ts`    | Reply validation and conversation rules                                                                     |
+| `src/modules/messages/messages.repository.spec.ts` | Message SQL and thread joins                                                                                |
+| `src/modules/messages/messages.controller.spec.ts` | Message controller wiring                                                                                   |
+| `test/app.e2e-spec.ts`                             | HTTP smoke test                                                                                             |
 
-The Nest `modules/` layer (auth, users, sessions, messages, …) has no unit
-tests yet — the suites above cover the algorithm and eval tooling. Add tests
-alongside behaviour changes.
+The core suites remain the algorithm's safety net. The Nest `modules/` layer is
+covered where behaviour was added — `courses`, plus focused `messages` and
+`sessions` specs. The courses HTTP suite is the only one that needs PostgreSQL:
+point `COURSES_TEST_DATABASE_URL` at a **disposable** database (never
+`DATABASE_URL` — the suite migrates it) or it skips while the rest run. Add
+tests alongside behaviour changes.
 
 ## Conventions
 
@@ -248,16 +267,16 @@ alongside behaviour changes.
 
 ## Documentation
 
-| Doc | Contents |
-|---|---|
-| [`docs/api.md`](docs/api.md) | Endpoint reference: auth, bodies, errors |
-| [`docs/database.md`](docs/database.md) | Tables, indexes, migration workflow |
-| [`docs/environment.md`](docs/environment.md) | Env files and every variable |
-| [`docs/project-structure.md`](docs/project-structure.md) | Layout and placement rules |
-| [`docs/core-roadmap-api-plan.md`](docs/core-roadmap-api-plan.md) | Roadmap with shipped/pending status |
-| [`docs/OPTIMIZATION_REPORT.md`](docs/OPTIMIZATION_REPORT.md) | Performance work and results |
-| [`docs/benchmarks/EVALUATION_FINDINGS.md`](docs/benchmarks/EVALUATION_FINDINGS.md) | Evaluation findings |
-| [`agent-docs/exceptions.md`](agent-docs/exceptions.md) | Exception hierarchy and response rules |
-| [`agent-docs/findings.md`](agent-docs/findings.md) | Durable discoveries and decisions |
-| [`agent-docs/lessons.md`](agent-docs/lessons.md) | Lessons, tooling traps, cautions |
-| [`AGENTS.md`](AGENTS.md) | Operating guide for coding agents in this package |
+| Doc                                                                                | Contents                                          |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [`docs/api.md`](docs/api.md)                                                       | Endpoint reference: auth, bodies, errors          |
+| [`docs/database.md`](docs/database.md)                                             | Tables, indexes, migration workflow               |
+| [`docs/environment.md`](docs/environment.md)                                       | Env files and every variable                      |
+| [`docs/project-structure.md`](docs/project-structure.md)                           | Layout and placement rules                        |
+| [`docs/core-roadmap-api-plan.md`](docs/core-roadmap-api-plan.md)                   | Roadmap with shipped/pending status               |
+| [`docs/OPTIMIZATION_REPORT.md`](docs/OPTIMIZATION_REPORT.md)                       | Performance work and results                      |
+| [`docs/benchmarks/EVALUATION_FINDINGS.md`](docs/benchmarks/EVALUATION_FINDINGS.md) | Evaluation findings                               |
+| [`agent-docs/exceptions.md`](agent-docs/exceptions.md)                             | Exception hierarchy and response rules            |
+| [`agent-docs/findings.md`](agent-docs/findings.md)                                 | Durable discoveries and decisions                 |
+| [`agent-docs/lessons.md`](agent-docs/lessons.md)                                   | Lessons, tooling traps, cautions                  |
+| [`AGENTS.md`](AGENTS.md)                                                           | Operating guide for coding agents in this package |
