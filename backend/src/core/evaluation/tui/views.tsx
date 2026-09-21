@@ -3,16 +3,30 @@ import { Box, Text, useInput, useStdout } from 'ink';
 import figlet from 'figlet';
 import { readFileSync } from 'fs';
 import {
+  DEFAULT_RUNS,
+  MAX_SAVED_RUNS,
+  winnerSummaryFromRows,
+} from '@core/evaluation/evaluation-harness';
+import {
   columnWidths,
   parseCsv,
+  shouldSpaceRows,
   stripTimingColumns,
   toCsv,
+  toSpacedCsv,
   writeCsvOutput,
 } from '@core/evaluation/cli-output';
 import { defaultNoteName, listSavedCsvs, saveNoteFile, type CsvFileInfo } from './files';
 import { cursorPosition, indexFromPosition, visualSpans } from './text-utils';
 import { HelpContent } from './help';
-import { SUITES, type Suite, type SuiteResult, type SuiteRunState } from './suites';
+import { currentSaveMode, SAVE_MODES, type SaveRowMode } from './help-data';
+import {
+  SUITES,
+  type RunOptions,
+  type Suite,
+  type SuiteResult,
+  type SuiteRunState,
+} from './suites';
 
 /** ── shared building blocks ─────────────────────────────────────────────── */
 
@@ -56,6 +70,23 @@ interface DataTableProps {
 
 const NO_HIGHLIGHTS: NonNullable<DataTableProps['highlights']> = [];
 
+/**
+ * Cap on rendered rows. The TUI has no internal scrollback (ink renders one
+ * frame), so a 1000-row per-run result must not flood the terminal — the full
+ * table always lives in the saved CSV.
+ */
+const MAX_TABLE_ROWS = 40;
+
+/**
+ * Terminal lines reserved for chrome above/below the table (heading, status
+ * lines, saved-file line, key hints). The visible table is capped so the whole
+ * frame fits the terminal height: ink's renderer switches to a full-screen
+ * clear when output exceeds the terminal rows, which desyncs its line-erase
+ * counter and leaves debris on the next shorter frame ("clumpy" output after a
+ * rerun). Fitting on screen avoids that path entirely.
+ */
+const TABLE_CHROME_LINES = 16;
+
 /** Column-aligned table that fits the terminal width and tints best-in-class cells. */
 function DataTable({
   header,
@@ -65,9 +96,12 @@ function DataTable({
   const { stdout } = useStdout();
   const availableWidth = Math.max(24, (stdout.columns ?? 80) - 4);
   const columnGap = 2;
+  const maxRows = Math.max(4, Math.min(MAX_TABLE_ROWS, (stdout.rows ?? 30) - TABLE_CHROME_LINES));
+  const truncated = rows.length - maxRows;
+  const visibleRows = truncated > 0 ? rows.slice(0, maxRows) : rows;
 
   const { widths, bestCells } = useMemo(() => {
-    const base = columnWidths(header, rows);
+    const base = columnWidths(header, visibleRows);
     const natural = base.reduce((sum, width) => sum + width, 0) + columnGap * (base.length - 1);
     const scaled = base.map((width) =>
       natural > availableWidth
@@ -83,7 +117,7 @@ function DataTable({
       }
       let bestIndex = -1;
       let bestValue = mode === 'max' ? -Infinity : Infinity;
-      rows.forEach((row, rowIndex) => {
+      visibleRows.forEach((row, rowIndex) => {
         const value = Number.parseFloat(row[columnIndex] ?? '');
         if (Number.isNaN(value)) {
           return;
@@ -99,7 +133,7 @@ function DataTable({
     }
 
     return { widths: scaled, bestCells };
-  }, [header, rows, highlights, availableWidth]);
+  }, [header, visibleRows, highlights, availableWidth]);
 
   const fit = (value: string, width: number): string =>
     value.length <= width ? value : `${value.slice(0, Math.max(width - 1, 1))}…`;
@@ -123,7 +157,7 @@ function DataTable({
           </Box>
         ))}
       </Box>
-      {rows.map((row, rowIndex) => (
+      {visibleRows.map((row, rowIndex) => (
         <Box key={`row-${rowIndex}`}>
           {row.map((value, columnIndex) => (
             <Box key={`${rowIndex}-${columnIndex}`} flexDirection="row">
@@ -137,6 +171,98 @@ function DataTable({
           ))}
         </Box>
       ))}
+      {truncated > 0 && (
+        <Box>
+          <Text color="gray" dimColor>
+            … {truncated} more row(s) — see the saved CSV for the full table
+          </Text>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+/**
+ * "Which algorithm wins" tally over the current results (see
+ * winnerSummaryFromRows): full per-strategy means + win counts on capture
+ * rows, win counts on per-run rows, or a prompt to switch modes on aggregate
+ * rows. Replaces the table while the W panel is open.
+ */
+function WinnerSummaryTable({
+  header,
+  rows,
+}: {
+  header: string[];
+  rows: string[][];
+}): React.JSX.Element {
+  const summary = useMemo(() => winnerSummaryFromRows(header, rows), [header, rows]);
+
+  if (summary.mode === 'aggregate') {
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyan">
+          Winner summary
+        </Text>
+        <Text color="gray">
+          These are aggregate rows (one averaged result per test) — press P for per-run rows, twice
+          for capture mode, to tally winners.
+        </Text>
+      </Box>
+    );
+  }
+
+  const bestScore = summary.strategies.reduce<number | null>(
+    (best, strategy) =>
+      strategy.meanScore !== null && (best === null || strategy.meanScore > best)
+        ? strategy.meanScore
+        : best,
+    null,
+  );
+  const pad = (text: string, width: number): string =>
+    text.length >= width ? text : `${text}${' '.repeat(width - text.length)}`;
+  const cell = (text: string, width: number): string => pad(text, width);
+
+  return (
+    <Box flexDirection="column">
+      <Text bold color="cyan">
+        Winner summary — {summary.rows} run(s)
+      </Text>
+      <Text color="gray" dimColor>
+        {summary.mode === 'per-run'
+          ? 'per-run rows: win counts only — ties break to the first strategy; press P again for capture to see all strategies + means'
+          : 'capture rows — every strategy’s full metrics per run (seeded fixtures, so the tally is exact)'}
+      </Text>
+      <Box>
+        <Text bold>{cell('strategy', 14)}</Text>
+        <Text bold>{cell('wins', 9)}</Text>
+        <Text bold>{cell('tiedBest', 11)}</Text>
+        <Text bold>{cell('meanScore', 12)}</Text>
+        <Text bold>{cell('unassigned%', 14)}</Text>
+        <Text bold>{cell('fairness', 11)}</Text>
+      </Box>
+      {summary.strategies.map((strategy) => (
+        <Box key={strategy.strategy}>
+          <Text>{cell(strategy.strategy, 14)}</Text>
+          <Text>{cell(String(strategy.strictWins), 9)}</Text>
+          <Text>{cell(strategy.tiedBest === null ? '—' : String(strategy.tiedBest), 11)}</Text>
+          <Text
+            color={
+              strategy.meanScore !== null && strategy.meanScore === bestScore ? 'green' : undefined
+            }
+          >
+            {cell(strategy.meanScore === null ? '—' : strategy.meanScore.toFixed(6), 12)}
+          </Text>
+          <Text>
+            {cell(strategy.meanUnassigned === null ? '—' : strategy.meanUnassigned.toFixed(2), 14)}
+          </Text>
+          <Text>
+            {cell(strategy.meanFairness === null ? '—' : strategy.meanFairness.toFixed(6), 11)}
+          </Text>
+        </Box>
+      ))}
+      <Text color="gray" dimColor>
+        W toggles this panel · best meanScore in green
+      </Text>
     </Box>
   );
 }
@@ -157,12 +283,15 @@ function TextInput({
   onCancel: () => void;
   placeholder?: string;
 }): React.JSX.Element {
+  // Windows terminals often send DEL (\x7f) for the Backspace key, which ink
+  // reports as `key.delete` rather than `key.backspace` — so handle both. These
+  // prompts are single-line with no cursor, so both erase the last character.
   useInput((input, key) => {
     if (key.escape) {
       onCancel();
     } else if (key.return) {
       onSubmit();
-    } else if (key.backspace) {
+    } else if (key.backspace || key.delete) {
       onChange(value.slice(0, -1));
     } else if (input && !key.ctrl) {
       onChange(value + input);
@@ -187,13 +316,16 @@ function TextInput({
 
 /** ── main menu ──────────────────────────────────────────────────────────── */
 
-const BANNER_FONTS = ['ANSI Shadow', 'Standard', 'Small'];
+const BANNER_FONTS = ['ANSI Shadow', 'Standard', 'Small'] as const;
+
+/** Font-name union from the figlet module itself (avoids the UMD global type). */
+type FigletFontName = NonNullable<Parameters<typeof figlet.textSync>[1]>['font'];
 
 /** Claude-style figlet banner, choosing the widest font that fits the screen. */
 function renderBanner(text: string, availableWidth: number): string[] {
   for (const font of BANNER_FONTS) {
     try {
-      const art = figlet.textSync(text, { font: font as figlet.Fonts });
+      const art = figlet.textSync(text, { font: font as FigletFontName });
       const lines = art.replace(/\n$/, '').split('\n');
       if (Math.max(...lines.map((line) => line.length)) <= availableWidth) {
         return lines;
@@ -328,26 +460,75 @@ export function RunScreen({
   onBack,
   noTiming,
   onToggleNoTiming,
+  options,
+  onOptionsChange,
+  skipConfig = false,
 }: {
   suite: Suite;
   onBack: () => void;
   /** Zero the wall-clock timing columns in the table and the saved CSV. */
   noTiming: boolean;
   onToggleNoTiming: () => void;
+  /** Run options (runs / count override / per-run mode) owned by App. */
+  options: RunOptions;
+  /** App-level setter; the R / C / P keys patch these options and re-run. */
+  onOptionsChange: (patch: Partial<RunOptions>) => void;
+  /**
+   * Skip the pre-run config prompts (set when the suite was launched with
+   * explicit run-option flags — the user already chose the values).
+   */
+  skipConfig?: boolean;
 }): React.JSX.Element {
   const [runId, setRunId] = useState(0);
   const [state, setState] = useState<SuiteRunState | null>(null);
   const [results, setResults] = useState<SuiteResult[] | null>(null);
   const [savedPaths, setSavedPaths] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [saveAs, setSaveAs] = useState(false);
+  // Save flow: `s` first asks WHICH rows to save (summary / per-run / capture),
+  // then the filename. `saveAsStep` is 'mode' while the picker is open, 'name'
+  // while the filename TextInput is open, and null when closed. When the picked
+  // mode differs from the current run mode the suite is re-run in that mode
+  // (same cost as pressing P then r) before the name prompt opens.
+  const [saveAsStep, setSaveAsStep] = useState<'mode' | 'name' | null>(null);
+  const [saveAsPick, setSaveAsPick] = useState<SaveRowMode>('summary');
   const [saveAsName, setSaveAsName] = useState('');
   const [saveAsError, setSaveAsError] = useState<string | null>(null);
+  // Set when `s` picks a row mode different from the current one: the suite is
+  // re-run in that mode, and when it finishes the name prompt opens itself.
+  const pendingSaveAfterRun = useRef(false);
   const [extraSaved, setExtraSaved] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  // W panel: "which algorithm wins" tally over the current results.
+  const [showSummary, setShowSummary] = useState(false);
+  // Run options mirroring the CLI flags (--runs, --save-runs, --students/--tutors,
+  // --per-run). State lives in App so launch flags seed it and it survives
+  // switching suites; only suites with `supportsOptions` honor them.
+  const runs = options.runs ?? DEFAULT_RUNS;
+  const override = options.override;
+  const perRun = options.perRun === true;
+  const capture = options.capture === true;
+  const [optionPrompt, setOptionPrompt] = useState<'runs' | 'counts' | null>(null);
+  const [optionValue, setOptionValue] = useState('');
+  const [optionError, setOptionError] = useState<string | null>(null);
+  // Pre-run configuration: harness suites (eval/topk/moderate/all) stop at a
+  // runs → counts prompt sequence before their first run, unless the suite was
+  // launched with explicit run-option flags (skipConfig). gap/baselines have no
+  // options and always run immediately.
+  const configNeeded = suite.supportsOptions && !skipConfig;
+  const [ready, setReady] = useState(() => !configNeeded);
+  const [configStep, setConfigStep] = useState<'runs' | 'counts' | null>(() =>
+    configNeeded ? 'runs' : null,
+  );
+  const [configValue, setConfigValue] = useState('');
+  const [configError, setConfigError] = useState<string | null>(null);
   const startRef = useRef<number | null>(null);
 
   useEffect(() => {
+    // Harness suites wait for the pre-run config prompts (ready flips when the
+    // runs + counts steps are accepted) before the first run starts.
+    if (!ready) {
+      return;
+    }
     let cancelled = false;
     setState(null);
     setResults(null);
@@ -355,20 +536,33 @@ export function RunScreen({
     setError(null);
     setExtraSaved(null);
     setShowHelp(false);
+    setShowSummary(false);
     startRef.current = Date.now();
 
     const run = async (): Promise<void> => {
       try {
-        const suiteResults = await suite.run((progress) => {
-          if (!cancelled) {
-            setState({ ...progress });
-          }
-        });
+        const suiteResults = await suite.run(
+          (progress) => {
+            if (!cancelled) {
+              setState({ ...progress });
+            }
+          },
+          { runs, override, perRun, capture },
+        );
         if (!cancelled) {
           setResults(suiteResults);
+          if (pendingSaveAfterRun.current) {
+            // A save picked a different row mode and re-ran the suite for it:
+            // results just landed in that mode — open the filename prompt.
+            pendingSaveAfterRun.current = false;
+            setSaveAsStep('name');
+            setSaveAsName('');
+            setSaveAsError(null);
+          }
         }
       } catch (err) {
         if (!cancelled) {
+          pendingSaveAfterRun.current = false;
           setError(err instanceof Error ? err.message : String(err));
         }
       }
@@ -378,7 +572,7 @@ export function RunScreen({
     return () => {
       cancelled = true;
     };
-  }, [suite, runId]);
+  }, [suite, runId, runs, override, perRun, capture, ready]);
 
   // Save whenever results or the timing toggle changes, so the CSV on disk
   // always matches what is displayed (timing columns zeroed when noTiming).
@@ -389,7 +583,11 @@ export function RunScreen({
     try {
       const paths = results.map((result) => {
         const rows = noTiming ? stripTimingColumns(result.header, result.rows) : result.rows;
-        return writeCsvOutput(result.defaultName, toCsv(result.header, rows));
+        // Per-run and capture CSVs carry real run numbers → spaced by default.
+        const csv = shouldSpaceRows(result.header, rows)
+          ? toSpacedCsv(result.header, rows)
+          : toCsv(result.header, rows);
+        return writeCsvOutput(result.defaultName, csv);
       });
       setSavedPaths(paths);
     } catch (err) {
@@ -397,10 +595,50 @@ export function RunScreen({
     }
   }, [results, noTiming]);
 
+  /**
+   * Starts the save-as flow for a picked row mode. When the mode matches what's
+   * on screen the filename prompt opens immediately; otherwise the suite is
+   * re-run in that mode (same cost as P then r) and the prompt opens when the
+   * run lands.
+   */
+  const beginSaveAs = (mode: SaveRowMode): void => {
+    const current = currentSaveMode(perRun, capture);
+    if (mode === current) {
+      setSaveAsStep('name');
+      setSaveAsName('');
+      setSaveAsError(null);
+      return;
+    }
+    pendingSaveAfterRun.current = true;
+    setSaveAsStep(null);
+    setSaveAsError(null);
+    onOptionsChange({
+      perRun: mode !== 'summary',
+      capture: mode === 'capture',
+    });
+  };
+
   // While help is open it is modal: the panel owns all keys (`isHelpCloseChord`).
   useInput(
     (input, key) => {
-      if (saveAs) {
+      // Save-mode picker is NOT a TextInput — it owns arrow/1-3/Enter/Esc keys.
+      if (saveAsStep === 'mode') {
+        const index = SAVE_MODES.findIndex((mode) => mode.id === saveAsPick);
+        if (input === '1' || input === '2' || input === '3') {
+          setSaveAsPick(SAVE_MODES[Number(input) - 1].id);
+        } else if (key.upArrow || input === 'k') {
+          setSaveAsPick(SAVE_MODES[(index - 1 + SAVE_MODES.length) % SAVE_MODES.length].id);
+        } else if (key.downArrow || input === 'j') {
+          setSaveAsPick(SAVE_MODES[(index + 1) % SAVE_MODES.length].id);
+        } else if (key.return) {
+          beginSaveAs(saveAsPick);
+        } else if (key.escape || input === 'q' || input === 'm') {
+          setSaveAsStep(null);
+          setSaveAsError(null);
+        }
+        return;
+      }
+      if (saveAsStep === 'name' || optionPrompt !== null || configStep !== null) {
         return; // TextInput handles the keys
       }
       if (input === 'q' || key.escape || input === 'm') {
@@ -408,11 +646,41 @@ export function RunScreen({
       } else if (input === 'r' && results !== null) {
         setRunId((id) => id + 1);
       } else if (input === 's' && results !== null && results.length === 1) {
-        setSaveAs(true);
-        setSaveAsName('');
-        setSaveAsError(null);
+        // Ask which rows to save first; the currently-shown mode is preselected.
+        const current = currentSaveMode(perRun, capture);
+        if (!suite.supportsOptions) {
+          // gap/baselines have no row modes — straight to the filename.
+          setSaveAsStep('name');
+          setSaveAsName('');
+          setSaveAsError(null);
+        } else {
+          setSaveAsPick(current);
+          setSaveAsStep('mode');
+          setSaveAsName('');
+          setSaveAsError(null);
+        }
       } else if (input === 't') {
         onToggleNoTiming();
+      } else if (input === 'R' && results !== null && suite.supportsOptions) {
+        setOptionPrompt('runs');
+        setOptionValue(String(runs));
+        setOptionError(null);
+      } else if (input === 'C' && results !== null && suite.supportsOptions) {
+        setOptionPrompt('counts');
+        setOptionValue(override === undefined ? '' : `${override.students}, ${override.tutors}`);
+        setOptionError(null);
+      } else if (input === 'P' && results !== null && suite.supportsOptions) {
+        // Cycle the row mode: summary → per-run (winner) → capture (all
+        // strategies, no cap) → summary. Mirrors the CLI row modes.
+        onOptionsChange(
+          perRun && !capture
+            ? { perRun: true, capture: true }
+            : capture
+              ? { perRun: false, capture: false }
+              : { perRun: true, capture: false },
+        );
+      } else if (input === 'W' && results !== null && results.length === 1) {
+        setShowSummary((value) => !value);
       } else if (input === '?' && results !== null) {
         setShowHelp((value) => !value);
       }
@@ -422,6 +690,94 @@ export function RunScreen({
 
   const elapsed =
     startRef.current === null ? '' : `${((Date.now() - startRef.current) / 1000).toFixed(1)}s`;
+
+  const COUNTS_HINT = 'Enter two positive integers separated by a comma (e.g. 120, 30).';
+
+  /**
+   * Applies a "students, tutors" prompt value. Blank resets to auto counts.
+   * Returns an error message when the input is invalid, null when applied.
+   */
+  const applyCountsValue = (text: string): string | null => {
+    const trimmed = text.trim();
+    if (trimmed === '') {
+      onOptionsChange({ override: undefined });
+      return null;
+    }
+    const parts = trimmed.split(/\s*,\s*|\s+/).filter((part) => part !== '');
+    if (parts.length !== 2) {
+      return COUNTS_HINT;
+    }
+    const students = Number(parts[0]);
+    const tutors = Number(parts[1]);
+    if (!Number.isInteger(students) || !Number.isInteger(tutors) || students <= 0 || tutors <= 0) {
+      return COUNTS_HINT;
+    }
+    onOptionsChange({ override: { students, tutors } });
+    return null;
+  };
+
+  /** Parses and applies the runs/counts prompt value, then re-runs the suite. */
+  const submitOption = (): void => {
+    if (optionPrompt === 'runs') {
+      const value = Number(optionValue.trim());
+      if (!Number.isInteger(value) || value <= 0) {
+        setOptionError('Runs per test must be a positive integer.');
+        return;
+      }
+      onOptionsChange({ runs: value });
+      setOptionPrompt(null);
+      setOptionError(null);
+      return;
+    }
+    if (optionPrompt === 'counts') {
+      const errorMessage = applyCountsValue(optionValue);
+      if (errorMessage !== null) {
+        setOptionError(errorMessage);
+        return;
+      }
+      setOptionPrompt(null);
+      setOptionError(null);
+      return;
+    }
+    setOptionPrompt(null);
+    setOptionError(null);
+  };
+
+  /**
+   * Advances the pre-run config prompts: runs → counts → start the run.
+   * Blank input keeps the current runs / resets counts to auto.
+   */
+  const acceptConfigStep = (): void => {
+    if (configStep === 'runs') {
+      const trimmed = configValue.trim();
+      if (trimmed !== '') {
+        const value = Number(trimmed);
+        if (!Number.isInteger(value) || value <= 0) {
+          setConfigError('Runs per test must be a positive integer.');
+          return;
+        }
+        onOptionsChange({ runs: value });
+      }
+      setConfigStep('counts');
+      setConfigValue(override === undefined ? '' : `${override.students}, ${override.tutors}`);
+      setConfigError(null);
+      return;
+    }
+    if (configStep === 'counts') {
+      const errorMessage = applyCountsValue(configValue);
+      if (errorMessage !== null) {
+        setConfigError(errorMessage);
+        return;
+      }
+      setConfigStep(null);
+      setConfigError(null);
+      setReady(true);
+      return;
+    }
+    setReady(true);
+  };
+
+  const countsLabel = override === undefined ? 'auto' : `${override.students}×${override.tutors}`;
 
   const heading = (
     <Box>
@@ -445,6 +801,51 @@ export function RunScreen({
         </Box>
         <Box marginTop={1}>
           <Text color="gray">q back to menu</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!ready) {
+    const onCounts = configStep === 'counts';
+    return (
+      <Box flexDirection="column" padding={1}>
+        {heading}
+        <Box marginTop={1}>
+          <Text bold color="yellow">
+            Configure this run
+          </Text>
+        </Box>
+        <Box>
+          <Text color="gray" dimColor>
+            {onCounts
+              ? '2 of 2 — Student/tutor counts override, e.g. 120, 30 (blank = auto)'
+              : `1 of 2 — Runs per test (blank = keep current ${runs})`}
+          </Text>
+        </Box>
+        <Box marginTop={1} flexDirection="column">
+          <TextInput
+            label={onCounts ? 'Counts:' : 'Runs:'}
+            value={configValue}
+            onChange={setConfigValue}
+            placeholder={onCounts ? 'e.g. 120, 30' : String(runs)}
+            onSubmit={acceptConfigStep}
+            onCancel={onBack}
+          />
+          <Text color="gray" dimColor>
+            {onCounts ? 'Enter start · Esc back to menu' : 'Enter next · Esc back to menu'}
+          </Text>
+        </Box>
+        {configError !== null && (
+          <Box marginTop={1}>
+            <Text color="red">✗ {configError}</Text>
+          </Box>
+        )}
+        <Box marginTop={1}>
+          <Text color="cyan" dimColor>
+            Current: {runs} run(s) · counts {countsLabel}
+            {capture ? ' · capture on' : perRun ? ' · per-run on' : ''}
+          </Text>
         </Box>
       </Box>
     );
@@ -487,17 +888,36 @@ export function RunScreen({
       <Box marginTop={1}>
         <Text color="green">✓ Completed in {elapsed}</Text>
       </Box>
-
+      {suite.supportsOptions && (
+        <Box>
+          <Text color="gray">
+            Each test ran {runs} time(s)
+            {runs === DEFAULT_RUNS ? ' (default)' : ''}
+            {capture
+              ? ' · capture mode (every run: all strategies + per-run time, no cap)'
+              : perRun
+                ? ' · per-run mode (one row per run, winner column)'
+                : ''}
+            {override !== undefined ? ` · counts ${override.students}/${override.tutors}` : ''}
+          </Text>
+        </Box>
+      )}
       {results.length === 1 ? (
         <>
           <Box marginTop={1} flexDirection="column">
-            <DataTable
-              header={results[0].header}
-              rows={
-                noTiming ? stripTimingColumns(results[0].header, results[0].rows) : results[0].rows
-              }
-              highlights={suite.highlights}
-            />
+            {showSummary ? (
+              <WinnerSummaryTable header={results[0].header} rows={results[0].rows} />
+            ) : (
+              <DataTable
+                header={results[0].header}
+                rows={
+                  noTiming
+                    ? stripTimingColumns(results[0].header, results[0].rows)
+                    : results[0].rows
+                }
+                highlights={suite.highlights}
+              />
+            )}
           </Box>
           <Box marginTop={1}>
             <Text color="green">
@@ -515,8 +935,30 @@ export function RunScreen({
           ))}
         </Box>
       )}
-
-      {saveAs && results.length === 1 && (
+      {saveAsStep === 'mode' && results.length === 1 && suite.supportsOptions && (
+        <Box marginTop={1} flexDirection="column">
+          <Text color="yellow">Save which rows?</Text>
+          {SAVE_MODES.map((mode) => (
+            <Text
+              key={mode.id}
+              color={saveAsPick === mode.id ? 'cyan' : 'white'}
+              bold={saveAsPick === mode.id}
+            >
+              {saveAsPick === mode.id ? ' ❯ ' : '   '}
+              {mode.label} — {mode.hint}
+            </Text>
+          ))}
+          <Text color="gray" dimColor>
+            ↑/↓ or 1-3 choose · Enter next · Esc cancel
+          </Text>
+          {saveAsError !== null && (
+            <Box marginTop={1}>
+              <Text color="red">✗ {saveAsError}</Text>
+            </Box>
+          )}
+        </Box>
+      )}
+      {saveAsStep === 'name' && results.length === 1 && (
         <Box marginTop={1} flexDirection="column">
           <Text color="yellow">Save results as (docs/benchmarks/)</Text>
           <TextInput
@@ -532,15 +974,19 @@ export function RunScreen({
                 const rows = noTiming
                   ? stripTimingColumns(result.header, result.rows)
                   : result.rows;
-                const path = writeCsvOutput(name, toCsv(result.header, rows));
+                const csv = shouldSpaceRows(result.header, rows)
+                  ? toSpacedCsv(result.header, rows)
+                  : toCsv(result.header, rows);
+                const path = writeCsvOutput(name, csv);
                 setExtraSaved(path);
-                setSaveAs(false);
+                setSaveAsStep(null);
+                setSaveAsName('');
               } catch (err) {
                 setSaveAsError(err instanceof Error ? err.message : String(err));
               }
             }}
             onCancel={() => {
-              setSaveAs(false);
+              setSaveAsStep(null);
               setSaveAsError(null);
             }}
           />
@@ -554,18 +1000,63 @@ export function RunScreen({
           )}
         </Box>
       )}
-
-      {extraSaved !== null && !saveAs && (
+      {extraSaved !== null && saveAsStep === null && (
         <Box marginTop={1}>
           <Text color="green">✓ Also saved to: {extraSaved}</Text>
         </Box>
       )}
-
+      {optionPrompt !== null && (
+        <Box marginTop={1} flexDirection="column">
+          <Text color="yellow">
+            {optionPrompt === 'runs'
+              ? `Runs per test (default ${DEFAULT_RUNS})`
+              : 'Counts override for every test — blank resets to auto'}
+          </Text>
+          <TextInput
+            label={optionPrompt === 'runs' ? 'Runs:' : 'Counts:'}
+            value={optionValue}
+            onChange={setOptionValue}
+            placeholder={optionPrompt === 'runs' ? String(DEFAULT_RUNS) : 'e.g. 120, 30'}
+            onSubmit={submitOption}
+            onCancel={() => {
+              setOptionPrompt(null);
+              setOptionError(null);
+            }}
+          />
+          <Text color="gray" dimColor>
+            Enter apply · Esc cancel
+          </Text>
+          {optionError !== null && (
+            <Box marginTop={1}>
+              <Text color="red">✗ {optionError}</Text>
+            </Box>
+          )}
+        </Box>
+      )}
+      {results.some((result) => (result.dropped ?? 0) > 0) && (
+        <Box marginTop={1}>
+          <Text color="yellow">
+            ⚠ Per-run CSV capped at {MAX_SAVED_RUNS} rows — some runs were skipped. Lower the run
+            count (R) or the test sizes (C).
+          </Text>
+        </Box>
+      )}
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          r rerun · s save as · t timing {noTiming ? 'off' : 'on'} · ? help · m menu · q quit
+          r rerun · s save as · t timing {noTiming ? 'off' : 'on'} · W winner summary · ? help · m
+          menu · q quit
         </Text>
       </Box>
+      {suite.supportsOptions && (
+        <Box>
+          <Text color="cyan" dimColor>
+            R runs:{runs}
+            {runs === DEFAULT_RUNS ? ' (default)' : ''} · C counts:
+            {override === undefined ? 'auto' : `${override.students}×${override.tutors}`} · P mode:
+            {capture ? 'capture' : perRun ? 'per-run' : 'summary'}
+          </Text>
+        </Box>
+      )}
     </Box>
   );
 }

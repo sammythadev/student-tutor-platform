@@ -1,0 +1,183 @@
+\drizzle.config.ts:6 - default
+\scripts\new.ts:1 - User (used in module)
+\scripts\new.ts:7 - user
+\src\common\index.ts:15 - CommonModule
+\src\common\index.ts:1 - AUTH_USER_METADATA_KEY
+\src\common\index.ts:2 - AUTH_ROLES_METADATA_KEY
+\src\common\index.ts:3 - AUTH_BEARER_PREFIX
+\src\common\index.ts:4 - JWT_ACCESS_STRATEGY_NAME
+\src\common\index.ts:5 - JWT_REFRESH_STRATEGY_NAME
+\src\common\index.ts:14 - AuthTokenService
+\src\common\index.ts:11 - AuthGuard
+\src\common\index.ts:7 - AccountRole
+\src\common\index.ts:8 - TokenUse
+\src\common\index.ts:10 - AuthenticatedUser
+\src\common\index.ts:16 - AuthTokenClaims
+\src\common\index.ts:26 - AuthTokenPair
+\src\common\index.ts:8 - JwtAccessStrategy
+\src\common\index.ts:14 - JwtRefreshStrategy
+\src\common\index.ts:10 - CurrentUser
+\src\common\index.ts:16 - OwnerOrAdminGuard
+\src\common\index.ts:5 - RefreshAuthGuard
+\src\common\index.ts:5 - Roles
+\src\common\index.ts:11 - RolesGuard
+\src\common\index.ts:1 - AppLoggerService
+\src\common\index.ts:1 - HttpLoggingInterceptor
+\src\common\index.ts:1 - CommonExceptionFilter
+\src\configs\index.ts:3 - getAppName
+\src\configs\index.ts:4 - getAppVersion
+\src\configs\index.ts:5 - getAdminSignupCode
+\src\configs\index.ts:7 - getJwtAccessTokenPrivateKey
+\src\configs\index.ts:9 - getJwtAccessTokenTtlSeconds
+\src\configs\index.ts:10 - getJwtRefreshTokenPrivateKey
+\src\configs\index.ts:12 - getJwtRefreshTokenTtlSeconds
+\src\configs\index.ts:23 - AppEnvironment
+\src\configs\index.ts:23 - LoggerLevel
+\src\core\index.ts:1 - WeightAdaptation
+\src\core\index.ts:2 - AdaptiveWeightKey
+\src\core\index.ts:3 - AssignmentLifecycle
+\src\core\index.ts:4 - CancellationResult
+\src\core\index.ts:5 - GreedyAssignmentEngine
+\src\core\index.ts:7 - AssignmentRunResult
+\src\core\index.ts:8 - AssignmentStats
+\src\core\index.ts:9 - AssignBatchOptions
+\src\core\index.ts:11 - EligibilityFilter
+\src\core\index.ts:12 - FeedbackUpdater
+\src\core\index.ts:13 - TopKRanker
+\src\core\index.ts:14 - RankedTutor
+\src\core\index.ts:15 - AcademicScorer
+\src\core\index.ts:16 - AcademicScore
+\src\core\index.ts:17 - CompositeScorer
+\src\core\index.ts:18 - FairnessScorer
+\src\core\index.ts:19 - PreferenceScorer
+\src\core\index.ts:20 - PreferenceScore
+\src\core\index.ts:21 - ScheduleScorer
+\src\core\index.ts:22 - MaxHeap
+\src\core\index.ts:23 - HeapItem
+\src\core\index.ts:24 - cosineSimilarity
+\src\core\index.ts:24 - dot
+\src\core\index.ts:24 - magnitude
+\src\core\index.ts:24 - oneHot
+\src\core\index.ts:3 - ACADEMIC_LEVEL_WEIGHT
+\src\core\index.ts:4 - COLD_START_QUALITY
+\src\core\index.ts:5 - EXAM_TYPE_MISMATCH_PENALTY
+\src\core\index.ts:6 - EXPERIENCE_THETA
+\src\core\index.ts:7 - EXPERIENCE_YEARS_MAX
+\src\core\index.ts:8 - FEEDBACK_LAMBDA
+\src\core\index.ts:9 - GAMMA_MAX
+\src\core\index.ts:10 - LEVEL_MAX
+\src\core\index.ts:11 - MAX_RATING
+\src\core\index.ts:12 - WEIGHT_EPSILON
+\src\core\index.ts:1 - MatchingEngine
+\src\core\index.ts:1 - AlgorithmWeights
+\src\core\index.ts:2 - AlgorithmWeightsInput
+\src\core\index.ts:3 - Assignment
+\src\core\index.ts:4 - AvailabilitySlot
+\src\core\index.ts:5 - CriterionWeights
+\src\core\index.ts:6 - CriterionWeightsInput
+\src\core\index.ts:7 - MatchScore
+\src\core\index.ts:8 - MatchScoreBreakdown
+\src\core\index.ts:8 - MatchSubBreakdown
+\src\core\index.ts:9 - Student
+\src\core\index.ts:10 - Tutor
+\src\core\index.ts:2 - AssignmentStatus
+\src\core\index.ts:3 - DeliveryMode
+\src\core\index.ts:4 - ExamType
+\src\core\index.ts:5 - FormatPreference
+\src\core\index.ts:6 - LearningPace
+\src\core\index.ts:7 - LearningStyle
+\src\core\index.ts:8 - TeachingStyle
+\src\core\index.ts:2 - IncompleteProfileException
+\src\core\index.ts:3 - NoEligibleTutorsException
+\src\core\index.ts:4 - TutorCapacityExceededException
+\src\database\index.ts:17 - userRoleEnum
+\src\database\index.ts:18 - userStatusEnum
+\src\database\index.ts:19 - assignmentStatusEnum
+\src\database\index.ts:25 - deliveryModeEnum
+\src\database\index.ts:26 - formatPreferenceEnum
+\src\database\index.ts:33 - teachingStyleEnum
+\src\database\index.ts:34 - learningPaceEnum
+\src\database\index.ts:35 - scheduleSlotStatusEnum
+\src\database\index.ts:40 - sessionStatusEnum
+\src\database\index.ts:212 - tutorSubjects
+\src\database\index.ts:398 - notificationTypeEnum
+\src\database\index.ts:429 - UserRecord
+\src\database\index.ts:430 - NewUserRecord
+\src\database\index.ts:431 - StudentProfileRecord
+\src\database\index.ts:432 - NewStudentProfileRecord
+\src\database\index.ts:433 - TutorProfileRecord
+\src\database\index.ts:434 - NewTutorProfileRecord
+\src\database\index.ts:435 - SubjectRecord
+\src\database\index.ts:436 - NewSubjectRecord
+\src\database\index.ts:438 - NewScheduleSlotRecord
+\src\database\index.ts:440 - NewSessionRecord
+\src\database\index.ts:441 - PostRecord
+\src\database\index.ts:442 - NewPostRecord
+\src\database\index.ts:443 - PostLikeRecord
+\src\database\index.ts:444 - MessageRecord
+\src\database\index.ts:445 - NewMessageRecord
+\src\core\evaluation\baseline-comparison.ts:307 - runBaselineComparison (used in module)
+\src\core\evaluation\baseline-comparison.ts:254 - BaselineScenario (used in module)
+\src\core\evaluation\baseline-comparison.ts:256 - StrategyOutcome (used in module)
+\src\core\evaluation\cli-output.ts:51 - resolveOutputPath (used in module)
+\src\core\evaluation\cli-output.ts:77 - formatTable (used in module)
+\src\core\evaluation\cli-output.ts:143 - writeCsvOutput (used in module)
+\src\core\evaluation\cli-output.ts:155 - TIMING_COLUMNS (used in module)
+\src\core\evaluation\cli-output.ts:192 - EmitOptions (used in module)
+\src\core\evaluation\evaluation-harness.ts:314 - runEvaluation
+\src\core\evaluation\evaluation-harness.ts:318 - runTopKSweep
+\src\core\evaluation\evaluation-harness.ts:16 - EvaluationRow (used in module)
+\src\core\evaluation\optimal-baseline.ts:239 - runOptimalityGap (used in module)
+\src\core\evaluation\optimal-baseline.ts:109 - OptimalResult (used in module)
+\src\core\evaluation\optimal-baseline.ts:161 - OptimalityGapRow (used in module)
+\src\modules\matchmaking\matchmaking.repository.ts:29 - BatchPersistResult (used in module)
+\src\modules\notifications\notifications.service.ts:5 - NotificationType (used in module)
+\src\modules\scheduling\scheduling.service.ts:6 - AvailableSlot (used in module)
+\src\modules\scheduling\scheduling.service.ts:11 - TutorSlotsResponse (used in module)
+\src\modules\users\users.types.ts:3 - PublicUserRecord (used in module)
+\src\core\evaluation\tui\files.ts:16 - listSavedCsvs
+\src\core\evaluation\tui\files.ts:8 - CsvFileInfo (used in module)
+\src\core\evaluation\tui\help-data.ts:9 - HelpRow (used in module)
+\src\core\evaluation\tui\help-data.ts:16 - HelpSection (used in module)
+\src\core\evaluation\tui\help-data.ts:21 - GLOBAL_KEYS (used in module)
+\src\core\evaluation\tui\help-data.ts:48 - MENU_KEYS (used in module)
+\src\core\evaluation\tui\help-data.ts:58 - RUN_KEYS (used in module)
+\src\core\evaluation\tui\help-data.ts:84 - BROWSER_KEYS (used in module)
+\src\core\evaluation\tui\help-data.ts:94 - NOTES_KEYS (used in module)
+\src\core\evaluation\tui\launch.ts:27 - TuiLaunch (used in module)
+\src\core\evaluation\tui\suites.ts:38 - SuiteResult (used in module)
+\src\core\evaluation\tui\suites.ts:47 - SuiteRunState (used in module)
+\src\core\evaluation\tui\suites.ts:59 - Highlight (used in module)
+\src\core\evaluation\tui\suites.ts:69 - RunOptions (used in module)
+\src\core\evaluation\tui\suites.ts:78 - SuiteRunner (used in module)
+\src\core\evaluation\tui\suites.ts:83 - Suite (used in module)
+\src\core\evaluation\tui\suites.ts:289 - gapSuite (used in module)
+\src\core\evaluation\tui\suites.ts:298 - baselinesSuite (used in module)
+\src\core\evaluation\tui\suites.ts:311 - allSuite (used in module)
+\src\core\evaluation\tui\text-utils.ts:17 - visualSpans (used in module)
+\src\core\evaluation\tui\text-utils.ts:9 - VisualSpan (used in module)
+\src\core\evaluation\tui\text-utils.ts:34 - CursorPosition (used in module)
+\src\modules\auth\dtos\auth-session.dto.ts:32 - OnboardUsersResponseDto
+\src\modules\auth\dtos\onboard-users.dto.ts:27 - AvailabilitySlotDto (used in module)
+\src\modules\auth\dtos\onboard-users.dto.ts:37 - OnboardStudentDto (used in module)
+\src\modules\auth\dtos\onboard-users.dto.ts:121 - OnboardTutorDto (used in module)
+\src\modules\dashboard\dtos\dashboard.dto.ts:24 - WeeklyBarDto (used in module)
+\src\modules\dashboard\dtos\dashboard.dto.ts:32 - ChannelPointDto (used in module)
+\src\modules\dashboard\dtos\dashboard.dto.ts:43 - EarningsPointDto (used in module)
+\src\modules\dashboard\dtos\dashboard.dto.ts:51 - ActivityItemDto (used in module)
+\src\modules\dashboard\dtos\dashboard.dto.ts:65 - RecentSessionDto (used in module)
+\src\modules\dashboard\dtos\dashboard.dto.ts:85 - SubjectDistributionDto (used in module)
+\src\modules\dashboard\dtos\dashboard.dto.ts:96 - UpcomingSessionDto (used in module)
+\src\modules\feed\dtos\feed.dto.ts:6 - PostAttachment (used in module)
+\src\modules\feed\dtos\feed.dto.ts:108 - TrendingTopicDto (used in module)
+\src\modules\feed\dtos\feed.dto.ts:116 - ActiveTutorDto (used in module)
+\src\modules\matchmaking\dtos\matchmaking.dto.ts:52 - CandidateTutorDto (used in module)
+\src\modules\matchmaking\dtos\matchmaking.dto.ts:115 - CandidateStudentDto (used in module)
+\src\modules\messages\dtos\message.dto.ts:15 - GetConversationDto
+\src\modules\users\dtos\create-user.dto.ts:35 - AvailabilitySlotDto (used in module)
+\src\modules\users\dtos\create-user.dto.ts:77 - CreateStudentProfileDto (used in module)
+\src\modules\users\dtos\create-user.dto.ts:145 - CreateTutorProfileDto (used in module)
+\src\modules\users\dtos\create-user.dto.ts:269 - UserResponseDto (used in module)
+\src\modules\users\dtos\create-user.dto.ts:298 - StudentProfileResponseDto (used in module)
+\src\modules\users\dtos\create-user.dto.ts:324 - TutorProfileResponseDto (used in module)
+\src\modules\users\dtos\update-user.dto.ts:17 - NotificationPrefsDto (used in module)

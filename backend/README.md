@@ -237,7 +237,8 @@ pnpm jest -t "test name"         # by test name
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `src/core/__tests__/core-units.spec.ts`            | Filters, scorers, assignment, ranking, feedback, adaptation                                                 |
 | `src/core/__tests__/core-engine.spec.ts`           | End-to-end core engine behaviour and benchmarks                                                             |
-| `src/core/__tests__/evaluation-tui.spec.ts`        | Eval configs, gap/baseline helpers, CSV/table helpers, TUI registry                                         |
+| `src/core/__tests__/evaluation-harness.spec.ts`    | Eval harness options: `--runs`, `--per-run`, `--save-runs`, `--capture-runs`, count overrides               |
+| `src/core/__tests__/evaluation-tui.spec.ts`        | Eval configs, gap/baseline helpers, CSV/table helpers, TUI registry, launch flags and save-mode helpers     |
 | `src/app/controller/app.controller.spec.ts`        | Status endpoint                                                                                             |
 | `src/modules/courses/courses.service.spec.ts`      | Course scoping, role rules, topic-limit and permutation guards                                              |
 | `src/modules/courses/courses.integration.spec.ts`  | Migrated-database HTTP contracts for every course endpoint; skips unless `COURSES_TEST_DATABASE_URL` is set |
@@ -264,6 +265,9 @@ tests alongside behaviour changes.
 - Path aliases (`@core/*`, `@modules/*`, `@database/*`, `@common/*`, …) are
   defined in `tsconfig.json` and mirrored in the Jest `moduleNameMapper`.
 - Commit messages follow Conventional Commits (commitlint + husky).
+- The native TypeScript 7 compiler (`@typescript/native`) runs alongside the
+  TS6 API compiler — see [`docs/tooling/typescript7.md`](docs/tooling/typescript7.md)
+  for what runs on which.
 
 ## Documentation
 
@@ -276,7 +280,68 @@ tests alongside behaviour changes.
 | [`docs/core-roadmap-api-plan.md`](docs/core-roadmap-api-plan.md)                   | Roadmap with shipped/pending status               |
 | [`docs/OPTIMIZATION_REPORT.md`](docs/OPTIMIZATION_REPORT.md)                       | Performance work and results                      |
 | [`docs/benchmarks/EVALUATION_FINDINGS.md`](docs/benchmarks/EVALUATION_FINDINGS.md) | Evaluation findings                               |
+| [`docs/tooling/typescript7.md`](docs/tooling/typescript7.md)                       | TypeScript 7 alongside the TS6 API compiler       |
+| [`docs/tooling/typescript-consumer-graph.txt`](docs/tooling/typescript-consumer-graph.txt) | Who compiles what, per tsconfig           |
+| [`docs/tooling/ts-prune-report.txt`](docs/tooling/ts-prune-report.txt)             | Current exported-symbol dead-code report          |
 | [`agent-docs/exceptions.md`](agent-docs/exceptions.md)                             | Exception hierarchy and response rules            |
 | [`agent-docs/findings.md`](agent-docs/findings.md)                                 | Durable discoveries and decisions                 |
 | [`agent-docs/lessons.md`](agent-docs/lessons.md)                                   | Lessons, tooling traps, cautions                  |
 | [`AGENTS.md`](AGENTS.md)                                                           | Operating guide for coding agents in this package |
+
+### Eval output files
+
+Each run auto-saves its CSV to `docs/benchmarks/`, so results land in the same
+files the `pnpm run eval*` scripts write. On the results screen, `s` lets you
+re-save the current table under a custom filename, and the notes scratchpad
+saves free text to `docs/notes/<name>.txt`:
+
+| Suite     | File                              |
+| --------- | --------------------------------- |
+| eval      | `evaluation-results.csv`          |
+| topk      | `topk-sweep-results.csv`          |
+| moderate  | `moderate-results.csv`            |
+| gap       | `optimality-gap-results.csv`      |
+| baselines | `baseline-comparison-results.csv` |
+| notes     | `docs/notes/<name>.txt`           |
+
+With per-run mode on (first `P` press), eval/topk/moderate save every run as
+its own row — `evaluation-per-run-results.csv`, `topk-per-run-results.csv`,
+`moderate-per-run-results.csv` — each row carrying its run index and the
+winning algorithm, capped at 1000 rows per file.
+
+Capture mode (second `P` press — summary → per-run → capture) saves the full
+record instead: `evaluation-capture-results.csv`, `topk-capture-results.csv`,
+`moderate-capture-results.csv` — every run is one row with ALL four
+strategies' results plus its `startedAt` timestamp and `durationMs`, and there
+is **no row cap**.
+
+The on-screen table only shows the first 40 rows (the TUI has no scrollback),
+but the **saved CSV always contains every row** — auto-save and `s` both write
+the complete table.
+
+### Run options
+
+The same options drive the `pnpm run eval` CLI, the TUI launch line, and the
+run view (`R`/`C`/`P` keys):
+
+| Flag                     | Effect                                              |
+| ------------------------ | --------------------------------------------------- |
+| `--save-runs <n>`        | run each test n times and write EVERY run to the CSV as its own row (one file, max 1000 rows) — R set to n + per-run mode on |
+| `--capture-runs <n>`     | **full capture mode** — every run becomes its own row containing ALL four strategies’ quality results plus that run’s started-at timestamp and duration, all in one file (`evaluation-capture-results.csv`), no row cap — same as `P` cycled to capture in the TUI |
+| `--runs <n>`             | repeats per test for the timing stats, default 5 (R) |
+| `--per-run`              | legacy toggle for per-run rows using the `--runs` count (P) |
+| `--students <n> --tutors <n>` | override counts for every test (both required) (C) |
+
+The default output is the **averaged summary** — each test is one row of mean
+results across its runs. Turn capture on when you want every single run
+instead:
+
+```bash
+# 100 runs per test, every run its own row (all 4 strategies + per-run time):
+pnpm run eval -- --capture-runs 100 --students 120 --tutors 30
+```
+
+That writes `evaluation-capture-results.csv` with 100 rows per test (no cap):
+`startedAt` and `durationMs` tell you when each run happened and how long it
+took, and the `<strategy>.averageScore` / `.unassignedPercent` /
+`.jainFairnessIndex` columns hold that run's full results for every strategy.

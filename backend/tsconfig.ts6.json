@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Used ONLY by the ts-node CLI scripts (pnpm run eval* / db:seed), which
+    // run as CommonJS and resolve path aliases at runtime through
+    // tsconfig-paths. ts-node emits CommonJS when module is commonjs, and
+    // tsconfig-paths requires baseUrl — but moduleResolution node10 and baseUrl
+    // are deprecated (TypeScript 6) / removed (native TypeScript 7), so they
+    // live in this legacy side-config behind ignoreDeprecations instead of in
+    // tsconfig.json, which the compilers, ts-jest, eslint and ts-prune use.
+    "module": "commonjs",
+    "moduleResolution": "node10",
+    "baseUrl": "./",
+    "ignoreDeprecations": "6.0"
+  }
+}

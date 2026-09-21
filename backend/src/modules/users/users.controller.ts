@@ -7,7 +7,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AuthenticatedUser } from '@common/auth/auth.types';
+import type { AuthenticatedUser } from '@common/auth/auth.types';
 import { CurrentUser } from '@common/auth/current-user.decorator';
 import { AuthGuard, OwnerOrAdminGuard, Roles, RolesGuard } from '@common/auth';
 import { CreateUserDto, UserIdParamDto, UserWithProfilesResponseDto } from './dtos/create-user.dto';

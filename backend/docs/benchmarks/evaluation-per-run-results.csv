@@ -1,0 +1,8 @@
+scenario,students,tutors,loadFactorWeight,topK,runs,run,winner,averageScore,unassignedPercent,jainFairnessIndex,elapsedMinMs,elapsedMeanMs,elapsedMaxMs,pairsScored,peakHeapEntries
+moderate-1.5to1,150,100,0.05,inf,2,1,greedy-engine,0.619380,7.33,0.633475,25,25.0,25,1062,1062
+
+moderate-1.5to1,150,100,0.05,inf,2,2,greedy-engine,0.619380,7.33,0.633475,13,13.0,13,1062,1062
+
+moderate-1.5to1,150,100,0,inf,2,1,da-stable,0.610840,7.33,0.605674,10,10.0,10,1062,1062
+
+moderate-1.5to1,150,100,0,inf,2,2,da-stable,0.610840,7.33,0.605674,9,9.0,9,1062,1062

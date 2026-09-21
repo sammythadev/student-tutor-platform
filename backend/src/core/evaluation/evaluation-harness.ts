@@ -1,6 +1,7 @@
 import { GreedyAssignmentEngine } from '@core/algorithms';
 import type { AssignmentStats } from '@core/algorithms';
-import { emitResults, runCli } from './cli-output';
+import { emitResults, getFlagValue, runCli } from './cli-output';
+import { runAllStrategies, type StrategyOutcome } from './baseline-comparison';
 import { type CapacityStrategy, generateStudents, generateTutors } from './fixtures';
 
 export interface EvaluationConfig {
@@ -18,6 +19,12 @@ export interface EvaluationRow {
   tutors: number;
   loadFactorWeight: number;
   topK: number | null;
+  /** Number of repeated runs per test — aggregate rows report the total; per-run rows report the test's total. */
+  runs: number;
+  /** 1-based run index; set only in --per-run rows (null in aggregate rows). */
+  run: number | null;
+  /** Winning strategy for this run; set only in --per-run rows (null in aggregate rows). */
+  winner: string | null;
   averageScore: number;
   unassignedPercent: number;
   jainFairnessIndex: number;
@@ -28,13 +35,448 @@ export interface EvaluationRow {
   peakHeapEntries: number;
 }
 
-/** Number of repeated runs; elapsed time is reported as min/mean/max across runs. */
-const BENCHMARK_RUNS = 5;
+/** Default number of repeated runs per test (override with `--runs <n>`). */
+export const DEFAULT_RUNS = 5;
+
+/** Hard cap on per-run rows saved to one CSV in --save-runs / --per-run mode. */
+export const MAX_SAVED_RUNS = 1000;
+
+export interface CountOverride {
+  students: number;
+  tutors: number;
+}
+
+/** Reads `--runs <n>` from argv; falls back to DEFAULT_RUNS when absent. */
+export function parseRuns(): number {
+  const raw = getFlagValue('--runs');
+  return raw === undefined ? DEFAULT_RUNS : parsePositiveInt('--runs', raw);
+}
+
+/**
+ * Reads `--save-runs <n>` from argv; returns undefined when absent. This is the
+ * self-contained "write every run to the CSV" command: each test in the sweep
+ * runs n times and each run is saved as its own row in one CSV file (capped at
+ * MAX_SAVED_RUNS rows total). Equivalent to `--runs <n> --per-run`.
+ */
+export function parseSaveRuns(): number | undefined {
+  const raw = getFlagValue('--save-runs');
+  return raw === undefined ? undefined : parsePositiveInt('--save-runs', raw);
+}
+
+/**
+ * Reads `--capture-runs <n>` from argv; returns undefined when absent. This is
+ * the full "capture every run" mode: each test runs n times and EVERY run is
+ * written as its own row with the complete results of all four strategies plus
+ * that run's timestamp and duration — one CSV file, no row cap.
+ */
+export function parseCaptureRuns(): number | undefined {
+  const raw = getFlagValue('--capture-runs');
+  return raw === undefined ? undefined : parsePositiveInt('--capture-runs', raw);
+}
+
+/**
+ * One per-run row: runs all four strategies (fcfs-filter, fcfs-best,
+ * da-stable, greedy-engine) on the config's population, reports the WINNER's
+ * quality metrics, and records greedy's per-run wall-clock timing/stats.
+ */
+export function evaluatePerRunRow(
+  config: EvaluationConfig,
+  run: number,
+  runs: number,
+): EvaluationRow {
+  const students = generateStudents(config.students, config.loadFactorWeight);
+  const outcomes = runAllStrategies(students, config.tutors, config.capacityStrategy);
+  const winner = outcomes.reduce((best, outcome) =>
+    outcome.averageScore > best.averageScore ? outcome : best,
+  );
+
+  // Greedy's timing is measured separately (the strategy runs inside
+  // runAllStrategies do not collect stats or wall-clock time).
+  const greedyTutors = generateTutors(config.tutors, config.capacityStrategy);
+  const runStats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
+  const start = Date.now();
+  new GreedyAssignmentEngine().assignBatch(students, greedyTutors, {
+    stats: runStats,
+    topK: config.topK,
+  });
+  const elapsedMs = Date.now() - start;
+
+  return {
+    scenario: config.scenario,
+    students: config.students,
+    tutors: config.tutors,
+    loadFactorWeight: config.loadFactorWeight,
+    topK: config.topK ?? null,
+    runs,
+    run,
+    winner: winner.strategy,
+    averageScore: winner.averageScore,
+    unassignedPercent: winner.unassignedPercent,
+    jainFairnessIndex: winner.jainFairnessIndex,
+    elapsedMinMs: elapsedMs,
+    elapsedMeanMs: elapsedMs,
+    elapsedMaxMs: elapsedMs,
+    pairsScored: runStats.pairsScored,
+    peakHeapEntries: runStats.peakHeapEntries,
+  };
+}
+
+/**
+ * Serializes --per-run mode: one row per run for every test, all in the same
+ * CSV. Rows beyond `maxRows` (MAX_SAVED_RUNS) are skipped instead of computed;
+ * the dropped count is returned so the CLI can warn.
+ */
+export function emitPerRun(
+  configs: EvaluationConfig[],
+  runs: number,
+  maxRows: number = MAX_SAVED_RUNS,
+): { header: string[]; rows: string[][]; dropped: number } {
+  const rows: string[][] = [];
+  let dropped = 0;
+  for (const config of configs) {
+    for (let run = 1; run <= runs; run += 1) {
+      if (rows.length >= maxRows) {
+        dropped += 1;
+        continue;
+      }
+      rows.push(toRow(evaluatePerRunRow(config, run, runs)));
+    }
+  }
+  return { header: HEADER, rows, dropped };
+}
+
+/** ── capture mode: every run, full multi-strategy results ──────────────── */
+
+/** All built-in strategies, in the order their columns appear in the CSV. */
+export const CAPTURE_STRATEGIES = [
+  'fcfs-filter',
+  'fcfs-best',
+  'da-stable',
+  'greedy-engine',
+] as const;
+
+const strategyMetrics = (strategy: string): string[] => [
+  `${strategy}.averageScore`,
+  `${strategy}.unassignedPercent`,
+  `${strategy}.jainFairnessIndex`,
+];
+
+/**
+ * One row per run of one test — the full record: who ran when, how long it
+ * took, and every strategy's complete quality metrics for that population.
+ */
+export const CAPTURE_HEADER: string[] = [
+  'scenario',
+  'students',
+  'tutors',
+  'loadFactorWeight',
+  'topK',
+  'runs',
+  'run',
+  'startedAt',
+  'durationMs',
+  'winner',
+  ...CAPTURE_STRATEGIES.flatMap(strategyMetrics),
+  'greedyMs',
+  'pairsScored',
+  'peakHeapEntries',
+];
+
+/**
+ * Evaluates ONE run in capture mode: all four strategies share the same
+ * student population, the wall-clock started-at timestamp and duration frame
+ * the run, and greedy's own timed execution supplies the stats columns.
+ * (`_run`/`_runs` mirror the per-run signature; the run index is attached by
+ * toCapturedRunRow, not measured here.)
+ */
+export function evaluateCapturedRun(
+  config: EvaluationConfig,
+  _run: number,
+  _runs: number,
+): {
+  startedAt: string;
+  durationMs: number;
+  winner: StrategyOutcome;
+  outcomes: StrategyOutcome[];
+  greedyMs: number;
+  pairsScored: number;
+  peakHeapEntries: number;
+} {
+  const students = generateStudents(config.students, config.loadFactorWeight);
+  const startedAt = new Date().toISOString();
+  const runStart = Date.now();
+  const outcomes = runAllStrategies(students, config.tutors, config.capacityStrategy);
+  const durationMs = Date.now() - runStart;
+  const winner = outcomes.reduce((best, outcome) =>
+    outcome.averageScore > best.averageScore ? outcome : best,
+  );
+
+  // Greedy's timing is measured separately (the strategy runs inside
+  // runAllStrategies do not collect stats or wall-clock time).
+  const greedyTutors = generateTutors(config.tutors, config.capacityStrategy);
+  const runStats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
+  const greedyStart = Date.now();
+  new GreedyAssignmentEngine().assignBatch(students, greedyTutors, {
+    stats: runStats,
+    topK: config.topK,
+  });
+  const greedyMs = Date.now() - greedyStart;
+
+  return {
+    startedAt,
+    durationMs,
+    winner,
+    outcomes,
+    greedyMs,
+    pairsScored: runStats.pairsScored,
+    peakHeapEntries: runStats.peakHeapEntries,
+  };
+}
+
+/** Serializes one captured run into a CAPTURE_HEADER-aligned row. */
+export function toCapturedRunRow(
+  config: EvaluationConfig,
+  run: number,
+  runs: number,
+  captured: ReturnType<typeof evaluateCapturedRun>,
+): string[] {
+  const outcomeByName = new Map(captured.outcomes.map((outcome) => [outcome.strategy, outcome]));
+  const metrics = CAPTURE_STRATEGIES.flatMap((strategy) => {
+    const outcome = outcomeByName.get(strategy);
+    if (outcome === undefined) {
+      throw new Error(`Capture row missing outcome for strategy "${strategy}"`);
+    }
+    return [
+      outcome.averageScore.toFixed(6),
+      outcome.unassignedPercent.toFixed(2),
+      outcome.jainFairnessIndex.toFixed(6),
+    ];
+  });
+  return [
+    config.scenario,
+    String(config.students),
+    String(config.tutors),
+    String(config.loadFactorWeight),
+    config.topK === undefined ? 'inf' : String(config.topK),
+    String(runs),
+    String(run),
+    captured.startedAt,
+    String(captured.durationMs),
+    captured.winner.strategy,
+    ...metrics,
+    String(captured.greedyMs),
+    String(captured.pairsScored),
+    String(captured.peakHeapEntries),
+  ];
+}
+
+/**
+ * Runs every test `runs` times in capture mode, one full row per run, all in a
+ * single CSV. Unlike --per-run/--save-runs there is NO row cap: capture mode
+ * exists precisely to keep every run.
+ */
+export function emitCaptureRuns(
+  configs: EvaluationConfig[],
+  runs: number,
+): { header: string[]; rows: string[][] } {
+  const rows: string[][] = [];
+  for (const config of configs) {
+    for (let run = 1; run <= runs; run += 1) {
+      rows.push(toCapturedRunRow(config, run, runs, evaluateCapturedRun(config, run, runs)));
+    }
+  }
+  return { header: CAPTURE_HEADER, rows };
+}
+
+/** ── winner summary: which algorithm wins across the captured runs ──────── */
+
+export interface WinnerStrategySummary {
+  strategy: string;
+  /** Runs where this strategy strictly beat every other strategy. */
+  strictWins: number;
+  /** Runs where this strategy tied the best score (incl. strict wins). */
+  tiedBest: number | null;
+  meanScore: number | null;
+  meanUnassigned: number | null;
+  meanFairness: number | null;
+}
+
+export interface WinnerSummary {
+  mode: 'capture' | 'per-run' | 'aggregate';
+  rows: number;
+  strategies: WinnerStrategySummary[];
+}
+
+/**
+ * Tallies "which algorithm is best" over result rows. Deterministic per
+ * config (fixtures are seeded), so the tally is exact for the population at
+ * hand:
+ *   capture rows — every strategy's metrics are in each row → full tally
+ *                  (strict wins, tied-for-best, means).
+ *   per-run rows  — only the winner column exists → win counts only.
+ *   aggregate rows — no per-run information → empty strategies (mode
+ *                  'aggregate'), caller prompts for per-run/capture mode.
+ */
+export function winnerSummaryFromRows(header: string[], rows: string[][]): WinnerSummary {
+  const isCapture = CAPTURE_STRATEGIES.every((strategy) =>
+    header.includes(`${strategy}.averageScore`),
+  );
+
+  if (isCapture) {
+    interface CaptureAccumulator {
+      strictWins: number;
+      tiedBest: number;
+      scoreSum: number;
+      unassignedSum: number;
+      fairnessSum: number;
+      valid: number;
+    }
+    const acc = new Map<string, CaptureAccumulator>();
+    for (const strategy of CAPTURE_STRATEGIES) {
+      acc.set(strategy, {
+        strictWins: 0,
+        tiedBest: 0,
+        scoreSum: 0,
+        unassignedSum: 0,
+        fairnessSum: 0,
+        valid: 0,
+      });
+    }
+    const scoresOf = (row: string[]): Map<string, number> => {
+      const map = new Map<string, number>();
+      for (const strategy of CAPTURE_STRATEGIES) {
+        const cell = row[header.indexOf(`${strategy}.averageScore`)];
+        map.set(strategy, Number.parseFloat(cell ?? ''));
+      }
+      return map;
+    };
+    for (const row of rows) {
+      const scores = scoresOf(row);
+      if ([...scores.values()].some(Number.isNaN)) {
+        continue;
+      }
+      const values = [...scores.values()];
+      const max = Math.max(...values);
+      // A strict win needs a UNIQUE best score — an all-tie run gives nobody one.
+      const atMax = values.filter((value) => value === max).length;
+      for (const strategy of CAPTURE_STRATEGIES) {
+        const entry = acc.get(strategy);
+        if (entry === undefined) {
+          continue;
+        }
+        const score = scores.get(strategy) ?? NaN;
+        const unassigned = Number.parseFloat(row[header.indexOf(`${strategy}.unassignedPercent`)]);
+        const fairness = Number.parseFloat(row[header.indexOf(`${strategy}.jainFairnessIndex`)]);
+        entry.valid += 1;
+        entry.scoreSum += score;
+        entry.unassignedSum += unassigned;
+        entry.fairnessSum += fairness;
+        if (score === max) {
+          entry.tiedBest += 1;
+          if (atMax === 1) {
+            entry.strictWins += 1;
+          }
+        }
+      }
+    }
+    const divide = (sum: number, count: number): number => sum / count;
+    return {
+      mode: 'capture',
+      rows: rows.length,
+      strategies: CAPTURE_STRATEGIES.map((strategy) => {
+        const entry = acc.get(strategy);
+        return {
+          strategy,
+          strictWins: entry?.strictWins ?? 0,
+          tiedBest: entry?.tiedBest ?? 0,
+          meanScore:
+            entry !== undefined && entry.valid > 0 ? divide(entry.scoreSum, entry.valid) : null,
+          meanUnassigned:
+            entry !== undefined && entry.valid > 0
+              ? divide(entry.unassignedSum, entry.valid)
+              : null,
+          meanFairness:
+            entry !== undefined && entry.valid > 0 ? divide(entry.fairnessSum, entry.valid) : null,
+        };
+      }),
+    };
+  }
+
+  if (header.includes('winner')) {
+    const winnerIndex = header.indexOf('winner');
+    // Aggregate rows also carry a winner column (empty) — treat rows with no
+    // actual winners as aggregate, not per-run.
+    const hasWinner = rows.some((row) => (row[winnerIndex] ?? '') !== '');
+    if (!hasWinner) {
+      return { mode: 'aggregate', rows: rows.length, strategies: [] };
+    }
+    const wins = new Map<string, number>();
+    for (const row of rows) {
+      const winner = row[winnerIndex];
+      if (winner !== undefined && winner !== '') {
+        wins.set(winner, (wins.get(winner) ?? 0) + 1);
+      }
+    }
+    return {
+      mode: 'per-run',
+      rows: rows.length,
+      strategies: CAPTURE_STRATEGIES.map((strategy) => ({
+        strategy,
+        strictWins: wins.get(strategy) ?? 0,
+        tiedBest: null, // ties are broken by the first strategy in the winner column
+        meanScore: null,
+        meanUnassigned: null,
+        meanFairness: null,
+      })),
+    };
+  }
+
+  return { mode: 'aggregate', rows: rows.length, strategies: [] };
+}
+
+/** Parses a positive-integer CLI flag value, or throws a one-line user error. */
+function parsePositiveInt(flag: string, raw: string): number {
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${flag} expects a positive integer, got "${raw}"`);
+  }
+  return value;
+}
+
+/**
+ * Reads `--students <n>` / `--tutors <n>` from argv. The two must be passed
+ * together (both or neither) so the ratio is never accidentally mangled; the
+ * override applies to EVERY test in the selected sweep.
+ */
+export function parseCountOverride(): CountOverride | undefined {
+  const studentsRaw = getFlagValue('--students');
+  const tutorsRaw = getFlagValue('--tutors');
+
+  if (studentsRaw === undefined && tutorsRaw === undefined) {
+    return undefined;
+  }
+  if (studentsRaw === undefined || tutorsRaw === undefined) {
+    throw new Error('--students and --tutors must be passed together (both or neither)');
+  }
+
+  return {
+    students: parsePositiveInt('--students', studentsRaw),
+    tutors: parsePositiveInt('--tutors', tutorsRaw),
+  };
+}
+
+/** Replaces the student/tutor counts of every config in a sweep. */
+export function applyCountOverride(
+  configs: EvaluationConfig[],
+  override: CountOverride,
+): EvaluationConfig[] {
+  return configs.map((config) => ({ ...config, ...override }));
+}
 
 const mean = (values: number[]): number =>
   values.length === 0 ? 0 : values.reduce((total, value) => total + value, 0) / values.length;
 
-export function evaluate(config: EvaluationConfig): EvaluationRow {
+export function evaluate(config: EvaluationConfig, runs: number = DEFAULT_RUNS): EvaluationRow {
   // The engine mutates tutor.assignedCount, so each run needs fresh fixtures.
   // Quality metrics are deterministic across runs; timing is min/mean/max of N.
   const elapsedSamples: number[] = [];
@@ -42,7 +484,7 @@ export function evaluate(config: EvaluationConfig): EvaluationRow {
   let assignedCounts: number[] = [];
   const stats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
 
-  for (let run = 0; run < BENCHMARK_RUNS; run += 1) {
+  for (let run = 0; run < runs; run += 1) {
     const students = generateStudents(config.students, config.loadFactorWeight);
     const tutors = generateTutors(config.tutors, config.capacityStrategy);
     const runStats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
@@ -71,6 +513,9 @@ export function evaluate(config: EvaluationConfig): EvaluationRow {
     tutors: config.tutors,
     loadFactorWeight: config.loadFactorWeight,
     topK: config.topK ?? null,
+    runs,
+    run: null,
+    winner: null,
     averageScore: result.assignments.length === 0 ? 0 : totalScore / result.assignments.length,
     unassignedPercent: (result.unassignable.length / config.students) * 100,
     jainFairnessIndex:
@@ -166,14 +611,6 @@ export function buildModerateConfigs(): EvaluationConfig[] {
   );
 }
 
-export function runEvaluation(): EvaluationRow[] {
-  return buildEvaluationConfigs().map(evaluate);
-}
-
-export function runTopKSweep(): EvaluationRow[] {
-  return buildTopKSweepConfigs().map(evaluate);
-}
-
 export function runRealisticEvaluation(): EvaluationRow[] {
   return buildRealisticConfigs().map(evaluate);
 }
@@ -187,6 +624,9 @@ export const HEADER = [
   'tutors',
   'loadFactorWeight',
   'topK',
+  'runs',
+  'run',
+  'winner',
   'averageScore',
   'unassignedPercent',
   'jainFairnessIndex',
@@ -203,6 +643,9 @@ export const toRow = (row: EvaluationRow): string[] => [
   String(row.tutors),
   String(row.loadFactorWeight),
   row.topK === null ? 'inf' : String(row.topK),
+  String(row.runs),
+  row.run === null ? '' : String(row.run),
+  row.winner ?? '',
   row.averageScore.toFixed(6),
   row.unassignedPercent.toFixed(2),
   row.jainFairnessIndex.toFixed(6),
@@ -219,16 +662,66 @@ if (typeof require !== 'undefined' && require.main === module) {
       throw new Error('The optimality gap moved to its own script. Run: pnpm run eval:gap');
     }
 
-    const rows = process.argv.includes('--topk-sweep')
-      ? runTopKSweep()
+    const baseConfigs = process.argv.includes('--topk-sweep')
+      ? buildTopKSweepConfigs()
       : process.argv.includes('--moderate')
-        ? runModerateEvaluation()
-        : [...runRealisticEvaluation(), ...runModerateEvaluation(), ...runEvaluation()];
+        ? buildModerateConfigs()
+        : [...buildRealisticConfigs(), ...buildModerateConfigs(), ...buildEvaluationConfigs()];
 
-    emitResults({
-      defaultName: 'evaluation-results.csv',
-      header: HEADER,
-      rows: rows.map(toRow),
-    });
+    const override = parseCountOverride();
+    const configs = override ? applyCountOverride(baseConfigs, override) : baseConfigs;
+
+    // --capture-runs <n> is the full capture mode and wins over the other row
+    // modes; --save-runs <n> is the "save every run" command (winner-only rows,
+    // capped); --runs + --per-run remain for compatibility.
+    const captureRuns = parseCaptureRuns();
+    const saveRuns = captureRuns === undefined ? parseSaveRuns() : undefined;
+    const runs = captureRuns ?? saveRuns ?? parseRuns();
+    const perRun = saveRuns !== undefined || process.argv.includes('--per-run');
+
+    if (captureRuns !== undefined) {
+      const { header, rows } = emitCaptureRuns(configs, captureRuns);
+      emitResults({
+        defaultName: 'evaluation-capture-results.csv',
+        header,
+        rows,
+      });
+      console.error(
+        `\nCaptured ${rows.length} run(s) — ${configs.length} test(s) × ${captureRuns} run(s), every run with all four strategies + its own time, no cap.`,
+      );
+    } else if (perRun) {
+      const { header, rows, dropped } = emitPerRun(configs, runs);
+      emitResults({
+        defaultName: 'evaluation-per-run-results.csv',
+        header,
+        rows,
+      });
+      if (dropped > 0) {
+        console.error(
+          `\nPer-run CSV capped at ${MAX_SAVED_RUNS} rows; ${dropped} run(s) not computed. Lower --save-runs/--runs or the test counts.`,
+        );
+      }
+    } else {
+      emitResults({
+        defaultName: 'evaluation-results.csv',
+        header: HEADER,
+        rows: configs.map((config) => toRow(evaluate(config, runs))),
+      });
+    }
+    console.error(
+      `\nEach test ran ${runs} time(s)${runs === DEFAULT_RUNS ? ' (default)' : ''}${
+        captureRuns !== undefined
+          ? ' — every run captured (all strategies + per-run time)'
+          : perRun
+            ? ' — every run saved to the CSV'
+            : ''
+      }${
+        captureRuns !== undefined
+          ? ' — set with --capture-runs <n>'
+          : saveRuns !== undefined
+            ? ' — set with --save-runs <n>'
+            : ' — set with --runs <n>'
+      }`,
+    );
   });
 }

@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "moduleResolution": "node",
+    // module "preserve" + bundler resolution keep CJS emission for the ts-node
+    // CLI scripts and ts-jest tests (this package has no "type": "module")
+    // while dropping node10 resolution, which TypeScript 6 deprecates and the
+    // native TypeScript 7 compiler rejects outright. Path aliases are relative
+    // to this file, so baseUrl (also removed) is not needed.
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "isolatedModules": true,
     "declaration": true,
@@ -14,18 +19,17 @@
     "jsx": "react-jsx",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"],
-      "@app/*": ["src/app/*"],
-      "@common/*": ["src/common/*"],
-      "@config": ["src/configs/index.ts"],
-      "@configs/*": ["src/configs/*"],
-      "@database": ["src/database/index.ts"],
-      "@database/*": ["src/database/*"],
-      "@modules/*": ["src/modules/*"],
-      "@types/*": ["src/types/*"],
-      "@core/*": ["src/core/*"]
+      "@/*": ["./src/*"],
+      "@app/*": ["./src/app/*"],
+      "@common/*": ["./src/common/*"],
+      "@config": ["./src/configs/index.ts"],
+      "@configs/*": ["./src/configs/*"],
+      "@database": ["./src/database/index.ts"],
+      "@database/*": ["./src/database/*"],
+      "@modules/*": ["./src/modules/*"],
+      "@types/*": ["./src/types/*"],
+      "@core/*": ["./src/core/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -37,7 +41,12 @@
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
-    "noUnusedLocals": false
+    "noUnusedLocals": false,
+    // TypeScript 6 stopped auto-including every @types package and requires an
+    // explicit rootDir: ambient globals (process/node, describe/it/expect/jest)
+    // only resolve when listed in `types`.
+    "rootDir": ".",
+    "types": ["node", "jest"]
   },
   "exclude": [
     "src/core/evaluation/tui",
