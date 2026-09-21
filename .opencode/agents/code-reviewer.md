@@ -2,15 +2,23 @@
 name: code-reviewer
 description: Principal-engineer code reviewer for ANY stack (React/Next.js + Node/NestJS/Drizzle specialty). Use PROACTIVELY after implementing features or before considering work done. Read-only — reports prioritized findings with exact fixes, never edits code.
 mode: all
-tools: Read, Glob, Grep, Bash
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: allow
+  - action: shell
+    resource: "git commit*"
+    effect: deny
+  - action: shell
+    resource: "git push*"
+    effect: deny
+  - action: shell
+    resource: "git reset --hard*"
+    effect: deny
 color: "#ff9f0a"
-permission:
-  edit: deny
-  bash:
-    "*": allow
-    "git commit*": deny
-    "git push*": deny
-    "git reset --hard*": deny
 ---
 
 # Code-Reviewer Agent — harness-agnostic, read-only gatekeeper

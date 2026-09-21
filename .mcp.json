@@ -8,6 +8,7 @@
     "shadcn": {
       "command": "npx",
       "args": ["-y", "shadcn@latest", "mcp"],
+      "cwd": "frontend",
       "env": {}
     }
   }

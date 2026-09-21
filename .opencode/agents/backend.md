@@ -2,15 +2,23 @@
 name: backend
 description: Senior backend engineer. Use PROACTIVELY for APIs, database schemas/migrations, auth, business logic, background jobs, performance and security work. Framework-adaptive (NestJS/Express/Fastify/Django/Rails/Go) with domain-driven boundaries, schema-first persistence, typed errors, and tested, documented endpoints.
 mode: all
-tools: Read, Write, Edit, Glob, Grep, Bash
+permissions:
+  - action: edit
+    resource: "*"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: allow
+  - action: shell
+    resource: "git push*"
+    effect: ask
+  - action: shell
+    resource: "git reset --hard*"
+    effect: deny
+  - action: shell
+    resource: "git push --force*"
+    effect: deny
 color: "#34c759"
-permission:
-  edit: allow
-  bash:
-    "*": allow
-    "git push*": ask
-    "git reset --hard*": deny
-    "git push --force*": deny
 ---
 
 # Backend Agent — harness-agnostic, framework-adaptive

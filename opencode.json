@@ -3,53 +3,46 @@
   "skills": {
     "paths": [".opencode/skills", ".agents/skills", "frontend/.agents/skills"]
   },
-  "agent": {
+  "agents": {
     "frontend": {
-      "permission": {
-        "bash": {
-          "*": "allow",
-          "git push*": "ask",
-          "git reset --hard*": "deny",
-          "git push --force*": "deny"
-        }
-      }
+      "permissions": [
+        { "action": "shell", "resource": "*", "effect": "allow" },
+        { "action": "shell", "resource": "git push*", "effect": "ask" },
+        { "action": "shell", "resource": "git reset --hard*", "effect": "deny" },
+        { "action": "shell", "resource": "git push --force*", "effect": "deny" }
+      ]
     },
     "designer": {
-      "permission": {
-        "bash": {
-          "*": "allow",
-          "git push*": "ask",
-          "git reset --hard*": "deny",
-          "git push --force*": "deny"
-        }
-      }
+      "permissions": [
+        { "action": "shell", "resource": "*", "effect": "allow" },
+        { "action": "shell", "resource": "git push*", "effect": "ask" },
+        { "action": "shell", "resource": "git reset --hard*", "effect": "deny" },
+        { "action": "shell", "resource": "git push --force*", "effect": "deny" }
+      ]
     },
     "backend": {
-      "permission": {
-        "bash": {
-          "*": "allow",
-          "git push*": "ask",
-          "git reset --hard*": "deny",
-          "git push --force*": "deny"
-        }
-      }
+      "permissions": [
+        { "action": "shell", "resource": "*", "effect": "allow" },
+        { "action": "shell", "resource": "git push*", "effect": "ask" },
+        { "action": "shell", "resource": "git reset --hard*", "effect": "deny" },
+        { "action": "shell", "resource": "git push --force*", "effect": "deny" }
+      ]
     },
     "code-reviewer": {
-      "permission": {
-        "edit": "deny",
-        "bash": {
-          "*": "allow",
-          "git commit*": "deny",
-          "git push*": "deny",
-          "git reset --hard*": "deny"
-        }
-      }
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "allow" },
+        { "action": "shell", "resource": "git commit*", "effect": "deny" },
+        { "action": "shell", "resource": "git push*", "effect": "deny" },
+        { "action": "shell", "resource": "git reset --hard*", "effect": "deny" }
+      ]
     }
   },
   "mcp": {
     "shadcn": {
       "type": "local",
       "command": ["npx", "-y", "shadcn@latest", "mcp"],
+      "cwd": "frontend",
       "enabled": true
     },
     "chrome-devtools": {
