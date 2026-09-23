@@ -11,6 +11,6 @@
     "module": "commonjs",
     "moduleResolution": "node10",
     "baseUrl": "./",
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
   }
 }
