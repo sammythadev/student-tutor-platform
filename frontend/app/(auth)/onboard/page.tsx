@@ -558,7 +558,7 @@ export default function OnboardingPage() {
                   </Alert>
                 </div>
               )}
-              <fieldset disabled={loading} className="min-w-0 space-y-6">
+              <fieldset disabled={loading} className="min-w-0 space-y-6 border-0 m-0 p-0">
                 <AnimatePresence mode="wait" custom={direction}>
                   <motion.div
                     key={`${role}-${stage}`}
