@@ -95,11 +95,15 @@ backend/coverage-output.txt
 backend/regen.txt
 backend/docs/benchmarks/baseline.csv .csv
 
-/*
- * Browser-capture debris from the clone-site skill landing the page was
- * measured against: viewport screenshots saved by hand sit beside the working
- * captures under the ignored scratch dirs, and re-running either capture
- * regenerates them. Session notes live in the chat, not the repo.
- */
+# Browser-capture debris from the clone-site skill landing the page was
+# measured against: viewport screenshots saved by hand sit beside the working
+# captures under the ignored scratch dirs, and re-running either capture
+# regenerates them. Session notes live in the chat, not the repo.
+#
+# This block used to be written as a C-style comment (`/*` … `*/`). Gitignore
+# has no such syntax: those lines were read as PATTERNS, and the opening `/*`
+# anchored at the repo root silently ignored every untracked path — so new
+# source files never showed up in `git status` and could not be added.
 frontend/public/screenshots/image*.png
 /SESSIONS.md
+/sessions.md
