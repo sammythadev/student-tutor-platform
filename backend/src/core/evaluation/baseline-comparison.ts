@@ -258,7 +258,30 @@ export interface StrategyOutcome {
   averageScore: number;
   unassignedPercent: number;
   jainFairnessIndex: number;
+  /** Gini coefficient of tutor loads: inequality, complementing Jain's index. */
+  giniLoad: number;
+  /** Worst match score among assigned students — the floor no mean reveals. */
+  worstStudentScore: number;
+  /** Share of students placed, in [0, 1]. */
+  coverage: number;
+  /** Tutor loads, kept for downstream inequality/percentile work. */
+  loads: number[];
 }
+
+/** Gini over a load vector (duplicated from stats.ts to keep this module's
+ *  dependency surface unchanged for the TUI's ESM loader). */
+const giniOf = (loads: number[]): number => {
+  const total = loads.reduce((sum, load) => sum + load, 0);
+  if (loads.length === 0 || total <= 0) {
+    return 0;
+  }
+  const sorted = [...loads].sort((left, right) => left - right);
+  let weighted = 0;
+  for (let index = 0; index < sorted.length; index += 1) {
+    weighted += (index + 1) * sorted[index];
+  }
+  return (2 * weighted - (sorted.length + 1) * total) / (sorted.length * total);
+};
 
 /**
  * Runs every built-in strategy against ONE student population. Students are
@@ -270,24 +293,45 @@ export function runAllStrategies(
   students: Student[],
   tutorCount: number,
   capacityStrategy: CapacityStrategy,
+  seedOffset = 0,
 ): StrategyOutcome[] {
   return STRATEGIES.map(({ strategy, run }) => {
-    const tutors = generateTutors(tutorCount, capacityStrategy);
+    const tutors = generateTutors(tutorCount, capacityStrategy, seedOffset);
     const { scores, unassigned, loads } = run(students, tutors);
+    const placed = scores.length;
     return {
       strategy,
-      averageScore: scores.length === 0 ? 0 : scores.reduce((a, b) => a + b, 0) / scores.length,
+      averageScore: placed === 0 ? 0 : scores.reduce((a, b) => a + b, 0) / placed,
       unassignedPercent: (unassigned / students.length) * 100,
       jainFairnessIndex: jain(loads),
+      giniLoad: giniOf(loads),
+      worstStudentScore: placed === 0 ? 0 : Math.min(...scores),
+      coverage: placed / students.length,
+      loads,
     };
   });
 }
 
-/** Runs all strategies against ONE scenario — exported so the TUI can report
- *  per-scenario progress instead of waiting for the whole comparison. */
-export function runBaselineCell(scenario: BaselineScenario): BaselineRow[] {
-  const students = generateStudents(scenario.students, 0.05);
-  return runAllStrategies(students, scenario.tutors, scenario.capacityStrategy).map((outcome) => ({
+/**
+ * Runs all strategies against ONE scenario — exported so the TUI can report
+ * per-scenario progress instead of waiting for the whole comparison.
+ *
+ * `loadFactorWeight` used to be hardcoded to 0.05 here, which meant the
+ * baseline suite could never ablate the fairness weight; it is now a parameter
+ * (default 0.05 keeps every previously recorded baseline reproducible).
+ */
+export function runBaselineCell(
+  scenario: BaselineScenario,
+  loadFactorWeight = 0.05,
+  seedOffset = 0,
+): BaselineRow[] {
+  const students = generateStudents(scenario.students, loadFactorWeight, seedOffset);
+  return runAllStrategies(
+    students,
+    scenario.tutors,
+    scenario.capacityStrategy,
+    seedOffset,
+  ).map((outcome) => ({
     scenario: scenario.scenario,
     strategy: outcome.strategy,
     students: scenario.students,
