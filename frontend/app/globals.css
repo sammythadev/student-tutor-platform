@@ -7,7 +7,30 @@
    Type: Geist Sans / Geist Mono — weights 400/500/600 only
    ============================================================ */
 
-@import 'tailwindcss';
+/*
+ * Source detection is explicitly scoped.
+ *
+ * Tailwind scans from the *current working directory* by default, which in this
+ * monorepo is the frontend package, so it also walked node_modules, the .next
+ * build and cache artifacts, .clone, the agent skill bundles and the images in
+ * public. Reading those (CSS chunks and binaries alike) produced garbage
+ * candidates such as "[metatype:<ctrl>7]", "[key:<ctrl>|4ng]" and
+ * "[hash:base64]", which Tailwind emitted as real rules, corrupting the
+ * stylesheet and tripping the CSS optimizer (control-char selectors and
+ * "Unexpected token" warnings).
+ *
+ * Because the junk was re-read out of `.next` on the next build, the corruption
+ * survived clean rebuilds and looked like a cache problem.
+ *
+ * Keep this whitelist in sync when adding a new top-level directory that
+ * contains class names.
+ */
+@import 'tailwindcss' source(none);
+@source './'; /* app/ — routes and page-level UI */
+@source '../components';
+@source '../hooks';
+@source '../lib';
+@source '../types';
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
