@@ -196,6 +196,14 @@ From re-reading `info.md` against the code (read-only):
 
 ## 6. What this unlocks, and the stop point
 
+> **Realised (24 September 2026) — see `STAGE2_REPAIR.md`.** The repair pass was
+> built and measured against the ceiling stated below: it closed 97.7–100% of the
+> oracle coverage gap (gaining 0.77 / 3.27 / 7.03 / 9.43 students per population
+> at 1:1 / 1.5:1 / 2:1 / 3:1), lifted `totalScorePerStudent` by +1.2…+4.3% with
+> zero losses, and left `stress-10to1` untouched because that market has no free
+> seat. The engine is now ahead of fcfs-best on coverage in all four unsaturated
+> scenarios.
+
 * **P2's ceiling is now measured, not assumed:** at most ~0.8–9.5 students per
   population (17%–53% of the engine's unplaced count) are recoverable by
   augmenting-path repair, decaying to nothing at 1:1 where the oracle gap is

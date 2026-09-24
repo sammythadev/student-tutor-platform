@@ -1,5 +1,51 @@
 # Evaluation Findings — Final Authoritative Run
 
+> ## ⚠️ Addendum (24 September 2026) — how to read this document
+>
+> The tables below are a **historical record of a single-population run**. Every
+> number in them comes from ONE deterministic fixture set per scenario, which is
+> why differences of 0.0004 were being read as wins. They are superseded by the
+> multi-population evidence (30 independent populations per scenario, exploratory
+> seeds 0–29):
+>
+> * `baseline-statistics-results.csv` — the authoritative metrics, with 95% CIs
+>   and paired sign tests against the engine;
+> * `STAGE1_REPORT.md` — metric definitions, the exact-oracle reference, and the
+>   unplaced-cause breakdown;
+> * `STAGE2_REPAIR.md` — the repair pass that closes the placement leak, and the
+>   current best-of-all-arms numbers;
+> * `FIGURES.md` / `index.html` — all nine figures regenerate from those CSVs.
+>
+> **Three corrections to the text below.**
+>
+> 1. **§6's half-bound sentence is not formally true of the shipped engine.**
+>    "This far exceeds the proven 1/2 worst-case bound" only holds for the
+>    static-only variant (δ=0, `topK = ∞`, no hash tie-break). The deployed
+>    engine deviates three ways — its priority includes the fairness term
+>    (`greedy-assignment.engine.ts:307`), `topK` truncates candidate edges
+>    (`:122-123`), and equal scores are broken by a hash — so the classical
+>    greedy ½-approximation argument does not apply. Rescope the claim to the
+>    static-only variant and report the measured ratios (0.9435 → 1.0000, and
+>    94.50–98.67% across scenarios before repair, 98.52–99.75% after) as
+>    **empirical**, not proven.
+> 2. **§5's "self-selection tracks the engine wherever supply is abundant" is
+>    too kind to the engine.** On the load-independent metric
+>    (`totalScorePerStudent`, static total over ALL students) self-selection is
+>    NOT distinguishable from the engine at 1:1 (+0.000905, p=0.58) or 1.5:1
+>    (−0.002742, p=0.099), and it places more students in every unsaturated
+>    scenario. The engine's real edge over it starts at 2:1. The 0.012 / 0.023 /
+>    0.130 gaps quoted below are the placed-only mean, which flatters whichever
+>    strategy leaves more students unplaced.
+> 3. **§6's "greedy places 59 of 64" is no longer the engine's number.** The
+>    leak is real (cause breakdown: 72–98% of it is students whose gate-passing
+>    tutors are all full) but bounded augmenting-path repair now closes 97.7–100%
+>    of the measured oracle gap, taking coverage within 0.0004–0.0011 of the
+>    exact optimum. `greedy-engine` remains the unrepaired reference arm.
+>
+> Confirmed unchanged by the multi-population runs: unassigned % is governed by
+> aggregate capacity (§2), the fairness term is inert at ≥2:1 (§3), and DA lands
+> within 0.0001–0.002 of the engine (§5).
+
 **Date:** 13 August 2026
 **Command:** `pnpm eval:all` (evaluation harness) · `pnpm test:cov` · optimality-gap tool
 **Reproducibility:** the harness contains no un-seeded randomness; all match-quality and
@@ -135,3 +181,10 @@ At the three smallest sizes the greedy engine matches the true optimum's assignm
 and reaches 99.9–100.0% of the optimal total score; at the largest tested instance it
 places 59 of the 64 students the optimum could place (94.3% of optimal score). In every
 case this far exceeds the proven 1/2 worst-case bound.
+
+> **Correction (24 September 2026):** the last sentence is not formally true of the
+> shipped engine — see the addendum at the top of this file. The ½-approximation
+> guarantee covers only the static-only variant; the deployed engine's fairness
+> term, `topK` truncation and hash tie-break each break the proof's assumptions,
+> so the measured 0.94–1.00 ratios are empirical results, not a bound being
+> exceeded.

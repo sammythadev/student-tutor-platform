@@ -176,6 +176,8 @@ all of them save CSV output to `docs/benchmarks/`.
 | `pnpm run eval:topk`      | Quality/speed/memory tradeoff for K ∈ {10, 20, 50, ∞}                            |
 | `pnpm run eval:gap`       | How far below the exact optimum does greedy land? (min-cost max-flow)            |
 | `pnpm run eval:baselines` | Does greedy beat the strategies real platforms use? (FCFS / deferred acceptance) |
+| `pnpm run eval:statistics`| Same comparison over 30 independent populations: means ± 95% CIs, paired sign tests vs the engine, the exact oracle on the same population, the unplaced-cause breakdown, and the `greedy-engine-repair` arm. Pass `--seeds` / `--base-seed` / `--scenario`. |
+| `pnpm run eval:report`    | Renders the CSVs above into `docs/benchmarks/figures/` (SVG + PNG), `FIGURES.md` and `index.html`.  |
 | `pnpm run eval:all`       | Everything above                                                                 |
 
 Flags available across the eval commands: `--name <file>`, `--out <path>`,
@@ -184,7 +186,15 @@ Flags available across the eval commands: `--name <file>`, `--out <path>`,
 
 Findings from these runs are written up in
 [`docs/benchmarks/EVALUATION_FINDINGS.md`](docs/benchmarks/EVALUATION_FINDINGS.md)
-and [`docs/OPTIMIZATION_REPORT.md`](docs/OPTIMIZATION_REPORT.md).
+and [`docs/OPTIMIZATION_REPORT.md`](docs/OPTIMIZATION_REPORT.md) — but note that
+both are dated single-population runs with correction addenda; the current
+authoritative numbers are
+[`docs/benchmarks/STAGE1_REPORT.md`](docs/benchmarks/STAGE1_REPORT.md) (metrics,
+oracle gap, cause breakdown) and
+[`docs/benchmarks/STAGE2_REPAIR.md`](docs/benchmarks/STAGE2_REPAIR.md) (the
+bounded repair pass, which is what makes the engine the best of the four
+strategies on both coverage and load-independent score). Figures:
+[`docs/benchmarks/FIGURES.md`](docs/benchmarks/FIGURES.md).
 
 ### Eval TUI
 
