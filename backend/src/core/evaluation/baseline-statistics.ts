@@ -569,7 +569,9 @@ export function selectScenarios(): BaselineScenario[] {
 export function formatSignificanceSummary(rows: StrategyStatRow[]): string {
   const lines = ['Engine vs baselines (paired sign test over independent populations):'];
   for (const row of rows) {
-    if (row.strategy === REFERENCE_STRATEGY) {
+    // Skip the reference itself, and the oracle row: its comparison columns are
+    // structural zeroes, so "beats the engine in 0/0" is not a finding.
+    if (row.strategy === REFERENCE_STRATEGY || row.strategy === ORACLE_STRATEGY) {
       continue;
     }
     const decided = row.winsVsEngine + row.lossesVsEngine;
