@@ -15,7 +15,7 @@ Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f1-quality-by-str
 
 ![F2 · Each baseline against the engine](figures/f2-delta-vs-engine.svg)
 
-Mean per-population difference (strategy − engine). Bars right of zero mean that strategy scored higher than the engine. 4 comparison(s) are significant at p < 0.05.
+Mean per-population difference (strategy − engine). Bars right of zero mean that strategy scored higher than the engine. 14 comparison(s) are significant at p < 0.05.
 
 Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f2-delta-vs-engine.svg`](figures/f2-delta-vs-engine.svg) · [`f2-delta-vs-engine.png`](figures/f2-delta-vs-engine.png)
 
@@ -58,5 +58,21 @@ Source: `docs/benchmarks/topk-sweep-results.csv` · [`f6-topk-quality.svg`](figu
 Mean elapsed milliseconds per run as the candidate list grows. Read with F6: this is what the flat part of the quality curve costs.
 
 Source: `docs/benchmarks/topk-sweep-results.csv` · [`f7-topk-cost.svg`](figures/f7-topk-cost.svg) · [`f7-topk-cost.png`](figures/f7-topk-cost.png)
+
+### F8 · Assignment quality by strategy (lines)
+
+![F8 · Assignment quality by strategy (lines)](figures/f8-quality-lines.svg)
+
+Mean match score per scenario across 30 independent populations, one line per strategy; whiskers are 95% confidence intervals. Overlapping intervals mean the strategies are not distinguishable at that scenario.
+
+Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f8-quality-lines.svg`](figures/f8-quality-lines.svg) · [`f8-quality-lines.png`](figures/f8-quality-lines.png)
+
+### F9 · Each baseline against the engine (lines)
+
+![F9 · Each baseline against the engine (lines)](figures/f9-delta-lines.svg)
+
+Mean per-population difference (strategy − engine) per scenario. The zero line is the engine: lines hugging it are ties. 14 comparison(s) are significant at p < 0.05.
+
+Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f9-delta-lines.svg`](figures/f9-delta-lines.svg) · [`f9-delta-lines.png`](figures/f9-delta-lines.png)
 
 

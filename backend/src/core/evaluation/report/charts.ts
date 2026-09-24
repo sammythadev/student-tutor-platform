@@ -303,6 +303,8 @@ export function groupedBarChart(options: ChartOptions): string {
 export interface LineSeries {
   name: string;
   points: { x: number; y: number }[];
+  /** Optional CI half-widths, aligned with `points` by index. */
+  errors?: (number | null)[];
 }
 
 export interface LineChartOptions {
@@ -317,6 +319,8 @@ export interface LineChartOptions {
   height?: number;
   /** Markers are labelled with their y value when true. */
   labelPoints?: boolean;
+  /** Horizontal reference line, e.g. the engine's 0 on a delta chart. */
+  yReference?: { value: number; label?: string };
 }
 
 /** Multi-series line chart with a shared linear y axis. */
@@ -331,7 +335,17 @@ export function lineChart(options: LineChartOptions): string {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"></svg>`;
   }
   const xs = allPoints.map((point) => point.x);
-  const ys = allPoints.map((point) => point.y);
+  const reference = options.yReference?.value;
+  const ys = allPoints
+    .flatMap((point) => (Number.isFinite(reference) ? [point.y, reference as number] : [point.y]))
+    .concat(
+      options.series.flatMap((series) =>
+        series.points.flatMap((point, index) => {
+          const error = series.errors?.[index];
+          return error && Number.isFinite(error) ? [point.y + error, point.y - error] : [];
+        }),
+      ),
+    );
   const ticks = niceTicks(Math.min(...ys), Math.max(...ys));
   const domainMin = Math.min(...ticks);
   const domainMax = Math.max(...ticks);
@@ -363,9 +377,31 @@ export function lineChart(options: LineChartOptions): string {
     parts.push(
       `<line x1="${plot.left}" y1="${y.toFixed(1)}" x2="${plot.left + plot.width}" y2="${y.toFixed(
         1,
-      )}" stroke="${GRID}" stroke-width="1"/>`,
+      )}" stroke="${tick === reference ? AXIS : GRID}" stroke-width="1"/>`,
     );
     parts.push(text(plot.left - 10, y + 4, format(tick), { size: 10, anchor: 'end' }));
+  }
+
+  if (options.yReference) {
+    const y = yOf(options.yReference.value);
+    // The label is drawn even when the reference sits on a tick — only the
+    // line itself is skipped, since the tick already drew it in AXIS colour.
+    if (options.yReference.label) {
+      parts.push(
+        text(plot.left + plot.width, y - 6, options.yReference.label, {
+          size: 10,
+          anchor: 'end',
+          fill: MUTED,
+        }),
+      );
+    }
+    if (!ticks.includes(options.yReference.value)) {
+      parts.push(
+        `<line x1="${plot.left}" y1="${y.toFixed(1)}" x2="${plot.left + plot.width}" y2="${y.toFixed(
+          1,
+        )}" stroke="${AXIS}" stroke-width="1" stroke-dasharray="4 4"/>`,
+      );
+    }
   }
 
   const uniqueXs = [...new Set(xs)].sort((a, b) => a - b);
@@ -383,6 +419,26 @@ export function lineChart(options: LineChartOptions): string {
       )
       .join(' ');
     parts.push(`<path d="${path}" fill="none" stroke="${color}" stroke-width="2"/>`);
+    sorted.forEach((point, pointIndex) => {
+      const error = series.errors?.[pointIndex];
+      if (error === null || error === undefined || !Number.isFinite(error) || error <= 0) {
+        return;
+      }
+      const highY = yOf(point.y + error);
+      const lowY = yOf(point.y - error);
+      const centre = xOf(point.x);
+      parts.push(
+        `<line x1="${centre.toFixed(1)}" y1="${highY.toFixed(1)}" x2="${centre.toFixed(
+          1,
+        )}" y2="${lowY.toFixed(1)}" stroke="${INK}" stroke-width="1"/>` +
+          `<line x1="${(centre - 3).toFixed(1)}" y1="${highY.toFixed(1)}" x2="${(
+            centre + 3
+          ).toFixed(1)}" y2="${highY.toFixed(1)}" stroke="${INK}" stroke-width="1"/>` +
+          `<line x1="${(centre - 3).toFixed(1)}" y1="${lowY.toFixed(1)}" x2="${(centre + 3).toFixed(
+            1,
+          )}" y2="${lowY.toFixed(1)}" stroke="${INK}" stroke-width="1"/>`,
+      );
+    });
     for (const point of sorted) {
       parts.push(
         `<circle cx="${xOf(point.x).toFixed(1)}" cy="${yOf(point.y).toFixed(1)}" r="3.5" fill="${color}"/>`,

@@ -12,7 +12,7 @@
  * (`baseline-statistics-results.csv`).
  */
 
-import { groupedBarChart, lineChart, type Series } from './charts';
+import { groupedBarChart, lineChart, type LineSeries, type Series } from './charts';
 
 export type Row = Record<string, string>;
 
@@ -99,10 +99,59 @@ function ordinalTopK(points: { scenario: string; topK: number; value: number }[]
   };
 }
 
-const topKLabel =
+const categoryLabel =
   (labels: string[]) =>
   (value: number): string =>
     labels[Math.round(value)] ?? String(value);
+
+/**
+ * Significance check that understands the `<0.0001` format `formatPValue`
+ * writes — `Number('<0.0001')` is NaN, which used to silently read as
+ * "not significant" in the F2 caption.
+ */
+function isSignificant(row: Row): boolean {
+  const raw = (row.pValueVsEngine ?? '').trim();
+  if (raw.startsWith('<')) {
+    const bound = Number(raw.slice(1));
+    return Number.isFinite(bound) && bound < 0.05;
+  }
+  const value = Number(raw);
+  return raw !== '' && Number.isFinite(value) && value < 0.05;
+}
+
+/** One sentence for the F2/F9 captions on how many comparisons separate. */
+function significanceVerdict(rows: Row[]): string {
+  const significant = rows.filter((row) => isSignificant(row));
+  return significant.length === 0
+    ? 'No strategy separates from the engine at p < 0.05.'
+    : `${significant.length} comparison(s) are significant at p < 0.05.`;
+}
+
+/**
+ * Turns the bar-chart pivot (one value per category) into line points on an
+ * ordinal x axis: scenarios sit at evenly spaced positions, and missing
+ * scenario values become gaps rather than zeros.
+ */
+function ordinalScenarioLines(
+  scenarios: string[],
+  series: Series[],
+): { series: LineSeries[]; labels: string[] } {
+  return {
+    labels: scenarios,
+    series: series.map((item) => {
+      const points: { x: number; y: number }[] = [];
+      const errors: (number | null)[] = [];
+      item.values.forEach((value, index) => {
+        if (value === null || !Number.isFinite(value)) {
+          return;
+        }
+        points.push({ x: index, y: value });
+        errors.push(item.errors?.[index] ?? null);
+      });
+      return { name: item.name, points, errors };
+    }),
+  };
+}
 
 /** Aggregates the per-scenario rows of one strategy, in first-seen order. */
 function pivotByStrategy(
@@ -182,11 +231,7 @@ function deltaFigure(statistics: Row[]): Figure | null {
   if (series.length === 0) {
     return null;
   }
-  const significant = rows.filter((row) => (num(row, 'pValueVsEngine') ?? 1) < 0.05);
-  const verdict =
-    significant.length === 0
-      ? 'No strategy separates from the engine at p < 0.05.'
-      : `${significant.length} comparison(s) are significant at p < 0.05.`;
+  const verdict = significanceVerdict(rows);
   return {
     id: 'f2-delta-vs-engine',
     title: 'F2 · Each baseline against the engine',
@@ -335,7 +380,7 @@ function topKFigure(topk: Row[]): Figure | null {
       yLabel: 'mean match score',
       valueFormat: (value) => value.toFixed(3),
       labelPoints: true,
-      xFormat: topKLabel(labels),
+      xFormat: categoryLabel(labels),
     }),
   };
 }
@@ -374,12 +419,81 @@ function topKCostFigure(topk: Row[]): Figure | null {
       yLabel: 'mean elapsed (ms)',
       valueFormat: (value) => value.toFixed(1),
       labelPoints: true,
-      xFormat: topKLabel(labels),
+      xFormat: categoryLabel(labels),
     }),
   };
 }
 
-/** Builds every figure the available data supports, in report order. */
+/**
+ * F8 — the F1 data as lines: one line per strategy across scenarios.
+ *
+ * Lines make the *shape* readable — which strategies track each other as
+ * contention rises, and where they fan apart — while the same 95% CI whiskers
+ * carry the caveat: overlapping intervals mean not distinguishable.
+ */
+function qualityLinesFigure(statistics: Row[]): Figure | null {
+  const { scenarios, series } = pivotByStrategy(statistics, 'averageScore', 'averageScoreCi95');
+  if (series.length === 0) {
+    return null;
+  }
+  const seeds = num(statistics[0], 'seeds') ?? 0;
+  const { series: lines, labels } = ordinalScenarioLines(scenarios, series);
+  return {
+    id: 'f8-quality-lines',
+    title: 'F8 · Assignment quality by strategy (lines)',
+    caption:
+      `Mean match score per scenario across ${seeds} independent populations, one line per ` +
+      'strategy; whiskers are 95% confidence intervals. Overlapping intervals mean the ' +
+      'strategies are not distinguishable at that scenario.',
+    sourceFile: 'baseline-statistics-results.csv',
+    svg: lineChart({
+      title: 'Assignment quality by strategy',
+      subtitle: `mean match score ± 95% CI over ${seeds} independent populations — higher is better`,
+      series: lines,
+      xLabel: 'scenario',
+      yLabel: 'mean match score',
+      valueFormat: fix,
+      xFormat: categoryLabel(labels),
+    }),
+  };
+}
+
+/**
+ * F9 — the F2 data as lines: each baseline's delta against the engine.
+ *
+ * The zero line is the engine itself, so a strategy whose line hugs zero is
+ * indistinguishable from it, while one pinned below zero loses consistently.
+ */
+function deltaLinesFigure(statistics: Row[]): Figure | null {
+  const rows = statistics.filter((row) => row.strategy !== 'greedy-engine');
+  if (rows.length === 0) {
+    return null;
+  }
+  const { scenarios, series } = pivotByStrategy(rows, 'meanDeltaVsEngine');
+  if (series.length === 0) {
+    return null;
+  }
+  const { series: lines, labels } = ordinalScenarioLines(scenarios, series);
+  return {
+    id: 'f9-delta-lines',
+    title: 'F9 · Each baseline against the engine (lines)',
+    caption:
+      'Mean per-population difference (strategy − engine) per scenario. The zero line is ' +
+      `the engine: lines hugging it are ties. ${significanceVerdict(rows)}`,
+    sourceFile: 'baseline-statistics-results.csv',
+    svg: lineChart({
+      title: 'Baseline minus engine (paired, per population)',
+      subtitle: 'mean delta in match score · above zero beats the engine',
+      series: lines,
+      xLabel: 'scenario',
+      yLabel: 'mean delta vs engine',
+      valueFormat: (value) => value.toFixed(4),
+      xFormat: categoryLabel(labels),
+      yReference: { value: 0, label: 'engine (0)' },
+      labelPoints: true,
+    }),
+  };
+}
 export function buildFigures(data: Dataset): { figures: Figure[]; skipped: string[] } {
   const skipped: string[] = [];
   const figures: Figure[] = [];
@@ -397,8 +511,12 @@ export function buildFigures(data: Dataset): { figures: Figure[]; skipped: strin
     attempt('F2 delta vs engine (statistics)', deltaFigure(data.statistics));
     attempt('F3 fairness (statistics)', fairnessFigure(data.statistics));
     attempt('F4 coverage (statistics)', floorFigure(data.statistics));
+    attempt('F8 quality lines (statistics)', qualityLinesFigure(data.statistics));
+    attempt('F9 delta lines (statistics)', deltaLinesFigure(data.statistics));
   } else {
-    skipped.push('F1–F4 · baseline-statistics-results.csv not found — run `pnpm eval:statistics`');
+    skipped.push(
+      'F1–F4, F8–F9 · baseline-statistics-results.csv not found — run `pnpm eval:statistics`',
+    );
   }
 
   if (data.optimality && data.optimality.length > 0) {

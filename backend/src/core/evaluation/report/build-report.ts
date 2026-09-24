@@ -232,7 +232,13 @@ runCli(() => {
     topk: readCsv('topk-sweep-results.csv'),
   };
 
-  const { figures, skipped } = buildFigures(data);
+  const { figures: built, skipped } = buildFigures(data);
+  // Report order: F1…F9 by the leading number of the stable id — `buildFigures`
+  // groups by dataset, so the line variants of the statistics figures would
+  // otherwise land between F4 and F5 in FIGURES.md and index.html.
+  const figures = [...built].sort(
+    (a, b) => Number(a.id.slice(1, a.id.indexOf('-'))) - Number(b.id.slice(1, b.id.indexOf('-'))),
+  );
   if (figures.length === 0) {
     throw new Error(
       `No figures could be built from ${BENCH_DIR}. Run the eval suites first (pnpm run eval:all).`,
