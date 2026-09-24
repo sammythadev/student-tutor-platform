@@ -52,6 +52,11 @@ const jain = (loads: number[]): number => {
   return squareSum === 0 ? 1 : (sum * sum) / (loads.length * squareSum);
 };
 
+export interface PlacedPair {
+  student: Student;
+  tutor: Tutor;
+}
+
 type Picker = (student: Student, eligible: Tutor[], scorer: CompositeScorer) => Tutor;
 
 const firstEligible: Picker = (_student, eligible) => eligible[0];
@@ -77,10 +82,12 @@ function runFcfs(
   scores: number[];
   unassigned: number;
   loads: number[];
+  placedPairs: PlacedPair[];
 } {
   const filter = new EligibilityFilter();
   const scorer = new CompositeScorer();
   const scores: number[] = [];
+  const placedPairs: PlacedPair[] = [];
   let unassigned = 0;
 
   for (const student of students) {
@@ -91,10 +98,11 @@ function runFcfs(
     }
     const tutor = pick(student, eligible, scorer);
     scores.push(scorer.score(student, tutor).total);
+    placedPairs.push({ student, tutor });
     tutor.assignedCount += 1;
   }
 
-  return { scores, unassigned, loads: tutors.map((tutor) => tutor.assignedCount) };
+  return { scores, unassigned, loads: tutors.map((tutor) => tutor.assignedCount), placedPairs };
 }
 
 function runEngine(
@@ -104,12 +112,24 @@ function runEngine(
   scores: number[];
   unassigned: number;
   loads: number[];
+  placedPairs: PlacedPair[];
 } {
   const result = new GreedyAssignmentEngine().assignBatch(students, tutors);
+  const studentById = new Map(students.map((student) => [student.id, student]));
+  const tutorById = new Map(tutors.map((tutor) => [tutor.id, tutor]));
+  const placedPairs: PlacedPair[] = [];
+  for (const assignment of result.assignments) {
+    const student = assignment.studentId ? studentById.get(assignment.studentId) : undefined;
+    const tutor = assignment.tutorId ? tutorById.get(assignment.tutorId) : undefined;
+    if (student && tutor) {
+      placedPairs.push({ student, tutor });
+    }
+  }
   return {
     scores: result.assignments.map((assignment) => assignment.matchScore?.total ?? 0),
     unassigned: result.unassignable.length,
     loads: tutors.map((tutor) => tutor.assignedCount),
+    placedPairs,
   };
 }
 
@@ -133,6 +153,7 @@ function runDeferredAcceptance(
   scores: number[];
   unassigned: number;
   loads: number[];
+  placedPairs: PlacedPair[];
 } {
   const filter = new EligibilityFilter();
   const scorer = new CompositeScorer();
@@ -209,6 +230,8 @@ function runDeferredAcceptance(
 
   // Finalize: score each held pair with the tutor's current load.
   const scores: number[] = [];
+  const placedPairs: PlacedPair[] = [];
+  const tutorById = new Map(tutors.map((tutor) => [tutor.id, tutor]));
   const studentById = new Map(students.map((s) => [s.id, s]));
   for (const tutor of tutors) {
     const held = holds.get(tutor.id) ?? [];
@@ -216,6 +239,8 @@ function runDeferredAcceptance(
       const student = studentById.get(entry.studentId);
       if (student) {
         scores.push(scorer.score(student, tutor).total);
+        const heldTutor = tutorById.get(tutor.id) ?? tutor;
+        placedPairs.push({ student, tutor: heldTutor });
         tutor.assignedCount += 1;
       }
     }
@@ -225,6 +250,7 @@ function runDeferredAcceptance(
     scores,
     unassigned: students.length - scores.length,
     loads: tutors.map((tutor) => tutor.assignedCount),
+    placedPairs,
   };
 }
 
@@ -266,6 +292,14 @@ export interface StrategyOutcome {
   coverage: number;
   /** Tutor loads, kept for downstream inequality/percentile work. */
   loads: number[];
+  /** Placed student count for this population (scores.length). */
+  placed: number;
+  /** Unplaced student count for this population (students - placed). */
+  unplaced: number;
+  /** Sum of CompositeScorer.staticScore over placed pairs (load-independent). */
+  staticTotal: number;
+  /** Placed (student, tutor) pairs, used to derive load-independent totals. */
+  placedPairs: PlacedPair[];
 }
 
 /** Gini over a load vector (duplicated from stats.ts to keep this module's
@@ -284,6 +318,42 @@ const giniOf = (loads: number[]): number => {
 };
 
 /**
+ * Runs every built-in strategy against ONE student population with an explicit
+ * tutor set. Each strategy gets a FRESH CLONE (assignedCount reset to 0) so
+ * runs never leak load into each other; the input tutors are never mutated.
+ * `runAllStrategies` delegates here after generating its tutors.
+ */
+export function runAllStrategiesWithTutors(
+  students: Student[],
+  tutors: Tutor[],
+): StrategyOutcome[] {
+  const scorer = new CompositeScorer();
+  return STRATEGIES.map(({ strategy, run }) => {
+    const freshTutors: Tutor[] = tutors.map((tutor) => ({ ...tutor, assignedCount: 0 }));
+    const { scores, unassigned, loads, placedPairs } = run(students, freshTutors);
+    const placed = scores.length;
+    const staticTotal = placedPairs.reduce(
+      (total, pair) => total + scorer.staticScore(pair.student, pair.tutor),
+      0,
+    );
+    return {
+      strategy,
+      averageScore: placed === 0 ? 0 : scores.reduce((a, b) => a + b, 0) / placed,
+      unassignedPercent: (unassigned / students.length) * 100,
+      jainFairnessIndex: jain(loads),
+      giniLoad: giniOf(loads),
+      worstStudentScore: placed === 0 ? 0 : Math.min(...scores),
+      coverage: placed / students.length,
+      loads,
+      placed,
+      unplaced: students.length - placed,
+      staticTotal,
+      placedPairs,
+    };
+  });
+}
+
+/**
  * Runs every built-in strategy against ONE student population. Students are
  * read-only and shared, so all strategies see the identical population; tutors
  * are regenerated per strategy because the runs mutate tutor.assignedCount.
@@ -295,21 +365,11 @@ export function runAllStrategies(
   capacityStrategy: CapacityStrategy,
   seedOffset = 0,
 ): StrategyOutcome[] {
-  return STRATEGIES.map(({ strategy, run }) => {
-    const tutors = generateTutors(tutorCount, capacityStrategy, seedOffset);
-    const { scores, unassigned, loads } = run(students, tutors);
-    const placed = scores.length;
-    return {
-      strategy,
-      averageScore: placed === 0 ? 0 : scores.reduce((a, b) => a + b, 0) / placed,
-      unassignedPercent: (unassigned / students.length) * 100,
-      jainFairnessIndex: jain(loads),
-      giniLoad: giniOf(loads),
-      worstStudentScore: placed === 0 ? 0 : Math.min(...scores),
-      coverage: placed / students.length,
-      loads,
-    };
-  });
+  // generateTutors is deterministic in (count, strategy, offset), so one set
+  // of fresh clones per strategy sees the identical population the per-strategy
+  // regeneration produced before this refactor.
+  const tutors = generateTutors(tutorCount, capacityStrategy, seedOffset);
+  return runAllStrategiesWithTutors(students, tutors);
 }
 
 /**

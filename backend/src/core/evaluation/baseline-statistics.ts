@@ -1,11 +1,12 @@
 import { emitResults, getFlagValue, runCli } from './cli-output';
 import {
-  runAllStrategies,
+  runAllStrategiesWithTutors,
   SCENARIOS,
   type BaselineScenario,
   type StrategyOutcome,
 } from './baseline-comparison';
-import { generateStudents } from './fixtures';
+import { computeOptimal } from './optimal-baseline';
+import { generateStudents, generateTutors } from './fixtures';
 import { ci95, formatPValue, mean, pairedSignTest, stdDev } from './stats';
 
 /**
@@ -36,6 +37,12 @@ const ORDER = ['fcfs-filter', 'fcfs-best', 'da-stable', 'greedy-engine'] as cons
 /** The strategy every other row is compared against. */
 export const REFERENCE_STRATEGY = 'greedy-engine';
 
+/** Extra row strategy carrying per-scenario oracle aggregates. */
+export const ORACLE_STRATEGY = 'oracle-exact';
+
+/** Oracle runs only at or below this student count (skips stress-10to1). */
+export const MAX_ORACLE_STUDENTS = 200;
+
 export interface StrategyStatRow {
   scenario: string;
   strategy: string;
@@ -60,6 +67,30 @@ export interface StrategyStatRow {
   meanDeltaVsEngine: number;
   /** Exact two-sided sign-test p-value against the engine; 1 for the engine row. */
   pValueVsEngine: number;
+  /** Mean static total per student (= staticTotal / students), load-independent. */
+  totalScorePerStudent: number;
+  /** 95% CI half-width of the totalScorePerStudent mean. */
+  totalScorePerStudentCi95: number;
+  /** Paired sign-test tally for totalScorePerStudent vs the engine. */
+  totalScorePerStudentWinsVsEngine: number;
+  totalScorePerStudentLossesVsEngine: number;
+  totalScorePerStudentTiesVsEngine: number;
+  /** Mean of (this strategy - engine) totalScorePerStudent over populations. */
+  totalScorePerStudentMeanDeltaVsEngine: number;
+  /** Exact two-sided sign-test p-value for totalScorePerStudent; 1 for engine row. */
+  totalScorePerStudentPValueVsEngine: number;
+  /** Mean load-independent static total across seeds. */
+  staticTotal: number;
+  /** Mean oracle coverage (optimal.assignedCount/students); 0 when oracle skipped. */
+  oracleCoverage: number;
+  /** Mean oracle static total (optimal.totalScore); 0 when oracle skipped. */
+  oracleStaticTotal: number;
+  /** Oracle coverage minus engine coverage; 0 when oracle skipped. */
+  engineCoverageGap: number;
+  /** Mean per-seed engineStaticTotal/oracleStaticTotal with CI. */
+  staticTotalRatioVsOracle: number;
+  /** 95% CI half-width of the staticTotalRatioVsOracle mean. */
+  staticTotalRatioVsOracleCi95: number;
 }
 
 export const HEADER = [
@@ -83,7 +114,60 @@ export const HEADER = [
   'tiesVsEngine',
   'meanDeltaVsEngine',
   'pValueVsEngine',
+  'totalScorePerStudent',
+  'totalScorePerStudentCi95',
+  'totalScorePerStudentWinsVsEngine',
+  'totalScorePerStudentLossesVsEngine',
+  'totalScorePerStudentTiesVsEngine',
+  'totalScorePerStudentMeanDeltaVsEngine',
+  'totalScorePerStudentPValueVsEngine',
+  'staticTotal',
+  'oracleCoverage',
+  'oracleStaticTotal',
+  'engineCoverageGap',
+  'staticTotalRatioVsOracle',
+  'staticTotalRatioVsOracleCi95',
 ];
+
+/** Per-seed oracle result on the SAME population as the strategies. */
+export interface OracleSample {
+  coverage: number;
+  staticTotal: number;
+}
+
+/** Whether the oracle runs for this scenario (students<=200; skips stress). */
+export function shouldRunOracle(scenario: Pick<BaselineScenario, 'students'>): boolean {
+  return scenario.students <= MAX_ORACLE_STUDENTS;
+}
+
+/**
+ * Oracle samples for one scenario on the SAME populations the strategies see.
+ * Generates the identical students/tutors per seedOffset (fixtures are
+ * deterministic in (count, strategy, offset)) and runs computeOptimal on
+ * pristine tutor copies. Empty when the scenario exceeds MAX_ORACLE_STUDENTS.
+ */
+export function sampleOracle(
+  scenario: BaselineScenario,
+  seeds: number,
+  baseSeed = 0,
+  loadFactorWeight = 0.05,
+): OracleSample[] {
+  if (!shouldRunOracle(scenario)) {
+    return [];
+  }
+  const samples: OracleSample[] = [];
+  for (let seed = 0; seed < seeds; seed += 1) {
+    const seedOffset = baseSeed + seed;
+    const students = generateStudents(scenario.students, loadFactorWeight, seedOffset);
+    const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy, seedOffset);
+    const optimal = computeOptimal(students, tutors);
+    samples.push({
+      coverage: scenario.students === 0 ? 0 : optimal.assignedCount / scenario.students,
+      staticTotal: optimal.totalScore,
+    });
+  }
+  return samples;
+}
 
 /** Every strategy's outcome for every sampled population of one scenario. */
 export function sampleScenario(
@@ -97,12 +181,8 @@ export function sampleScenario(
   for (let seed = 0; seed < seeds; seed += 1) {
     const seedOffset = baseSeed + seed;
     const students = generateStudents(scenario.students, loadFactorWeight, seedOffset);
-    const outcomes = runAllStrategies(
-      students,
-      scenario.tutors,
-      scenario.capacityStrategy,
-      seedOffset,
-    );
+    const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy, seedOffset);
+    const outcomes = runAllStrategiesWithTutors(students, tutors);
     for (const outcome of outcomes) {
       byStrategy.get(outcome.strategy)?.push(outcome);
     }
@@ -121,8 +201,30 @@ export function statisticsForScenario(
   const byStrategy = sampleScenario(scenario, seeds, baseSeed, loadFactorWeight);
   const reference = byStrategy.get(REFERENCE_STRATEGY) ?? [];
   const referenceScores = reference.map((outcome) => outcome.averageScore);
+  const referencePerStudent = reference.map(
+    (outcome) => outcome.staticTotal / scenario.students,
+  );
+  const oracleSamples = sampleOracle(scenario, seeds, baseSeed, loadFactorWeight);
+  const hasOracle = oracleSamples.length > 0;
+  const oracleCoverage = hasOracle ? mean(oracleSamples.map((s) => s.coverage)) : 0;
+  const oracleStaticTotal = hasOracle ? mean(oracleSamples.map((s) => s.staticTotal)) : 0;
+  const engineCoverage = reference.length > 0 ? mean(reference.map((o) => o.coverage)) : 0;
+  const engineCoverageGap = hasOracle ? oracleCoverage - engineCoverage : 0;
+  // Per-seed engine/oracle static ratio: guards a zero oracle total so a
+  // degenerate empty population yields 1 when the engine is also empty.
+  const ratioSamples = hasOracle
+    ? reference.map((outcome, index) => {
+        const oracleTotal = oracleSamples[index]?.staticTotal ?? 0;
+        if (oracleTotal === 0) {
+          return outcome.staticTotal === 0 ? 1 : 0;
+        }
+        return outcome.staticTotal / oracleTotal;
+      })
+    : [];
+  const staticTotalRatioVsOracle = hasOracle ? mean(ratioSamples) : 0;
+  const staticTotalRatioVsOracleCi95 = hasOracle ? (ci95(ratioSamples) ?? 0) : 0;
 
-  return ORDER.flatMap((strategy) => {
+  const rows: StrategyStatRow[] = ORDER.flatMap((strategy) => {
     const outcomes = byStrategy.get(strategy) ?? [];
     if (outcomes.length === 0) {
       return [];
@@ -131,6 +233,13 @@ export function statisticsForScenario(
     const jainSamples = outcomes.map((outcome) => outcome.jainFairnessIndex);
     const deltas = scoreSamples.map((score, index) => score - (referenceScores[index] ?? score));
     const test = pairedSignTest(deltas);
+    const perStudentSamples = outcomes.map(
+      (outcome) => outcome.staticTotal / scenario.students,
+    );
+    const perStudentDeltas = perStudentSamples.map(
+      (value, index) => value - (referencePerStudent[index] ?? value),
+    );
+    const perStudentTest = pairedSignTest(perStudentDeltas);
     const isReference = strategy === REFERENCE_STRATEGY;
 
     return [
@@ -155,9 +264,63 @@ export function statisticsForScenario(
         tiesVsEngine: isReference ? seeds : test.ties,
         meanDeltaVsEngine: isReference ? 0 : test.meanDelta,
         pValueVsEngine: isReference ? 1 : test.pValue,
+        totalScorePerStudent: mean(perStudentSamples),
+        totalScorePerStudentCi95: ci95(perStudentSamples) ?? 0,
+        totalScorePerStudentWinsVsEngine: isReference ? 0 : perStudentTest.wins,
+        totalScorePerStudentLossesVsEngine: isReference ? 0 : perStudentTest.losses,
+        totalScorePerStudentTiesVsEngine: isReference ? seeds : perStudentTest.ties,
+        totalScorePerStudentMeanDeltaVsEngine: isReference ? 0 : perStudentTest.meanDelta,
+        totalScorePerStudentPValueVsEngine: isReference ? 1 : perStudentTest.pValue,
+        staticTotal: mean(outcomes.map((outcome) => outcome.staticTotal)),
+        oracleCoverage,
+        oracleStaticTotal,
+        engineCoverageGap,
+        staticTotalRatioVsOracle,
+        staticTotalRatioVsOracleCi95,
       },
     ];
   });
+
+  if (hasOracle) {
+    const oraclePerStudent = oracleSamples.map((s) => s.staticTotal / scenario.students);
+    rows.push({
+      scenario: scenario.scenario,
+      strategy: ORACLE_STRATEGY,
+      students: scenario.students,
+      tutors: scenario.tutors,
+      loadFactorWeight,
+      seeds: oracleSamples.length,
+      averageScore: 0,
+      averageScoreStdDev: 0,
+      averageScoreCi95: 0,
+      unassignedPercent: (1 - oracleCoverage) * 100,
+      jainFairnessIndex: 0,
+      jainCi95: 0,
+      giniLoad: 0,
+      worstStudentScore: 0,
+      coverage: oracleCoverage,
+      winsVsEngine: 0,
+      lossesVsEngine: 0,
+      tiesVsEngine: 0,
+      meanDeltaVsEngine: 0,
+      pValueVsEngine: 1,
+      totalScorePerStudent: scenario.students === 0 ? 0 : oracleStaticTotal / scenario.students,
+      totalScorePerStudentCi95: ci95(oraclePerStudent) ?? 0,
+      totalScorePerStudentWinsVsEngine: 0,
+      totalScorePerStudentLossesVsEngine: 0,
+      totalScorePerStudentTiesVsEngine: 0,
+      totalScorePerStudentMeanDeltaVsEngine: 0,
+      totalScorePerStudentPValueVsEngine: 1,
+      staticTotal: oracleStaticTotal,
+      oracleCoverage,
+      oracleStaticTotal,
+      engineCoverageGap: 0,
+      staticTotalRatioVsOracle: 0,
+      staticTotalRatioVsOracleCi95: 0,
+    });
+  }
+
+  return rows;
 }
 
 /** Every scenario, every strategy, with dispersion and significance. */
@@ -195,6 +358,21 @@ export const toRow = (row: StrategyStatRow): string[] => [
   String(row.tiesVsEngine),
   ratio(row.meanDeltaVsEngine, 6),
   row.pValueVsEngine === 1 ? '1' : formatPValue(row.pValueVsEngine),
+  ratio(row.totalScorePerStudent, 6),
+  ratio(row.totalScorePerStudentCi95, 6),
+  String(row.totalScorePerStudentWinsVsEngine),
+  String(row.totalScorePerStudentLossesVsEngine),
+  String(row.totalScorePerStudentTiesVsEngine),
+  ratio(row.totalScorePerStudentMeanDeltaVsEngine, 6),
+  row.totalScorePerStudentPValueVsEngine === 1
+    ? '1'
+    : formatPValue(row.totalScorePerStudentPValueVsEngine),
+  ratio(row.staticTotal, 6),
+  ratio(row.oracleCoverage, 6),
+  ratio(row.oracleStaticTotal, 6),
+  ratio(row.engineCoverageGap, 6),
+  ratio(row.staticTotalRatioVsOracle, 6),
+  ratio(row.staticTotalRatioVsOracleCi95, 6),
 ];
 
 /** Parses `--seeds <n>` for this suite, falling back to DEFAULT_BASELINE_SEEDS. */
