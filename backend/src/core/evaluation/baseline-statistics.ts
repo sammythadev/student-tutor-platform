@@ -1,9 +1,12 @@
 import { emitResults, getFlagValue, runCli } from './cli-output';
 import {
+  EMPTY_UNPLACED_CAUSES,
   runAllStrategiesWithTutors,
+  runStrategyOutcome,
   SCENARIOS,
   type BaselineScenario,
   type StrategyOutcome,
+  type UnplacedCauseCounts,
 } from './baseline-comparison';
 import { computeOptimal } from './optimal-baseline';
 import { generateStudents, generateTutors } from './fixtures';
@@ -42,6 +45,9 @@ export const ORACLE_STRATEGY = 'oracle-exact';
 
 /** Oracle runs only at or below this student count (skips stress-10to1). */
 export const MAX_ORACLE_STUDENTS = 200;
+
+/** Strategy label for the δ=0 engine arm (stage 1e). */
+export const STATIC_ENGINE_STRATEGY = 'greedy-engine-static';
 
 export interface StrategyStatRow {
   scenario: string;
@@ -91,6 +97,27 @@ export interface StrategyStatRow {
   staticTotalRatioVsOracle: number;
   /** 95% CI half-width of the staticTotalRatioVsOracle mean. */
   staticTotalRatioVsOracleCi95: number;
+  /**
+   * Engine-row cause breakdown of unplaced students, means across populations.
+   * Buckets are the stage-1 letters: (a) no gate-passing tutor, (b) every
+   * gate-passer full, (c) top-k truncated, (d) below a fairness floor θ,
+   * (e) a gate-passer had a spare seat. Zero on every non-engine row.
+   */
+  engineUnplacedA: number;
+  engineUnplacedB: number;
+  engineUnplacedC: number;
+  engineUnplacedD: number;
+  engineUnplacedE: number;
+  /** Mean share of a population's unplaced students in each bucket. */
+  engineUnplacedShareA: number;
+  engineUnplacedShareB: number;
+  engineUnplacedShareC: number;
+  engineUnplacedShareD: number;
+  engineUnplacedShareE: number;
+  /** Mean unplaced count the buckets divide into (a+b+c+d+e). */
+  engineUnplacedTotal: number;
+  /** Unplaced students whose engine reason string contradicts the gates. */
+  engineUnplacedReasonMismatches: number;
 }
 
 export const HEADER = [
@@ -127,6 +154,18 @@ export const HEADER = [
   'engineCoverageGap',
   'staticTotalRatioVsOracle',
   'staticTotalRatioVsOracleCi95',
+  'engineUnplacedA',
+  'engineUnplacedB',
+  'engineUnplacedC',
+  'engineUnplacedD',
+  'engineUnplacedE',
+  'engineUnplacedShareA',
+  'engineUnplacedShareB',
+  'engineUnplacedShareC',
+  'engineUnplacedShareD',
+  'engineUnplacedShareE',
+  'engineUnplacedTotal',
+  'engineUnplacedReasonMismatches',
 ];
 
 /** Per-seed oracle result on the SAME population as the strategies. */
@@ -167,6 +206,34 @@ export function sampleOracle(
     });
   }
   return samples;
+}
+
+/**
+ * Stage-1e static arm: the SAME engine on the same populations with the
+ * fairness weight switched off (loadFactorWeight = 0).
+ *
+ * Labeled honestly rather than sold as the provably-½ static-only variant.
+ * `fixtures.ts` draws every attribute from (role, count, seedOffset) and never
+ * from the weight, so the population IS byte-identical — but
+ * `CriterionWeights.normalize` rescales α/β/γ by 1/0.95 once δ=0 drops the
+ * weights below a sum of 1, and the engine's hash tie-break has no off switch.
+ * This arm therefore measures "fairness term off", nothing stronger.
+ */
+export function sampleStaticEngine(
+  scenario: BaselineScenario,
+  seeds: number,
+  baseSeed = 0,
+): StrategyOutcome[] {
+  const outcomes: StrategyOutcome[] = [];
+  for (let seed = 0; seed < seeds; seed += 1) {
+    const seedOffset = baseSeed + seed;
+    const students = generateStudents(scenario.students, 0, seedOffset);
+    const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy, seedOffset);
+    outcomes.push(
+      runStrategyOutcome(REFERENCE_STRATEGY, students, tutors, STATIC_ENGINE_STRATEGY),
+    );
+  }
+  return outcomes;
 }
 
 /** Every strategy's outcome for every sampled population of one scenario. */
@@ -224,11 +291,46 @@ export function statisticsForScenario(
   const staticTotalRatioVsOracle = hasOracle ? mean(ratioSamples) : 0;
   const staticTotalRatioVsOracleCi95 = hasOracle ? (ci95(ratioSamples) ?? 0) : 0;
 
-  const rows: StrategyStatRow[] = ORDER.flatMap((strategy) => {
-    const outcomes = byStrategy.get(strategy) ?? [];
-    if (outcomes.length === 0) {
-      return [];
+  // Engine-only unplaced-cause taxonomy, averaged across the same populations.
+  const causeSamples: UnplacedCauseCounts[] = reference.map(
+    (outcome) => outcome.unplacedCauses ?? EMPTY_UNPLACED_CAUSES,
+  );
+  for (const counts of causeSamples) {
+    const bucketed =
+      counts.noEligibleTutor +
+      counts.eligibleButFull +
+      counts.topKTruncated +
+      counts.belowFloorTheta +
+      counts.residual;
+    if (bucketed !== counts.total) {
+      throw new Error(
+        `Unplaced-cause buckets (${bucketed}) do not add up to the engine's unplaced count (${counts.total})`,
+      );
     }
+  }
+  // A population with nothing unplaced contributes a 0 share, not a 0/0 NaN.
+  const causeShare = (pick: (counts: UnplacedCauseCounts) => number): number =>
+    mean(causeSamples.map((counts) => (counts.total === 0 ? 0 : pick(counts) / counts.total)));
+  const engineUnplaced = {
+    A: mean(causeSamples.map((counts) => counts.noEligibleTutor)),
+    B: mean(causeSamples.map((counts) => counts.eligibleButFull)),
+    C: mean(causeSamples.map((counts) => counts.topKTruncated)),
+    D: mean(causeSamples.map((counts) => counts.belowFloorTheta)),
+    E: mean(causeSamples.map((counts) => counts.residual)),
+    shareA: causeShare((counts) => counts.noEligibleTutor),
+    shareB: causeShare((counts) => counts.eligibleButFull),
+    shareC: causeShare((counts) => counts.topKTruncated),
+    shareD: causeShare((counts) => counts.belowFloorTheta),
+    shareE: causeShare((counts) => counts.residual),
+    total: mean(causeSamples.map((counts) => counts.total)),
+    reasonMismatches: mean(causeSamples.map((counts) => counts.reasonMismatches)),
+  };
+
+  // The static arm runs the engine on loadFactorWeight = 0 populations of the
+  // SAME seeds, so its deltas pair against the engine by seed offset.
+  const staticArm = sampleStaticEngine(scenario, seeds, baseSeed);
+
+  const rowFor = (strategy: string, outcomes: StrategyOutcome[]): StrategyStatRow => {
     const scoreSamples = outcomes.map((outcome) => outcome.averageScore);
     const jainSamples = outcomes.map((outcome) => outcome.jainFairnessIndex);
     const deltas = scoreSamples.map((score, index) => score - (referenceScores[index] ?? score));
@@ -242,44 +344,67 @@ export function statisticsForScenario(
     const perStudentTest = pairedSignTest(perStudentDeltas);
     const isReference = strategy === REFERENCE_STRATEGY;
 
-    return [
-      {
-        scenario: scenario.scenario,
-        strategy,
-        students: scenario.students,
-        tutors: scenario.tutors,
-        loadFactorWeight,
-        seeds: outcomes.length,
-        averageScore: mean(scoreSamples),
-        averageScoreStdDev: stdDev(scoreSamples),
-        averageScoreCi95: ci95(scoreSamples) ?? 0,
-        unassignedPercent: mean(outcomes.map((outcome) => outcome.unassignedPercent)),
-        jainFairnessIndex: mean(jainSamples),
-        jainCi95: ci95(jainSamples) ?? 0,
-        giniLoad: mean(outcomes.map((outcome) => outcome.giniLoad)),
-        worstStudentScore: mean(outcomes.map((outcome) => outcome.worstStudentScore)),
-        coverage: mean(outcomes.map((outcome) => outcome.coverage)),
-        winsVsEngine: isReference ? 0 : test.wins,
-        lossesVsEngine: isReference ? 0 : test.losses,
-        tiesVsEngine: isReference ? seeds : test.ties,
-        meanDeltaVsEngine: isReference ? 0 : test.meanDelta,
-        pValueVsEngine: isReference ? 1 : test.pValue,
-        totalScorePerStudent: mean(perStudentSamples),
-        totalScorePerStudentCi95: ci95(perStudentSamples) ?? 0,
-        totalScorePerStudentWinsVsEngine: isReference ? 0 : perStudentTest.wins,
-        totalScorePerStudentLossesVsEngine: isReference ? 0 : perStudentTest.losses,
-        totalScorePerStudentTiesVsEngine: isReference ? seeds : perStudentTest.ties,
-        totalScorePerStudentMeanDeltaVsEngine: isReference ? 0 : perStudentTest.meanDelta,
-        totalScorePerStudentPValueVsEngine: isReference ? 1 : perStudentTest.pValue,
-        staticTotal: mean(outcomes.map((outcome) => outcome.staticTotal)),
-        oracleCoverage,
-        oracleStaticTotal,
-        engineCoverageGap,
-        staticTotalRatioVsOracle,
-        staticTotalRatioVsOracleCi95,
-      },
-    ];
+    return {
+      scenario: scenario.scenario,
+      strategy,
+      students: scenario.students,
+      tutors: scenario.tutors,
+      // The static arm records the weight it actually ran with (0), so the CSV
+      // cannot be mistaken for a fifth 0.05 run.
+      loadFactorWeight: strategy === STATIC_ENGINE_STRATEGY ? 0 : loadFactorWeight,
+      seeds: outcomes.length,
+      averageScore: mean(scoreSamples),
+      averageScoreStdDev: stdDev(scoreSamples),
+      averageScoreCi95: ci95(scoreSamples) ?? 0,
+      unassignedPercent: mean(outcomes.map((outcome) => outcome.unassignedPercent)),
+      jainFairnessIndex: mean(jainSamples),
+      jainCi95: ci95(jainSamples) ?? 0,
+      giniLoad: mean(outcomes.map((outcome) => outcome.giniLoad)),
+      worstStudentScore: mean(outcomes.map((outcome) => outcome.worstStudentScore)),
+      coverage: mean(outcomes.map((outcome) => outcome.coverage)),
+      winsVsEngine: isReference ? 0 : test.wins,
+      lossesVsEngine: isReference ? 0 : test.losses,
+      tiesVsEngine: isReference ? seeds : test.ties,
+      meanDeltaVsEngine: isReference ? 0 : test.meanDelta,
+      pValueVsEngine: isReference ? 1 : test.pValue,
+      totalScorePerStudent: mean(perStudentSamples),
+      totalScorePerStudentCi95: ci95(perStudentSamples) ?? 0,
+      totalScorePerStudentWinsVsEngine: isReference ? 0 : perStudentTest.wins,
+      totalScorePerStudentLossesVsEngine: isReference ? 0 : perStudentTest.losses,
+      totalScorePerStudentTiesVsEngine: isReference ? seeds : perStudentTest.ties,
+      totalScorePerStudentMeanDeltaVsEngine: isReference ? 0 : perStudentTest.meanDelta,
+      totalScorePerStudentPValueVsEngine: isReference ? 1 : perStudentTest.pValue,
+      staticTotal: mean(outcomes.map((outcome) => outcome.staticTotal)),
+      oracleCoverage,
+      oracleStaticTotal,
+      engineCoverageGap,
+      staticTotalRatioVsOracle,
+      staticTotalRatioVsOracleCi95,
+      // Cause buckets describe the engine's run only; blank the other rows
+      // rather than repeating one scenario-level number 4 times.
+      engineUnplacedA: isReference ? engineUnplaced.A : 0,
+      engineUnplacedB: isReference ? engineUnplaced.B : 0,
+      engineUnplacedC: isReference ? engineUnplaced.C : 0,
+      engineUnplacedD: isReference ? engineUnplaced.D : 0,
+      engineUnplacedE: isReference ? engineUnplaced.E : 0,
+      engineUnplacedShareA: isReference ? engineUnplaced.shareA : 0,
+      engineUnplacedShareB: isReference ? engineUnplaced.shareB : 0,
+      engineUnplacedShareC: isReference ? engineUnplaced.shareC : 0,
+      engineUnplacedShareD: isReference ? engineUnplaced.shareD : 0,
+      engineUnplacedShareE: isReference ? engineUnplaced.shareE : 0,
+      engineUnplacedTotal: isReference ? engineUnplaced.total : 0,
+      engineUnplacedReasonMismatches: isReference ? engineUnplaced.reasonMismatches : 0,
+    };
+  };
+
+  const rows: StrategyStatRow[] = ORDER.flatMap((strategy) => {
+    const outcomes = byStrategy.get(strategy) ?? [];
+    return outcomes.length === 0 ? [] : [rowFor(strategy, outcomes)];
   });
+
+  if (staticArm.length > 0) {
+    rows.push(rowFor(STATIC_ENGINE_STRATEGY, staticArm));
+  }
 
   if (hasOracle) {
     const oraclePerStudent = oracleSamples.map((s) => s.staticTotal / scenario.students);
@@ -317,6 +442,18 @@ export function statisticsForScenario(
       engineCoverageGap: 0,
       staticTotalRatioVsOracle: 0,
       staticTotalRatioVsOracleCi95: 0,
+      engineUnplacedA: 0,
+      engineUnplacedB: 0,
+      engineUnplacedC: 0,
+      engineUnplacedD: 0,
+      engineUnplacedE: 0,
+      engineUnplacedShareA: 0,
+      engineUnplacedShareB: 0,
+      engineUnplacedShareC: 0,
+      engineUnplacedShareD: 0,
+      engineUnplacedShareE: 0,
+      engineUnplacedTotal: 0,
+      engineUnplacedReasonMismatches: 0,
     });
   }
 
@@ -373,6 +510,18 @@ export const toRow = (row: StrategyStatRow): string[] => [
   ratio(row.engineCoverageGap, 6),
   ratio(row.staticTotalRatioVsOracle, 6),
   ratio(row.staticTotalRatioVsOracleCi95, 6),
+  ratio(row.engineUnplacedA, 6),
+  ratio(row.engineUnplacedB, 6),
+  ratio(row.engineUnplacedC, 6),
+  ratio(row.engineUnplacedD, 6),
+  ratio(row.engineUnplacedE, 6),
+  ratio(row.engineUnplacedShareA, 6),
+  ratio(row.engineUnplacedShareB, 6),
+  ratio(row.engineUnplacedShareC, 6),
+  ratio(row.engineUnplacedShareD, 6),
+  ratio(row.engineUnplacedShareE, 6),
+  ratio(row.engineUnplacedTotal, 6),
+  ratio(row.engineUnplacedReasonMismatches, 6),
 ];
 
 /** Parses `--seeds <n>` for this suite, falling back to DEFAULT_BASELINE_SEEDS. */

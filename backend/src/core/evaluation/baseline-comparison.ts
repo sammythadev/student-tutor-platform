@@ -1,5 +1,5 @@
 import { CompositeScorer, EligibilityFilter, GreedyAssignmentEngine } from '@core/algorithms';
-import type { Student, Tutor } from '@core/entities';
+import type { Assignment, Student, Tutor } from '@core/entities';
 import { emitResults, getFlagValue, runCli } from './cli-output';
 import { type CapacityStrategy, generateStudents, generateTutors } from './fixtures';
 
@@ -55,6 +55,101 @@ const jain = (loads: number[]): number => {
 export interface PlacedPair {
   student: Student;
   tutor: Tutor;
+}
+
+/**
+ * Why each unplaced student was left out, counted per population. Buckets are
+ * mutually exclusive and sum to `total`; the letters match the stage-1 brief:
+ *   (a) no tutor passes the subject/grade/exam gates — unrecoverable;
+ *   (b) a gate-passer exists but every one is full at run end — this is the
+ *       headroom bounded augmenting-path repair can attack;
+ *   (c) dropped by the top-k cap — 0 in these runs, which use topK = ∞;
+ *   (d) refused by a fairness floor θ — 0, no floor is implemented yet;
+ *   (e) a gate-passer still had a spare seat at run end.
+ *
+ * (e) is structurally 0 while topK is ∞: every eligible pair is pushed and the
+ * heap is drained, and assignedCount never falls, so a seat that was free at
+ * the end was free when that student's pairs were popped. It is kept as a
+ * bucket so a future top-k or floor run cannot silently absorb mismatches.
+ */
+export interface UnplacedCauseCounts {
+  noEligibleTutor: number;
+  eligibleButFull: number;
+  topKTruncated: number;
+  belowFloorTheta: number;
+  residual: number;
+  /** Students whose engine reason string contradicts the gate check. */
+  reasonMismatches: number;
+  /** Unplaced students classified (a+b+c+d+e). */
+  total: number;
+}
+
+export const EMPTY_UNPLACED_CAUSES: UnplacedCauseCounts = {
+  noEligibleTutor: 0,
+  eligibleButFull: 0,
+  topKTruncated: 0,
+  belowFloorTheta: 0,
+  residual: 0,
+  reasonMismatches: 0,
+  total: 0,
+};
+
+/**
+ * Classifies one engine run's unplaced students against the tutors' END state
+ * (assignedCount as the run left it), so the engine-vs-oracle placement gap
+ * decomposes into recoverable and unrecoverable parts.
+ *
+ * Read-only, and deliberately does NOT trust the engine's reason strings: it
+ * re-runs the three gates itself and counts a mismatch when the two disagree.
+ * They can: a capacity-0 tutor passes subject/grade/exam but is excluded from
+ * candidate generation, so the engine reports "no eligible tutors" where the
+ * gates say a qualifying tutor exists.
+ */
+export function classifyUnplaced(
+  students: Student[],
+  endStateTutors: Tutor[],
+  unassignable: Array<Pick<Assignment, 'studentId' | 'reason'>>,
+): UnplacedCauseCounts {
+  const filter = new EligibilityFilter();
+  const studentById = new Map(students.map((student) => [student.id, student]));
+  const counts: UnplacedCauseCounts = { ...EMPTY_UNPLACED_CAUSES };
+
+  for (const entry of unassignable) {
+    counts.total += 1;
+    const student = entry.studentId ? studentById.get(entry.studentId) : undefined;
+    if (!student) {
+      // No student to re-check the gates against — count it as unexplained
+      // rather than inventing a cause.
+      counts.residual += 1;
+      continue;
+    }
+
+    // Gates WITHOUT the capacity rule: capacity is bucket (b), not (a).
+    const gatePassers = endStateTutors.filter(
+      (tutor) =>
+        filter.hasSubject(student, tutor) &&
+        filter.supportsGradeLevel(student, tutor) &&
+        filter.supportsExamType(student, tutor),
+    );
+
+    if (gatePassers.length === 0) {
+      counts.noEligibleTutor += 1;
+    } else if (gatePassers.every((tutor) => !filter.hasCapacity(tutor))) {
+      counts.eligibleButFull += 1;
+    } else {
+      counts.residual += 1;
+    }
+
+    // The engine emits one of two reason strings; hold each to the gates.
+    const reasonSaysNoEligible = (entry.reason ?? '').startsWith(
+      `No eligible tutors found for student`,
+    );
+    if (reasonSaysNoEligible !== (gatePassers.length === 0)) {
+      counts.reasonMismatches += 1;
+    }
+  }
+
+  return counts;
 }
 
 type Picker = (student: Student, eligible: Tutor[], scorer: CompositeScorer) => Tutor;
@@ -113,6 +208,7 @@ function runEngine(
   unassigned: number;
   loads: number[];
   placedPairs: PlacedPair[];
+  unplacedCauses?: UnplacedCauseCounts;
 } {
   const result = new GreedyAssignmentEngine().assignBatch(students, tutors);
   const studentById = new Map(students.map((student) => [student.id, student]));
@@ -130,6 +226,9 @@ function runEngine(
     unassigned: result.unassignable.length,
     loads: tutors.map((tutor) => tutor.assignedCount),
     placedPairs,
+    // `tutors` is the array the run mutated, so its assignedCount is already
+    // the end state the classifier needs.
+    unplacedCauses: classifyUnplaced(students, tutors, result.unassignable),
   };
 }
 
@@ -300,6 +399,8 @@ export interface StrategyOutcome {
   staticTotal: number;
   /** Placed (student, tutor) pairs, used to derive load-independent totals. */
   placedPairs: PlacedPair[];
+  /** Engine-only: cause breakdown of this population's unplaced students. */
+  unplacedCauses?: UnplacedCauseCounts;
 }
 
 /** Gini over a load vector (duplicated from stats.ts to keep this module's
@@ -327,30 +428,57 @@ export function runAllStrategiesWithTutors(
   students: Student[],
   tutors: Tutor[],
 ): StrategyOutcome[] {
-  const scorer = new CompositeScorer();
-  return STRATEGIES.map(({ strategy, run }) => {
-    const freshTutors: Tutor[] = tutors.map((tutor) => ({ ...tutor, assignedCount: 0 }));
-    const { scores, unassigned, loads, placedPairs } = run(students, freshTutors);
-    const placed = scores.length;
-    const staticTotal = placedPairs.reduce(
-      (total, pair) => total + scorer.staticScore(pair.student, pair.tutor),
-      0,
+  return STRATEGIES.map(({ strategy }) => runStrategyOutcome(strategy, students, tutors));
+}
+
+/**
+ * Runs ONE built-in strategy against ONE population.
+ *
+ * `label` overrides the reported strategy name so a variant that reuses an
+ * existing run — the stage-1 δ=0 arm, which is the engine on a
+ * loadFactorWeight=0 population — names itself honestly in the CSV instead of
+ * passing for the engine.
+ */
+export function runStrategyOutcome(
+  strategy: string,
+  students: Student[],
+  tutors: Tutor[],
+  label = strategy,
+): StrategyOutcome {
+  const definition = STRATEGIES.find((candidate) => candidate.strategy === strategy);
+  if (!definition) {
+    throw new Error(
+      `Unknown strategy "${strategy}". Available: ${STRATEGIES.map((s) => s.strategy).join(', ')}`,
     );
-    return {
-      strategy,
-      averageScore: placed === 0 ? 0 : scores.reduce((a, b) => a + b, 0) / placed,
-      unassignedPercent: (unassigned / students.length) * 100,
-      jainFairnessIndex: jain(loads),
-      giniLoad: giniOf(loads),
-      worstStudentScore: placed === 0 ? 0 : Math.min(...scores),
-      coverage: placed / students.length,
-      loads,
-      placed,
-      unplaced: students.length - placed,
-      staticTotal,
-      placedPairs,
-    };
-  });
+  }
+
+  const scorer = new CompositeScorer();
+  const freshTutors: Tutor[] = tutors.map((tutor) => ({ ...tutor, assignedCount: 0 }));
+  const { scores, unassigned, loads, placedPairs, unplacedCauses } = definition.run(
+    students,
+    freshTutors,
+  );
+  const placed = scores.length;
+  const staticTotal = placedPairs.reduce(
+    (total, pair) => total + scorer.staticScore(pair.student, pair.tutor),
+    0,
+  );
+
+  return {
+    strategy: label,
+    averageScore: placed === 0 ? 0 : scores.reduce((a, b) => a + b, 0) / placed,
+    unassignedPercent: (unassigned / students.length) * 100,
+    jainFairnessIndex: jain(loads),
+    giniLoad: giniOf(loads),
+    worstStudentScore: placed === 0 ? 0 : Math.min(...scores),
+    coverage: placed / students.length,
+    loads,
+    placed,
+    unplaced: students.length - placed,
+    staticTotal,
+    placedPairs,
+    unplacedCauses,
+  };
 }
 
 /**

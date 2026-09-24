@@ -494,6 +494,21 @@ function deltaLinesFigure(statistics: Row[]): Figure | null {
     }),
   };
 }
+/**
+ * Strategies that are NOT baseline arms and must stay out of the comparison
+ * figures:
+ *   • `greedy-engine` — the series every delta is measured against;
+ *   • `oracle-exact` — scenario-level oracle aggregates only; its score, Jain
+ *     and delta columns are structural zeroes, so drawing it would put an
+ *     empty series (and a fake "Jain = 0") on F1/F3/F4;
+ *   • `greedy-engine-static` — the stage-1 δ=0 arm, reported as a table row
+ *     rather than a fifth baseline curve.
+ */
+const NON_ARM_STRATEGIES = new Set(['greedy-engine', 'oracle-exact', 'greedy-engine-static']);
+
+const comparisonArms = (rows: Row[]): Row[] =>
+  rows.filter((row) => !NON_ARM_STRATEGIES.has(row.strategy));
+
 export function buildFigures(data: Dataset): { figures: Figure[]; skipped: string[] } {
   const skipped: string[] = [];
   const figures: Figure[] = [];
@@ -507,12 +522,13 @@ export function buildFigures(data: Dataset): { figures: Figure[]; skipped: strin
   };
 
   if (data.statistics && data.statistics.length > 0) {
-    attempt('F1 quality (statistics)', qualityFigure(data.statistics));
-    attempt('F2 delta vs engine (statistics)', deltaFigure(data.statistics));
-    attempt('F3 fairness (statistics)', fairnessFigure(data.statistics));
-    attempt('F4 coverage (statistics)', floorFigure(data.statistics));
-    attempt('F8 quality lines (statistics)', qualityLinesFigure(data.statistics));
-    attempt('F9 delta lines (statistics)', deltaLinesFigure(data.statistics));
+    const arms = comparisonArms(data.statistics);
+    attempt('F1 quality (statistics)', qualityFigure(arms));
+    attempt('F2 delta vs engine (statistics)', deltaFigure(arms));
+    attempt('F3 fairness (statistics)', fairnessFigure(arms));
+    attempt('F4 coverage (statistics)', floorFigure(arms));
+    attempt('F8 quality lines (statistics)', qualityLinesFigure(arms));
+    attempt('F9 delta lines (statistics)', deltaLinesFigure(arms));
   } else {
     skipped.push(
       'F1–F4, F8–F9 · baseline-statistics-results.csv not found — run `pnpm eval:statistics`',

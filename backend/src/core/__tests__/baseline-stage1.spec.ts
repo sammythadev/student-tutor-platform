@@ -1,4 +1,4 @@
-import { CompositeScorer } from '../algorithms';
+import { CompositeScorer, GreedyAssignmentEngine } from '../algorithms';
 import { AvailabilitySlot, type Student, type Tutor } from '../entities';
 import {
   DeliveryMode,
@@ -7,13 +7,16 @@ import {
   LearningStyle,
   TeachingStyle,
 } from '../enums';
-import { runAllStrategiesWithTutors } from '../evaluation/baseline-comparison';
+import { classifyUnplaced, runAllStrategiesWithTutors } from '../evaluation/baseline-comparison';
 import {
   HEADER,
   MAX_ORACLE_STUDENTS,
   ORACLE_STRATEGY,
   REFERENCE_STRATEGY,
+  STATIC_ENGINE_STRATEGY,
   sampleOracle,
+  sampleScenario,
+  sampleStaticEngine,
   shouldRunOracle,
   statisticsForScenario,
   toRow,
@@ -156,6 +159,18 @@ describe('baseline stage 1a+1b', () => {
       'engineCoverageGap',
       'staticTotalRatioVsOracle',
       'staticTotalRatioVsOracleCi95',
+      'engineUnplacedA',
+      'engineUnplacedB',
+      'engineUnplacedC',
+      'engineUnplacedD',
+      'engineUnplacedE',
+      'engineUnplacedShareA',
+      'engineUnplacedShareB',
+      'engineUnplacedShareC',
+      'engineUnplacedShareD',
+      'engineUnplacedShareE',
+      'engineUnplacedTotal',
+      'engineUnplacedReasonMismatches',
     ]);
     expect(new Set(HEADER).size).toBe(HEADER.length);
   });
@@ -163,9 +178,17 @@ describe('baseline stage 1a+1b', () => {
   it('statistics rows carry new aggregates and serialize via toRow', () => {
     const scenario = { scenario: 'tiny', students: 2, tutors: 1, capacityStrategy: 'seed' } as const;
     const rows = statisticsForScenario(scenario, 3, 9000, 0.05);
-    // Four strategies plus the appended oracle row (2 <= MAX_ORACLE_STUDENTS).
-    expect(rows).toHaveLength(5);
-    expect(rows.at(-1)?.strategy).toBe(ORACLE_STRATEGY);
+    // Four strategies, the δ=0 static arm, then the oracle row
+    // (2 <= MAX_ORACLE_STUDENTS).
+    expect(rows).toHaveLength(6);
+    expect(rows.map((row) => row.strategy)).toEqual([
+      'fcfs-filter',
+      'fcfs-best',
+      'da-stable',
+      'greedy-engine',
+      STATIC_ENGINE_STRATEGY,
+      ORACLE_STRATEGY,
+    ]);
     for (const row of rows) {
       expect(row.staticTotal).toBeGreaterThanOrEqual(0);
       expect(row.totalScorePerStudent).toBeCloseTo(row.staticTotal / row.students, 12);
@@ -200,6 +223,129 @@ describe('baseline stage 1a+1b', () => {
     // Oracle row reports oracle aggregates on itself, not engine comparisons.
     expect(oracle.staticTotal).toBeCloseTo(oracle.oracleStaticTotal, 12);
     expect(oracle.staticTotalRatioVsOracle).toBe(0);
+  });
+
+  it('classifies an unplaced student with no gate-passing tutor as (a)', () => {
+    const { students } = tinyFixture();
+    const tutors = [mkTutor('t1', 'mathematics', 1)];
+    const result = new GreedyAssignmentEngine().assignBatch(students, tutors);
+    const counts = classifyUnplaced(students, tutors, result.unassignable);
+    // s2 asks for 'klingon': no tutor teaches it, so nothing can be done.
+    expect(counts).toEqual({
+      noEligibleTutor: 1,
+      eligibleButFull: 0,
+      topKTruncated: 0,
+      belowFloorTheta: 0,
+      residual: 0,
+      reasonMismatches: 0,
+      total: 1,
+    });
+  });
+
+  it('classifies contention as (b) and agrees with the capacity reason string', () => {
+    // Two students, one seat: the loser is blocked by capacity, not by gates.
+    const students = [mkStudent('s1', 'mathematics'), mkStudent('s2', 'mathematics')];
+    const tutors = [mkTutor('t1', 'mathematics', 1)];
+    const result = new GreedyAssignmentEngine().assignBatch(students, tutors);
+    const counts = classifyUnplaced(students, tutors, result.unassignable);
+    expect(counts.eligibleButFull).toBe(1);
+    expect(counts.noEligibleTutor).toBe(0);
+    // (c), (d) and (e) are structurally empty on a topK=∞, no-floor run.
+    expect(counts.topKTruncated).toBe(0);
+    expect(counts.belowFloorTheta).toBe(0);
+    expect(counts.residual).toBe(0);
+    expect(counts.reasonMismatches).toBe(0);
+    expect(counts.total).toBe(result.unassignable.length);
+  });
+
+  it('flags the capacity-0 disagreement between the gates and the reason string', () => {
+    // The tutor passes subject/grade/exam but has capacity 0, so the engine
+    // never generates the pair and blames eligibility. The taxonomy calls that
+    // (b) — the gates say a qualifying tutor exists — and counts the mismatch.
+    const students = [mkStudent('s1', 'mathematics')];
+    const tutors = [mkTutor('t0', 'mathematics', 0)];
+    const result = new GreedyAssignmentEngine().assignBatch(students, tutors);
+    expect(result.unassignable[0]?.reason).toContain('No eligible tutors found for student');
+    const counts = classifyUnplaced(students, tutors, result.unassignable);
+    expect(counts.eligibleButFull).toBe(1);
+    expect(counts.noEligibleTutor).toBe(0);
+    expect(counts.reasonMismatches).toBe(1);
+  });
+
+  it('exposes the engine-only cause buckets on the engine row and nowhere else', () => {
+    const scenario = { scenario: 'tiny', students: 2, tutors: 1, capacityStrategy: 'seed' } as const;
+    const rows = statisticsForScenario(scenario, 3, 9000, 0.05);
+    const engine = rows.find((row) => row.strategy === REFERENCE_STRATEGY);
+    if (!engine) {
+      throw new Error('expected an engine row');
+    }
+    expect(engine.engineUnplacedA).toBeGreaterThan(0);
+    expect(engine.engineUnplacedTotal).toBeGreaterThan(0);
+    // a+b+c+d+e must account for every unplaced student, on the mean too.
+    expect(
+      engine.engineUnplacedA +
+        engine.engineUnplacedB +
+        engine.engineUnplacedC +
+        engine.engineUnplacedD +
+        engine.engineUnplacedE,
+    ).toBeCloseTo(engine.engineUnplacedTotal, 12);
+    expect(
+      engine.engineUnplacedShareA +
+        engine.engineUnplacedShareB +
+        engine.engineUnplacedShareC +
+        engine.engineUnplacedShareD +
+        engine.engineUnplacedShareE,
+    ).toBeCloseTo(1, 12);
+    expect(engine.engineUnplacedC).toBe(0);
+    expect(engine.engineUnplacedD).toBe(0);
+    expect(engine.engineUnplacedE).toBe(0);
+    for (const row of rows) {
+      if (row.strategy === REFERENCE_STRATEGY) {
+        continue;
+      }
+      expect(row.engineUnplacedTotal).toBe(0);
+      expect(row.engineUnplacedShareA).toBe(0);
+      expect(row.engineUnplacedReasonMismatches).toBe(0);
+    }
+    const cells = toRow(engine);
+    expect(cells).toHaveLength(HEADER.length);
+    const byName = new Map(HEADER.map((name, index) => [name, cells[index] as string]));
+    expect(Number(byName.get('engineUnplacedA'))).toBeCloseTo(engine.engineUnplacedA, 6);
+    expect(Number(byName.get('engineUnplacedTotal'))).toBeCloseTo(engine.engineUnplacedTotal, 6);
+  });
+
+  it('adds the δ=0 arm as its own labeled row, paired against the engine', () => {
+    const scenario = {
+      scenario: 'moderate-1.5to1',
+      students: 40,
+      tutors: 30,
+      capacityStrategy: 'seed',
+    } as const;
+    const rows = statisticsForScenario(scenario, 4, 9000, 0.05);
+    const engine = rows.find((row) => row.strategy === REFERENCE_STRATEGY);
+    const staticArm = rows.find((row) => row.strategy === STATIC_ENGINE_STRATEGY);
+    if (!engine || !staticArm) {
+      throw new Error('expected both an engine and a static-arm row');
+    }
+    // Honestly labeled: the row records the weight it actually ran with.
+    expect(staticArm.loadFactorWeight).toBe(0);
+    expect(engine.loadFactorWeight).toBe(0.05);
+    expect(staticArm.seeds).toBe(4);
+    expect(staticArm.pValueVsEngine).not.toBe(1);
+    // The δ=0 arm reuses the engine run, so it must carry the engine's buckets
+    // only via the engine row — its own cause columns stay blank.
+    expect(staticArm.engineUnplacedTotal).toBe(0);
+    // The arm is the engine on the same populations: pair the seed offsets.
+    const armOutcomes = sampleStaticEngine(scenario, 4, 9000);
+    expect(armOutcomes).toHaveLength(4);
+    expect(armOutcomes.every((outcome) => outcome.strategy === STATIC_ENGINE_STRATEGY)).toBe(
+      true,
+    );
+    // δ=0 populations are the same fixtures: only the fairness weight differs,
+    // which fixtures.ts never feeds into its PRNG seed.
+    expect(armOutcomes.map((outcome) => outcome.placed)).toEqual(
+      sampleScenario(scenario, 4, 9000, 0).get(REFERENCE_STRATEGY)?.map((o) => o.placed),
+    );
   });
 
   it('skips the oracle above MAX_ORACLE_STUDENTS', () => {
