@@ -27,6 +27,29 @@ interface CandidatePair {
 export interface AssignmentRunResult {
   assignments: Assignment[];
   unassignable: Assignment[];
+  /** Present only when the repair pass ran (see AssignBatchOptions.repair). */
+  repair?: RepairReport;
+}
+
+/** Bounds for the opt-in P2 repair pass. */
+export interface RepairOptions {
+  /** Maximum augmenting-path depth. Depth 1 only displaces a single student. */
+  maxDepth?: number;
+}
+
+/** Per-phase deltas and cost of the repair pass, for honest reporting. */
+export interface RepairReport {
+  /** Students the heap pass left unplaced who the repair pass seated. */
+  placementsGained: number;
+  /** Already-seated students moved to free a seat for someone else. */
+  displaced: number;
+  /** Augmenting paths accepted (equals placementsGained today). */
+  acceptedPaths: number;
+  /** (student, tutor) scores computed inside the repair pass. */
+  scoredPairs: number;
+  /** Wall-clock milliseconds spent in the repair pass. */
+  elapsedMs: number;
+  maxDepth: number;
 }
 
 /** Optional instrumentation collector for benchmarking (see evaluation-harness). */
@@ -52,7 +75,38 @@ export interface AssignBatchOptions {
    *  quality loss (students whose top-k fill up may go unassigned). k=20 is a
    *  good default. Pass Infinity or omit for no cap. */
   topK?: number;
+  /**
+   * P2 bounded repair, DEFAULT OFF so deployed behaviour is unchanged.
+   *
+   * After the heap drains, the engine stops — but a student can still be
+   * unplaced while a seat is occupied by someone who has an acceptable
+   * alternative. `repair: true` (or `{ maxDepth }`) runs a deterministic,
+   * depth-bounded augmenting-path search that re-routes seated students to open
+   * a seat for an unplaced one. Only placements that strictly increase are
+   * accepted, and no P1 behaviour changes. */
+  repair?: boolean | RepairOptions;
 }
+
+/** Default augmenting-path depth: 1 displacement per seat opened. */
+const DEFAULT_REPAIR_MAX_DEPTH = 3;
+
+/** Per-search cap on tutor visits, so repair cost stays bounded on any input. */
+const MAX_REPAIR_SEARCH_WORK = 5_000;
+
+/** Stable string ordering — used for every tie-break in the repair pass. */
+const compareIds = (left: string, right: string): number =>
+  left < right ? -1 : left > right ? 1 : 0;
+
+/** Normalises the repair flag; null means "do not repair". */
+const resolveRepairOptions = (
+  repair: boolean | RepairOptions | undefined,
+): Required<RepairOptions> | null => {
+  if (!repair) {
+    return null;
+  }
+  const options = repair === true ? {} : repair;
+  return { maxDepth: Math.max(0, options.maxDepth ?? DEFAULT_REPAIR_MAX_DEPTH) };
+};
 
 export class GreedyAssignmentEngine {
   constructor(
@@ -180,6 +234,13 @@ export class GreedyAssignmentEngine {
       );
     }
 
+    // P2 — bounded repair (opt-in): the heap is drained, so the only way to
+    // seat another student is to re-route someone already seated.
+    const repairOptions = resolveRepairOptions(options.repair);
+    const repair = repairOptions
+      ? this.repairUnplaced(students, tutors, assignedStudentIds, assignments, repairOptions)
+      : undefined;
+
     const unassignable = students
       .filter((student) => !assignedStudentIds.has(student.id))
       .map((student) =>
@@ -191,7 +252,235 @@ export class GreedyAssignmentEngine {
         ),
       );
 
-    return { assignments, unassignable };
+    return { assignments, unassignable, repair };
+  }
+
+  /**
+   * P2 — bounded augmenting repair.
+   *
+   * For each unplaced student, in input order, search for a depth-bounded
+   * augmenting path: repeat "move a seated student to a tutor that still has a
+   * seat" until a seat opens for the unplaced student, then apply the whole
+   * path deepest-move-first (which is the order that keeps every step legal).
+   *
+   * Deterministic by construction: tutors are explored in static-score order
+   * with tutor id as the tie-break, a tutor's holders are visited in student-id
+   * order, students are processed in input order, and every search is capped by
+   * maxDepth plus a per-search work budget. No randomness, and only a strict
+   * placement increase is ever accepted.
+   *
+   * Read-only on the caller's inputs beyond the same tutor.assignedCount
+   * mutation P1 already performs.
+   */
+  private repairUnplaced(
+    students: Student[],
+    tutors: Tutor[],
+    assignedStudentIds: Set<string>,
+    assignments: Assignment[],
+    options: Required<RepairOptions>,
+  ): RepairReport {
+    const startedAt = performance.now();
+    const studentById = new Map(students.map((student) => [student.id, student]));
+    const tutorById = new Map(tutors.map((tutor) => [tutor.id, tutor]));
+    const holderTutorByStudent = new Map<string, string>();
+    const occupants = new Map<string, Set<string>>();
+    const assignmentByStudent = new Map<string, Assignment>();
+
+    for (const assignment of assignments) {
+      if (!assignment.tutorId) {
+        continue;
+      }
+      holderTutorByStudent.set(assignment.studentId, assignment.tutorId);
+      assignmentByStudent.set(assignment.studentId, assignment);
+      let holders = occupants.get(assignment.tutorId);
+      if (!holders) {
+        holders = new Set<string>();
+        occupants.set(assignment.tutorId, holders);
+      }
+      holders.add(assignment.studentId);
+    }
+
+    // Sound early exit: every augmenting path ends at a tutor with a free seat,
+    // so if no tutor has one, no path of any depth can exist. This is what keeps
+    // a supply-bound market (1000 students, 250 seats, all taken) from paying
+    // for hundreds of searches that cannot possibly succeed.
+    if (!tutors.some((tutor) => this.eligibilityFilter.hasCapacity(tutor))) {
+      return {
+        placementsGained: 0,
+        displaced: 0,
+        acceptedPaths: 0,
+        scoredPairs: 0,
+        elapsedMs: performance.now() - startedAt,
+        maxDepth: options.maxDepth,
+      };
+    }
+
+    let scoredPairs = 0;
+    const eligibleCache = new Map<string, Tutor[]>();
+
+    // Gates only — capacity is checked live, because repair exists precisely to
+    // deal with tutors that are full at this moment.
+    const gatesPass = (student: Student, tutor: Tutor): boolean =>
+      this.eligibilityFilter.hasSubject(student, tutor) &&
+      this.eligibilityFilter.supportsGradeLevel(student, tutor) &&
+      this.eligibilityFilter.supportsExamType(student, tutor);
+
+    const eligibleTutorsFor = (student: Student): Tutor[] => {
+      const cached = eligibleCache.get(student.id);
+      if (cached) {
+        return cached;
+      }
+      const weights = this.compositeScorer.buildWeights(student);
+      const scored: Array<{ tutor: Tutor; staticScore: number }> = [];
+      for (const tutor of tutors) {
+        if (!gatesPass(student, tutor)) {
+          continue;
+        }
+        const match = this.compositeScorer.score(student, tutor, weights);
+        scoredPairs += 1;
+        scored.push({
+          tutor,
+          staticScore: this.compositeScorer.staticScoreFromMatch(match, weights),
+        });
+      }
+      scored.sort(
+        (left, right) =>
+          right.staticScore - left.staticScore || compareIds(left.tutor.id, right.tutor.id),
+      );
+      const ordered = scored.map((entry) => entry.tutor);
+      eligibleCache.set(student.id, ordered);
+      return ordered;
+    };
+
+    interface Move {
+      studentId: string;
+      toTutor: Tutor;
+    }
+
+    // Returns moves in APPLY order (deepest first), or null when no bounded
+    // path exists.
+    const findPath = (
+      student: Student,
+      depth: number,
+      visitedTutors: Set<string>,
+      visitedStudents: Set<string>,
+      budget: { remaining: number },
+    ): Move[] | null => {
+      for (const tutor of eligibleTutorsFor(student)) {
+        if (budget.remaining <= 0) {
+          return null;
+        }
+        budget.remaining -= 1;
+
+        if (this.eligibilityFilter.hasCapacity(tutor)) {
+          return [{ studentId: student.id, toTutor: tutor }];
+        }
+        // A visited tutor is full and cannot become free during the search
+        // (moves are applied only after a whole path is found), so it is a
+        // legitimate cut, not just a cycle guard.
+        if (depth >= options.maxDepth || visitedTutors.has(tutor.id)) {
+          continue;
+        }
+        visitedTutors.add(tutor.id);
+
+        const holders = [...(occupants.get(tutor.id) ?? [])].sort(compareIds);
+        for (const holderId of holders) {
+          if (visitedStudents.has(holderId)) {
+            continue;
+          }
+          const holder = studentById.get(holderId);
+          if (!holder) {
+            continue;
+          }
+          visitedStudents.add(holderId);
+          const deeper = findPath(holder, depth + 1, visitedTutors, visitedStudents, budget);
+          if (deeper) {
+            return [...deeper, { studentId: student.id, toTutor: tutor }];
+          }
+        }
+        visitedTutors.delete(tutor.id);
+      }
+      return null;
+    };
+
+    const applyMove = (move: Move): void => {
+      const student = studentById.get(move.studentId);
+      if (!student) {
+        return;
+      }
+
+      const currentTutorId = holderTutorByStudent.get(move.studentId);
+      if (currentTutorId) {
+        const currentTutor = tutorById.get(currentTutorId);
+        if (currentTutor) {
+          currentTutor.assignedCount -= 1;
+        }
+        occupants.get(currentTutorId)?.delete(move.studentId);
+      }
+
+      const target = move.toTutor;
+      target.assignedCount += 1;
+      let holders = occupants.get(target.id);
+      if (!holders) {
+        holders = new Set<string>();
+        occupants.set(target.id, holders);
+      }
+      holders.add(move.studentId);
+      holderTutorByStudent.set(move.studentId, target.id);
+      assignedStudentIds.add(move.studentId);
+
+      // Scored after the seat is taken, so the fairness term reflects the load
+      // this student actually joined — the same "fresh fairness at assignment
+      // time" semantics P1 uses.
+      const weights = this.compositeScorer.buildWeights(student);
+      const matchScore = this.compositeScorer.score(student, target, weights);
+      scoredPairs += 1;
+
+      const existing = assignmentByStudent.get(move.studentId);
+      if (existing) {
+        existing.tutorId = target.id;
+        existing.matchScore = matchScore;
+        return;
+      }
+      const created = this.createAssignment(move.studentId, target.id, matchScore);
+      assignments.push(created);
+      assignmentByStudent.set(move.studentId, created);
+    };
+
+    let placementsGained = 0;
+    let displaced = 0;
+    let acceptedPaths = 0;
+
+    for (const student of students) {
+      if (assignedStudentIds.has(student.id)) {
+        continue;
+      }
+      const path = findPath(
+        student,
+        0,
+        new Set<string>(),
+        new Set<string>([student.id]),
+        { remaining: MAX_REPAIR_SEARCH_WORK },
+      );
+      if (!path || path.length === 0) {
+        continue;
+      }
+      for (const move of path) {
+        applyMove(move);
+      }
+      placementsGained += 1;
+      displaced += path.length - 1;
+      acceptedPaths += 1;
+    }
+
+    return {
+      placementsGained,
+      displaced,
+      acceptedPaths,
+      scoredPairs,
+      elapsedMs: performance.now() - startedAt,
+      maxDepth: options.maxDepth,
+    };
   }
 
   /** Fallback for top-k: greedily match still-unassigned students against any

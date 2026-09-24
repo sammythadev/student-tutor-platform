@@ -7,6 +7,8 @@ export type {
   AssignmentRunResult,
   AssignmentStats,
   AssignBatchOptions,
+  RepairOptions,
+  RepairReport,
 } from './assignment/greedy-assignment.engine';
 export { EligibilityFilter } from './filters/eligibility.filter';
 export { FeedbackUpdater } from './feedback/feedback-updater';

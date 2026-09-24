@@ -1,4 +1,10 @@
-import { CompositeScorer, EligibilityFilter, GreedyAssignmentEngine } from '@core/algorithms';
+import {
+  CompositeScorer,
+  EligibilityFilter,
+  GreedyAssignmentEngine,
+  type AssignBatchOptions,
+  type RepairReport,
+} from '@core/algorithms';
 import type { Assignment, Student, Tutor } from '@core/entities';
 import { emitResults, getFlagValue, runCli } from './cli-output';
 import { type CapacityStrategy, generateStudents, generateTutors } from './fixtures';
@@ -56,6 +62,9 @@ export interface PlacedPair {
   student: Student;
   tutor: Tutor;
 }
+
+/** Strategy label for the P2 repaired engine arm (stage 2). */
+export const REPAIR_STRATEGY = 'greedy-engine-repair';
 
 /**
  * Why each unplaced student was left out, counted per population. Buckets are
@@ -203,14 +212,16 @@ function runFcfs(
 function runEngine(
   students: Student[],
   tutors: Tutor[],
+  options: AssignBatchOptions = {},
 ): {
   scores: number[];
   unassigned: number;
   loads: number[];
   placedPairs: PlacedPair[];
   unplacedCauses?: UnplacedCauseCounts;
+  repair?: RepairReport;
 } {
-  const result = new GreedyAssignmentEngine().assignBatch(students, tutors);
+  const result = new GreedyAssignmentEngine().assignBatch(students, tutors, options);
   const studentById = new Map(students.map((student) => [student.id, student]));
   const tutorById = new Map(tutors.map((tutor) => [tutor.id, tutor]));
   const placedPairs: PlacedPair[] = [];
@@ -229,7 +240,13 @@ function runEngine(
     // `tutors` is the array the run mutated, so its assignedCount is already
     // the end state the classifier needs.
     unplacedCauses: classifyUnplaced(students, tutors, result.unassignable),
+    repair: result.repair,
   };
+}
+
+/** P2 arm: the same engine with the bounded repair pass enabled. */
+function runEngineRepaired(students: Student[], tutors: Tutor[]) {
+  return runEngine(students, tutors, { repair: true });
 }
 
 /**
@@ -374,6 +391,7 @@ const STRATEGIES: Array<{
   { strategy: 'fcfs-best', run: (s, t) => runFcfs(s, t, bestEligible) },
   { strategy: 'da-stable', run: runDeferredAcceptance },
   { strategy: 'greedy-engine', run: runEngine },
+  { strategy: REPAIR_STRATEGY, run: runEngineRepaired },
 ];
 
 export type BaselineScenario = (typeof SCENARIOS)[number];
@@ -401,6 +419,8 @@ export interface StrategyOutcome {
   placedPairs: PlacedPair[];
   /** Engine-only: cause breakdown of this population's unplaced students. */
   unplacedCauses?: UnplacedCauseCounts;
+  /** Repair-arm only: per-phase deltas and cost of the repair pass. */
+  repair?: RepairReport;
 }
 
 /** Gini over a load vector (duplicated from stats.ts to keep this module's
@@ -454,7 +474,7 @@ export function runStrategyOutcome(
 
   const scorer = new CompositeScorer();
   const freshTutors: Tutor[] = tutors.map((tutor) => ({ ...tutor, assignedCount: 0 }));
-  const { scores, unassigned, loads, placedPairs, unplacedCauses } = definition.run(
+  const { scores, unassigned, loads, placedPairs, unplacedCauses, repair } = definition.run(
     students,
     freshTutors,
   );
@@ -478,6 +498,7 @@ export function runStrategyOutcome(
     staticTotal,
     placedPairs,
     unplacedCauses,
+    repair,
   };
 }
 

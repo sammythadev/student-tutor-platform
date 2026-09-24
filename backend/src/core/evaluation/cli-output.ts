@@ -186,6 +186,10 @@ export const TIMING_COLUMNS: ReadonlySet<string> = new Set([
   'elapsedMaxMs',
   'greedyMs',
   'optimalMs',
+  'repairMsP50',
+  'repairMsP95',
+  'oracleMsP50',
+  'oracleMsP95',
 ]);
 
 /**

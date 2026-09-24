@@ -1,6 +1,7 @@
 import { emitResults, getFlagValue, runCli } from './cli-output';
 import {
   EMPTY_UNPLACED_CAUSES,
+  REPAIR_STRATEGY,
   runAllStrategiesWithTutors,
   runStrategyOutcome,
   SCENARIOS,
@@ -10,7 +11,7 @@ import {
 } from './baseline-comparison';
 import { computeOptimal } from './optimal-baseline';
 import { generateStudents, generateTutors } from './fixtures';
-import { ci95, formatPValue, mean, pairedSignTest, stdDev } from './stats';
+import { ci95, formatPValue, mean, pairedSignTest, percentile, stdDev } from './stats';
 
 /**
  * Multi-population comparison of the four assignment strategies.
@@ -34,8 +35,12 @@ import { ci95, formatPValue, mean, pairedSignTest, stdDev } from './stats';
 /** Independent populations per scenario. 30 gives the sign test real power. */
 export const DEFAULT_BASELINE_SEEDS = 30;
 
-/** Strategies evaluated per scenario, in reporting order. */
-const ORDER = ['fcfs-filter', 'fcfs-best', 'da-stable', 'greedy-engine'] as const;
+/**
+ * Strategies evaluated per scenario, in reporting order. `greedy-engine-repair`
+ * is the Stage-2 arm: the same engine with the bounded repair pass enabled, so
+ * its deltas read directly as the value of repair against the plain engine.
+ */
+const ORDER = ['fcfs-filter', 'fcfs-best', 'da-stable', 'greedy-engine', REPAIR_STRATEGY] as const;
 
 /** The strategy every other row is compared against. */
 export const REFERENCE_STRATEGY = 'greedy-engine';
@@ -118,6 +123,20 @@ export interface StrategyStatRow {
   engineUnplacedTotal: number;
   /** Unplaced students whose engine reason string contradicts the gates. */
   engineUnplacedReasonMismatches: number;
+  /**
+   * Repair-arm phase deltas, means across populations; 0 on every other row.
+   * `repairPlacementsGained` is how many students P2 seated that the plain heap
+   * pass left unplaced, and `repairDisplaced` how many seated students moved to
+   * open those seats — so the reader can see what a placement cost.
+   */
+  repairPlacementsGained: number;
+  repairDisplaced: number;
+  /** Repair-pass wall-clock p50/p95 in ms (repair row only). */
+  repairMsP50: number;
+  repairMsP95: number;
+  /** Exact-solver wall-clock p50/p95 in ms; scenario-level, repeated on rows. */
+  oracleMsP50: number;
+  oracleMsP95: number;
 }
 
 export const HEADER = [
@@ -166,12 +185,20 @@ export const HEADER = [
   'engineUnplacedShareE',
   'engineUnplacedTotal',
   'engineUnplacedReasonMismatches',
+  'repairPlacementsGained',
+  'repairDisplaced',
+  'repairMsP50',
+  'repairMsP95',
+  'oracleMsP50',
+  'oracleMsP95',
 ];
 
 /** Per-seed oracle result on the SAME population as the strategies. */
 export interface OracleSample {
   coverage: number;
   staticTotal: number;
+  /** Wall-clock milliseconds the exact solver took on this population. */
+  elapsedMs: number;
 }
 
 /** Whether the oracle runs for this scenario (students<=200; skips stress). */
@@ -199,10 +226,13 @@ export function sampleOracle(
     const seedOffset = baseSeed + seed;
     const students = generateStudents(scenario.students, loadFactorWeight, seedOffset);
     const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy, seedOffset);
+    const startedAt = performance.now();
     const optimal = computeOptimal(students, tutors);
+    const elapsedMs = performance.now() - startedAt;
     samples.push({
       coverage: scenario.students === 0 ? 0 : optimal.assignedCount / scenario.students,
       staticTotal: optimal.totalScore,
+      elapsedMs,
     });
   }
   return samples;
@@ -290,6 +320,21 @@ export function statisticsForScenario(
     : [];
   const staticTotalRatioVsOracle = hasOracle ? mean(ratioSamples) : 0;
   const staticTotalRatioVsOracleCi95 = hasOracle ? (ci95(ratioSamples) ?? 0) : 0;
+  const oracleElapsed = oracleSamples.map((sample) => sample.elapsedMs);
+  const oracleMsP50 = hasOracle ? percentile(oracleElapsed, 0.5) : 0;
+  const oracleMsP95 = hasOracle ? percentile(oracleElapsed, 0.95) : 0;
+
+  // Stage-2 repair phase deltas. Absent only if the arm was removed from ORDER.
+  const repairSamples = (byStrategy.get(REPAIR_STRATEGY) ?? []).map((outcome) => outcome.repair);
+  const repairGained = repairSamples.length === 0
+    ? 0
+    : mean(repairSamples.map((report) => report?.placementsGained ?? 0));
+  const repairDisplaced = repairSamples.length === 0
+    ? 0
+    : mean(repairSamples.map((report) => report?.displaced ?? 0));
+  const repairElapsed = repairSamples.map((report) => report?.elapsedMs ?? 0);
+  const repairMsP50 = percentile(repairElapsed, 0.5);
+  const repairMsP95 = percentile(repairElapsed, 0.95);
 
   // Engine-only unplaced-cause taxonomy, averaged across the same populations.
   const causeSamples: UnplacedCauseCounts[] = reference.map(
@@ -394,6 +439,12 @@ export function statisticsForScenario(
       engineUnplacedShareE: isReference ? engineUnplaced.shareE : 0,
       engineUnplacedTotal: isReference ? engineUnplaced.total : 0,
       engineUnplacedReasonMismatches: isReference ? engineUnplaced.reasonMismatches : 0,
+      repairPlacementsGained: strategy === REPAIR_STRATEGY ? repairGained : 0,
+      repairDisplaced: strategy === REPAIR_STRATEGY ? repairDisplaced : 0,
+      repairMsP50: strategy === REPAIR_STRATEGY ? repairMsP50 : 0,
+      repairMsP95: strategy === REPAIR_STRATEGY ? repairMsP95 : 0,
+      oracleMsP50,
+      oracleMsP95,
     };
   };
 
@@ -454,6 +505,12 @@ export function statisticsForScenario(
       engineUnplacedShareE: 0,
       engineUnplacedTotal: 0,
       engineUnplacedReasonMismatches: 0,
+      repairPlacementsGained: 0,
+      repairDisplaced: 0,
+      repairMsP50: 0,
+      repairMsP95: 0,
+      oracleMsP50,
+      oracleMsP95,
     });
   }
 
@@ -522,6 +579,12 @@ export const toRow = (row: StrategyStatRow): string[] => [
   ratio(row.engineUnplacedShareE, 6),
   ratio(row.engineUnplacedTotal, 6),
   ratio(row.engineUnplacedReasonMismatches, 6),
+  ratio(row.repairPlacementsGained, 6),
+  ratio(row.repairDisplaced, 6),
+  row.repairMsP50.toFixed(2),
+  row.repairMsP95.toFixed(2),
+  row.oracleMsP50.toFixed(2),
+  row.oracleMsP95.toFixed(2),
 ];
 
 /** Parses `--seeds <n>` for this suite, falling back to DEFAULT_BASELINE_SEEDS. */
