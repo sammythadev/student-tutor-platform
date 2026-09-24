@@ -10,13 +10,14 @@ import {
 import { runAllStrategiesWithTutors } from '../evaluation/baseline-comparison';
 import {
   HEADER,
+  MAX_ORACLE_STUDENTS,
   ORACLE_STRATEGY,
+  REFERENCE_STRATEGY,
   sampleOracle,
   shouldRunOracle,
   statisticsForScenario,
   toRow,
 } from '../evaluation/baseline-statistics';
-import { computeOptimal } from '../evaluation/optimal-baseline';
 
 const slot = (s: number, e: number): AvailabilitySlot =>
   new AvailabilitySlot(
@@ -114,15 +115,34 @@ describe('baseline stage 1a+1b', () => {
     }
   });
 
-  it('appends new columns at END of HEADER only', () => {
-    expect(HEADER.slice(-13, -8)).toEqual([
+  it('appends new columns at END of HEADER only, renaming none', () => {
+    // The pre-stage-1 header, verbatim and in order: every one of these must
+    // still be present at its original index so existing CSV readers keep
+    // working.
+    const legacy = [
+      'scenario',
+      'strategy',
+      'students',
+      'tutors',
+      'loadFactorWeight',
+      'seeds',
+      'averageScore',
+      'averageScoreStdDev',
+      'averageScoreCi95',
+      'unassignedPercent',
+      'jainFairnessIndex',
+      'jainCi95',
+      'giniLoad',
+      'worstStudentScore',
+      'coverage',
       'winsVsEngine',
       'lossesVsEngine',
       'tiesVsEngine',
       'meanDeltaVsEngine',
       'pValueVsEngine',
-    ]);
-    expect(HEADER.slice(-8)).toEqual([
+    ];
+    expect(HEADER.slice(0, legacy.length)).toEqual(legacy);
+    expect(HEADER.slice(legacy.length)).toEqual([
       'totalScorePerStudent',
       'totalScorePerStudentCi95',
       'totalScorePerStudentWinsVsEngine',
@@ -131,13 +151,21 @@ describe('baseline stage 1a+1b', () => {
       'totalScorePerStudentMeanDeltaVsEngine',
       'totalScorePerStudentPValueVsEngine',
       'staticTotal',
+      'oracleCoverage',
+      'oracleStaticTotal',
+      'engineCoverageGap',
+      'staticTotalRatioVsOracle',
+      'staticTotalRatioVsOracleCi95',
     ]);
+    expect(new Set(HEADER).size).toBe(HEADER.length);
   });
 
   it('statistics rows carry new aggregates and serialize via toRow', () => {
     const scenario = { scenario: 'tiny', students: 2, tutors: 1, capacityStrategy: 'seed' } as const;
     const rows = statisticsForScenario(scenario, 3, 9000, 0.05);
-    expect(rows).toHaveLength(4);
+    // Four strategies plus the appended oracle row (2 <= MAX_ORACLE_STUDENTS).
+    expect(rows).toHaveLength(5);
+    expect(rows.at(-1)?.strategy).toBe(ORACLE_STRATEGY);
     for (const row of rows) {
       expect(row.staticTotal).toBeGreaterThanOrEqual(0);
       expect(row.totalScorePerStudent).toBeCloseTo(row.staticTotal / row.students, 12);
@@ -150,6 +178,47 @@ describe('baseline stage 1a+1b', () => {
       if (row.strategy === 'greedy-engine') {
         expect(byName.get('totalScorePerStudentPValueVsEngine')).toBe('1');
       }
+    }
+  });
+
+  it('bounds the engine by the oracle on the same populations', () => {
+    const scenario = { scenario: 'tiny', students: 2, tutors: 1, capacityStrategy: 'seed' } as const;
+    const rows = statisticsForScenario(scenario, 3, 9000, 0.05);
+    const oracle = rows.find((row) => row.strategy === ORACLE_STRATEGY);
+    const engine = rows.find((row) => row.strategy === REFERENCE_STRATEGY);
+    if (!oracle || !engine) {
+      throw new Error('expected both an oracle and an engine row');
+    }
+    // The oracle maximizes placements first, so it can never place fewer than
+    // the engine's greedy pass on the identical population.
+    expect(oracle.coverage).toBeGreaterThanOrEqual(engine.coverage);
+    expect(engine.engineCoverageGap).toBeCloseTo(oracle.coverage - engine.coverage, 12);
+    expect(engine.engineCoverageGap).toBeGreaterThanOrEqual(0);
+    // Same-population static ratio: the engine may match the oracle but not beat it.
+    expect(engine.staticTotalRatioVsOracle).toBeLessThanOrEqual(1);
+    expect(engine.staticTotalRatioVsOracle).toBeGreaterThan(0);
+    // Oracle row reports oracle aggregates on itself, not engine comparisons.
+    expect(oracle.staticTotal).toBeCloseTo(oracle.oracleStaticTotal, 12);
+    expect(oracle.staticTotalRatioVsOracle).toBe(0);
+  });
+
+  it('skips the oracle above MAX_ORACLE_STUDENTS', () => {
+    const tooBig = {
+      scenario: 'stress',
+      students: MAX_ORACLE_STUDENTS + 1,
+      tutors: 500,
+      capacityStrategy: 'seed',
+    } as const;
+    expect(shouldRunOracle(tooBig)).toBe(false);
+    expect(sampleOracle(tooBig, 3, 0, 0.05)).toEqual([]);
+    expect(shouldRunOracle({ students: MAX_ORACLE_STUDENTS })).toBe(true);
+    const rows = statisticsForScenario(tooBig, 2, 0, 0.05);
+    expect(rows.some((row) => row.strategy === ORACLE_STRATEGY)).toBe(false);
+    for (const row of rows) {
+      expect(row.oracleCoverage).toBe(0);
+      expect(row.oracleStaticTotal).toBe(0);
+      expect(row.engineCoverageGap).toBe(0);
+      expect(row.staticTotalRatioVsOracle).toBe(0);
     }
   });
 });
