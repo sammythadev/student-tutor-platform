@@ -77,7 +77,7 @@ graphify-out/
 __pycache__/
 
 # Binary Word deliverables and Word's own lock files (~$name.docx).
-*.docx
+
 ~$*
 
 # The root pnpm-lock.yaml is the only lockfile this workspace keeps; a lockfile
