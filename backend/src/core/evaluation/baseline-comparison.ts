@@ -64,8 +64,21 @@ export interface PlacedPair {
   tutor: Tutor;
 }
 
-/** Strategy label for the P2 repaired engine arm (stage 2). */
-export const REPAIR_STRATEGY = 'greedy-engine-repair';
+/**
+ * The deployed engine arm: the priority-queue heap pass followed by the bounded
+ * repair pass. Repair is the engine's default behaviour, so this arm and the
+ * production path (`MatchmakingService.runBatch`) run the same code.
+ */
+export const ENGINE_STRATEGY = 'greedy-engine';
+
+/**
+ * Strategy label for the P1-only ablation: the same engine with the repair pass
+ * explicitly switched off. It is the counterfactual that measures what the pass
+ * is worth (`greedy-engine` minus `greedy-engine-norepair`), reported as a table
+ * row and deliberately kept out of the figures so the deployed engine is the
+ * only greedy series a reader sees.
+ */
+export const NO_REPAIR_STRATEGY = 'greedy-engine-norepair';
 
 /**
  * Strategy label for the stage-3 exact floor-constrained arm: the P2 pipeline
@@ -218,6 +231,11 @@ function runFcfs(
   return { scores, unassigned, loads: tutors.map((tutor) => tutor.assignedCount), placedPairs };
 }
 
+/**
+ * The engine as deployed: `assignBatch` with no repair flag, which means the
+ * bounded repair pass runs. The ablation arm below is the only caller that turns
+ * it off.
+ */
 function runEngine(
   students: Student[],
   tutors: Tutor[],
@@ -257,13 +275,13 @@ function runEngine(
   };
 }
 
-/** P2 arm: the same engine with the bounded repair pass enabled. */
-function runEngineRepaired(students: Student[], tutors: Tutor[]) {
-  return runEngine(students, tutors, { repair: true });
+/** Ablation arm: the heap pass alone, with the repair pass explicitly disabled. */
+function runEngineNoRepair(students: Student[], tutors: Tutor[]) {
+  return runEngine(students, tutors, { repair: false });
 }
 
 /**
- * Stage-3 arm: P1 + repair, then an exact floor-constrained re-solve.
+ * Stage-3 arm: the deployed engine, then an exact floor-constrained re-solve.
  *
  * The floor θ is the pipeline's OWN static floor over the pairs it placed, so
  * nothing is imposed from outside: the arm is measured on the promise "same
@@ -275,7 +293,7 @@ function runEngineRepaired(students: Student[], tutors: Tutor[]) {
 function runFloorExact(students: Student[], tutors: Tutor[]) {
   const scorer = new CompositeScorer();
   const fresh: Tutor[] = tutors.map((tutor) => ({ ...tutor, assignedCount: 0 }));
-  const engineRun = new GreedyAssignmentEngine().assignBatch(students, fresh, { repair: true });
+  const engineRun = new GreedyAssignmentEngine().assignBatch(students, fresh);
   const studentById = new Map(students.map((student) => [student.id, student]));
   const tutorById = new Map(fresh.map((tutor) => [tutor.id, tutor]));
 
@@ -470,8 +488,8 @@ const STRATEGIES: Array<{
   { strategy: 'fcfs-filter', run: (s, t) => runFcfs(s, t, firstEligible) },
   { strategy: 'fcfs-best', run: (s, t) => runFcfs(s, t, bestEligible) },
   { strategy: 'da-stable', run: runDeferredAcceptance },
-  { strategy: 'greedy-engine', run: runEngine },
-  { strategy: REPAIR_STRATEGY, run: runEngineRepaired },
+  { strategy: ENGINE_STRATEGY, run: runEngine },
+  { strategy: NO_REPAIR_STRATEGY, run: runEngineNoRepair },
   { strategy: FLOOR_STRATEGY, run: runFloorExact },
 ];
 
@@ -506,7 +524,8 @@ export interface StrategyOutcome {
   placedPairs: PlacedPair[];
   /** Engine-only: cause breakdown of this population's unplaced students. */
   unplacedCauses?: UnplacedCauseCounts;
-  /** Repair-arm only: per-phase deltas and cost of the repair pass. */
+  /** Every arm except the no-repair ablation: per-phase deltas and cost of the
+   *  repair pass the deployed engine always runs. */
   repair?: RepairReport;
   /** Floor arm only: the θ it enforced (its own pipeline's static floor). */
   floorTheta?: number;

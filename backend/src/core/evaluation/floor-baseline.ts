@@ -3,8 +3,8 @@ import type { Student, Tutor } from '@core/entities';
 import { emitResults, getFlagValue, runCli } from './cli-output';
 import { COST_SCALE, MinCostMaxFlow } from './optimal-baseline';
 import {
+  ENGINE_STRATEGY,
   FLOOR_STRATEGY,
-  REPAIR_STRATEGY,
   runStrategyOutcome,
   SCENARIOS,
   type BaselineScenario,
@@ -313,7 +313,8 @@ export interface FloorFrontierRow {
 function engineFloorForPopulation(students: Student[], tutors: Tutor[]): EngineFloor {
   const scorer = new CompositeScorer();
   const fresh = tutors.map((tutor) => ({ ...tutor, assignedCount: 0 }));
-  const result = new GreedyAssignmentEngine().assignBatch(students, fresh, { repair: true });
+  // The deployed engine: no repair flag, which means the repair pass runs.
+  const result = new GreedyAssignmentEngine().assignBatch(students, fresh);
   const studentById = new Map(students.map((student) => [student.id, student]));
   const tutorById = new Map(fresh.map((tutor) => [tutor.id, tutor]));
   const scoredPairs: Array<{ studentId: string; tutorId: string; score: number }> = [];
@@ -466,8 +467,8 @@ export function runFloorFrontier(
  * hypothesis H3 test, and the same machinery for the floor and coverage claims.
  *
  * The statistics suite only ever pairs strategies against the single reference
- * engine, so the floor arm against the REPAIR arm needs its own pairing; doing it
- * here keeps the CSV's column contract untouched.
+ * engine, so the floor arm against the deployed ENGINE needs its own pairing;
+ * doing it here keeps the CSV's column contract untouched.
  */
 export interface ArmComparison {
   scenario: string;
@@ -501,7 +502,7 @@ const ARM_METRICS: Array<{
   { metric: 'worstStudentStaticScore', pick: (outcome) => outcome.worstStudentStaticScore },
 ];
 
-export function compareFloorToRepair(
+export function compareFloorToEngine(
   scenarios: BaselineScenario[] = SCENARIOS,
   seeds: number = DEFAULT_BASELINE_STATISTICS_SEEDS,
   baseSeed = 0,
@@ -518,7 +519,7 @@ export function compareFloorToRepair(
       const students = generateStudents(scenario.students, 0.05, seedOffset);
       const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy, seedOffset);
       // Each arm gets its own fresh clones through runStrategyOutcome.
-      const repair = runStrategyOutcome(REPAIR_STRATEGY, students, tutors);
+      const repair = runStrategyOutcome(ENGINE_STRATEGY, students, tutors);
       const floor = runStrategyOutcome(FLOOR_STRATEGY, students, tutors);
       for (const { metric, pick } of ARM_METRICS) {
         const base = pick(repair, scenario.students);
@@ -532,7 +533,7 @@ export function compareFloorToRepair(
       comparisons.push({
         scenario: scenario.scenario,
         metric,
-        baseline: REPAIR_STRATEGY,
+        baseline: ENGINE_STRATEGY,
         candidate: FLOOR_STRATEGY,
         wins: test.wins,
         losses: test.losses,
@@ -549,13 +550,13 @@ export function compareFloorToRepair(
 
 /** Human-readable H3 verdict, printed alongside the frontier. */
 export function formatArmComparisons(comparisons: ArmComparison[]): string {
-  const lines = ['\nFloor arm vs repair arm (paired sign test over populations):'];
+  const lines = ['\nFloor arm vs the deployed engine (paired sign test over populations):'];
   for (const entry of comparisons) {
     const verdict =
       entry.pValue < 0.05
         ? entry.meanDelta > 0
           ? 'floor-exact wins'
-          : 'repair wins'
+          : 'the engine wins'
         : 'not distinguishable';
     lines.push(
       `  ${entry.scenario.padEnd(18)} ${entry.metric.padEnd(24)} ` +
@@ -567,7 +568,7 @@ export function formatArmComparisons(comparisons: ArmComparison[]): string {
   return lines.join('\n');
 }
 
-/** Seeds used by `compareFloorToRepair` — the sweep's own default. */
+/** Seeds used by `compareFloorToEngine` — the sweep's own default. */
 export const DEFAULT_BASELINE_STATISTICS_SEEDS = 30;
 
 /** Every scenario, the whole ladder. */
@@ -663,13 +664,12 @@ if (typeof require !== 'undefined' && require.main === module) {
       header: HEADER,
       rows: rows.map(toRow),
     });
-    console.error(
-      `\nPrice of fairness: ${seeds} independent populations per scenario, ` +
-        `floor swept from the repaired engine's own floor to the exact max-min ceiling.`,
+    console.error(        `\nPrice of fairness: ${seeds} independent populations per scenario, ` +
+        `floor swept from the deployed engine's own floor to the exact max-min ceiling.`,
     );
     console.error(
       formatArmComparisons(
-        compareFloorToRepair(selectScenarios(), DEFAULT_BASELINE_STATISTICS_SEEDS, 0),
+        compareFloorToEngine(selectScenarios(), DEFAULT_BASELINE_STATISTICS_SEEDS, 0),
       ),
     );
   });

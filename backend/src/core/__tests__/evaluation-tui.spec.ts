@@ -25,7 +25,7 @@ import {
 import { computeOptimalityGapRow, DEFAULT_GAP_SIZES } from '../evaluation/optimal-baseline';
 import {
   FLOOR_STRATEGY,
-  REPAIR_STRATEGY,
+  NO_REPAIR_STRATEGY,
   runBaselineCell,
   SCENARIOS,
 } from '../evaluation/baseline-comparison';
@@ -81,14 +81,14 @@ describe('optimality gap helpers', () => {
 });
 
 describe('baseline cell runner', () => {
-  it('runs every strategy per scenario, including the Stage-2 and Stage-3 arms', () => {
+  it('runs every strategy per scenario, including the ablation and floor arms', () => {
     const rows = runBaselineCell(SCENARIOS[0]);
     expect(rows.map((row) => row.strategy)).toEqual([
       'fcfs-filter',
       'fcfs-best',
       'da-stable',
       'greedy-engine',
-      REPAIR_STRATEGY,
+      NO_REPAIR_STRATEGY,
       FLOOR_STRATEGY,
     ]);
   });

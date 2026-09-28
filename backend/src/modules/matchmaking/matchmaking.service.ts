@@ -237,12 +237,12 @@ export class MatchmakingService {
     const students = allStudents.filter((student) => this.hasAvailability(student));
     const incomplete = allStudents.filter((student) => !this.hasAvailability(student));
 
-    // The bounded repair pass is ON in production: it is measured to seat strictly
-    // more students and to score at least as well, never worse, across every
-    // evaluated population (docs/benchmarks/STAGE2_REPAIR.md, STAGE3_FLOOR.md), and
-    // it costs no more than the heap pass it follows (0.14 s vs 0.18 s at 1000×100,
-    // 1.97 s vs 2.21 s at 5000×500). It only ever adds placements.
-    const result = this.greedyAssignmentEngine.assignBatch(students, tutors, { repair: true });
+    // No options: `assignBatch` runs the engine as deployed, which includes the
+    // bounded repair pass (see greedy-assignment.engine.ts). Repair is measured to
+    // seat strictly more students and to score at least as well, never worse,
+    // across every evaluated population, and it costs no more than the heap pass
+    // it follows (docs/benchmarks/STAGE2_REPAIR.md, STAGE3_FLOOR.md).
+    const result = this.greedyAssignmentEngine.assignBatch(students, tutors);
     const activeAssignments = result.assignments
       .filter((assignment) => assignment.tutorId && assignment.matchScore)
       .map((assignment) => ({

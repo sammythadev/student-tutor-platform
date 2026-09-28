@@ -27,11 +27,15 @@ interface CandidatePair {
 export interface AssignmentRunResult {
   assignments: Assignment[];
   unassignable: Assignment[];
-  /** Present only when the repair pass ran (see AssignBatchOptions.repair). */
+  /**
+   * Cost and per-phase deltas of the bounded repair pass. Present on every run
+   * except the P1-only ablation (`repair: false`), since repair is part of the
+   * engine's normal behaviour.
+   */
   repair?: RepairReport;
 }
 
-/** Bounds for the opt-in P2 repair pass. */
+/** Bounds for the bounded repair pass. */
 export interface RepairOptions {
   /** Maximum augmenting-path depth. Depth 1 only displaces a single student. */
   maxDepth?: number;
@@ -76,14 +80,16 @@ export interface AssignBatchOptions {
    *  good default. Pass Infinity or omit for no cap. */
   topK?: number;
   /**
-   * P2 bounded repair, DEFAULT OFF so deployed behaviour is unchanged.
+   * Bounded repair pass. DEFAULT ON — this is part of the algorithm, not an
+   * optional extra: after the heap drains a student can still be unplaced while
+   * a seat is occupied by someone who has an acceptable alternative, and the
+   * pass runs a deterministic, depth-bounded augmenting-path search that
+   * re-routes seated students to open a seat for that student. Only placements
+   * that strictly increase are accepted, and the heap phase itself is untouched.
    *
-   * After the heap drains, the engine stops — but a student can still be
-   * unplaced while a seat is occupied by someone who has an acceptable
-   * alternative. `repair: true` (or `{ maxDepth }`) runs a deterministic,
-   * depth-bounded augmenting-path search that re-routes seated students to open
-   * a seat for an unplaced one. Only placements that strictly increase are
-   * accepted, and no P1 behaviour changes. */
+   * `repair: false` disables it and is the P1-only ablation used to measure what
+   * the pass is worth (see `docs/benchmarks/STAGE2_REPAIR.md`). `{ maxDepth }`
+   * bounds the displacement chain, default 3. */
   repair?: boolean | RepairOptions;
 }
 
@@ -97,14 +103,23 @@ const MAX_REPAIR_SEARCH_WORK = 5_000;
 const compareIds = (left: string, right: string): number =>
   left < right ? -1 : left > right ? 1 : 0;
 
-/** Normalises the repair flag; null means "do not repair". */
+/**
+ * Normalises the repair flag; null means "do not repair".
+ *
+ * Repair is ON by default: it is measured to seat strictly more students and to
+ * score at least as well on the load-independent total, never worse, across every
+ * evaluated population (docs/benchmarks/STAGE2_REPAIR.md, STAGE3_FLOOR.md), and it
+ * costs no more than the heap pass it follows. `repair: false` exists only as the
+ * P1-only ablation, so the deployed algorithm and the measured algorithm are the
+ * same object rather than two arms that can drift apart.
+ */
 const resolveRepairOptions = (
   repair: boolean | RepairOptions | undefined,
 ): Required<RepairOptions> | null => {
-  if (!repair) {
+  if (repair === false) {
     return null;
   }
-  const options = repair === true ? {} : repair;
+  const options = repair === true || repair === undefined ? {} : repair;
   return { maxDepth: Math.max(0, options.maxDepth ?? DEFAULT_REPAIR_MAX_DEPTH) };
 };
 
@@ -234,12 +249,19 @@ export class GreedyAssignmentEngine {
       );
     }
 
-    // P2 — bounded repair (opt-in): the heap is drained, so the only way to
-    // seat another student is to re-route someone already seated.
+    // Bounded repair (default on): the heap is drained, so the only way to seat
+    // another student is to re-route someone already seated.
     const repairOptions = resolveRepairOptions(options.repair);
     const repair = repairOptions
       ? this.repairUnplaced(students, tutors, assignedStudentIds, assignments, repairOptions)
       : undefined;
+    if (stats && repair) {
+      // The pass re-scores pairs too, so its work belongs in the pair count the
+      // harness reports — otherwise the timing includes repair and the pair count
+      // does not, which is exactly the kind of mismatch that makes two numbers
+      // look inconsistent.
+      stats.pairsScored += repair.scoredPairs;
+    }
 
     const unassignable = students
       .filter((student) => !assignedStudentIds.has(student.id))

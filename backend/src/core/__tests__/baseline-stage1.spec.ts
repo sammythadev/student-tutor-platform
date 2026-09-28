@@ -10,7 +10,7 @@ import {
 import {
   classifyUnplaced,
   FLOOR_STRATEGY,
-  REPAIR_STRATEGY,
+  NO_REPAIR_STRATEGY,
   runAllStrategiesWithTutors,
 } from '../evaluation/baseline-comparison';
 import {
@@ -94,8 +94,8 @@ describe('baseline stage 1a+1b', () => {
       { ...tutors[0], assignedCount: 0 },
     ).total;
     const outcomes = runAllStrategiesWithTutors(students, tutors);
-    // fcfs-filter, fcfs-best, da-stable, greedy-engine, greedy-engine-repair,
-    // floor-exact.
+    // fcfs-filter, fcfs-best, da-stable, greedy-engine (= deployed, repair on),
+    // greedy-engine-norepair (ablation), floor-exact.
     expect(outcomes).toHaveLength(6);
     for (const outcome of outcomes) {
       expect(outcome.placed).toBe(1);
@@ -194,7 +194,7 @@ describe('baseline stage 1a+1b', () => {
   it('statistics rows carry new aggregates and serialize via toRow', () => {
     const scenario = { scenario: 'tiny', students: 2, tutors: 1, capacityStrategy: 'seed' } as const;
     const rows = statisticsForScenario(scenario, 3, 9000, 0.05);
-    // Three baselines, the engine, the Stage-2 repair arm, the Stage-3 floor
+    // Three baselines, the engine, the no-repair ablation arm, the Stage-3 floor
     // arm, the δ=0 static arm, then the oracle row (2 <= MAX_ORACLE_STUDENTS).
     expect(rows).toHaveLength(8);
     expect(rows.map((row) => row.strategy)).toEqual([
@@ -202,7 +202,7 @@ describe('baseline stage 1a+1b', () => {
       'fcfs-best',
       'da-stable',
       'greedy-engine',
-      REPAIR_STRATEGY,
+      NO_REPAIR_STRATEGY,
       FLOOR_STRATEGY,
       STATIC_ENGINE_STRATEGY,
       ORACLE_STRATEGY,
@@ -238,9 +238,31 @@ describe('baseline stage 1a+1b', () => {
     // Same-population static ratio: the engine may match the oracle but not beat it.
     expect(engine.staticTotalRatioVsOracle).toBeLessThanOrEqual(1);
     expect(engine.staticTotalRatioVsOracle).toBeGreaterThan(0);
-    // Oracle row reports oracle aggregates on itself, not engine comparisons.
+    // Oracle row reports oracle aggregates on itself, not engine comparisons:
+    // its static total IS the denominator, so its share of it is exactly 1.
     expect(oracle.staticTotal).toBeCloseTo(oracle.oracleStaticTotal, 12);
-    expect(oracle.staticTotalRatioVsOracle).toBe(0);
+    expect(oracle.staticTotalRatioVsOracle).toBe(1);
+  });
+
+  it('derives each row\'s oracle ratio from that row\'s own outcomes', () => {
+    // Regression: the ratio used to be computed from the engine and stamped on
+    // every row, so every arm reported the engine's number. Arms with different
+    // static totals must therefore report different ratios.
+    const scenario = {
+      scenario: 'ratio-scope',
+      students: 20,
+      tutors: 8,
+      capacityStrategy: 'seed',
+    } as const;
+    const rows = statisticsForScenario(scenario, 3, 4242, 0.05).filter(
+      (row) => row.strategy !== ORACLE_STRATEGY,
+    );
+    expect(rows.length).toBeGreaterThan(1);
+    const totals = new Set(rows.map((row) => row.staticTotal.toFixed(9)));
+    const ratios = new Set(rows.map((row) => row.staticTotalRatioVsOracle.toFixed(9)));
+    if (totals.size > 1) {
+      expect(ratios.size).toBeGreaterThan(1);
+    }
   });
 
   it('classifies an unplaced student with no gate-passing tutor as (a)', () => {

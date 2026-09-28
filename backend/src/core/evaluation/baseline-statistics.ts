@@ -1,8 +1,9 @@
 import { emitResults, getFlagValue, runCli } from './cli-output';
 import {
   EMPTY_UNPLACED_CAUSES,
+  ENGINE_STRATEGY,
   FLOOR_STRATEGY,
-  REPAIR_STRATEGY,
+  NO_REPAIR_STRATEGY,
   runAllStrategiesWithTutors,
   runStrategyOutcome,
   SCENARIOS,
@@ -37,21 +38,22 @@ import { ci95, formatPValue, mean, pairedSignTest, percentile, stdDev } from './
 export const DEFAULT_BASELINE_SEEDS = 30;
 
 /**
- * Strategies evaluated per scenario, in reporting order. `greedy-engine-repair`
- * is the Stage-2 arm: the same engine with the bounded repair pass enabled, so
- * its deltas read directly as the value of repair against the plain engine.
+ * Strategies evaluated per scenario, in reporting order. `greedy-engine` IS the
+ * deployed algorithm (heap pass + bounded repair), so every delta in the CSV
+ * reads against the engine that actually ships. `greedy-engine-norepair` is the
+ * P1-only ablation of that engine: a table row, excluded from the figures.
  */
 const ORDER = [
   'fcfs-filter',
   'fcfs-best',
   'da-stable',
-  'greedy-engine',
-  REPAIR_STRATEGY,
+  ENGINE_STRATEGY,
+  NO_REPAIR_STRATEGY,
   FLOOR_STRATEGY,
 ] as const;
 
-/** The strategy every other row is compared against. */
-export const REFERENCE_STRATEGY = 'greedy-engine';
+/** The strategy every other row is compared against: the deployed engine. */
+export const REFERENCE_STRATEGY = ENGINE_STRATEGY;
 
 /** Extra row strategy carrying per-scenario oracle aggregates. */
 export const ORACLE_STRATEGY = 'oracle-exact';
@@ -323,19 +325,6 @@ export function statisticsForScenario(
   const oracleStaticTotal = hasOracle ? mean(oracleSamples.map((s) => s.staticTotal)) : 0;
   const engineCoverage = reference.length > 0 ? mean(reference.map((o) => o.coverage)) : 0;
   const engineCoverageGap = hasOracle ? oracleCoverage - engineCoverage : 0;
-  // Per-seed engine/oracle static ratio: guards a zero oracle total so a
-  // degenerate empty population yields 1 when the engine is also empty.
-  const ratioSamples = hasOracle
-    ? reference.map((outcome, index) => {
-        const oracleTotal = oracleSamples[index]?.staticTotal ?? 0;
-        if (oracleTotal === 0) {
-          return outcome.staticTotal === 0 ? 1 : 0;
-        }
-        return outcome.staticTotal / oracleTotal;
-      })
-    : [];
-  const staticTotalRatioVsOracle = hasOracle ? mean(ratioSamples) : 0;
-  const staticTotalRatioVsOracleCi95 = hasOracle ? (ci95(ratioSamples) ?? 0) : 0;
   const oracleElapsed = oracleSamples.map((sample) => sample.elapsedMs);
   const oracleMsP50 = hasOracle ? percentile(oracleElapsed, 0.5) : 0;
   const oracleMsP95 = hasOracle ? percentile(oracleElapsed, 0.95) : 0;
@@ -349,8 +338,9 @@ export function statisticsForScenario(
       ? 0
       : mean(floorSamples.map((outcome) => outcome.floorCeiling ?? 0));
 
-  // Stage-2 repair phase deltas. Absent only if the arm was removed from ORDER.
-  const repairSamples = (byStrategy.get(REPAIR_STRATEGY) ?? []).map((outcome) => outcome.repair);
+  // Repair-phase deltas of the deployed engine. The ablation arm has no report,
+  // so these columns are zero on every other row.
+  const repairSamples = reference.map((outcome) => outcome.repair);
   const repairGained = repairSamples.length === 0
     ? 0
     : mean(repairSamples.map((report) => report?.placementsGained ?? 0));
@@ -413,6 +403,22 @@ export function statisticsForScenario(
     );
     const perStudentTest = pairedSignTest(perStudentDeltas);
     const isReference = strategy === REFERENCE_STRATEGY;
+    // Per-seed share of the oracle's static total, computed from THIS
+    // strategy's own outcomes (it used to be taken from the engine and stamped
+    // on every row, which misreported every arm but the engine). Guards a zero
+    // oracle total so a degenerate empty population yields 1 when the arm is
+    // also empty.
+    const ratioSamples = hasOracle
+      ? outcomes.map((outcome, index) => {
+          const oracleTotal = oracleSamples[index]?.staticTotal ?? 0;
+          if (oracleTotal === 0) {
+            return outcome.staticTotal === 0 ? 1 : 0;
+          }
+          return outcome.staticTotal / oracleTotal;
+        })
+      : [];
+    const staticTotalRatioVsOracle = hasOracle ? mean(ratioSamples) : 0;
+    const staticTotalRatioVsOracleCi95 = hasOracle ? (ci95(ratioSamples) ?? 0) : 0;
 
     return {
       scenario: scenario.scenario,
@@ -467,10 +473,10 @@ export function statisticsForScenario(
       engineUnplacedShareE: isReference ? engineUnplaced.shareE : 0,
       engineUnplacedTotal: isReference ? engineUnplaced.total : 0,
       engineUnplacedReasonMismatches: isReference ? engineUnplaced.reasonMismatches : 0,
-      repairPlacementsGained: strategy === REPAIR_STRATEGY ? repairGained : 0,
-      repairDisplaced: strategy === REPAIR_STRATEGY ? repairDisplaced : 0,
-      repairMsP50: strategy === REPAIR_STRATEGY ? repairMsP50 : 0,
-      repairMsP95: strategy === REPAIR_STRATEGY ? repairMsP95 : 0,
+      repairPlacementsGained: isReference ? repairGained : 0,
+      repairDisplaced: isReference ? repairDisplaced : 0,
+      repairMsP50: isReference ? repairMsP50 : 0,
+      repairMsP95: isReference ? repairMsP95 : 0,
       oracleMsP50,
       oracleMsP95,
       floorTheta: strategy === FLOOR_STRATEGY ? floorThetaMean : 0,
@@ -522,7 +528,9 @@ export function statisticsForScenario(
       oracleCoverage,
       oracleStaticTotal,
       engineCoverageGap: 0,
-      staticTotalRatioVsOracle: 0,
+      // This row IS the oracle: its static total is the denominator, so its
+      // share of it is exactly 1.
+      staticTotalRatioVsOracle: 1,
       staticTotalRatioVsOracleCi95: 0,
       engineUnplacedA: 0,
       engineUnplacedB: 0,

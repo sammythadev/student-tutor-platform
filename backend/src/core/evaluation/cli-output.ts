@@ -185,6 +185,8 @@ export const TIMING_COLUMNS: ReadonlySet<string> = new Set([
   'elapsedMeanMs',
   'elapsedMaxMs',
   'greedyMs',
+  'engineMs',
+  'engineP95Ms',
   'optimalMs',
   'repairMsP50',
   'repairMsP95',

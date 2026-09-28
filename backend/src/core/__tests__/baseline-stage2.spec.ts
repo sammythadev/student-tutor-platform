@@ -7,14 +7,21 @@ import {
   TeachingStyle,
 } from '../enums';
 import { GreedyAssignmentEngine } from '../algorithms';
-import { runAllStrategiesWithTutors, REPAIR_STRATEGY } from '../evaluation/baseline-comparison';
+import {
+  ENGINE_STRATEGY,
+  NO_REPAIR_STRATEGY,
+  runAllStrategiesWithTutors,
+} from '../evaluation/baseline-comparison';
 import { SCENARIOS } from '../evaluation/baseline-comparison';
 import { generateStudents, generateTutors } from '../evaluation/fixtures';
 
 /**
  * Stage 2 — the repair pass must seat students the heap pass cannot, without
- * breaking the audit invariants (G1), without becoming order-dependent (G3),
- * and without touching P1 when the flag is off.
+ * breaking the audit invariants (G1) and without becoming order-dependent (G3).
+ *
+ * The pass is now part of the engine's own behaviour, so these tests exercise the
+ * default path and use `repair: false` as the P1-only baseline to check the pass
+ * is what is doing the work.
  */
 
 const slot = (start: number, end: number): AvailabilitySlot =>
@@ -138,32 +145,36 @@ const depthFixture = (): { students: Student[]; tutors: Tutor[] } => ({
 describe('stage 2 · bounded repair', () => {
   // The engine deliberately mutates tutor.assignedCount, so every run needs a
   // fresh fixture set — reusing one would start the next run with seats gone.
-  const runPlain = () => {
+  /** The deployed engine: `assignBatch` with no options, which means repair ON. */
+  const runDeployed = () => {
     const { students, tutors } = chainFixture();
     return new GreedyAssignmentEngine().assignBatch(students, tutors);
   };
-  const runRepaired = (repair: boolean | { maxDepth: number } = true) => {
+  /** The P1-only ablation: the same engine with the repair pass switched off. */
+  const runP1Only = () => {
     const { students, tutors } = chainFixture();
-    return new GreedyAssignmentEngine().assignBatch(students, tutors, { repair });
+    return new GreedyAssignmentEngine().assignBatch(students, tutors, { repair: false });
   };
 
-  it('is off by default and leaves P1 results identical', () => {
-    const plain = runPlain();
-    const explicitOff = runRepaired(false);
+  it('runs by default, and `repair: false` is the P1-only ablation', () => {
+    const p1Only = runP1Only();
+    const deployed = runDeployed();
 
-    expect(plain.repair).toBeUndefined();
-    expect(explicitOff.repair).toBeUndefined();
-    expect(placements(explicitOff)).toEqual(placements(plain));
+    // No flag means repaired; the explicit opt-out is the only unrepaired path.
+    expect(p1Only.repair).toBeUndefined();
+    expect(deployed.repair).toBeDefined();
+    // The ablation is deterministic on its own, so the default cannot leak into it.
+    expect(placements(runP1Only())).toEqual(placements(p1Only));
   });
 
   it('seats a student the heap pass leaks by displacing one already seated', () => {
-    const plain = runPlain();
+    const plain = runP1Only();
     // Precondition: P1 provably leaks here — this is the failure mode being fixed.
     expect(plain.assignments).toHaveLength(1);
     expect(placements(plain)).toEqual(new Map([['s', 't1']]));
     expect(plain.unassignable.map((entry) => entry.studentId)).toEqual(['u']);
 
-    const repaired = runRepaired();
+    const repaired = runDeployed();
     expect(repaired.assignments).toHaveLength(2);
     expect(placements(repaired)).toEqual(
       new Map([
@@ -183,7 +194,7 @@ describe('stage 2 · bounded repair', () => {
     const engine = new GreedyAssignmentEngine();
     const plain = (() => {
       const { students, tutors } = depthFixture();
-      return engine.assignBatch(students, tutors);
+      return engine.assignBatch(students, tutors, { repair: false });
     })();
     expect(plain.assignments).toHaveLength(2);
     expect(plain.unassignable).toHaveLength(1);
@@ -209,7 +220,7 @@ describe('stage 2 · bounded repair', () => {
     const scenario = SCENARIOS[3]; // moderate-3to1: 150 students, 50 tutors
     const students = generateStudents(scenario.students, 0.05, 7);
     const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy, 7);
-    const result = new GreedyAssignmentEngine().assignBatch(students, tutors, { repair: true });
+    const result = new GreedyAssignmentEngine().assignBatch(students, tutors);
     // The audit only means something if the pass actually did work.
     expect(result.repair?.placementsGained).toBeGreaterThan(0);
 
@@ -249,7 +260,7 @@ describe('stage 2 · bounded repair', () => {
     const run = () => {
       const students = generateStudents(scenario.students, 0.05, 11);
       const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy, 11);
-      return engine.assignBatch(students, tutors, { repair: true });
+      return engine.assignBatch(students, tutors);
     };
     const first = run();
     const second = run();
@@ -261,20 +272,22 @@ describe('stage 2 · bounded repair', () => {
     expect(second.repair?.acceptedPaths).toBe(first.repair?.acceptedPaths);
   });
 
-  it('exposes the repaired engine as its own arm, with phase deltas', () => {
+  it('reports the pass on the ENGINE arm, and the ablation as the counterfactual', () => {
     const scenario = SCENARIOS[3];
     const students = generateStudents(scenario.students, 0.05, 3);
     const tutors = generateTutors(scenario.tutors, scenario.capacityStrategy, 3);
     const outcomes = runAllStrategiesWithTutors(students, tutors);
-    const repaired = outcomes.find((outcome) => outcome.strategy === REPAIR_STRATEGY);
-    const plain = outcomes.find((outcome) => outcome.strategy === 'greedy-engine');
-    if (!repaired?.repair || !plain) {
-      throw new Error('expected a repair arm carrying its report');
+    const engine = outcomes.find((outcome) => outcome.strategy === ENGINE_STRATEGY);
+    const ablation = outcomes.find((outcome) => outcome.strategy === NO_REPAIR_STRATEGY);
+    if (!engine?.repair || !ablation) {
+      throw new Error('expected the engine arm to carry its repair report');
     }
+    // The ablation carries no report: it never ran the pass.
+    expect(ablation.repair).toBeUndefined();
     // The gained placements must be exactly the coverage difference.
-    expect(repaired.placed - plain.placed).toBe(repaired.repair.placementsGained);
-    expect(repaired.repair.placementsGained).toBeGreaterThan(0);
+    expect(engine.placed - ablation.placed).toBe(engine.repair.placementsGained);
+    expect(engine.repair.placementsGained).toBeGreaterThan(0);
     // Seating more students must not lower the static total here.
-    expect(repaired.staticTotal).toBeGreaterThanOrEqual(plain.staticTotal);
+    expect(engine.staticTotal).toBeGreaterThanOrEqual(ablation.staticTotal);
   });
 });

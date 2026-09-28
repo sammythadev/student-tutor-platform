@@ -12,10 +12,10 @@ import { mean, percentile } from './stats';
  * Stage 2 measured the exact solver (SPFA min-cost max-flow) at ≤150×100 and
  * flagged, without evidence, that "SPFA will not carry the 5000×500 tier". This
  * suite replaces that caveat with a measurement at the sizes a real batch run
- * would see, for each arm in the chain:
+ * would see, for each step of the chain a deployment could choose between:
  *
- *   greedy-engine        P1 — the deployed heap pass.
- *   greedy-engine-repair P2 — P1 plus the bounded augmenting repair.
+ *   engine               the deployed algorithm: heap pass + bounded repair,
+ *                        exactly what `MatchmakingService.runBatch` runs.
  *   score-matrix         every (student, tutor) pair scored once; the exact
  *                        solver's fixed cost, and a lower bound on any exact pass.
  *   floor-solve          the exact floor-constrained re-solve (the stage-3 lever).
@@ -24,6 +24,10 @@ import { mean, percentile } from './stats';
  *   oracle-exact         the unconstrained optimum, capped by work rather than by
  *                        hope: a capped run reports how far it got and is never
  *                        labelled optimal.
+ *
+ * There is deliberately no second greedy variant here: the repair pass is part of
+ * the engine, so the engine's own timings already include it, and its contribution
+ * is reported separately as `repairPlacementsGained`.
  *
  * Nothing here is extrapolated: a size either completed within the work cap or is
  * reported as capped, with the augmentations it managed in the time it took.
@@ -46,10 +50,8 @@ export interface ScaleRow {
   tutors: number;
   seeds: number;
   /** Wall-clock ms, mean/p95 across populations. */
-  greedyMs: number;
-  greedyP95Ms: number;
-  repairMs: number;
-  repairP95Ms: number;
+  engineMs: number;
+  engineP95Ms: number;
   scoringMs: number;
   floorSolveMs: number;
   floorSolveP95Ms: number;
@@ -61,17 +63,14 @@ export interface ScaleRow {
   oracleAugmentations: number;
   /** 1 when any population hit the oracle work cap — the number is partial. */
   oracleCapped: number;
-  coverageGreedy: number;
-  coverageRepair: number;
+  coverageEngine: number;
   coverageFloor: number;
   coverageOracle: number;
-  totalScorePerStudentGreedy: number;
-  totalScorePerStudentRepair: number;
+  totalScorePerStudentEngine: number;
   totalScorePerStudentFloor: number;
   totalScorePerStudentOracle: number;
-  /** Static floor (worst placed pair score) for each arm. */
-  floorGreedy: number;
-  floorRepair: number;
+  /** Static floor (worst placed pair score) for the engine and the floor solve. */
+  floorEngine: number;
   floorFloor: number;
   /**
    * Exact max-min ceiling over the floor arm's placed set. -1 when the ceiling
@@ -79,6 +78,7 @@ export interface ScaleRow {
    * step (~10 solves), so it is measured separately from the deployable chain.
    */
   ceiling: number;
+  /** Students the engine's own repair pass seated that the heap pass alone could not. */
   repairPlacementsGained: number;
 }
 
@@ -86,24 +86,20 @@ export interface ScaleRow {
 export const DEFAULT_ORACLE_AUGMENTATION_CAP = 2000;
 
 interface Sample {
-  greedyMs: number;
-  repairMs: number;
+  engineMs: number;
   scoringMs: number;
   floorMs: number;
   ceilingMs: number;
   oracleMs: number;
   oracleAugmentations: number;
   oracleCapped: boolean;
-  coverageGreedy: number;
-  coverageRepair: number;
+  coverageEngine: number;
   coverageFloor: number;
   coverageOracle: number;
-  totalGreedy: number;
-  totalRepair: number;
+  totalEngine: number;
   totalFloor: number;
   totalOracle: number;
-  floorGreedy: number;
-  floorRepair: number;
+  floorEngine: number;
   floorFloor: number;
   ceiling: number;
   gained: number;
@@ -141,21 +137,13 @@ function sample(
   const studentsList = generateStudents(students, 0.05, seedOffset);
   const studentById = new Map(studentsList.map((student) => [student.id, student]));
 
-  const greedyTutors = generateTutors(tutorCount, 'synthetic', seedOffset);
-  const greedyById = new Map(greedyTutors.map((tutor) => [tutor.id, tutor]));
-  const greedyStart = performance.now();
-  const greedy = new GreedyAssignmentEngine().assignBatch(studentsList, greedyTutors);
-  const greedyMs = performance.now() - greedyStart;
-  const greedyStatic = staticOf(greedy.assignments, studentById, greedyById);
-
-  const repairTutors = generateTutors(tutorCount, 'synthetic', seedOffset);
-  const repairById = new Map(repairTutors.map((tutor) => [tutor.id, tutor]));
-  const repairStart = performance.now();
-  const repaired = new GreedyAssignmentEngine().assignBatch(studentsList, repairTutors, {
-    repair: true,
-  });
-  const repairMs = performance.now() - repairStart;
-  const repairStatic = staticOf(repaired.assignments, studentById, repairById);
+  // The deployed engine: no repair flag, which means the repair pass runs.
+  const engineTutors = generateTutors(tutorCount, 'synthetic', seedOffset);
+  const engineById = new Map(engineTutors.map((tutor) => [tutor.id, tutor]));
+  const engineStart = performance.now();
+  const engine = new GreedyAssignmentEngine().assignBatch(studentsList, engineTutors);
+  const engineMs = performance.now() - engineStart;
+  const engineStatic = staticOf(engine.assignments, studentById, engineById);
 
   // The exact solver's fixed cost: score every gate-passing pair once.
   const scoringStart = performance.now();
@@ -163,7 +151,7 @@ function sample(
   const scoringMs = performance.now() - scoringStart;
 
   const floorStart = performance.now();
-  const solution = solveFloorFromGraph(graph, repairStatic.worst);
+  const solution = solveFloorFromGraph(graph, engineStatic.worst);
   const floorMs = performance.now() - floorStart;
 
   // Ceiling over the students the floor solve placed, matching the statistics
@@ -181,27 +169,23 @@ function sample(
   const oracleMs = performance.now() - oracleStart;
 
   return {
-    greedyMs,
-    repairMs,
+    engineMs,
     scoringMs,
     floorMs,
     ceilingMs,
     oracleMs,
     oracleAugmentations: oracle.assignedCount,
     oracleCapped: oracle.capped,
-    coverageGreedy: greedy.assignments.length / students,
-    coverageRepair: repaired.assignments.length / students,
+    coverageEngine: engine.assignments.length / students,
     coverageFloor: solution.assignedCount / students,
     coverageOracle: oracle.assignedCount / students,
-    totalGreedy: greedyStatic.total / students,
-    totalRepair: repairStatic.total / students,
+    totalEngine: engineStatic.total / students,
     totalFloor: solution.totalScore / students,
     totalOracle: oracle.totalScore / students,
-    floorGreedy: greedyStatic.worst,
-    floorRepair: repairStatic.worst,
+    floorEngine: engineStatic.worst,
     floorFloor: solution.worstScore,
     ceiling: ceiling.feasible ? ceiling.theta : -1,
-    gained: repaired.repair?.placementsGained ?? 0,
+    gained: engine.repair?.placementsGained ?? 0,
   };
 }
 
@@ -224,10 +208,8 @@ export function runScaleBenchmark(
       students: size.students,
       tutors: size.tutors,
       seeds,
-      greedyMs: ms((s) => s.greedyMs),
-      greedyP95Ms: p95((s) => s.greedyMs),
-      repairMs: ms((s) => s.repairMs),
-      repairP95Ms: p95((s) => s.repairMs),
+      engineMs: ms((s) => s.engineMs),
+      engineP95Ms: p95((s) => s.engineMs),
       scoringMs: ms((s) => s.scoringMs),
       floorSolveMs: ms((s) => s.floorMs),
       floorSolveP95Ms: p95((s) => s.floorMs),
@@ -237,16 +219,13 @@ export function runScaleBenchmark(
       oracleP95Ms: p95((s) => s.oracleMs),
       oracleAugmentations: ms((s) => s.oracleAugmentations),
       oracleCapped: samples.some((s) => s.oracleCapped) ? 1 : 0,
-      coverageGreedy: ms((s) => s.coverageGreedy),
-      coverageRepair: ms((s) => s.coverageRepair),
+      coverageEngine: ms((s) => s.coverageEngine),
       coverageFloor: ms((s) => s.coverageFloor),
       coverageOracle: ms((s) => s.coverageOracle),
-      totalScorePerStudentGreedy: ms((s) => s.totalGreedy),
-      totalScorePerStudentRepair: ms((s) => s.totalRepair),
+      totalScorePerStudentEngine: ms((s) => s.totalEngine),
       totalScorePerStudentFloor: ms((s) => s.totalFloor),
       totalScorePerStudentOracle: ms((s) => s.totalOracle),
-      floorGreedy: ms((s) => s.floorGreedy),
-      floorRepair: ms((s) => s.floorRepair),
+      floorEngine: ms((s) => s.floorEngine),
       floorFloor: ms((s) => s.floorFloor),
       ceiling: ms((s) => s.ceiling),
       repairPlacementsGained: ms((s) => s.gained),
@@ -258,10 +237,8 @@ export const HEADER = [
   'students',
   'tutors',
   'seeds',
-  'greedyMs',
-  'greedyP95Ms',
-  'repairMs',
-  'repairP95Ms',
+  'engineMs',
+  'engineP95Ms',
   'scoringMs',
   'floorSolveMs',
   'floorSolveP95Ms',
@@ -271,16 +248,13 @@ export const HEADER = [
   'oracleP95Ms',
   'oracleAugmentations',
   'oracleCapped',
-  'coverageGreedy',
-  'coverageRepair',
+  'coverageEngine',
   'coverageFloor',
   'coverageOracle',
-  'totalScorePerStudentGreedy',
-  'totalScorePerStudentRepair',
+  'totalScorePerStudentEngine',
   'totalScorePerStudentFloor',
   'totalScorePerStudentOracle',
-  'floorGreedy',
-  'floorRepair',
+  'floorEngine',
   'floorFloor',
   'ceiling',
   'repairPlacementsGained',
@@ -290,10 +264,8 @@ export const toRow = (row: ScaleRow): string[] => [
   String(row.students),
   String(row.tutors),
   String(row.seeds),
-  row.greedyMs.toFixed(1),
-  row.greedyP95Ms.toFixed(1),
-  row.repairMs.toFixed(1),
-  row.repairP95Ms.toFixed(1),
+  row.engineMs.toFixed(1),
+  row.engineP95Ms.toFixed(1),
   row.scoringMs.toFixed(1),
   row.floorSolveMs.toFixed(1),
   row.floorSolveP95Ms.toFixed(1),
@@ -303,16 +275,13 @@ export const toRow = (row: ScaleRow): string[] => [
   row.oracleP95Ms.toFixed(1),
   row.oracleAugmentations.toFixed(0),
   String(row.oracleCapped),
-  row.coverageGreedy.toFixed(6),
-  row.coverageRepair.toFixed(6),
+  row.coverageEngine.toFixed(6),
   row.coverageFloor.toFixed(6),
   row.coverageOracle.toFixed(6),
-  row.totalScorePerStudentGreedy.toFixed(6),
-  row.totalScorePerStudentRepair.toFixed(6),
+  row.totalScorePerStudentEngine.toFixed(6),
   row.totalScorePerStudentFloor.toFixed(6),
   row.totalScorePerStudentOracle.toFixed(6),
-  row.floorGreedy.toFixed(6),
-  row.floorRepair.toFixed(6),
+  row.floorEngine.toFixed(6),
   row.floorFloor.toFixed(6),
   row.ceiling.toFixed(6),
   row.repairPlacementsGained.toFixed(2),
