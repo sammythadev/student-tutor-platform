@@ -95,6 +95,13 @@ backend/test-results.txt
 backend/coverage-output.txt
 backend/regen.txt
 backend/docs/benchmarks/baseline.csv .csv
+# Per-run capture dumps from the pre-seed harness (`--runs 100`), superseded by
+# the 30-seed sweep and read by nothing. Kept on disk deliberately: they are the
+# evidence behind the "800 capture rows, 8 unique quality values" finding the
+# evaluation notes quote.
+backend/docs/benchmarks/qq.csv
+backend/docs/benchmarks/none..csv
+
 
 # Browser-capture debris from the clone-site skill landing the page was
 # measured against: viewport screenshots saved by hand sit beside the working
