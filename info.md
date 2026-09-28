@@ -199,4 +199,11 @@ future improvement has.
    mean rank, p50/p95 latency). Any stage failing its hypothesis ships OFF,
    with the negative result documented — that discipline is what makes the
    final core hold.
+   *(done 28 September 2026: `HELD_OUT_CONFIRMATION.md` — pre-registration
+   committed before the run, then seeds 1000–1029 spent once. All six registered
+   direction claims hold; 23 of 24 effect sizes land within ±50% of the
+   exploratory estimate, the exception being the `floor-exact` tail lift at 1:1
+   (−53%, direction held). DA still reports 0 blocking pairs on all 150 held-out
+   populations. The range is now spent: a new confirmation needs a fresh
+   registered range.)*
 

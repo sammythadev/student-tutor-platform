@@ -224,7 +224,11 @@ fairness-floor ceiling, the price-of-fairness frontier, and the measured scale
 threshold for the exact solver) and
 [`docs/benchmarks/STAGE4_STABILITY.md`](docs/benchmarks/STAGE4_STABILITY.md)
 (blocking pairs per arm, the opt-in stability pass, and the measured
-stability-versus-fairness tradeoff). Figures:
+stability-versus-fairness tradeoff) and
+[`docs/benchmarks/HELD_OUT_CONFIRMATION.md`](docs/benchmarks/HELD_OUT_CONFIRMATION.md)
+(the one-shot confirmation on the reserved seeds 1000–1029, pre-registered
+before the run: all six registered direction claims hold, and 23 of 24 effect
+sizes land within ±50% of their exploratory estimates). Figures:
 [`docs/benchmarks/FIGURES.md`](docs/benchmarks/FIGURES.md).
 
 ### Eval TUI

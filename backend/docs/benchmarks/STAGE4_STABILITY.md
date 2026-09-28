@@ -214,4 +214,7 @@ stability over both, in which case the price is the table in §2, not an unknown
 * No size above 1000×100 was run with the pass on; at 5000×500 the pair scoring
   the pass needs would be the dominant cost and nothing here suggests it fits a
   request path.
-* Held-out seeds 1000–1029 remain reserved and untouched.
+* The numbers above are the exploratory set (seeds 0–29). The reserved range was
+  spent afterwards in `HELD_OUT_CONFIRMATION.md`, where all of §2's signs and the
+  pass's 30/0 sign-test tallies reproduce (Δ Jain −0.007…−0.033, Δ total
+  +0.0008…+0.0018) — so these are not artifacts of the seeds that chose them.
