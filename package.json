@@ -3,5 +3,12 @@
   "private": true,
   "scripts": {
     "test:backend": "pnpm --filter backend test"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.2.7",
+    "react-icons": "^5.7.0",
+    "sharp": "^0.35.4"
   }
 }
