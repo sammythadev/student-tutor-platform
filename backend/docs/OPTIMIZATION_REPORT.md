@@ -106,6 +106,21 @@ scores, compared on the static-score basis both methods can evaluate identically
 > On real scenarios the engine keeps 94.50–98.67% of the oracle's static total
 > (30 populations), rising to 98.52–99.75% with the bounded repair pass; see
 > `benchmarks/STAGE1_REPORT.md` and `benchmarks/STAGE2_REPAIR.md`.
+>
+> **Two further corrections (28 September 2026), from the stage-3 measurement in
+> `benchmarks/STAGE3_FLOOR.md`.**
+>
+> 1. "Orders-of-magnitude better scaling" is true only where it is measured to be.
+>    At 1000×100 the exact floor solve takes **99.6 ms** against greedy's 179.2 ms — it
+>    is *faster*; the gap opens at 2000×200 (507.7 vs 288.6 ms) and 5000×500
+>    (**6357.1 ms** vs 2206.3 ms). What is genuinely impractical is the max-min ceiling
+>    search (**40.1 s** at 5000×500), not the floor solve.
+> 2. "Within 0.1% of optimal" understates what an exact solve buys. Constrained to the
+>    engine's own static floor, an exact solve on the same 30 populations reaches
+>    **99.98–100% of the oracle's static total** *and* lifts the worst placed pair from
+>    0.3725–0.4026 to 0.3848–0.4092, for ≤ **0.0003** of static total per student. The
+>    engine's distance from the optimum is therefore two separate leaks — placements
+>    (closed by repair) and the tail (not closed by repair at all) — not one.
 
 | Size | Greedy assigned | Optimal assigned | Greedy score | Optimal score | **Ratio** |
 |---|---|---|---|---|---|

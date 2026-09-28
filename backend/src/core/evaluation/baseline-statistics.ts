@@ -1,6 +1,7 @@
 import { emitResults, getFlagValue, runCli } from './cli-output';
 import {
   EMPTY_UNPLACED_CAUSES,
+  FLOOR_STRATEGY,
   REPAIR_STRATEGY,
   runAllStrategiesWithTutors,
   runStrategyOutcome,
@@ -40,7 +41,14 @@ export const DEFAULT_BASELINE_SEEDS = 30;
  * is the Stage-2 arm: the same engine with the bounded repair pass enabled, so
  * its deltas read directly as the value of repair against the plain engine.
  */
-const ORDER = ['fcfs-filter', 'fcfs-best', 'da-stable', 'greedy-engine', REPAIR_STRATEGY] as const;
+const ORDER = [
+  'fcfs-filter',
+  'fcfs-best',
+  'da-stable',
+  'greedy-engine',
+  REPAIR_STRATEGY,
+  FLOOR_STRATEGY,
+] as const;
 
 /** The strategy every other row is compared against. */
 export const REFERENCE_STRATEGY = 'greedy-engine';
@@ -69,6 +77,8 @@ export interface StrategyStatRow {
   jainCi95: number;
   giniLoad: number;
   worstStudentScore: number;
+  /** Mean worst STATIC score over placed students (stage 3); the floor basis. */
+  worstStudentStaticScore: number;
   coverage: number;
   /** Populations where THIS strategy's mean score exceeded the engine's. */
   winsVsEngine: number;
@@ -137,6 +147,9 @@ export interface StrategyStatRow {
   /** Exact-solver wall-clock p50/p95 in ms; scenario-level, repeated on rows. */
   oracleMsP50: number;
   oracleMsP95: number;
+  /** Floor-arm only: mean θ enforced, and mean exact max-min ceiling reached. */
+  floorTheta: number;
+  floorCeiling: number;
 }
 
 export const HEADER = [
@@ -191,6 +204,9 @@ export const HEADER = [
   'repairMsP95',
   'oracleMsP50',
   'oracleMsP95',
+  'worstStudentStaticScore',
+  'floorTheta',
+  'floorCeiling',
 ];
 
 /** Per-seed oracle result on the SAME population as the strategies. */
@@ -324,6 +340,15 @@ export function statisticsForScenario(
   const oracleMsP50 = hasOracle ? percentile(oracleElapsed, 0.5) : 0;
   const oracleMsP95 = hasOracle ? percentile(oracleElapsed, 0.95) : 0;
 
+  // Stage-3 floor arm: the θ it enforced and the exact ceiling it could reach.
+  const floorSamples = byStrategy.get(FLOOR_STRATEGY) ?? [];
+  const floorThetaMean =
+    floorSamples.length === 0 ? 0 : mean(floorSamples.map((outcome) => outcome.floorTheta ?? 0));
+  const floorCeilingMean =
+    floorSamples.length === 0
+      ? 0
+      : mean(floorSamples.map((outcome) => outcome.floorCeiling ?? 0));
+
   // Stage-2 repair phase deltas. Absent only if the arm was removed from ORDER.
   const repairSamples = (byStrategy.get(REPAIR_STRATEGY) ?? []).map((outcome) => outcome.repair);
   const repairGained = repairSamples.length === 0
@@ -406,6 +431,9 @@ export function statisticsForScenario(
       jainCi95: ci95(jainSamples) ?? 0,
       giniLoad: mean(outcomes.map((outcome) => outcome.giniLoad)),
       worstStudentScore: mean(outcomes.map((outcome) => outcome.worstStudentScore)),
+      worstStudentStaticScore: mean(
+        outcomes.map((outcome) => outcome.worstStudentStaticScore),
+      ),
       coverage: mean(outcomes.map((outcome) => outcome.coverage)),
       winsVsEngine: isReference ? 0 : test.wins,
       lossesVsEngine: isReference ? 0 : test.losses,
@@ -445,6 +473,8 @@ export function statisticsForScenario(
       repairMsP95: strategy === REPAIR_STRATEGY ? repairMsP95 : 0,
       oracleMsP50,
       oracleMsP95,
+      floorTheta: strategy === FLOOR_STRATEGY ? floorThetaMean : 0,
+      floorCeiling: strategy === FLOOR_STRATEGY ? floorCeilingMean : 0,
     };
   };
 
@@ -474,6 +504,7 @@ export function statisticsForScenario(
       jainCi95: 0,
       giniLoad: 0,
       worstStudentScore: 0,
+      worstStudentStaticScore: 0,
       coverage: oracleCoverage,
       winsVsEngine: 0,
       lossesVsEngine: 0,
@@ -511,6 +542,8 @@ export function statisticsForScenario(
       repairMsP95: 0,
       oracleMsP50,
       oracleMsP95,
+      floorTheta: 0,
+      floorCeiling: 0,
     });
   }
 
@@ -585,6 +618,9 @@ export const toRow = (row: StrategyStatRow): string[] => [
   row.repairMsP95.toFixed(2),
   row.oracleMsP50.toFixed(2),
   row.oracleMsP95.toFixed(2),
+  ratio(row.worstStudentStaticScore, 6),
+  ratio(row.floorTheta, 6),
+  ratio(row.floorCeiling, 6),
 ];
 
 /** Parses `--seeds <n>` for this suite, falling back to DEFAULT_BASELINE_SEEDS. */

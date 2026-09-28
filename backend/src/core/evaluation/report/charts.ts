@@ -48,6 +48,11 @@ export const PALETTE: Record<string, string> = {
   'fcfs-best': '#60a5fa',
   'da-stable': '#f59e0b',
   'greedy-engine': '#111827',
+  // Stage-2 and stage-3 arms get stable colours of their own rather than whatever
+  // the fallback rotation happens to hand them, so a series keeps its colour when
+  // another arm is added to the statistics table.
+  'greedy-engine-repair': '#0ea5e9',
+  'floor-exact': '#0d9488',
 };
 
 const FALLBACK = ['#2563eb', '#dc2626', '#059669', '#7c3aed', '#db2777'];

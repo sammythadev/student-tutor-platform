@@ -14,9 +14,11 @@
 >   unplaced-cause breakdown;
 > * `STAGE2_REPAIR.md` — the repair pass that closes the placement leak, and the
 >   current best-of-all-arms numbers;
+> * `STAGE3_FLOOR.md` — the exact max-min ceiling on the worst placed score, the
+>   price-of-fairness frontier, and the measured scale threshold for the exact solver;
 > * `FIGURES.md` / `index.html` — all nine figures regenerate from those CSVs.
 >
-> **Three corrections to the text below.**
+> **Four corrections to the text below.**
 >
 > 1. **§6's half-bound sentence is not formally true of the shipped engine.**
 >    "This far exceeds the proven 1/2 worst-case bound" only holds for the
@@ -41,6 +43,17 @@
 >    tutors are all full) but bounded augmenting-path repair now closes 97.7–100%
 >    of the measured oracle gap, taking coverage within 0.0004–0.0011 of the
 >    exact optimum. `greedy-engine` remains the unrepaired reference arm.
+> 4. **The 0.40–0.44 worst-student floor is a real defect with proven headroom,
+>    not a market bound.** Repair does not move it (it adds students; it does not
+>    re-rank the ones seated). An exact θ-constrained solver puts the largest
+>    achievable floor at 0.4059–0.4101 across the unsaturated scenarios (30
+>    populations), i.e. **0.0075–0.0241 above the repaired engine's own static
+>    floor**, and reaches 99.98–100% of the oracle's static total while doing it.
+>    The price of that fairness — the static total given up — is **≤ 0.0003** per
+>    student, inside the 0.002 negligibility band, and the exact arm never loses a
+>    population on total, coverage or the worst placed score (30/30, p < 0.0001).
+>    The `worstStudentStaticScore` / `floorTheta` / `floorCeiling` columns in
+>    `baseline-statistics-results.csv` track it.
 >
 > Confirmed unchanged by the multi-population runs: unassigned % is governed by
 > aggregate capacity (§2), the fairness term is inert at ≥2:1 (§3), and DA lands

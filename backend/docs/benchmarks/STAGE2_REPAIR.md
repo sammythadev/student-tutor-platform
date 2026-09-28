@@ -152,6 +152,22 @@ is unchanged).
    That is P3's job (floor θ + max-min rebalance), and the price-of-fairness curve
    is the remaining result worth having.
 
+> **Realised (28 September 2026) — see `STAGE3_FLOOR.md`.** Item 4 was done, and it
+> revises two statements above.
+>
+> * The solver **does** return pairings now: `solveFloorFromGraph` emits the matched
+>   (student, tutor) list, so the shipping blocker named in item 3 is gone. Stage 3
+>   still deliberately left it out of the request path — the wiring was reviewed
+>   separately.
+> * **SPFA carries 5000×500** — the exact floor solve completes there in **6357 ms**
+>   uncapped, no Dijkstra + potentials needed. What misses the interactive budget is
+>   everything above the ~150-student tier (3065 ms at 1000×600, 53.9 s at
+>   2000×1200) and the ceiling search (40.1 s at 5000×500, offline-only).
+> * The tail curve exists: the exact ceiling sits **0.0075–0.0241** above the repaired
+>   engine's own static floor, and the price of that lift is **≤ 0.0003** of static
+>   total per student. The exact arm never loses to repair on total, coverage or the
+>   worst placed score (30/30 populations per scenario, p < 0.0001).
+
 ## 3. Reproduce
 
 ```bash

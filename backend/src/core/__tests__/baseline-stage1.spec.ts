@@ -9,6 +9,7 @@ import {
 } from '../enums';
 import {
   classifyUnplaced,
+  FLOOR_STRATEGY,
   REPAIR_STRATEGY,
   runAllStrategiesWithTutors,
 } from '../evaluation/baseline-comparison';
@@ -93,8 +94,9 @@ describe('baseline stage 1a+1b', () => {
       { ...tutors[0], assignedCount: 0 },
     ).total;
     const outcomes = runAllStrategiesWithTutors(students, tutors);
-    // fcfs-filter, fcfs-best, da-stable, greedy-engine, greedy-engine-repair.
-    expect(outcomes).toHaveLength(5);
+    // fcfs-filter, fcfs-best, da-stable, greedy-engine, greedy-engine-repair,
+    // floor-exact.
+    expect(outcomes).toHaveLength(6);
     for (const outcome of outcomes) {
       expect(outcome.placed).toBe(1);
       expect(outcome.unplaced).toBe(1);
@@ -182,6 +184,9 @@ describe('baseline stage 1a+1b', () => {
       'repairMsP95',
       'oracleMsP50',
       'oracleMsP95',
+      'worstStudentStaticScore',
+      'floorTheta',
+      'floorCeiling',
     ]);
     expect(new Set(HEADER).size).toBe(HEADER.length);
   });
@@ -189,15 +194,16 @@ describe('baseline stage 1a+1b', () => {
   it('statistics rows carry new aggregates and serialize via toRow', () => {
     const scenario = { scenario: 'tiny', students: 2, tutors: 1, capacityStrategy: 'seed' } as const;
     const rows = statisticsForScenario(scenario, 3, 9000, 0.05);
-    // Three baselines, the engine, the Stage-2 repair arm, the δ=0 static arm,
-    // then the oracle row (2 <= MAX_ORACLE_STUDENTS).
-    expect(rows).toHaveLength(7);
+    // Three baselines, the engine, the Stage-2 repair arm, the Stage-3 floor
+    // arm, the δ=0 static arm, then the oracle row (2 <= MAX_ORACLE_STUDENTS).
+    expect(rows).toHaveLength(8);
     expect(rows.map((row) => row.strategy)).toEqual([
       'fcfs-filter',
       'fcfs-best',
       'da-stable',
       'greedy-engine',
       REPAIR_STRATEGY,
+      FLOOR_STRATEGY,
       STATIC_ENGINE_STRATEGY,
       ORACLE_STRATEGY,
     ]);

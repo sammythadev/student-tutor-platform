@@ -211,6 +211,11 @@ From re-reading `info.md` against the code (read-only):
 * **The tail is protected by nothing:** `worstStudentScore` is 0.40–0.44 at 1:1
   through 3:1, and no arm is meaningfully better — the δ term neither raises the
   tail nor (per §4) costs score, which is exactly the setup for P3's floor θ.
+  > **Realised (28 September 2026) — see `STAGE3_FLOOR.md`.** The claim held: the
+  > exact ceiling is **0.0075–0.0241** above the repaired engine's own static floor
+  > in every unsaturated scenario, and buying that lift costs **≤ 0.0003** of static
+  > total per student. The tail was the last open leak, not a property of the
+  > market.
 * **The quality story is weaker than it looked:** against fcfs-best, the engine
   wins on `totalScorePerStudent` only from 2:1 up.
 

@@ -106,6 +106,18 @@ NOT "a bigger δ" — our data proved δ dies under contention. Instead:
   priority would be a fourth deviation from the ½-variant and muddy the story.
   Keep P1 pure; protect the vulnerable in P2/P3.
 
+> **Outcome (28 September 2026) — `backend/docs/benchmarks/STAGE3_FLOOR.md`.** The
+> floor rule was built as an exact **evaluation** solver rather than an engine pass:
+> `solveFloorFromGraph` maximizes coverage first and static total second under every
+> matched pair scoring ≥ θ, and `maxMinFloor` computes the largest achievable θ
+> exactly. Measured: the ceiling sits **0.0075–0.0241** above the repaired engine's
+> own static floor, and the ε the (1−ε) construction was designed around is
+> **≤ 0.000211 of static total per student** — two orders of magnitude inside the
+> 2–3% trigger below. The min-cost formulation pays for the tail by itself, so the
+> scarce-first protection and weight moves were not needed for it. Repair is now ON
+> in the production batch path; the exact solver is deliberately not wired in — see
+> the scale threshold in §1 of the stage-3 report.
+
 **P4 — Optional stability sweep.** Bounded blocking-pair elimination, capped
 iterations, measured residual. Runs AFTER fairness so the interaction is
 reported (fairness vs stability is genuine thesis material: they conflict, and
@@ -151,7 +163,9 @@ future improvement has.
   baseline. A product decision, not a math one.
 - If held-out seeds show P3's ε cost above ~2–3% of total for meaningful tail
   gains, the price-of-fairness curve IS the finding — publish the curve, don't
-  force the mechanism.
+  force the mechanism. *(28 September 2026: measured ε is **≤ 0.000211** of static
+  total per student for a tail lift of 0.0075–0.0241 — the trigger did not fire.
+  The curve is still the deliverable, and it is in `STAGE3_FLOOR.md` §1.2.)*
 
 ## 6. Execution order (no code yet)
 
@@ -160,6 +174,8 @@ future improvement has.
 2. P2 repair (cardinality paths, then weight swaps) with per-phase deltas. The
    biggest number-mover.
 3. P3 fairness rebalance + floor, with the ε curve.
+   *(done 28 September 2026: `STAGE3_FLOOR.md` — H1 and H3 hold, H2 refuted and
+   reported as a negative.)*
 4. P4 stability sweep as an explicitly optional, separately-measured stage.
 5. Sort/selection fixes + byte-level memory (latency hygiene).
 6. Locked 30-seed confirmation: exploratory vs held-out seeds, prespecified

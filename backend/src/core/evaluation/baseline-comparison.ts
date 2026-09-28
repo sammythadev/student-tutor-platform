@@ -8,6 +8,7 @@ import {
 import type { Assignment, Student, Tutor } from '@core/entities';
 import { emitResults, getFlagValue, runCli } from './cli-output';
 import { type CapacityStrategy, generateStudents, generateTutors } from './fixtures';
+import { buildScoredGraph, maxMinFloor, solveFloorFromGraph, subGraph } from './floor-baseline';
 
 /**
  * Baseline comparison for RQ6: how does the proposed priority-queue greedy
@@ -65,6 +66,14 @@ export interface PlacedPair {
 
 /** Strategy label for the P2 repaired engine arm (stage 2). */
 export const REPAIR_STRATEGY = 'greedy-engine-repair';
+
+/**
+ * Strategy label for the stage-3 exact floor-constrained arm: the P2 pipeline
+ * followed by an exact re-solve that may not sign any pair below the floor the
+ * pipeline itself achieved. It maximizes coverage first and static total second,
+ * so it can only add placements, never lose one — see `STAGE3_FLOOR.md`.
+ */
+export const FLOOR_STRATEGY = 'floor-exact';
 
 /**
  * Why each unplaced student was left out, counted per population. Buckets are
@@ -220,6 +229,10 @@ function runEngine(
   placedPairs: PlacedPair[];
   unplacedCauses?: UnplacedCauseCounts;
   repair?: RepairReport;
+  /** Floor arm only: the θ it enforced (the pipeline's own static floor). */
+  floorTheta?: number;
+  /** Floor arm only: the exact max-min ceiling over the students it placed. */
+  floorCeiling?: number;
 } {
   const result = new GreedyAssignmentEngine().assignBatch(students, tutors, options);
   const studentById = new Map(students.map((student) => [student.id, student]));
@@ -247,6 +260,73 @@ function runEngine(
 /** P2 arm: the same engine with the bounded repair pass enabled. */
 function runEngineRepaired(students: Student[], tutors: Tutor[]) {
   return runEngine(students, tutors, { repair: true });
+}
+
+/**
+ * Stage-3 arm: P1 + repair, then an exact floor-constrained re-solve.
+ *
+ * The floor θ is the pipeline's OWN static floor over the pairs it placed, so
+ * nothing is imposed from outside: the arm is measured on the promise "same
+ * floor or better, and the best static total the floor allows". Since every pair
+ * the pipeline placed clears θ0 by construction, the pipeline's assignment is a
+ * feasible flow of the same value, which makes coverage monotone here — the
+ * solve can add placements but can never take one away.
+ */
+function runFloorExact(students: Student[], tutors: Tutor[]) {
+  const scorer = new CompositeScorer();
+  const fresh: Tutor[] = tutors.map((tutor) => ({ ...tutor, assignedCount: 0 }));
+  const engineRun = new GreedyAssignmentEngine().assignBatch(students, fresh, { repair: true });
+  const studentById = new Map(students.map((student) => [student.id, student]));
+  const tutorById = new Map(fresh.map((tutor) => [tutor.id, tutor]));
+
+  let floorTheta = Infinity;
+  let placedByEngine = 0;
+  for (const assignment of engineRun.assignments) {
+    const student = assignment.studentId ? studentById.get(assignment.studentId) : undefined;
+    const tutor = assignment.tutorId ? tutorById.get(assignment.tutorId) : undefined;
+    if (!student || !tutor) {
+      continue;
+    }
+    placedByEngine += 1;
+    floorTheta = Math.min(floorTheta, scorer.staticScore(student, tutor));
+  }
+  if (placedByEngine === 0) {
+    floorTheta = 0;
+  }
+
+  const graph = buildScoredGraph(students, tutors);
+  const solution = solveFloorFromGraph(graph, floorTheta);
+  const placedIds = solution.pairs.map((pair) => pair.studentId);
+  const ceiling = maxMinFloor(subGraph(graph, placedIds));
+
+  const placedPairs: PlacedPair[] = [];
+  const scores: number[] = [];
+  for (const tutor of fresh) {
+    tutor.assignedCount = 0;
+  }
+  // `solution.pairs` already follows student input order, and each score is
+  // taken BEFORE the seat is counted — the engine's "fresh fairness at the load
+  // this student joined" semantics, so averageScore stays comparable across arms
+  // instead of silently losing the δ term on a full tutor.
+  for (const pair of solution.pairs) {
+    const student = studentById.get(pair.studentId);
+    const tutor = tutorById.get(pair.tutorId);
+    if (!student || !tutor) {
+      continue;
+    }
+    scores.push(scorer.score(student, tutor).total);
+    tutor.assignedCount += 1;
+    placedPairs.push({ student, tutor });
+  }
+
+  return {
+    scores,
+    unassigned: students.length - placedPairs.length,
+    loads: fresh.map((tutor) => tutor.assignedCount),
+    placedPairs,
+    floorTheta,
+    floorCeiling: ceiling.feasible ? ceiling.theta : 0,
+  };
 }
 
 /**
@@ -392,6 +472,7 @@ const STRATEGIES: Array<{
   { strategy: 'da-stable', run: runDeferredAcceptance },
   { strategy: 'greedy-engine', run: runEngine },
   { strategy: REPAIR_STRATEGY, run: runEngineRepaired },
+  { strategy: FLOOR_STRATEGY, run: runFloorExact },
 ];
 
 export type BaselineScenario = (typeof SCENARIOS)[number];
@@ -405,6 +486,12 @@ export interface StrategyOutcome {
   giniLoad: number;
   /** Worst match score among assigned students — the floor no mean reveals. */
   worstStudentScore: number;
+  /**
+   * Worst STATIC score among assigned students (stage 3). Load-independent, so
+   * it is the basis the floor solver can be held to; `worstStudentScore` above
+   * still carries the δ fairness term and is reported unchanged.
+   */
+  worstStudentStaticScore: number;
   /** Share of students placed, in [0, 1]. */
   coverage: number;
   /** Tutor loads, kept for downstream inequality/percentile work. */
@@ -421,6 +508,10 @@ export interface StrategyOutcome {
   unplacedCauses?: UnplacedCauseCounts;
   /** Repair-arm only: per-phase deltas and cost of the repair pass. */
   repair?: RepairReport;
+  /** Floor arm only: the θ it enforced (its own pipeline's static floor). */
+  floorTheta?: number;
+  /** Floor arm only: exact max-min ceiling over the students it placed. */
+  floorCeiling?: number;
 }
 
 /** Gini over a load vector (duplicated from stats.ts to keep this module's
@@ -474,15 +565,11 @@ export function runStrategyOutcome(
 
   const scorer = new CompositeScorer();
   const freshTutors: Tutor[] = tutors.map((tutor) => ({ ...tutor, assignedCount: 0 }));
-  const { scores, unassigned, loads, placedPairs, unplacedCauses, repair } = definition.run(
-    students,
-    freshTutors,
-  );
+  const { scores, unassigned, loads, placedPairs, unplacedCauses, repair, floorTheta, floorCeiling } =
+    definition.run(students, freshTutors);
   const placed = scores.length;
-  const staticTotal = placedPairs.reduce(
-    (total, pair) => total + scorer.staticScore(pair.student, pair.tutor),
-    0,
-  );
+  const staticScores = placedPairs.map((pair) => scorer.staticScore(pair.student, pair.tutor));
+  const staticTotal = staticScores.reduce((total, score) => total + score, 0);
 
   return {
     strategy: label,
@@ -491,6 +578,7 @@ export function runStrategyOutcome(
     jainFairnessIndex: jain(loads),
     giniLoad: giniOf(loads),
     worstStudentScore: placed === 0 ? 0 : Math.min(...scores),
+    worstStudentStaticScore: staticScores.length === 0 ? 0 : Math.min(...staticScores),
     coverage: placed / students.length,
     loads,
     placed,
@@ -499,6 +587,8 @@ export function runStrategyOutcome(
     placedPairs,
     unplacedCauses,
     repair,
+    floorTheta,
+    floorCeiling,
   };
 }
 
