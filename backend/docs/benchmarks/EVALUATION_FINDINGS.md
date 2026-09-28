@@ -42,7 +42,9 @@
 >    leak is real (cause breakdown: 72–98% of it is students whose gate-passing
 >    tutors are all full) but bounded augmenting-path repair now closes 97.7–100%
 >    of the measured oracle gap, taking coverage within 0.0004–0.0011 of the
->    exact optimum. `greedy-engine` remains the unrepaired reference arm.
+>    exact optimum. **`greedy-engine` is now the repaired engine** — the pass was
+>    folded into the algorithm as its default behaviour, and the unrepaired run is
+>    reported only as the `greedy-engine-norepair` ablation (28 September 2026).
 > 4. **The 0.40–0.44 worst-student floor is a real defect with proven headroom,
 >    not a market bound.** Repair does not move it (it adds students; it does not
 >    re-rank the ones seated). An exact θ-constrained solver puts the largest

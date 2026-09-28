@@ -55,6 +55,13 @@ Ran on exploratory seeds 0–29 only; seeds 1000–1029 were not touched. Data:
 `baseline-statistics-results.csv` (arm `greedy-engine-repair`),
 regenerate with `pnpm run eval:statistics && pnpm run eval:report`.
 
+> **Naming note (28 September 2026).** The pass has since been folded into the
+> engine: `greedy-engine` **is** the repaired engine, and the unrepaired run is now
+> reported as the `greedy-engine-norepair` ablation. The tables below keep the arm
+> labels they were measured under, and the ablation reproduces this report's
+> "plain engine" column exactly (`baseline-comparison-results.csv`), which is the
+> check that the fold changed nothing but the name.
+
 ### 1.1 Cardinality (H1) — PASSES in all four unsaturated scenarios
 
 | Scenario | engine | **repair** | fcfs-best | oracle | gap closed | repairs/pop | displaced/pop |
@@ -124,9 +131,11 @@ Stage 1a documented, now demonstrated on a real change.
   placements and identical phase counts (only the wall-clock reading differs).
   The full sweep also reproduces.
 
-**Verdict: the stage ships ON** (as the `greedy-engine-repair` arm and the
-opt-in `repair` engine option; the flag still defaults OFF so deployed behaviour
-is unchanged).
+**Verdict: the stage ships ON.** It was measured as the `greedy-engine-repair`
+arm against an opt-in flag that defaulted OFF; it has since been folded in, so the
+pass now runs on every `assignBatch` call and `greedy-engine` is the repaired
+engine. The results above are unchanged by that fold — the ablation
+(`greedy-engine-norepair`) reproduces the "plain engine" column exactly.
 
 ## 2. What this settles about "the best algorithm"
 

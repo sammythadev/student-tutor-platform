@@ -85,6 +85,13 @@ Every number below is a mean over independent populations: the frontier
 table (`baseline-statistics-results.csv`) over **30**. §0 was not edited after
 the run.
 
+**Naming note (28 September 2026).** Repair stopped being a separate arm: it is
+now the engine's default behaviour, so §0's "repaired engine" and the
+`greedy-engine` arm are the same algorithm (the reported numbers are identical to
+the ones the old `greedy-engine-repair` arm produced, which is the check). The
+unrepaired run survives only as the `greedy-engine-norepair` ablation, and the
+exact `floor-exact` arm is unchanged.
+
 ### 1.1 Verdicts
 
 | Hypothesis | Verdict | Measurement |
@@ -176,8 +183,11 @@ deployed engine on total.
 
 ### 1.5 H3 — the floor-constrained assignment is free: holds
 
-The paired sign test the pre-registration asked for (`compareFloorToRepair`, 30
-populations, `floor-exact` vs `greedy-engine-repair`):
+The paired sign test the pre-registration asked for (`compareFloorToEngine`, 30
+populations, `floor-exact` vs `greedy-engine`) — §0 names the opponent "the
+repaired engine", which after the fold below IS the `greedy-engine` arm; the
+algorithm is unchanged, so these numbers are the same ones the repair arm
+produced:
 
 | Scenario | `totalScorePerStudent` W/L/T | mean Δ | p | `coverage` W/L/T | `worstStudentStaticScore` W/L/T | p |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -198,8 +208,8 @@ worse", not "reliably better".
 | Guardrail | Result | Evidence |
 | --- | --- | --- |
 | **G1** audit invariants | pass | `baseline-stage3.spec.ts`: solver pairings clear the gates, no tutor exceeds capacity, one seat per student; the 2-population frontier test asserts pinned coverage, `worstScore ≥ θ`, and `engineFloor ≤ θ ≤ ceiling` on every row |
-| **G2** p95 ≤ 250 ms solve, ≤ 500 ms ceiling at 150×100 | pass, 10× headroom | worst measured solve p95 at moderate-1.5to1 is **25.60 ms**; ceiling p95 **151.76 ms** (`floor-frontier-results.csv`, `solveMsP95` / `ceilingMsP95`) |
-| **G3** determinism | pass | a second sweep reproduced all 25 rows with **0** differing non-timing cells; the four timing columns are the only noise, as documented |
+| **G2** p95 ≤ 250 ms solve, ≤ 500 ms ceiling at 150×100 | pass, 2.4×–10× headroom | worst measured solve p95 at moderate-1.5to1 is **25.23 ms** (9.9× headroom); ceiling p95 **205.84 ms** (2.4×) (`floor-frontier-results.csv`, `solveMsP95` / `ceilingMsP95`) |
+| **G3** determinism | pass | a second sweep reproduced all 25 rows with **0** differing non-timing cells; the four timing columns are the only noise, as documented. Re-confirmed on the 28 September 2026 post-fold re-run: the θ/ceiling/coverage/total cells are byte-identical, only ms move |
 | **G4** exactness vs brute force | pass | the 4×3 spec asserts equality with exhaustive search on matched count and static total at 8 values of θ, equality on the max-min ceiling (0.3), feasibility **at** the ceiling and infeasibility one admissible step **above** it, and `{θ: 0, feasible: false}` for a gate-orphaned student |
 
 Because G2 passed, the pre-registered fallback ("recommend greedy+repair with the
@@ -208,55 +218,63 @@ tier, where it partially is, is §2.
 
 ## 2. Scale check — where "exact by default" stops being affordable
 
-Measured, never extrapolated. Two sweeps, one population per size:
+Measured, never extrapolated. Re-measured after the repair pass was folded into
+the engine, so the `engine` column is the deployed algorithm (heap pass + repair)
+and the redundant second greedy column is gone; one population per size.
 
 * **Saturated tier** (`scale-benchmark-results.csv`, 10 students : 1 tutor, seats
-  bind — every arm at the same 0.25 coverage, so the run is supply-bound and no
-  arm can gain a placement):
+  bind — the engine is at the 0.25 coverage bound, so the run is supply-bound and
+  no algorithm can gain a placement):
 
-| Size | greedy | repair | scoring (exact solver's fixed cost) | exact floor solve | ceiling search | oracle (unconstrained) | repair placements gained |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1000×100 | 179.2 ms | 142.9 ms | 89.6 ms | **99.6 ms** | 326.6 ms | 276.4 ms (250 aug, uncapped) | 0.00 |
-| 2000×200 | 288.6 ms | 291.4 ms | 238.6 ms | **507.7 ms** | 2584.3 ms | 2136.4 ms (500, uncapped) | 0.00 |
-| 5000×500 | 2206.3 ms | 1971.3 ms | 1510.9 ms | **6357.1 ms** | 40146.7 ms | 35642.6 ms (1250, uncapped) | 0.00 |
+| Size | engine (heap + repair) | scoring (exact solver's fixed cost) | exact floor solve | ceiling search | oracle (unconstrained) | repair placements gained |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1000×100 | 169.2 ms | 96.2 ms | **111.7 ms** | 330.8 ms | 266.0 ms (250 aug, uncapped) | 0.00 |
+| 2000×200 | 315.6 ms | 215.1 ms | **521.1 ms** | 2386.3 ms | 1811.3 ms (500, uncapped) | 0.00 |
+| 5000×500 | 1619.2 ms | 1308.6 ms | **5269.5 ms** | 27150.1 ms | 27227.5 ms (1250, uncapped) | 0.00 |
 
 * **Unsaturated tier** (`scale-benchmark-unsaturated-results.csv`, ceiling search
   skipped with `--no-ceiling`, which is why `ceiling` is `-1.000000`):
 
-| Size | coverage greedy → repair / exact | greedy | repair | scoring | exact floor solve | oracle | repair gained | greedy worst → exact worst |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1000×600 | 1.0000 → 1.0000 | 608.1 ms | 452.7 ms | 397.4 ms | **3064.7 ms** | 9640.1 ms (1000, uncapped) | 0.00 | 0.387925 → **0.449300** |
-| 2000×1200 | 0.9915 → 1.0000 | 1989.5 ms | 1962.7 ms | 1494.0 ms | **53889.6 ms** | 85718.2 ms (**capped at 2000 aug — partial, not optimal**) | 17.00 | 0.419650 → **0.485700** |
+| Size | coverage engine → exact | engine | scoring | exact floor solve | oracle | repair gained | engine worst → exact worst |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000×600 | 1.0000 → 1.0000 | 624.4 ms | 403.9 ms | **2678.6 ms** | 7925.8 ms (1000, uncapped) | 0.00 | 0.387925 → **0.449300** |
+| 2000×1200 | 1.0000 → 1.0000 | 1746.2 ms | 1354.8 ms | **36189.6 ms** | 63761.7 ms (**capped at 2000 aug — partial, not optimal**) | 17.00 | 0.419650 → **0.485700** |
 
 Findings, in the order the decision rule needs them:
 
-1. **Repair is not a cost at scale.** It finished *faster* than the plain heap pass
-   at 1000 and 5000 students (142.9 vs 179.2 ms; 1971.3 vs 2206.3 ms) and within
-   1 % at 2000, because the heap pass it follows is the expensive part. Nothing
-   measured argues against having it on.
+1. **The engine's pass is not a cost at scale.** The whole deployed engine finishes
+   in 169.2 ms at 1000×100 and 1.62 s at 5000×500, within run-to-run noise of the
+   heap-pass-only figures this artifact recorded before the fold (179.2 ms and
+   2.21 s), and it gains exactly 0 placements at those sizes because every seat is
+   taken — the pass's sound early exit fires and it pays nothing. Where seats are
+   free it pays for itself: +17 students at 2000×1200. The ablation's own timings
+   were dropped from this CSV when the fold happened; they remain in git history and
+   in `STAGE2_REPAIR.md`.
 2. **The exact solve's cost is set by the flow value, not the graph size.**
-   1000×100 places 250 students in 99.6 ms; 1000×600 places 1000 students in
-   3064.7 ms — same student count, 30× the time. At 5000×500 the floor solve is
-   6.36 s and the ceiling search 40.1 s, so at that tier the ceiling is an
+   1000×100 places 250 students in 111.7 ms; 1000×600 places 1000 students in
+   2678.6 ms — same student count, 24× the time. At 5000×500 the floor solve is
+   5.27 s and the ceiling search 27.2 s, so at that tier the ceiling is an
    offline job even though the solve is not.
 3. **The oracle is where the money runs out.** At 2000×1200 it hit the
-   2000-augmentation cap after 85.7 s and is reported as partial; that number is
+   2000-augmentation cap after 63.8 s and is reported as partial; that number is
    quoted nowhere as an optimum.
 4. **The tail lift survives to production sizes.** In the unsaturated tier the
    exact solve lifts the worst placed pair from 0.387925 to 0.449300 (1000×600)
    and 0.419650 to 0.485700 (2000×1200) — larger than the 150×100 lift, and
-   obtained with coverage equal to or above the engine's.
+   obtained with coverage equal to the engine's (both place every student at
+   2000×1200, where the engine's own repair pass is what closes the last 17 seats).
 
 **Threshold decision.** `optimal-by-default` is affordable where the exact solve
 completes inside the interactive budget, and that is measured, not assumed: at
-the platform's small batch tier (150×100) the solve p95 is 25.60 ms and the
-ceiling p95 151.76 ms — inside G2's 250 ms / 500 ms with 10× headroom. The next
+the platform's small batch tier (150×100) the solve p95 is 25.23 ms and the
+ceiling p95 205.84 ms — inside G2's 250 ms / 500 ms, the solve with 10× headroom
+and the ceiling with 2.4×. The next
 measured step up, 1000×600, is 3064.7 ms for a single solve, i.e. an order of
 magnitude outside that budget. So the recommendation is:
 
-* **production default = greedy + repair** (the deployable chain), at every tier
-  measured, since it is the only chain measured to complete at 5000×500 and it
-  costs the same as or less than plain greedy;
+* **production default = the greedy engine as shipped** (heap pass + repair) at
+  every tier measured, since it is the only algorithm measured to complete at
+  5000×500 and the pass adds no measurable cost there;
 * **exact floor solve = the small tier only** (measured affordable at 150×100);
   available as an administrative/offline re-solve elsewhere;
 * **ceiling search = offline only** everywhere, including the small tier where a

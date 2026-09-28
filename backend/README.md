@@ -163,15 +163,18 @@ pass. Two rules keep this package honest:
   facade for callers that want the whole pipeline in one call.
 - Subject eligibility is a **hard filter**, never a weighted term.
 
-`MatchmakingService.runBatch` runs the engine with the bounded repair pass
-enabled (`{ repair: true }`). Repair is measured to add placements and never to
-remove one, to score at least as well on the load-independent total in 30/30
-populations per scenario, and to cost no more than the heap pass it follows
-(`STAGE2_REPAIR.md`, `STAGE3_FLOOR.md`). The response shape is unchanged:
-repair only moves students from `unassignable` into placements. The exact
-floor-constrained solver is **not** wired into the request path — it is an
-offline/administrative re-solve, because `STAGE3_FLOOR.md` §2 measures it leaving
-the interactive budget above the ~150-student tier.
+`MatchmakingService.runBatch` calls `assignBatch` with no options, which is the
+engine as deployed: the priority-queue heap pass followed by the bounded repair
+pass. Repair is the engine's own behaviour (`src/core/algorithms/assignment/greedy-assignment.engine.ts`),
+not a separate algorithm or a second arm — `repair: false` exists only as the
+P1-only ablation the evaluation suite reports as `greedy-engine-norepair`. It is
+measured to add placements and never to remove one, to score at least as well on
+the load-independent total in 30/30 populations per scenario, and to cost no more
+than the heap pass it follows (`STAGE2_REPAIR.md`, `STAGE3_FLOOR.md`). The
+response shape is unchanged: repair only moves students from `unassignable` into
+placements. The exact floor-constrained solver is **not** wired into the request
+path — it is an offline/administrative re-solve, because `STAGE3_FLOOR.md` §2
+measures it leaving the interactive budget above the ~150-student tier.
 
 ## Evaluation harnesses
 
@@ -186,8 +189,8 @@ all of them save CSV output to `docs/benchmarks/`.
 | `pnpm run eval:topk`      | Quality/speed/memory tradeoff for K ∈ {10, 20, 50, ∞}                            |
 | `pnpm run eval:gap`       | How far below the exact optimum does greedy land? (min-cost max-flow)            |
 | `pnpm run eval:baselines` | Does greedy beat the strategies real platforms use? (FCFS / deferred acceptance) |
-| `pnpm run eval:statistics`| Same comparison over 30 independent populations: means ± 95% CIs, paired sign tests vs the engine, the exact oracle on the same population, the unplaced-cause breakdown, the `greedy-engine-repair` and `floor-exact` arms, and the `worstStudentStaticScore` / `floorTheta` / `floorCeiling` columns. Pass `--seeds` / `--base-seed` / `--scenario`. |
-| `pnpm run eval:floor`     | The price-of-fairness frontier: exact θ-constrained min-cost max-flow (`floor-baseline.ts`) swept from the engine's own static floor to the exact max-min ceiling, plus the `floor-exact` vs `greedy-engine-repair` paired sign test on stderr. Pass `--seeds` / `--steps` / `--scenario` / `--no-timing`. |
+| `pnpm run eval:statistics`| Same comparison over 30 independent populations: means ± 95% CIs, paired sign tests vs the engine, the exact oracle on the same population, the unplaced-cause breakdown, the `greedy-engine-norepair` ablation and `floor-exact` arms, and the `worstStudentStaticScore` / `floorTheta` / `floorCeiling` columns. `greedy-engine` is the deployed algorithm (heap pass + repair), so every delta reads against what ships. Pass `--seeds` / `--base-seed` / `--scenario`. |
+| `pnpm run eval:floor`     | The price-of-fairness frontier: exact θ-constrained min-cost max-flow (`floor-baseline.ts`) swept from the engine's own static floor to the exact max-min ceiling, plus the `floor-exact` vs deployed-engine paired sign test on stderr. Pass `--seeds` / `--steps` / `--scenario` / `--no-timing`. |
 | `pnpm run eval:scale`     | Production-scale cost of the whole chain (greedy → repair → exact floor solve → ceiling search → oracle) at `--sizes 1000x100,2000x200,5000x500`; `--no-ceiling` skips the ~10×-a-solve ceiling search, `--oracle-cap` bounds the oracle. **Not part of `eval:all`** — it is minutes, not seconds. |
 | `pnpm run eval:report`    | Renders the CSVs above into `docs/benchmarks/figures/` (SVG + PNG), `FIGURES.md` and `index.html`.  |
 | `pnpm run eval:all`       | Everything above except `eval:scale`                                             |

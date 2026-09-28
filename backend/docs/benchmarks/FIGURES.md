@@ -15,7 +15,7 @@ Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f1-quality-by-str
 
 ![F2 · Each baseline against the engine](figures/f2-delta-vs-engine.svg)
 
-Mean per-population difference (strategy − engine). Bars right of zero mean that strategy scored higher than the engine. 23 comparison(s) are significant at p < 0.05.
+Mean per-population difference (strategy − engine). Bars right of zero mean that strategy scored higher than the engine. 15 comparison(s) are significant at p < 0.05.
 
 Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f2-delta-vs-engine.svg`](figures/f2-delta-vs-engine.svg) · [`f2-delta-vs-engine.png`](figures/f2-delta-vs-engine.png)
 
@@ -39,7 +39,7 @@ Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f4-coverage.svg`]
 
 ![F5 · Engine versus the optimal assignment](figures/f5-optimality-gap.svg)
 
-Share of the min-cost-max-flow optimum the greedy engine achieves, by problem size. Worst observed ratio: 94.34%.
+Share of the min-cost-max-flow optimum the greedy engine achieves, by problem size. Worst observed ratio: 97.61%.
 
 Source: `docs/benchmarks/optimality-gap-results.csv` · [`f5-optimality-gap.svg`](figures/f5-optimality-gap.svg) · [`f5-optimality-gap.png`](figures/f5-optimality-gap.png)
 
@@ -71,7 +71,7 @@ Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f8-quality-lines.
 
 ![F9 · Each baseline against the engine (lines)](figures/f9-delta-lines.svg)
 
-Mean per-population difference (strategy − engine) per scenario. The zero line is the engine: lines hugging it are ties. 23 comparison(s) are significant at p < 0.05.
+Mean per-population difference (strategy − engine) per scenario. The zero line is the engine: lines hugging it are ties. 15 comparison(s) are significant at p < 0.05.
 
 Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f9-delta-lines.svg`](figures/f9-delta-lines.svg) · [`f9-delta-lines.png`](figures/f9-delta-lines.png)
 

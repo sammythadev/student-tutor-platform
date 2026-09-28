@@ -495,17 +495,25 @@ function deltaLinesFigure(statistics: Row[]): Figure | null {
   };
 }
 /**
- * Strategy rows that are aggregates or diagnostics rather than strategies, and
- * so must never be drawn as a baseline curve:
+ * Strategy rows that are aggregates, diagnostics or ablations rather than
+ * strategies, and so must never be drawn as a baseline curve:
  *   • `oracle-exact` — scenario-level oracle aggregates; its score, Jain and
  *     delta columns are structural zeroes, so plotting it would put an empty
  *     series (and a fake “Jain = 0”) on F1/F3/F4;
  *   • `greedy-engine-static` — the stage-1 δ=0 arm, reported as a table row
- *     rather than a fifth baseline.
+ *     rather than a fifth baseline;
+ *   • `greedy-engine-norepair` — the ablation of the engine's own repair pass.
+ *     The deployed engine is ONE algorithm, so it gets ONE series; the ablation
+ *     belongs in the table (where the pass's value is quotable) and in
+ *     `STAGE2_REPAIR.md`, not as a second greedy line competing for attention.
  * `greedy-engine` is deliberately NOT here: it is the reference series F1/F3/
  * F4/F8 show, and the delta figures drop it themselves.
  */
-const NON_STRATEGY_ROWS = new Set(['oracle-exact', 'greedy-engine-static']);
+const NON_STRATEGY_ROWS = new Set([
+  'oracle-exact',
+  'greedy-engine-static',
+  'greedy-engine-norepair',
+]);
 
 const comparisonArms = (rows: Row[]): Row[] =>
   rows.filter((row) => !NON_STRATEGY_ROWS.has(row.strategy));
