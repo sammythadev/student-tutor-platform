@@ -176,6 +176,16 @@ placements. The exact floor-constrained solver is **not** wired into the request
 path — it is an offline/administrative re-solve, because `STAGE3_FLOOR.md` §2
 measures it leaving the interactive budget above the ~150-student tier.
 
+The engine also has a **bounded blocking-pair elimination pass**,
+`assignBatch(..., { stability: true })`, and it is **off by default**: the
+deployed path above does not run it. It resolves pairs that both a student and a
+tutor would prefer to the status quo, and it is measured as its own arm
+(`greedy-engine-stable`) because stability is a different objective from static
+total: on 30 populations it removes 3.3–14.3 blocking pairs per population and
+never a placement, but it flattens tutor loads (Jain −0.007…−0.035) and costs
+the worst placed student 0.005–0.010 (`STAGE4_STABILITY.md`). Whether a
+deployment wants that is a product decision, which is why it is opt-in.
+
 ## Evaluation harnesses
 
 All suites generate the same synthetic fixtures
@@ -189,7 +199,7 @@ all of them save CSV output to `docs/benchmarks/`.
 | `pnpm run eval:topk`      | Quality/speed/memory tradeoff for K ∈ {10, 20, 50, ∞}                            |
 | `pnpm run eval:gap`       | How far below the exact optimum does greedy land? (min-cost max-flow)            |
 | `pnpm run eval:baselines` | Does greedy beat the strategies real platforms use? (FCFS / deferred acceptance) |
-| `pnpm run eval:statistics`| Same comparison over 30 independent populations: means ± 95% CIs, paired sign tests vs the engine, the exact oracle on the same population, the unplaced-cause breakdown, the `greedy-engine-norepair` ablation and `floor-exact` arms, and the `worstStudentStaticScore` / `floorTheta` / `floorCeiling` columns. `greedy-engine` is the deployed algorithm (heap pass + repair), so every delta reads against what ships. Pass `--seeds` / `--base-seed` / `--scenario`. |
+| `pnpm run eval:statistics`| Same comparison over 30 independent populations: means ± 95% CIs, paired sign tests vs the engine, the exact oracle on the same population, the unplaced-cause breakdown, the `greedy-engine-norepair` ablation plus the `floor-exact` and `greedy-engine-stable` arms, and the `worstStudentStaticScore` / `floorTheta` / `floorCeiling` / `blockingPairs` columns. `greedy-engine` is the deployed algorithm (heap pass + repair), so every delta reads against what ships. Pass `--seeds` / `--base-seed` / `--scenario`. |
 | `pnpm run eval:floor`     | The price-of-fairness frontier: exact θ-constrained min-cost max-flow (`floor-baseline.ts`) swept from the engine's own static floor to the exact max-min ceiling, plus the `floor-exact` vs deployed-engine paired sign test on stderr. Pass `--seeds` / `--steps` / `--scenario` / `--no-timing`. |
 | `pnpm run eval:scale`     | Production-scale cost of the whole chain (greedy → repair → exact floor solve → ceiling search → oracle) at `--sizes 1000x100,2000x200,5000x500`; `--no-ceiling` skips the ~10×-a-solve ceiling search, `--oracle-cap` bounds the oracle. **Not part of `eval:all`** — it is minutes, not seconds. |
 | `pnpm run eval:report`    | Renders the CSVs above into `docs/benchmarks/figures/` (SVG + PNG), `FIGURES.md` and `index.html`.  |
@@ -211,7 +221,10 @@ bounded repair pass, which is what makes the engine the best of the four
 strategies on both coverage and load-independent score) and
 [`docs/benchmarks/STAGE3_FLOOR.md`](docs/benchmarks/STAGE3_FLOOR.md) (the exact
 fairness-floor ceiling, the price-of-fairness frontier, and the measured scale
-threshold for the exact solver). Figures:
+threshold for the exact solver) and
+[`docs/benchmarks/STAGE4_STABILITY.md`](docs/benchmarks/STAGE4_STABILITY.md)
+(blocking pairs per arm, the opt-in stability pass, and the measured
+stability-versus-fairness tradeoff). Figures:
 [`docs/benchmarks/FIGURES.md`](docs/benchmarks/FIGURES.md).
 
 ### Eval TUI

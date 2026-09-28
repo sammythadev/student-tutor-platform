@@ -75,4 +75,12 @@ Mean per-population difference (strategy − engine) per scenario. The zero line
 
 Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f9-delta-lines.svg`](figures/f9-delta-lines.svg) · [`f9-delta-lines.png`](figures/f9-delta-lines.png)
 
+### F10 · Blocking pairs per student by arm
+
+![F10 · Blocking pairs per student by arm](figures/f10-blocking-pairs.svg)
+
+Mean blocking pairs per student across independent populations; 0 is a stable matching, so lower is better and the vertical axis starts at zero. Deferred acceptance is the reference that holds zero by construction; the engine is the deployed pipeline and `greedy-engine-stable` adds the bounded blocking-pair pass.
+
+Source: `docs/benchmarks/baseline-statistics-results.csv` · [`f10-blocking-pairs.svg`](figures/f10-blocking-pairs.svg) · [`f10-blocking-pairs.png`](figures/f10-blocking-pairs.png)
+
 

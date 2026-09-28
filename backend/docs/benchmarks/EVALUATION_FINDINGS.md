@@ -45,6 +45,10 @@
 >    exact optimum. **`greedy-engine` is now the repaired engine** — the pass was
 >    folded into the algorithm as its default behaviour, and the unrepaired run is
 >    reported only as the `greedy-engine-norepair` ablation (28 September 2026).
+>    The current `optimality-gap-results.csv` puts the deployed engine at
+>    **63 of 64 placements and 97.61%** of the optimal total at 100×33; the
+>    59/64 (94.35%) that §6's table quotes is the **P1-only ablation**, which is
+>    where that number now lives.
 > 4. **The 0.40–0.44 worst-student floor is a real defect with proven headroom,
 >    not a market bound.** Repair does not move it (it adds students; it does not
 >    re-rank the ones seated). An exact θ-constrained solver puts the largest
@@ -56,6 +60,19 @@
 >    population on total, coverage or the worst placed score (30/30, p < 0.0001).
 >    The `worstStudentStaticScore` / `floorTheta` / `floorCeiling` columns in
 >    `baseline-statistics-results.csv` track it.
+> 5. **Stability is a separate axis this document never measured, and the
+>    deployed engine loses it (28 September 2026).** `blockingPairs` counts
+>    (student, tutor) pairs both sides prefer to the status quo, so zero is the
+>    stable matching deferred acceptance holds by construction — and DA reports
+>    exactly **0.00 in all five scenarios**, which is the check that makes the
+>    engine's **4.93–42.03** a real gap. The bounded stability pass removes
+>    3.30/14.30/13.33/13.87 of them (30/30 populations, p<0.0001) without losing a
+>    placement, but costs Jain 0.007–0.035 and 0.005–0.010 of the worst placed
+>    student; it stays opt-in. See `STAGE4_STABILITY.md` and the
+>    `greedy-engine-stable` row. Two consequences for the tables below: the
+>    **repair pass creates blockers** (15.00 → 25.43 at 1.5:1, 5.33 → 42.03 at
+>    3:1 versus the no-repair ablation), and arrival-order assignment is the
+>    stability disaster (194–3931 per population).
 >
 > Confirmed unchanged by the multi-population runs: unassigned % is governed by
 > aggregate capacity (§2), the fairness term is inert at ≥2:1 (§3), and DA lands

@@ -146,7 +146,13 @@ engine. The results above are unchanged by that fold — the ablation
 2. **Repair is cheap:** ≤5.60 ms p95 at 150×50 for 1.2–4.3% more score per
    student, deterministic, and it changes nothing when the market is
    supply-bound.
-3. **Exact flow is affordable at our evaluated scale — measured, not assumed.**
+3. **Repair costs matching stability** (measured later, in
+   `STAGE4_STABILITY.md`): seating a student by displacing a seated one is how a
+   blocking pair is created, so the repaired engine leaves more of them than the
+   ablation it is built on — 25.43 vs 15.00 at 1.5:1, 33.53 vs 10.20 at 2:1, 42.03
+   vs 5.33 at 3:1, where deferred acceptance leaves zero. Coverage and stability
+   are in direct conflict; stage 4 measures what recovering some of it costs.
+4. **Exact flow is affordable at our evaluated scale — measured, not assumed.**
    The SPFA-based oracle's own per-population wall clock is **p50/p95 = 2.39/6.48 ms
    (50×50), 21.87/32.29 ms (150×100), 14.50/23.05 ms (150×75), 10.51/17.16 ms
    (150×50)**. So at ≤150×100 a min-cost-max-flow solver finishes in ≤33 ms p95,

@@ -122,6 +122,18 @@ NOT "a bigger δ" — our data proved δ dies under contention. Instead:
 iterations, measured residual. Runs AFTER fairness so the interaction is
 reported (fairness vs stability is genuine thesis material: they conflict, and
 the tradeoff curve with CIs is a result, not a failure).
+>
+> **Outcome (28 September 2026) — `backend/docs/benchmarks/STAGE4_STABILITY.md`.**
+> Built as an opt-in engine pass (`assignBatch(..., { stability: true })`, off by
+> default) plus a new `blockingPairs` metric reported for every arm, defined so
+> that zero is the stable matching DA holds by construction — and DA measures
+> exactly 0.00 in all five scenarios, which is the check that the metric means
+> stability. Measured: the deployed engine leaves 4.9–42.0 blockers per
+> population; the pass removes 3.3–14.3 of them (30/30, p<0.0001) without losing
+> a placement and without losing static total, but it flattens tutor loads
+> (Jain −0.007…−0.035) and the tail (−0.005…−0.010). Two findings the earlier
+> stages could not see: **repair creates blockers** (15.00 → 25.43 at 1.5:1), and
+> the exact optimum is not stable either. Pass cost p95 19.25 ms at 150×100.
 
 **P5 — Audit.** Per run, assert and emit: eligibility of every pair, capacity
 respected, no double assignment — plus the **unassigned-cause taxonomy** the
@@ -177,6 +189,9 @@ future improvement has.
    *(done 28 September 2026: `STAGE3_FLOOR.md` — H1 and H3 hold, H2 refuted and
    reported as a negative.)*
 4. P4 stability sweep as an explicitly optional, separately-measured stage.
+   *(done 28 September 2026: `STAGE4_STABILITY.md` — H1 and H3 hold, H2 holds in
+   the opposite direction to the registration: stability is bought with load
+   fairness and tail, not with static total. Pass stays opt-in.)*
 5. Sort/selection fixes + byte-level memory (latency hygiene).
 6. Locked 30-seed confirmation: exploratory vs held-out seeds, prespecified
    hypotheses per stage (P2 raises coverage; P3 raises min at ≤ε cost; P4
