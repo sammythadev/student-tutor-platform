@@ -28,6 +28,7 @@ import {
   NO_REPAIR_STRATEGY,
   runBaselineCell,
   SCENARIOS,
+  STABLE_STRATEGY,
 } from '../evaluation/baseline-comparison';
 import { getSuite, harnessSuite, moderateSuite, topkSuite, SUITES } from '../evaluation/tui/suites';
 import { wrapClearDesync } from '../evaluation/tui/stdout-clear-patch';
@@ -88,6 +89,7 @@ describe('baseline cell runner', () => {
       'fcfs-best',
       'da-stable',
       'greedy-engine',
+      STABLE_STRATEGY,
       NO_REPAIR_STRATEGY,
       FLOOR_STRATEGY,
     ]);

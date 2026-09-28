@@ -7,6 +7,7 @@ import {
   runAllStrategiesWithTutors,
   runStrategyOutcome,
   SCENARIOS,
+  STABLE_STRATEGY,
   type BaselineScenario,
   type StrategyOutcome,
   type UnplacedCauseCounts,
@@ -48,6 +49,7 @@ const ORDER = [
   'fcfs-best',
   'da-stable',
   ENGINE_STRATEGY,
+  STABLE_STRATEGY,
   NO_REPAIR_STRATEGY,
   FLOOR_STRATEGY,
 ] as const;
@@ -152,6 +154,35 @@ export interface StrategyStatRow {
   /** Floor-arm only: mean θ enforced, and mean exact max-min ceiling reached. */
   floorTheta: number;
   floorCeiling: number;
+  /**
+   * Stage-4 stability: mean blocking-pair count of THIS arm's own matching
+   * (lower is more stable), so the deployed engine, the stable arm and
+   * `da-stable` are directly comparable. `blockingPairsPerStudent` divides by
+   * the population size, which is what makes 50-student and 150-student
+   * scenarios comparable. The oracle row reports 0: the exact solve does not
+   * emit its pairings, so its stability is NOT measured.
+   */
+  blockingPairs: number;
+  blockingPairsPerStudent: number;
+  /**
+   * Mean of (engine − this arm) blocking pairs over populations: POSITIVE means
+   * this arm is the more stable one, which is the opposite sign convention to
+   * every score column because fewer blocking pairs is the better outcome.
+   */
+  blockingPairsReductionVsEngine: number;
+  /** Populations where this arm had strictly fewer blocking pairs than the engine. */
+  blockingPairsWinsVsEngine: number;
+  blockingPairsLossesVsEngine: number;
+  blockingPairsTiesVsEngine: number;
+  /** Exact two-sided sign test on the reduction; 1 on the engine row. */
+  blockingPairsPValueVsEngine: number;
+  /**
+   * Stable-arm only: resolutions the bounded elimination applied, and the pass's
+   * wall-clock p50/p95 in ms. Zero on every other row.
+   */
+  stabilityMoves: number;
+  stabilityMsP50: number;
+  stabilityMsP95: number;
 }
 
 export const HEADER = [
@@ -209,6 +240,16 @@ export const HEADER = [
   'worstStudentStaticScore',
   'floorTheta',
   'floorCeiling',
+  'blockingPairs',
+  'blockingPairsPerStudent',
+  'blockingPairsReductionVsEngine',
+  'blockingPairsWinsVsEngine',
+  'blockingPairsLossesVsEngine',
+  'blockingPairsTiesVsEngine',
+  'blockingPairsPValueVsEngine',
+  'stabilityMoves',
+  'stabilityMsP50',
+  'stabilityMsP95',
 ];
 
 /** Per-seed oracle result on the SAME population as the strategies. */
@@ -319,6 +360,7 @@ export function statisticsForScenario(
   const referencePerStudent = reference.map(
     (outcome) => outcome.staticTotal / scenario.students,
   );
+  const referenceBlocking = reference.map((outcome) => outcome.blockingPairs);
   const oracleSamples = sampleOracle(scenario, seeds, baseSeed, loadFactorWeight);
   const hasOracle = oracleSamples.length > 0;
   const oracleCoverage = hasOracle ? mean(oracleSamples.map((s) => s.coverage)) : 0;
@@ -420,6 +462,17 @@ export function statisticsForScenario(
     const staticTotalRatioVsOracle = hasOracle ? mean(ratioSamples) : 0;
     const staticTotalRatioVsOracleCi95 = hasOracle ? (ci95(ratioSamples) ?? 0) : 0;
 
+    // Stage-4 stability: each arm's OWN blocking-pair count, plus the paired
+    // reduction against the deployed engine. The reduction is engine − arm, so a
+    // positive number means the arm removed blockers the engine left behind.
+    const blockingSamples = outcomes.map((outcome) => outcome.blockingPairs);
+    const blockingPairs = mean(blockingSamples);
+    const blockingTest = pairedSignTest(
+      blockingSamples.map((value, index) => (referenceBlocking[index] ?? value) - value),
+    );
+    const isStableArm = strategy === STABLE_STRATEGY;
+    const stabilityElapsed = outcomes.map((outcome) => outcome.stability?.elapsedMs ?? 0);
+
     return {
       scenario: scenario.scenario,
       strategy,
@@ -481,6 +534,18 @@ export function statisticsForScenario(
       oracleMsP95,
       floorTheta: strategy === FLOOR_STRATEGY ? floorThetaMean : 0,
       floorCeiling: strategy === FLOOR_STRATEGY ? floorCeilingMean : 0,
+      blockingPairs,
+      blockingPairsPerStudent: scenario.students === 0 ? 0 : blockingPairs / scenario.students,
+      blockingPairsReductionVsEngine: isReference ? 0 : blockingTest.meanDelta,
+      blockingPairsWinsVsEngine: isReference ? 0 : blockingTest.wins,
+      blockingPairsLossesVsEngine: isReference ? 0 : blockingTest.losses,
+      blockingPairsTiesVsEngine: isReference ? seeds : blockingTest.ties,
+      blockingPairsPValueVsEngine: isReference ? 1 : blockingTest.pValue,
+      stabilityMoves: isStableArm
+        ? mean(outcomes.map((outcome) => outcome.stability?.moves ?? 0))
+        : 0,
+      stabilityMsP50: isStableArm ? percentile(stabilityElapsed, 0.5) : 0,
+      stabilityMsP95: isStableArm ? percentile(stabilityElapsed, 0.95) : 0,
     };
   };
 
@@ -552,6 +617,18 @@ export function statisticsForScenario(
       oracleMsP95,
       floorTheta: 0,
       floorCeiling: 0,
+      // The exact solve emits totals, not pairings, so the oracle's own stability
+      // is not measured: these stay 0 and the report says so.
+      blockingPairs: 0,
+      blockingPairsPerStudent: 0,
+      blockingPairsReductionVsEngine: 0,
+      blockingPairsWinsVsEngine: 0,
+      blockingPairsLossesVsEngine: 0,
+      blockingPairsTiesVsEngine: 0,
+      blockingPairsPValueVsEngine: 1,
+      stabilityMoves: 0,
+      stabilityMsP50: 0,
+      stabilityMsP95: 0,
     });
   }
 
@@ -629,6 +706,18 @@ export const toRow = (row: StrategyStatRow): string[] => [
   ratio(row.worstStudentStaticScore, 6),
   ratio(row.floorTheta, 6),
   ratio(row.floorCeiling, 6),
+  ratio(row.blockingPairs, 6),
+  ratio(row.blockingPairsPerStudent, 6),
+  ratio(row.blockingPairsReductionVsEngine, 6),
+  String(row.blockingPairsWinsVsEngine),
+  String(row.blockingPairsLossesVsEngine),
+  String(row.blockingPairsTiesVsEngine),
+  row.blockingPairsPValueVsEngine === 1
+    ? '1'
+    : formatPValue(row.blockingPairsPValueVsEngine),
+  ratio(row.stabilityMoves, 6),
+  row.stabilityMsP50.toFixed(2),
+  row.stabilityMsP95.toFixed(2),
 ];
 
 /** Parses `--seeds <n>` for this suite, falling back to DEFAULT_BASELINE_SEEDS. */
@@ -702,6 +791,40 @@ export function formatSignificanceSummary(rows: StrategyStatRow[]): string {
   return lines.join('\n');
 }
 
+/**
+ * Human-readable stability summary: each arm's own blocking-pair count, and what
+ * the bounded elimination pass managed on top of the deployed engine. Printed
+ * unconditionally, including when the pass moved nothing.
+ */
+export function formatStabilitySummary(rows: StrategyStatRow[]): string {
+  const lines = ['\nBlocking pairs per arm (lower is more stable; 0 = a stable matching):'];
+  for (const row of rows) {
+    // The oracle row does not measure stability (the exact solve emits totals,
+    // not pairings), so printing its structural zero would be a false claim.
+    if (row.strategy === ORACLE_STRATEGY) {
+      continue;
+    }
+    const decided = row.blockingPairsWinsVsEngine + row.blockingPairsLossesVsEngine;
+    const reduction =
+      row.strategy === REFERENCE_STRATEGY
+        ? ''
+        : `  reduction vs engine ${row.blockingPairsReductionVsEngine >= 0 ? '+' : ''}` +
+          `${row.blockingPairsReductionVsEngine.toFixed(2)} (${row.blockingPairsWinsVsEngine}/${decided}, ` +
+          `p=${formatPValue(row.blockingPairsPValueVsEngine)})`;
+    const pass =
+      row.strategy === STABLE_STRATEGY
+        ? `  · pass: ${row.stabilityMoves.toFixed(2)} moves, ` +
+          `p50/p95 ${row.stabilityMsP50.toFixed(2)}/${row.stabilityMsP95.toFixed(2)} ms`
+        : '';
+    lines.push(
+      `  ${row.scenario.padEnd(18)} ${row.strategy.padEnd(22)} ` +
+        `${row.blockingPairs.toFixed(2)} (${row.blockingPairsPerStudent.toFixed(3)}/student)` +
+        `${reduction}${pass}`,
+    );
+  }
+  return lines.join('\n');
+}
+
 if (typeof require !== 'undefined' && require.main === module) {
   runCli(() => {
     const seeds = parseStatisticsSeeds();
@@ -713,8 +836,9 @@ if (typeof require !== 'undefined' && require.main === module) {
       rows: rows.map(toRow),
     });
     console.error(
-      `\n${seeds} independent populations per scenario (seeds ${baseSeed}…${baseSeed + seeds - 1}), ` +
-        `all four strategies evaluated on each.\n${formatSignificanceSummary(rows)}`,
+      `\n${seeds} independent populations per scenario (seeds ${baseSeed}…${baseSeed + seeds - 1}).` +
+        `\n${formatSignificanceSummary(rows)}\n${formatStabilitySummary(rows)}`,
     );
   });
 }
+

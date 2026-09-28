@@ -2,13 +2,17 @@ export { WeightAdaptation } from './adaptation/weight-adaptation';
 export type { AdaptiveWeightKey } from './adaptation/weight-adaptation';
 export { AssignmentLifecycle } from './assignment/assignment-lifecycle';
 export type { CancellationResult } from './assignment/assignment-lifecycle';
-export { GreedyAssignmentEngine } from './assignment/greedy-assignment.engine';
+export { GreedyAssignmentEngine, countBlockingPairs } from './assignment/greedy-assignment.engine';
 export type {
   AssignmentRunResult,
   AssignmentStats,
   AssignBatchOptions,
+  BlockingPairCounts,
+  Placement,
   RepairOptions,
   RepairReport,
+  StabilityOptions,
+  StabilityReport,
 } from './assignment/greedy-assignment.engine';
 export { EligibilityFilter } from './filters/eligibility.filter';
 export { FeedbackUpdater } from './feedback/feedback-updater';

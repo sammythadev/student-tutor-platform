@@ -1,9 +1,12 @@
 import {
   CompositeScorer,
+  countBlockingPairs,
   EligibilityFilter,
   GreedyAssignmentEngine,
   type AssignBatchOptions,
+  type Placement,
   type RepairReport,
+  type StabilityReport,
 } from '@core/algorithms';
 import type { Assignment, Student, Tutor } from '@core/entities';
 import { emitResults, getFlagValue, runCli } from './cli-output';
@@ -64,6 +67,10 @@ export interface PlacedPair {
   tutor: Tutor;
 }
 
+/** The `Placement` shape `countBlockingPairs` reads, built from placed pairs. */
+const placementsOf = (placedPairs: ReadonlyArray<PlacedPair>): Placement[] =>
+  placedPairs.map((pair) => ({ studentId: pair.student.id, tutorId: pair.tutor.id }));
+
 /**
  * The deployed engine arm: the priority-queue heap pass followed by the bounded
  * repair pass. Repair is the engine's default behaviour, so this arm and the
@@ -87,6 +94,15 @@ export const NO_REPAIR_STRATEGY = 'greedy-engine-norepair';
  * so it can only add placements, never lose one — see `STAGE3_FLOOR.md`.
  */
 export const FLOOR_STRATEGY = 'floor-exact';
+
+/**
+ * Strategy label for the stage-4 stability arm: the deployed pipeline (heap pass
+ * plus bounded repair) followed by bounded blocking-pair elimination. It is the
+ * only arm whose objective is stability rather than static total, so it is
+ * measured against `da-stable`, the arm that is stable by construction, as well
+ * as against the deployed engine — see `docs/benchmarks/STAGE4_STABILITY.md`.
+ */
+export const STABLE_STRATEGY = 'greedy-engine-stable';
 
 /**
  * Why each unplaced student was left out, counted per population. Buckets are
@@ -209,6 +225,8 @@ function runFcfs(
   unassigned: number;
   loads: number[];
   placedPairs: PlacedPair[];
+  /** Blocking pairs in the matching this arm produced (lower = more stable). */
+  blockingPairs: number;
 } {
   const filter = new EligibilityFilter();
   const scorer = new CompositeScorer();
@@ -228,7 +246,13 @@ function runFcfs(
     tutor.assignedCount += 1;
   }
 
-  return { scores, unassigned, loads: tutors.map((tutor) => tutor.assignedCount), placedPairs };
+  return {
+    scores,
+    unassigned,
+    loads: tutors.map((tutor) => tutor.assignedCount),
+    placedPairs,
+    blockingPairs: countBlockingPairs(students, tutors, placementsOf(placedPairs)).total,
+  };
 }
 
 /**
@@ -247,6 +271,10 @@ function runEngine(
   placedPairs: PlacedPair[];
   unplacedCauses?: UnplacedCauseCounts;
   repair?: RepairReport;
+  /** Blocking pairs in the matching this arm produced (lower = more stable). */
+  blockingPairs: number;
+  /** Stability arm only: what the bounded elimination pass did and cost. */
+  stability?: StabilityReport;
   /** Floor arm only: the θ it enforced (the pipeline's own static floor). */
   floorTheta?: number;
   /** Floor arm only: the exact max-min ceiling over the students it placed. */
@@ -272,12 +300,23 @@ function runEngine(
     // the end state the classifier needs.
     unplacedCauses: classifyUnplaced(students, tutors, result.unassignable),
     repair: result.repair,
+    blockingPairs: countBlockingPairs(students, tutors, result.assignments).total,
+    stability: result.stability,
   };
 }
 
 /** Ablation arm: the heap pass alone, with the repair pass explicitly disabled. */
 function runEngineNoRepair(students: Student[], tutors: Tutor[]) {
   return runEngine(students, tutors, { repair: false });
+}
+
+/**
+ * Stage-4 arm: the deployed pipeline, then bounded blocking-pair elimination.
+ * The pass is opt-in on the engine (`stability: true`) and OFF in production, so
+ * this arm is the only caller that turns it on.
+ */
+function runEngineStable(students: Student[], tutors: Tutor[]) {
+  return runEngine(students, tutors, { stability: true });
 }
 
 /**
@@ -344,6 +383,7 @@ function runFloorExact(students: Student[], tutors: Tutor[]) {
     placedPairs,
     floorTheta,
     floorCeiling: ceiling.feasible ? ceiling.theta : 0,
+    blockingPairs: countBlockingPairs(students, fresh, placementsOf(placedPairs)).total,
   };
 }
 
@@ -368,6 +408,8 @@ function runDeferredAcceptance(
   unassigned: number;
   loads: number[];
   placedPairs: PlacedPair[];
+  /** Blocking pairs in the matching this arm produced (lower = more stable). */
+  blockingPairs: number;
 } {
   const filter = new EligibilityFilter();
   const scorer = new CompositeScorer();
@@ -465,6 +507,7 @@ function runDeferredAcceptance(
     unassigned: students.length - scores.length,
     loads: tutors.map((tutor) => tutor.assignedCount),
     placedPairs,
+    blockingPairs: countBlockingPairs(students, tutors, placementsOf(placedPairs)).total,
   };
 }
 
@@ -489,6 +532,7 @@ const STRATEGIES: Array<{
   { strategy: 'fcfs-best', run: (s, t) => runFcfs(s, t, bestEligible) },
   { strategy: 'da-stable', run: runDeferredAcceptance },
   { strategy: ENGINE_STRATEGY, run: runEngine },
+  { strategy: STABLE_STRATEGY, run: runEngineStable },
   { strategy: NO_REPAIR_STRATEGY, run: runEngineNoRepair },
   { strategy: FLOOR_STRATEGY, run: runFloorExact },
 ];
@@ -524,6 +568,14 @@ export interface StrategyOutcome {
   placedPairs: PlacedPair[];
   /** Engine-only: cause breakdown of this population's unplaced students. */
   unplacedCauses?: UnplacedCauseCounts;
+  /**
+   * Blocking pairs in this arm's final matching: (student, tutor) pairs where a
+   * gate-passing tutor with a seat and the student both prefer each other to the
+   * status quo. Zero is the stable-matching property DA holds by construction.
+   */
+  blockingPairs: number;
+  /** Stability arm only: what the bounded blocking-pair elimination pass did. */
+  stability?: StabilityReport;
   /** Every arm except the no-repair ablation: per-phase deltas and cost of the
    *  repair pass the deployed engine always runs. */
   repair?: RepairReport;
@@ -584,7 +636,7 @@ export function runStrategyOutcome(
 
   const scorer = new CompositeScorer();
   const freshTutors: Tutor[] = tutors.map((tutor) => ({ ...tutor, assignedCount: 0 }));
-  const { scores, unassigned, loads, placedPairs, unplacedCauses, repair, floorTheta, floorCeiling } =
+  const { scores, unassigned, loads, placedPairs, unplacedCauses, repair, floorTheta, floorCeiling, blockingPairs, stability } =
     definition.run(students, freshTutors);
   const placed = scores.length;
   const staticScores = placedPairs.map((pair) => scorer.staticScore(pair.student, pair.tutor));
@@ -608,6 +660,8 @@ export function runStrategyOutcome(
     repair,
     floorTheta,
     floorCeiling,
+    blockingPairs,
+    stability,
   };
 }
 

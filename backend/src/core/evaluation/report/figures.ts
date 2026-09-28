@@ -495,6 +495,44 @@ function deltaLinesFigure(statistics: Row[]): Figure | null {
   };
 }
 /**
+ * F10 — stage-4 stability: blocking pairs per student, by arm.
+ *
+ * A blocking pair is a (student, tutor) pair that is eligible and mutually
+ * preferred to the status quo, so zero blocking pairs is the stable-matching
+ * property. `da-stable` holds it by construction and is the reference the other
+ * bars are read against; the gap between it and `greedy-engine` is what the
+ * bounded elimination pass has to work with, and the `greedy-engine-stable` bar
+ * is how much of it the pass actually closed. The oracle row is absent because
+ * the exact solve emits totals rather than pairings, so its stability is not
+ * measured.
+ */
+function stabilityFigure(statistics: Row[]): Figure | null {
+  const { scenarios, series } = pivotByStrategy(statistics, 'blockingPairsPerStudent');
+  if (series.length === 0) {
+    return null;
+  }
+  return {
+    id: 'f10-blocking-pairs',
+    title: 'F10 · Blocking pairs per student by arm',
+    caption:
+      'Mean blocking pairs per student across independent populations; 0 is a stable ' +
+      'matching, so lower is better and the vertical axis starts at zero. Deferred ' +
+      'acceptance is the reference that holds zero by construction; the engine is the ' +
+      'deployed pipeline and `greedy-engine-stable` adds the bounded blocking-pair pass.',
+    sourceFile: 'baseline-statistics-results.csv',
+    svg: groupedBarChart({
+      title: 'Blocking pairs per student',
+      subtitle: 'mean over independent populations — lower is more stable',
+      categories: scenarios,
+      series,
+      yLabel: 'blocking pairs per student',
+      yMin: 0,
+      valueFormat: (value) => value.toFixed(2),
+    }),
+  };
+}
+
+/**
  * Strategy rows that are aggregates, diagnostics or ablations rather than
  * strategies, and so must never be drawn as a baseline curve:
  *   • `oracle-exact` — scenario-level oracle aggregates; its score, Jain and
@@ -506,6 +544,10 @@ function deltaLinesFigure(statistics: Row[]): Figure | null {
  *     The deployed engine is ONE algorithm, so it gets ONE series; the ablation
  *     belongs in the table (where the pass's value is quotable) and in
  *     `STAGE2_REPAIR.md`, not as a second greedy line competing for attention.
+ *   • `greedy-engine-stable` — the stage-4 arm. It optimizes stability rather
+ *     than static total, so drawing it as a quality series would invite reading
+ *     its deliberate score trade for a regression. It is plotted by F10 (the
+ *     stability figure), which pulls it back in explicitly.
  * `greedy-engine` is deliberately NOT here: it is the reference series F1/F3/
  * F4/F8 show, and the delta figures drop it themselves.
  */
@@ -513,10 +555,17 @@ const NON_STRATEGY_ROWS = new Set([
   'oracle-exact',
   'greedy-engine-static',
   'greedy-engine-norepair',
+  'greedy-engine-stable',
 ]);
 
 const comparisonArms = (rows: Row[]): Row[] =>
   rows.filter((row) => !NON_STRATEGY_ROWS.has(row.strategy));
+
+/** F10's arms: everything F1–F9 show, plus the stability arm they exclude. */
+const stabilityArms = (rows: Row[]): Row[] =>
+  rows.filter(
+    (row) => row.strategy === 'greedy-engine-stable' || !NON_STRATEGY_ROWS.has(row.strategy),
+  );
 
 export function buildFigures(data: Dataset): { figures: Figure[]; skipped: string[] } {
   const skipped: string[] = [];
@@ -538,9 +587,10 @@ export function buildFigures(data: Dataset): { figures: Figure[]; skipped: strin
     attempt('F4 coverage (statistics)', floorFigure(arms));
     attempt('F8 quality lines (statistics)', qualityLinesFigure(arms));
     attempt('F9 delta lines (statistics)', deltaLinesFigure(arms));
+    attempt('F10 blocking pairs (statistics)', stabilityFigure(stabilityArms(data.statistics)));
   } else {
     skipped.push(
-      'F1–F4, F8–F9 · baseline-statistics-results.csv not found — run `pnpm eval:statistics`',
+      'F1–F4, F8–F10 · baseline-statistics-results.csv not found — run `pnpm eval:statistics`',
     );
   }
 

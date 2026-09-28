@@ -53,6 +53,9 @@ export const PALETTE: Record<string, string> = {
   // another arm is added to the statistics table. (`greedy-engine-norepair` needs
   // none: it is an ablation and is never plotted.)
   'floor-exact': '#0d9488',
+  // The stage-4 stability arm: same pipeline as the engine, plus the bounded
+  // blocking-pair pass, so it needs a colour of its own on the stability figure.
+  'greedy-engine-stable': '#7c3aed',
 };
 
 const FALLBACK = ['#2563eb', '#dc2626', '#059669', '#7c3aed', '#db2777'];

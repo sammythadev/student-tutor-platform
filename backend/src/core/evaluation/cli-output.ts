@@ -192,6 +192,8 @@ export const TIMING_COLUMNS: ReadonlySet<string> = new Set([
   'repairMsP95',
   'oracleMsP50',
   'oracleMsP95',
+  'stabilityMsP50',
+  'stabilityMsP95',
   'solveMsP50',
   'solveMsP95',
   'ceilingMsP50',

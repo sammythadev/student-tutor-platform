@@ -33,6 +33,12 @@ export interface AssignmentRunResult {
    * engine's normal behaviour.
    */
   repair?: RepairReport;
+  /**
+   * Cost and outcome of the optional bounded blocking-pair elimination pass.
+   * Present only when `stability` was requested — the pass is not part of the
+   * deployed algorithm.
+   */
+  stability?: StabilityReport;
 }
 
 /** Bounds for the bounded repair pass. */
@@ -54,6 +60,54 @@ export interface RepairReport {
   /** Wall-clock milliseconds spent in the repair pass. */
   elapsedMs: number;
   maxDepth: number;
+}
+
+/**
+ * Bounds for the optional bounded blocking-pair elimination pass.
+ *
+ * The pass is OFF by default: it changes what the algorithm optimizes (stability
+ * instead of static total), which is a product decision, so it is measured as an
+ * arm before anything is wired into the request path — see STAGE4_STABILITY.md.
+ */
+export interface StabilityOptions {
+  /** Accepted resolutions before the pass stops and reports the residual. */
+  maxMoves?: number;
+}
+
+/** What the stability pass did, and what it cost. */
+export interface StabilityReport {
+  /** Blocking pairs in the matching the pass received (the deployed engine's). */
+  blockingPairsBefore: number;
+  /** Blocking pairs left when the pass stopped: a measured residual, not a claim. */
+  blockingPairsAfter: number;
+  /** Resolutions applied (each one strictly lowered the blocking count). */
+  moves: number;
+  /** Trial resolutions rejected because they did not lower the count. */
+  rejected: number;
+  /** (student, tutor) static scores computed inside the pass. */
+  scoredPairs: number;
+  elapsedMs: number;
+  maxMoves: number;
+}
+
+/** One placement, structurally compatible with `Assignment`. */
+export interface Placement {
+  studentId: string;
+  tutorId: string | null;
+}
+
+/**
+ * Blocking pairs of one matching, split by how the bounded pass may act on them.
+ * `total = freeSeat + swap + unresolved` by construction.
+ */
+export interface BlockingPairCounts {
+  total: number;
+  /** Resolvable by seating the student at a gate-passing tutor with a free seat. */
+  freeSeat: number;
+  /** Resolvable by swapping the student in and the tutor's weakest holder out. */
+  swap: number;
+  /** Blocking but out of reach: a full tutor and an unplaced student. */
+  unresolved: number;
 }
 
 /** Optional instrumentation collector for benchmarking (see evaluation-harness). */
@@ -91,6 +145,21 @@ export interface AssignBatchOptions {
    * the pass is worth (see `docs/benchmarks/STAGE2_REPAIR.md`). `{ maxDepth }`
    * bounds the displacement chain, default 3. */
   repair?: boolean | RepairOptions;
+  /**
+   * Optional bounded blocking-pair elimination (P4). DEFAULT OFF, and not wired
+   * into `MatchmakingService`: it trades static total for matching stability, so
+   * it is offered as an opt-in pass that the evaluation measures as its own arm
+   * (`greedy-engine-stable`, see `docs/benchmarks/STAGE4_STABILITY.md`).
+   *
+   * A pair (s, t) blocks the matching when t is a gate-passing tutor with a seat
+   * and both sides prefer each other: s is unplaced or prefers t to the tutor it
+   * holds, and t has a free seat or its weakest holder scores below σ(s, t). The
+   * pass resolves such pairs one at a time — free-seat moves first, then swaps
+   * with the tutor's weakest holder — accepting a resolution only when it
+   * strictly lowers the blocking count, and stopping at `maxMoves` moves or when
+   * no resolution helps. Deterministic, and reported as before/after/residual.
+   */
+  stability?: boolean | StabilityOptions;
 }
 
 /** Default augmenting-path depth: 1 displacement per seat opened. */
@@ -121,6 +190,292 @@ const resolveRepairOptions = (
   }
   const options = repair === true || repair === undefined ? {} : repair;
   return { maxDepth: Math.max(0, options.maxDepth ?? DEFAULT_REPAIR_MAX_DEPTH) };
+};
+
+/** Default accepted-resolution cap for the bounded stability pass. */
+const DEFAULT_STABILITY_MAX_MOVES = 64;
+
+/** Normalises the stability flag; null means "do not stabilise". */
+const resolveStabilityOptions = (
+  stability: boolean | StabilityOptions | undefined,
+): Required<StabilityOptions> | null => {
+  if (stability === undefined || stability === false) {
+    return null;
+  }
+  const options = stability === true ? {} : stability;
+  return { maxMoves: Math.max(0, options.maxMoves ?? DEFAULT_STABILITY_MAX_MOVES) };
+};
+
+/**
+ * Static scores of every gate-passing pair, computed once per student and
+ * reused. Scores come from `staticScoreFromMatch`, so they are load-independent:
+ * the fairness term cannot leak into a preference, and two runs that differ only
+ * in assignment order rank identically.
+ */
+interface PreferenceLookup {
+  /** Pairs scored, reported in the harness's pair count alongside repair's. */
+  readonly pairs: { value: number };
+  /** Gate-passing, seat-having tutors for one student: best score first, tutor
+   *  id as the deterministic tie-break. */
+  eligibleFor(student: Student): ReadonlyArray<{ tutorId: string; score: number }>;
+  /** Static score of one pair, or null when it fails a hard gate — including
+   *  tutors with no seat to offer, which can never be matched. */
+  scoreOf(student: Student, tutorId: string): number | null;
+}
+
+const buildPreferenceLookup = (tutors: readonly Tutor[]): PreferenceLookup => {
+  const scorer = new CompositeScorer();
+  const filter = new EligibilityFilter();
+  const rows = new Map<string, Map<string, number | null>>();
+  const ordered = new Map<string, ReadonlyArray<{ tutorId: string; score: number }>>();
+  const pairs = { value: 0 };
+
+  const rowFor = (student: Student): Map<string, number | null> => {
+    const cached = rows.get(student.id);
+    if (cached) {
+      return cached;
+    }
+
+    const weights = scorer.buildWeights(student);
+    const row = new Map<string, number | null>();
+    for (const tutor of tutors) {
+      if (
+        tutor.capacity <= 0 ||
+        !filter.hasSubject(student, tutor) ||
+        !filter.supportsGradeLevel(student, tutor) ||
+        !filter.supportsExamType(student, tutor)
+      ) {
+        row.set(tutor.id, null);
+        continue;
+      }
+      const match = scorer.score(student, tutor, weights);
+      pairs.value += 1;
+      row.set(tutor.id, scorer.staticScoreFromMatch(match, weights));
+    }
+
+    rows.set(student.id, row);
+    const ranked: Array<{ tutorId: string; score: number }> = [];
+    for (const [tutorId, score] of row) {
+      if (score !== null) {
+        ranked.push({ tutorId, score });
+      }
+    }
+    ranked.sort(
+      (left, right) => right.score - left.score || compareIds(left.tutorId, right.tutorId),
+    );
+    ordered.set(student.id, ranked);
+    return row;
+  };
+
+  return {
+    pairs,
+    eligibleFor: (student) => {
+      rowFor(student);
+      return ordered.get(student.id) ?? [];
+    },
+    scoreOf: (student, tutorId) => rowFor(student).get(tutorId) ?? null,
+  };
+};
+
+/** Who holds which seat, in a shape both the counting and the pass can mutate. */
+interface MatchingState {
+  /** studentId → tutorId for every student holding a seat. */
+  holderTutor: Map<string, string>;
+  /** tutorId → the student ids holding its seats. */
+  holders: Map<string, string[]>;
+}
+
+const buildMatchingState = (assignments: readonly Placement[]): MatchingState => {
+  const holderTutor = new Map<string, string>();
+  const holders = new Map<string, string[]>();
+  for (const assignment of assignments) {
+    if (!assignment.tutorId) {
+      continue;
+    }
+    holderTutor.set(assignment.studentId, assignment.tutorId);
+    const seatHolders = holders.get(assignment.tutorId);
+    if (seatHolders) {
+      seatHolders.push(assignment.studentId);
+    } else {
+      holders.set(assignment.tutorId, [assignment.studentId]);
+    }
+  }
+  return { holderTutor, holders };
+};
+
+const cloneMatchingState = (state: MatchingState): MatchingState => ({
+  holderTutor: new Map(state.holderTutor),
+  holders: new Map([...state.holders].map(([tutorId, ids]) => [tutorId, [...ids]])),
+});
+
+const setHolder = (state: MatchingState, studentId: string, tutorId: string): void => {
+  const previous = state.holderTutor.get(studentId);
+  if (previous) {
+    const seatHolders = state.holders.get(previous);
+    if (seatHolders) {
+      seatHolders.splice(seatHolders.indexOf(studentId), 1);
+    }
+  }
+  state.holderTutor.set(studentId, tutorId);
+  const next = state.holders.get(tutorId);
+  if (next) {
+    next.push(studentId);
+  } else {
+    state.holders.set(tutorId, [studentId]);
+  }
+};
+
+/** Everything the blocking tests need, built once per population. */
+interface BlockingContext {
+  students: readonly Student[];
+  studentById: Map<string, Student>;
+  tutorById: Map<string, Tutor>;
+  lookup: PreferenceLookup;
+}
+
+/** Lowest score among a tutor's holders, or +Infinity when it holds nobody. */
+const worstHolderScore = (
+  state: MatchingState,
+  context: BlockingContext,
+  tutorId: string,
+): number => {
+  let worst = Infinity;
+  for (const holderId of state.holders.get(tutorId) ?? []) {
+    const holder = context.studentById.get(holderId);
+    const score = holder ? context.lookup.scoreOf(holder, tutorId) : null;
+    if (score !== null) {
+      worst = Math.min(worst, score);
+    }
+  }
+  return worst;
+};
+
+/**
+ * Holders of `tutorId` that score below `threshold` there and could actually
+ * take a seat at `targetTutorId`, weakest first (score, then student id). The
+ * first entry is the holder a swap displaces.
+ */
+const displaceableHolders = (
+  state: MatchingState,
+  context: BlockingContext,
+  tutorId: string,
+  threshold: number,
+  targetTutorId: string,
+): string[] => {
+  const ranked: Array<{ holderId: string; score: number }> = [];
+  for (const holderId of state.holders.get(tutorId) ?? []) {
+    const holder = context.studentById.get(holderId);
+    if (!holder) {
+      continue;
+    }
+    const here = context.lookup.scoreOf(holder, tutorId);
+    if (here === null || here >= threshold) {
+      continue;
+    }
+    if (context.lookup.scoreOf(holder, targetTutorId) === null) {
+      continue;
+    }
+    ranked.push({ holderId, score: here });
+  }
+  ranked.sort((left, right) => left.score - right.score || compareIds(left.holderId, right.holderId));
+  return ranked.map((entry) => entry.holderId);
+};
+
+/**
+ * P4 — count the blocking pairs of one matching.
+ *
+ * A gate-passing pair (s, t) with a seat blocks when both sides prefer each
+ * other: s is unplaced or prefers t to the tutor it holds, and t has a spare
+ * seat or its weakest holder scores below σ(s, t). Preferences are the static
+ * composite score on both sides — the same basis the engine, the baselines and
+ * the oracle rank by — so a matching with zero blocking pairs is exactly the
+ * stable matching deferred acceptance produces.
+ *
+ * Read-only: it scores pairs but never mutates the population or the tasks.
+ */
+export function countBlockingPairs(
+  students: readonly Student[],
+  tutors: readonly Tutor[],
+  assignments: readonly Placement[],
+): BlockingPairCounts {
+  return countBlockingPairsOf(buildMatchingState(assignments), {
+    students,
+    studentById: new Map(students.map((student) => [student.id, student])),
+    tutorById: new Map(tutors.map((tutor) => [tutor.id, tutor])),
+    lookup: buildPreferenceLookup(tutors),
+  });
+}
+
+const countBlockingPairsOf = (
+  state: MatchingState,
+  context: BlockingContext,
+): BlockingPairCounts => {
+  const counts: BlockingPairCounts = { total: 0, freeSeat: 0, swap: 0, unresolved: 0 };
+
+  for (const student of context.students) {
+    const currentTutorId = state.holderTutor.get(student.id) ?? null;
+    const currentScore =
+      currentTutorId === null ? -Infinity : context.lookup.scoreOf(student, currentTutorId) ?? 0;
+
+    for (const { tutorId, score } of context.lookup.eligibleFor(student)) {
+      if (currentTutorId === tutorId) {
+        continue;
+      }
+      // Student side: unplaced students prefer every tutor; placed students only
+      // strictly better ones.
+      if (currentTutorId !== null && score <= currentScore) {
+        continue;
+      }
+
+      const tutor = context.tutorById.get(tutorId);
+      if (!tutor) {
+        continue;
+      }
+
+      const spareSeat = (state.holders.get(tutorId) ?? []).length < tutor.capacity;
+      // Tutor side: a free seat takes anyone; a full tutor must prefer s to its
+      // current weakest holder.
+      if (!spareSeat && !(score > worstHolderScore(state, context, tutorId))) {
+        continue;
+      }
+
+      counts.total += 1;
+      if (spareSeat) {
+        counts.freeSeat += 1;
+      } else if (
+        currentTutorId !== null &&
+        displaceableHolders(state, context, tutorId, score, currentTutorId).length > 0
+      ) {
+        counts.swap += 1;
+      } else {
+        counts.unresolved += 1;
+      }
+    }
+  }
+
+  return counts;
+};
+
+/** One blocking pair and the move that resolves it. */
+interface StabilityResolution {
+  /** Identity for the rejection set, so a failed trial is not retried forever. */
+  key: string;
+  kind: 'freeSeat' | 'swap';
+  studentId: string;
+  tutorId: string;
+  /** Swap only: the holder moved out of `tutorId` into the student's old seat. */
+  displacedId?: string;
+}
+
+/** Applies a resolution to a matching state (tentative trials use a clone). */
+const applyResolution = (state: MatchingState, resolution: StabilityResolution): void => {
+  if (resolution.kind === 'swap' && resolution.displacedId) {
+    const vacated = state.holderTutor.get(resolution.studentId);
+    if (vacated) {
+      setHolder(state, resolution.displacedId, vacated);
+    }
+  }
+  setHolder(state, resolution.studentId, resolution.tutorId);
 };
 
 export class GreedyAssignmentEngine {
@@ -263,6 +618,17 @@ export class GreedyAssignmentEngine {
       stats.pairsScored += repair.scoredPairs;
     }
 
+    // Optional bounded blocking-pair elimination (P4), OFF unless requested: it
+    // runs on the repaired matching so the arm measures the deployed pipeline
+    // plus the pass, not a different pipeline.
+    const stabilityOptions = resolveStabilityOptions(options.stability);
+    const stability = stabilityOptions
+      ? this.stabilize(students, tutors, assignedStudentIds, assignments, stabilityOptions)
+      : undefined;
+    if (stats && stability) {
+      stats.pairsScored += stability.scoredPairs;
+    }
+
     const unassignable = students
       .filter((student) => !assignedStudentIds.has(student.id))
       .map((student) =>
@@ -274,7 +640,7 @@ export class GreedyAssignmentEngine {
         ),
       );
 
-    return { assignments, unassignable, repair };
+    return { assignments, unassignable, repair, stability };
   }
 
   /**
@@ -503,6 +869,235 @@ export class GreedyAssignmentEngine {
       elapsedMs: performance.now() - startedAt,
       maxDepth: options.maxDepth,
     };
+  }
+
+  /**
+   * P4 — bounded blocking-pair elimination.
+   *
+   * Runs on the matching the deployed pipeline produced (heap pass, then repair)
+   * and resolves blocking pairs one at a time: a free-seat move when the tutor
+   * has room, otherwise a swap with the tutor's weakest holder — the holder that
+   * both scores below the incoming student and can take the seat that student
+   * vacates. A resolution is applied only when the blocking count strictly
+   * falls, which is what makes the pass terminate (the count is a non-negative
+   * integer, so at most `before` moves can ever be accepted) and what stops it
+   * trading one blocker for another. Trials that do not help are counted, not
+   * hidden, and the residual count is reported either way.
+   *
+   * Deterministic: students in input order, their gate-passing tutors in static
+   * score order with tutor id as tie-break, the weakest displaceable holder
+   * first, and every trial evaluated on a clone before anything is written.
+   */
+  private stabilize(
+    students: Student[],
+    tutors: Tutor[],
+    assignedStudentIds: Set<string>,
+    assignments: Assignment[],
+    options: Required<StabilityOptions>,
+  ): StabilityReport {
+    const startedAt = performance.now();
+    const lookup = buildPreferenceLookup(tutors);
+    const context: BlockingContext = {
+      students,
+      studentById: new Map(students.map((student) => [student.id, student])),
+      tutorById: new Map(tutors.map((tutor) => [tutor.id, tutor])),
+      lookup,
+    };
+    const assignmentByStudent = new Map<string, Assignment>();
+    for (const assignment of assignments) {
+      if (assignment.tutorId) {
+        assignmentByStudent.set(assignment.studentId, assignment);
+      }
+    }
+
+    let state = buildMatchingState(assignments);
+    const before = countBlockingPairsOf(state, context).total;
+    let current = before;
+    let moves = 0;
+    let rejected = 0;
+    const rejectedKeys = new Set<string>();
+    // An unhelpful resolution would be found again on the next scan, so the
+    // attempt budget — not just the move budget — is what bounds the pass.
+    const maxAttempts = options.maxMoves * 4;
+
+    while (moves < options.maxMoves && moves + rejected < maxAttempts) {
+      const resolution = this.findBlockingResolution(state, context, rejectedKeys);
+      if (!resolution) {
+        break;
+      }
+
+      const trial = cloneMatchingState(state);
+      applyResolution(trial, resolution);
+      const trialCount = countBlockingPairsOf(trial, context).total;
+
+      if (trialCount < current) {
+        applyResolution(state, resolution);
+        this.applyStabilityToAssignments(
+          resolution,
+          assignments,
+          assignmentByStudent,
+          assignedStudentIds,
+          context,
+        );
+        current = trialCount;
+        moves += 1;
+        rejectedKeys.clear();
+      } else {
+        rejected += 1;
+        rejectedKeys.add(resolution.key);
+      }
+    }
+
+    return {
+      blockingPairsBefore: before,
+      blockingPairsAfter: current,
+      moves,
+      rejected,
+      scoredPairs: lookup.pairs.value,
+      elapsedMs: performance.now() - startedAt,
+      maxMoves: options.maxMoves,
+    };
+  }
+
+  /** First resolvable blocking pair in canonical order, skipping rejected trials. */
+  private findBlockingResolution(
+    state: MatchingState,
+    context: BlockingContext,
+    rejectedKeys: ReadonlySet<string>,
+  ): StabilityResolution | null {
+    for (const student of context.students) {
+      const currentTutorId = state.holderTutor.get(student.id) ?? null;
+      const currentScore =
+        currentTutorId === null
+          ? -Infinity
+          : context.lookup.scoreOf(student, currentTutorId) ?? 0;
+
+      for (const { tutorId, score } of context.lookup.eligibleFor(student)) {
+        if (currentTutorId === tutorId) {
+          continue;
+        }
+        if (currentTutorId !== null && score <= currentScore) {
+          continue;
+        }
+
+        const tutor = context.tutorById.get(tutorId);
+        if (!tutor) {
+          continue;
+        }
+
+        const spareSeat = (state.holders.get(tutorId) ?? []).length < tutor.capacity;
+        if (spareSeat) {
+          const key = `${student.id}:${tutorId}:move`;
+          if (!rejectedKeys.has(key)) {
+            return { key, kind: 'freeSeat', studentId: student.id, tutorId };
+          }
+          continue;
+        }
+
+        // A full tutor cannot absorb an unplaced student without dropping one,
+        // so that blocker is left to the residual count.
+        if (currentTutorId === null) {
+          continue;
+        }
+        if (!(score > worstHolderScore(state, context, tutorId))) {
+          continue;
+        }
+
+        const displaceable = displaceableHolders(state, context, tutorId, score, currentTutorId);
+        if (displaceable.length === 0) {
+          continue;
+        }
+        const key = `${student.id}:${tutorId}:${displaceable[0]}`;
+        if (!rejectedKeys.has(key)) {
+          return {
+            key,
+            kind: 'swap',
+            studentId: student.id,
+            tutorId,
+            displacedId: displaceable[0],
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  /** Mirrors an accepted resolution onto the caller's assignments and loads. */
+  private applyStabilityToAssignments(
+    resolution: StabilityResolution,
+    assignments: Assignment[],
+    assignmentByStudent: Map<string, Assignment>,
+    assignedStudentIds: Set<string>,
+    context: BlockingContext,
+  ): void {
+    const target = context.tutorById.get(resolution.tutorId);
+    const student = context.studentById.get(resolution.studentId);
+    if (!target || !student) {
+      return;
+    }
+
+    const vacatedId = assignmentByStudent.get(resolution.studentId)?.tutorId ?? null;
+    const vacated = vacatedId ? context.tutorById.get(vacatedId) ?? null : null;
+
+    if (resolution.kind === 'swap' && resolution.displacedId && vacated) {
+      const displaced = context.studentById.get(resolution.displacedId);
+      if (displaced) {
+        this.seatStudent(
+          resolution.displacedId,
+          vacated,
+          target,
+          assignments,
+          assignmentByStudent,
+          assignedStudentIds,
+          context,
+        );
+      }
+    }
+
+    this.seatStudent(
+      resolution.studentId,
+      target,
+      vacated,
+      assignments,
+      assignmentByStudent,
+      assignedStudentIds,
+      context,
+    );
+  }
+
+  /** Moves one student into a seat, rescorning with the load it actually joined. */
+  private seatStudent(
+    studentId: string,
+    toTutor: Tutor,
+    fromTutor: Tutor | null,
+    assignments: Assignment[],
+    assignmentByStudent: Map<string, Assignment>,
+    assignedStudentIds: Set<string>,
+    context: BlockingContext,
+  ): void {
+    const student = context.studentById.get(studentId);
+    if (!student) {
+      return;
+    }
+
+    if (fromTutor) {
+      fromTutor.assignedCount -= 1;
+    }
+    toTutor.assignedCount += 1;
+
+    const weights = this.compositeScorer.buildWeights(student);
+    const matchScore = this.compositeScorer.score(student, toTutor, weights);
+
+    const existing = assignmentByStudent.get(studentId);
+    if (existing) {
+      existing.tutorId = toTutor.id;
+      existing.matchScore = matchScore;
+    } else {
+      const created = this.createAssignment(studentId, toTutor.id, matchScore);
+      assignments.push(created);
+      assignmentByStudent.set(studentId, created);
+    }
+    assignedStudentIds.add(studentId);
   }
 
   /** Fallback for top-k: greedily match still-unassigned students against any
