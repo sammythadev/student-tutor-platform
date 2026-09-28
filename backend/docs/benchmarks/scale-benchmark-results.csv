@@ -1,0 +1,4 @@
+students,tutors,seeds,engineMs,engineP95Ms,scoringMs,floorSolveMs,floorSolveP95Ms,ceilingMs,ceilingP95Ms,oracleMs,oracleP95Ms,oracleAugmentations,oracleCapped,coverageEngine,coverageFloor,coverageOracle,totalScorePerStudentEngine,totalScorePerStudentFloor,totalScorePerStudentOracle,floorEngine,floorFloor,ceiling,repairPlacementsGained
+1000,100,1,169.2,169.2,96.2,111.7,111.7,330.8,330.8,266.0,266.0,250,0,0.250000,0.250000,0.250000,0.169682,0.170044,0.170044,0.466418,0.500625,0.514875,0.00
+2000,200,1,315.6,315.6,215.1,521.1,521.1,2386.3,2386.3,1811.3,1811.3,500,0,0.250000,0.250000,0.250000,0.177484,0.178198,0.178198,0.506386,0.518875,0.532208,0.00
+5000,500,1,1619.2,1619.2,1308.6,5269.5,5269.5,27150.1,27150.1,27227.5,27227.5,1250,0,0.250000,0.250000,0.250000,0.186737,0.187501,0.187501,0.561842,0.581000,0.607099,0.00

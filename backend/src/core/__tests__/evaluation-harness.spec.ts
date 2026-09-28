@@ -243,17 +243,15 @@ describe('winner summary from result rows', () => {
   });
 
   it('counts wins from per-run rows and falls back for aggregate rows', () => {
+    // Build rows by COLUMN NAME, not position: the aggregate header gained
+    // `seeds` and the dispersion columns, so index-based fixtures rot.
+    const byNameRow = (cells: Record<string, string>): string[] =>
+      HEADER.map((column) => cells[column] ?? '');
     const perRunRows = [
-      ['scenario', '', '', '', '', '2', '1', 'da-stable'],
-      ['scenario', '', '', '', '', '2', '2', 'greedy-engine'],
-      ['scenario', '', '', '', '', '2', '3', 'greedy-engine'],
-    ].map((cells) => {
-      const row = new Array<string>(HEADER.length).fill('');
-      cells.forEach((cell, i) => {
-        row[i] = cell;
-      });
-      return row;
-    });
+      byNameRow({ scenario: 'scenario', runs: '2', run: '1', winner: 'da-stable' }),
+      byNameRow({ scenario: 'scenario', runs: '2', run: '2', winner: 'greedy-engine' }),
+      byNameRow({ scenario: 'scenario', runs: '2', run: '3', winner: 'greedy-engine' }),
+    ];
     const perRun = winnerSummaryFromRows(HEADER, perRunRows);
     expect(perRun.mode).toBe('per-run');
     const byName = new Map(perRun.strategies.map((s) => [s.strategy, s]));

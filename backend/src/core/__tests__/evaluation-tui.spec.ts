@@ -23,7 +23,13 @@ import {
   toRow,
 } from '../evaluation/evaluation-harness';
 import { computeOptimalityGapRow, DEFAULT_GAP_SIZES } from '../evaluation/optimal-baseline';
-import { runBaselineCell, SCENARIOS } from '../evaluation/baseline-comparison';
+import {
+  FLOOR_STRATEGY,
+  NO_REPAIR_STRATEGY,
+  runBaselineCell,
+  SCENARIOS,
+  STABLE_STRATEGY,
+} from '../evaluation/baseline-comparison';
 import { getSuite, harnessSuite, moderateSuite, topkSuite, SUITES } from '../evaluation/tui/suites';
 import { wrapClearDesync } from '../evaluation/tui/stdout-clear-patch';
 import {
@@ -76,13 +82,16 @@ describe('optimality gap helpers', () => {
 });
 
 describe('baseline cell runner', () => {
-  it('runs all four strategies per scenario', () => {
+  it('runs every strategy per scenario, including the ablation and floor arms', () => {
     const rows = runBaselineCell(SCENARIOS[0]);
     expect(rows.map((row) => row.strategy)).toEqual([
       'fcfs-filter',
       'fcfs-best',
       'da-stable',
       'greedy-engine',
+      STABLE_STRATEGY,
+      NO_REPAIR_STRATEGY,
+      FLOOR_STRATEGY,
     ]);
   });
 });

@@ -1,0 +1,413 @@
+===== SLIDE 1 =====
+  FEDERAL UNIVERSITY OF TECHNOLOGY OWERRI  ·  DEPARTMENT OF SOFTWARE ENGINEERING
+  A Multi-Criteria Student-Tutor Matchmaking System Using Weighted Scoring and Availability Optimization
+  A Final Year Project Defence - B.Tech (Hons) Software Engineering, July 2026
+  Anumudu Udochukwu Samuel
+  20211259202
+  Obi Michael Chimaobi
+  20211265722
+  Supervisor: Engr. Dr. A. I. Erike
+  NestJS · React · PostgreSQL · Drizzle ORM
+===== SLIDE 2 =====
+  ROADMAP
+  What This Defence Covers
+  01
+  Background & Problem
+  Market context, the West African tutoring gap, and the four concrete defects in current matching
+  02
+  Literature Review
+  Conceptual, theoretical and empirical frames; the research gap this work closes
+  03
+  Methodology
+  Requirements, the composite scoring model, and the priority-queue greedy algorithm
+  04
+  System Design
+  Three-tier architecture, domain-layer algorithm design, database and module design
+  05
+  Evaluation & Results
+  30-population benchmark, optimality gap, fairness floor, scaling and explainability
+  06
+  Conclusion & Contribution
+  Findings, recommendations, contribution to knowledge, and future work
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  01
+===== SLIDE 3 =====
+  CHAPTER ONE
+  Background to the Study
+  A USD 10.4 bn tutoring market, roughly half of it primary and secondary
+  72.12% of 1.8 m WASSCE 2024 candidates earned five credit passes - down 7.69 points YoY
+  Matching is still manual, keyword-filtered, or subject-and-availability only
+  01
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  02
+===== SLIDE 4 =====
+  1.1 BACKGROUND
+  A Large Market, an Informal Matching Process
+  Secondary-school tutoring demand in Nigeria is driven by exam preparation, not enrichment.
+  Online tutoring reached USD 10.4 bn in 2024 and is forecast to nearly double to USD 23.7 bn by 2030 (Grand View Research, 2025); primary and secondary learners drive over half of that demand.
+  WASSCE 2024: 72.12% of 1.8 m candidates scored credit passes in at least five subjects - a 7.69-point drop from 2023, leaving roughly half a million candidates short in core subjects (Vanguard, 2024).
+  Personalisation, not content, drives engagement in educational recommender systems (Deschenes, 2020; da Silva et al., 2023; Spivakovsky et al., 2025).
+  Deployed matching is primitive: manual assignment, keyword filtering, or rules over subject and availability only (Taveekarn et al., 2014; Ramesh, 2020).
+  The ranking effect concentrates demand on popular tutors while new tutors idle (Pitoura et al., 2022), and calendars collide.
+  Why a matching problem, not a search problem
+  Assigning n students to m tutors with capacity limits and conflicting preferences is constrained combinatorial optimisation. Weighted scoring resolves the criteria trade-off; a priority-queue greedy pass with lazy fairness recomputation resolves the allocation at scale.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  03
+===== SLIDE 5 =====
+  1.2 STATEMENT OF PROBLEM
+  Four Defects in Every Current Platform
+  01
+  Limited matching criteria
+  Tutor-finder platforms match on subject and time slot and little else. Teaching style, language compatibility, pricing and historical performance are ignored (Taveekarn et al., 2014; Ramesh, 2020).
+  02
+  Scheduling conflicts
+  A tutor's calendar and a student's calendar often fail to overlap, and the same conflict recurs weekly for anyone on a fixed timetable.
+  03
+  Uneven tutor workload
+  A few well-ranked tutors are flooded with requests while the rest sit idle - the ranking effect concentrates supply instead of distributing it (Pitoura et al., 2022).
+  04
+  Opaque recommendations
+  A failed match costs hours of contact and real money from the paying family, and neither side can see why the pairing was proposed.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  04
+===== SLIDE 6 =====
+  1.3 / 1.4
+  Objectives and Research Questions
+  Objectives
+  Design a weighted composite scoring model spanning academic fit, preferences and schedule availability.
+  Develop a capacity-constrained assignment algorithm that accounts for tutor load in real time.
+  Implement the model as a production web platform on NestJS, React and PostgreSQL.
+  Validate the algorithm empirically against an exact min-cost-max-flow oracle and three deployed-style baselines.
+  Quantify the trade-off between match quality, fairness and runtime.
+  Research Questions
+  RQ1
+  How effective is the composite scoring model at predicting match quality against deployed-style baselines?
+  RQ2
+  Does capacity-aware assignment outperform first-come-first-served and self-selection under contention?
+  RQ3
+  What is the measured optimality gap of the greedy engine against the exact optimum?
+  RQ4
+  How do fairness constraints affect match quality, and what is the price of that fairness?
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  05
+===== SLIDE 7 =====
+  CHAPTER TWO
+  Literature Review
+  Conceptual: multi-criteria decision-making and weighted scoring models
+  Theoretical: the proven half-approximation of greedy bipartite matching
+  Empirical: what 30 studies of educational recommender systems actually do
+  The gap: near-zero direct attempt at tutor allocation itself
+  02
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  06
+===== SLIDE 8 =====
+  2.2 - 2.4
+  Three Frames, One Unanswered Question
+  Conceptual framework
+  Multi-criteria decision-making resolves conflicting suitability criteria through explicit weights (Wang et al., 2023; Hien et al., 2025).
+  Weighted scoring models give a single comparable number per student-tutor pair.
+  Theoretical framework
+  Greedy bipartite matching carries a proven half-approximation guarantee - used directly as the design basis rather than cited as background.
+  The guarantee covers the static-only variant; the shipped engine's fairness term, top-K truncation and hash tie-break fall outside its assumptions.
+  Empirical framework
+  Educational recommender systems overwhelmingly recommend content or resources, not people (da Silva et al., 2023).
+  Direct tutor allocation is attempted rarely, and where it exists it optimises stability or a single axis.
+  THE RESEARCH GAP
+  No reviewed system combines a multi-criterion weighted compatibility score, a hard availability constraint, and a load-balancing objective in a single assignment decision - and none of them report their output against an exact optimal-assignment oracle.
+  This work closes that gap: it scores every eligible pair, allocates under capacity, prices fairness explicitly, and validates all three against a min-cost-max-flow oracle and three baseline strategies over 30 independent populations per scenario.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  07
+===== SLIDE 9 =====
+  CHAPTER THREE
+  Methodology
+  Requirements gathered from the platform's tutor, student and admin roles
+  Composite scoring model: academic fit, preference fit, schedule fit
+  Priority-queue greedy assignment with lazy fairness recomputation
+  Implementation plan and the path from model to module
+  03
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  08
+===== SLIDE 10 =====
+  4.5.1
+  The Composite Scoring Model
+  a.A(s,t)  +  b.P(s,t)  +  c.S(s,t)  +  d.F(t)          a + b + c + d = 1 ,  each sub-score in [0,1]
+  A - Academic score
+  1.0 exact subject + specialisation match
+  0.7 subject matches, stated specialisations do not align
+  0.5 subject matches, specialisation data missing
+  Exam-type term: 1.0 supported or unspecified, 0.5 explicit mismatch
+  Grade-gap term g penalises distance from the nearest supported grade level
+  P - Preference score
+  Style: cosine similarity over one-hot vectors of delivery mode, format and learning style
+  Budget: 1 if the hourly rate is within budget, linear decay on excess
+  Region: 1 for online or same-region in-person, 0 for mismatch, 0.5 when data is missing
+  S - Schedule score
+  Overlap between requested slots H_s and available slots H_t
+  One contiguous tutor slot must cover the request; fragments across several slots fail
+  A student with zero declared availability is rejected as an incomplete profile
+  Fairness term  F(t) = (1 - load(t)/capacity(t))^1.15 + 0.05
+  - the 1.15 exponent makes the penalty on heavily loaded tutors slightly super-linear; the 0.05 cold-start boost applies only to a tutor with zero assigned students, nudging unused tutors back into circulation. Default load-factor weight d = 0.05.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  09
+===== SLIDE 11 =====
+  4.5.2
+  Priority-Queue Greedy with Lazy Fairness Recompute
+  1
+  Hard eligibility filter
+  The tutor must teach one of the student's subjects, support the grade level and exam type, and have spare capacity. Ineligible pairs are never scored and never reach the heap.
+  2
+  Push eligible pairs
+  Each eligible (student, tutor) pair is scored by the composite model and pushed onto a max-heap keyed by priority.
+  3
+  Pop the best pair
+  The highest-priority pair is assigned, consuming one seat from that tutor's capacity.
+  4
+  Recompute lazily
+  Because a tutor's load changed, every remaining pair touching that tutor is stale: pop it, re-score it with the fresh F(t), push it back.
+  5
+  Mark the rest unassignable
+  When the heap empties with students still unplaced, each is recorded with a structured reason code - never silently dropped.
+  Why lazy recompute
+  Static sorting has a known flaw: a tutor's fairness score is correct only while the tutor has no students. The moment a seat is taken, every cached score for that tutor is stale. Lazy recompute re-pushes only the affected pairs instead of re-sorting the whole candidate set - the fairness term stays exact at a fraction of the cost.
+  Complexity
+  Time: O(S.T) to score eligible pairs, O(E log E) for heap operations, plus lazy re-pushes - O(n^2 log n) overall
+  Space: O(E) heap entries, one per live candidate pair
+  Measured: 5,000 students / 500 tutors gives 208,336 pairs scored in 2.28 s mean
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  10
+===== SLIDE 12 =====
+  CHAPTER FOUR
+  System Design, Implementation and Evaluation
+  NestJS + Drizzle ORM + PostgreSQL, consumed by a React front end
+  Three-tier architecture with the algorithm owned by the domain layer
+  30 independent populations per scenario, 95% CIs, paired sign tests
+  Validation against a min-cost-max-flow oracle and three baselines
+  04
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  11
+===== SLIDE 13 =====
+  4.2 - 4.4
+  Three-Tier Architecture, Algorithm in the Domain Layer
+  Presentation tier
+  React front end - tutor, student and admin dashboards - consumes POST /api/matches - renders explainable match reasons
+  ▶
+  Application tier
+  NestJS controllers - DTO validation at the boundary - services orchestrate scoring and assignment - typed HTTP exceptions, never bare throws
+  ▶
+  Domain layer
+  CompositeScorer - GreedyAssignmentEngine (max-heap + lazy fairness) - match rationale builder - capacity and eligibility policy
+  ▶
+  Data tier
+  PostgreSQL via Drizzle ORM - schema-first - users, profiles, subjects, availability, capacity, assignments - zero N+1 joins
+  End-to-end matchmaking flow
+  Controller validates the request and loads the eligible population
+  Scorer produces a compatibility score and a per-criterion breakdown
+  Engine allocates under capacity, then runs bounded augmenting-path repair
+  Service returns placements, unplaced reason codes and human-readable rationales
+  Edge cases handled explicitly
+  Incomplete profiles rejected: a student with no declared availability never enters the pool
+  Zero-capacity tutors filtered before scoring, not after
+  Fragmented slot coverage fails the contiguous-slot rule
+  Unassignable students carry a structured reason, never a silent drop
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  12
+===== SLIDE 14 =====
+  4.10.1
+  The Evaluation Harness
+  core/evaluation/evaluation-harness.ts generates synthetic student and tutor populations of configurable size and student:tutor ratio - no live production data required, consistent with the stated limitation in Section 1.6.
+  Three scenario families: realistic-seed (50:50, mirroring the platform's actual Nigerian secondary-school seed data and capacity distribution), moderate-* (1.5:1 to 4:1, probing fairness where slack exists but is not unlimited), and stress-sweep (a deliberate 10:1 oversubscription test at four scales).
+  30 independent populations per scenario, exploratory seeds 0-29. Every reported mean carries a 95% confidence interval, and every engine-versus-baseline claim is backed by a paired sign test.
+  An exact min-cost-max-flow oracle provides the reference point, and the engine is compared against three deployed-style strategies: filter-only FCFS, score-based self-selection, and student-proposing deferred acceptance.
+  30
+  independent populations per scenario (seeds 0-29)
+  95%
+  confidence interval on every reported mean
+  6
+  strategies compared, including the exact oracle
+  5
+  student:tutor regimes: 1:1, 1.5:1, 2:1, 3:1, 10:1
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  13
+===== SLIDE 15 =====
+  4.10.2  ·  FIGURE F1 / F8
+  Match Quality by Strategy, With 95% Confidence Intervals
+  Scoring is worth 0.07-0.10 on its own
+  Filter-only FCFS sits at 0.523-0.526 at every ratio, 0.05-0.18 below the engine - a 10-26% relative reduction. This is the empirical case for scoring at all.
+  The engine and DA converge under scarcity
+  At 10:1 only the capacity-aware strategies place anyone useful: engine 0.7064 vs deferred acceptance 0.7061 vs self-selection 0.5822. Coordination beats greedy choice once seats are contested.
+  Read coverage alongside score
+  A higher mean can coexist with more unplaced students. F4 is reported for exactly this reason - the engine wins on both axes at once.
+  Mean match score per scenario across 30 independent populations, one line per strategy. Overlapping intervals mean the strategies are not distinguishable at that scenario.   Source: docs/benchmarks/baseline-statistics-results.csv
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  14
+===== SLIDE 16 =====
+  4.10.5  ·  FIGURE F2 / F9
+  Each Baseline Against the Engine
+  FCFS loses everywhere, decisively
+  -0.046 to -0.182 mean score, p < 0.0001 at all four scenarios. It also gives the most uneven loads when capacity is slack: Jain 0.390 vs the engine's 0.506 at 1:1.
+  Self-selection's edge starts at 2:1
+  Indistinguishable from the engine at 1:1 (+0.0014, p = 0.86) and 1.5:1 (-0.0004, p = 0.86), then behind by 0.019 at 3:1 and 0.124 at 10:1. Early arrivals take seats later students needed more.
+  Deferred acceptance is a real rival
+  Within 0.0004 of the engine at 10:1, but it fixes each pair once and cannot re-balance load as tutors fill. Its fairness lags where capacity is slack.
+  Mean per-population difference (strategy minus engine) per scenario. The zero line is the engine: lines hugging it are ties. 15 of 27 comparisons are significant at p < 0.05.   Source: baseline-statistics-results.csv
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  15
+===== SLIDE 17 =====
+  4.10.2  ·  FIGURES F3 & F4
+  Fairness and Coverage Are Won Together
+  F3 - Jain's fairness index over tutor loads (1.0 = perfectly even)   ·   F4 - share of students that received a placement.   Source: baseline-statistics-results.csv
+  Fairness - Jain's index
+  Where capacity is slack the engine's live fairness term is decisive: 0.506 vs 0.391 (FCFS) and 0.491 (self-selection) at 1:1. At 10:1 every capacity-aware strategy saturates at the 0.833 arithmetic ceiling - fairness there is set by the capacity model, not the algorithm.
+  Coverage - share placed
+  The repaired engine places 92.9% of students at 1:1 and 98.1% at 1.5:1, against 91.3% and 95.9% unrepaired - and beats every baseline on both score and coverage. At 3:1 it reaches 82.5% where all four baselines sit between 75.8% and 77.9%.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  16
+===== SLIDE 18 =====
+  4.5.5  ·  FIGURE F5
+  How Close Is the Engine to the True Optimum?
+  After repair: 98.5-99.7% of the oracle
+  Across the unsaturated scenarios the repaired engine reaches 98.52-99.75% of the oracle's static total, with coverage within 0.0004-0.0011 of optimal.
+  The classical half-bound does not apply here
+  That proof covers the static-only variant. The shipped engine deviates three ways - fairness term in the priority, top-K truncation, hash tie-break - so 0.98-1.00 is empirical, not a bound being exceeded. Scoping this correctly was a correction made to the original report.
+  Pre-repair the engine leaked placements
+  The 100-student instance placed 63 of the 64 students the optimum could. 72-98% of that leak was students whose gate-passing tutors were all full - exactly what bounded augmenting-path repair fixes.
+  Share of the min-cost-max-flow optimum the greedy engine achieves, by problem size. Worst observed ratio 97.61%.   Source: docs/benchmarks/optimality-gap-results.csv
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  19
+===== SLIDE 19 =====
+  4.10.2  ·  FIGURES F6 & F7
+  Candidate-List Size: Where the Plateau Starts
+  F6 - mean match score as the candidate list grows   ·   F7 - mean elapsed ms per run as it grows.   Source: topk-sweep-results.csv
+  Quality plateaus at top-K = 20
+  At 1,000 students, top-K 10 scores 0.7123 and top-K 20 scores 0.7124 - a difference of 0.0001. K = 50 and K = infinity return an identical 0.7806 at 2,000 students. Past the plateau, a larger candidate list buys nothing at all.
+  The plateau is not free
+  Scoring cost still grows with K. At 1,000 students mean runtime moves 120 / 89 / 74 / 57 ms across K = 10/20/50/infinity; at 2,000 students it is 1,624 / 1,645 / 2,294 / 2,192 ms. K = 20 is the knee: the quality of infinity at a fraction of the scoring cost.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  17
+===== SLIDE 20 =====
+  4.10.4
+  Scaling: The Greedy Engine vs the Exact Solver
+  Students / tutors
+  1,000 / 100
+  2,000 / 200
+  5,000 / 500
+  Engine runtime
+  169 ms
+  316 ms
+  1,619 ms
+  - of which scoring
+  96 ms
+  215 ms
+  1,309 ms
+  Pairs scored
+  3,336
+  13,336
+  208,336
+  Exact oracle runtime
+  266 ms
+  1,811 ms
+  27,228 ms
+  Oracle cap hit
+  no
+  no
+  no
+  O(n^2 log n), confirmed
+  Quadratic growth plus a slowly growing log factor. At 5,000 students: 2.28 s mean over five runs, consistent with the theory in 4.5.3.
+  The exact solver is not the product
+  At 5,000 students the oracle takes 27.2 s against the engine's 1.6 s - a 16.8x gap - and on unsaturated populations it hits its augmentation cap and is abandoned (capped = 1) at 2,000 students, taking 63.8 s. The oracle is a validation instrument, not a deployment strategy; the engine is what ships.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  18
+===== SLIDE 21 =====
+  4.10.2  ·  NEGATIVE RESULT
+  A Real Defect, With Proven Headroom
+  The worst-placed student still scores only 0.380-0.433 across the unsaturated scenarios while the mean sits near 0.59-0.62. One badly served student is invisible to an average.
+  Repair does not fix it: the augmenting-path pass adds students, it does not re-rank the ones already seated. The floor is structural, not a leak.
+  An exact theta-constrained solver puts the largest achievable floor at 0.4059-0.4101 across the unsaturated scenarios - 0.0075 to 0.0241 above the repaired engine's own static floor.
+  The price of that fairness is at most 0.0003 of static total per student, inside the pre-registered 0.002 negligibility band, while the exact arm never loses a population on total, coverage or the worst-student metric.
+  This is a defect in the shipped engine, not a market bound. It is stated as such in the report's correction addendum.
+  Engine vs ceiling (static worst-student score)
+  Scenario
+  Engine
+  Ceiling
+  1:1
+  0.4013
+  0.4108
+  1.5:1
+  0.3856
+  0.4071
+  2:1
+  0.3861
+  0.3970
+  3:1
+  0.3802
+  0.4152
+  10 seeds per scenario. Ceiling from an exact theta-constrained min-cost-max-flow solve.
+  The price-of-fairness frontier
+  Raising theta from the engine's own floor to the ceiling lifts the worst student 0.398 to 0.411 at 1:1 while static total per student moves 0.5131 to 0.5148 and coverage is unchanged at 93.2%. The exact arm pays nothing measurable to protect the worst-served student.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  20
+===== SLIDE 22 =====
+  4.10.6
+  Explainability as a Design Requirement
+  A match a family cannot interrogate is a match they will not trust.
+  The scorer returns a per-criterion breakdown, not only a composite number: academic fit, preference fit, schedule overlap and the tutor's live load factor are each exposed to the consumer.
+  Every unplaced student carries a structured reason code - no tutor eligible, all eligible tutors at capacity, no contiguous slot overlap - so a student sees why, instead of an empty result.
+  The fairness term is surfaced as a tutor-load indicator, which makes the load-balancing behaviour legible to an administrator rather than mysterious.
+  Rationale text is generated server-side alongside the assignment, so the explanation cannot drift from the computation that produced it.
+  Why this matters in this domain
+  The motivating failure is a paying family losing hours of contact and money on a match that never worked. An explanation is the cheapest available defence against that, and it costs one breakdown object per assignment.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  21
+===== SLIDE 23 =====
+  CHAPTER FIVE
+  Summary, Conclusions and Recommendations
+  Findings: what the 30-population evaluation actually established
+  Conclusions on each research question, including the negative result
+  Recommendations for the platform and for practice
+  Contribution to knowledge, and what comes next
+  05
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  22
+===== SLIDE 24 =====
+  5.1 - 5.2
+  Research Questions, Answered
+  RQ1
+  Is the scoring model effective?
+  Yes, decisively. Against filter-only FCFS it adds 0.067-0.182 of mean score at every ratio (p < 0.0001), and it is the only mechanism here that accounts for style, language, budget and region at all.
+  RQ2
+  Does capacity-aware assignment win under contention?
+  Not where supply is abundant - self-selection is indistinguishable from the engine at 1:1 and 1.5:1 (p = 0.86). From 2:1 onward the engine leads by 0.019 at 3:1 and 0.124 at 10:1, and places more students in every unsaturated scenario.
+  RQ3
+  What is the measured optimality gap?
+  97.61% at the worst tested instance before repair; 98.52-99.75% of the oracle's static total after it, with coverage within 0.0004-0.0011 of optimal. Empirical, not a proven bound.
+  RQ4
+  What is the price of fairness?
+  Small and measurable. Load-aware fairness costs 0.012-0.023 in mean score at 2:1-3:1 while raising Jain's index from 0.714 to 0.730 and lifting coverage. Protecting the worst student costs at most 0.0003 per student.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  23
+===== SLIDE 25 =====
+  5.3 - 5.5
+  Recommendations, Contribution and Future Work
+  Recommendations
+  Ship top-K = 20 as the default candidate-list size - the quality knee, at a fraction of infinity's scoring cost.
+  Adopt the theta-constrained exact floor as a nightly offline recomputation, not a request-path step.
+  Keep the load factor weight at d = 0.05; the sweep shows no higher setting pays for itself.
+  Contribution to knowledge
+  A scoring-plus-availability matching model whose fairness term is made exact at run time by lazy recomputation, rather than approximated by static sorting.
+  An honest account of two claims that did not survive scrutiny - the half-approximation and the 'greedy places 59 of 64' figure - rescoped and reported as empirical.
+  Future work
+  01
+  Replace the static composite with a learned compatibility model, keeping the fairness term exogenous so the guarantee is not traded away for accuracy.
+  02
+  Extend the theta-constraint from the worst student to a full equity profile - per-region, per-subject and per-income-band placement floors.
+  03
+  Replace seeded synthetic populations with the platform's own anonymised assignment history, and re-run the same 30-population protocol as a live A/B test.
+  Student-Tutor Matchmaking System  ·  B.Tech Software Engineering  ·  FUTO Owerri
+  24
+===== SLIDE 26 =====
+  THANK YOU
+  Questions and Defence
+  All figures in this deck regenerate from docs/benchmarks/ via pnpm run eval:all. Every number quoted is traceable to a CSV in that directory.
+  Anumudu Udochukwu Samuel
+  Obi Michael Chimaobi
+  Supervisor: Engr. Dr. A. I. Erike

@@ -1,8 +1,52 @@
 import { GreedyAssignmentEngine } from '@core/algorithms';
+import { CompositeScorer, EligibilityFilter } from '@core/algorithms';
 import type { AssignmentStats } from '@core/algorithms';
+import type { Assignment, Student, Tutor } from '@core/entities';
 import { emitResults, getFlagValue, runCli } from './cli-output';
 import { runAllStrategies, type StrategyOutcome } from './baseline-comparison';
 import { type CapacityStrategy, generateStudents, generateTutors } from './fixtures';
+import { ci95, gini, mean, percentile, stdDev } from './stats';
+
+/**
+ * Largest student count for which the rank-of-choice diagnostic runs. It needs
+ * one extra O(S·T) scoring pass per population, which is the same order as the
+ * assignment itself; on the 5,000-student stress row that double-scoring would
+ * dominate the wall-clock for no analytical gain, so it is skipped there.
+ */
+export const RANK_DIAGNOSTIC_MAX_STUDENTS = 1000;
+
+/**
+ * For each student, the tutors they were eligible for ordered by STATIC score
+ * (academic + preference + schedule, fairness excluded) so a rank is
+ * load-independent and comparable across populations.
+ *
+ * This is the diagnostic the harness was missing: average score says how good
+ * the matches were, but nothing said whether students got anything near their
+ * best option. Call it with a FRESH tutor set (assignedCount 0) so the ranking
+ * reflects the student's preferences rather than the post-assignment state.
+ */
+export function rankEligibleTutors(
+  students: Student[],
+  tutors: Tutor[],
+): Map<string, string[]> {
+  const filter = new EligibilityFilter();
+  const scorer = new CompositeScorer();
+  const rankings = new Map<string, string[]>();
+
+  for (const student of students) {
+    const weights = scorer.buildWeights(student);
+    const scored = tutors
+      .filter((tutor) => filter.isEligible(student, tutor))
+      .map((tutor) => ({ id: tutor.id, score: scorer.staticScore(student, tutor, weights) }))
+      .sort((left, right) => right.score - left.score);
+    rankings.set(
+      student.id,
+      scored.map((entry) => entry.id),
+    );
+  }
+
+  return rankings;
+}
 
 export interface EvaluationConfig {
   scenario: string;
@@ -13,30 +57,77 @@ export interface EvaluationConfig {
   topK?: number;
 }
 
+/**
+ * One aggregate row per test.
+ *
+ * TWO KINDS OF REPETITION — do not confuse them:
+ *   `runs`  = repetitions of the SAME population. Varies wall-clock only, because
+ *             the fixtures are deterministic. Use it for timing.
+ *   `seeds` = INDEPENDENT populations of the same size. This is what makes the
+ *             quality/fairness columns a real sample, so `*StdDev`/`*Ci95` are
+ *             estimable and cross-scenario claims become falsifiable.
+ * With `seeds = 1` the StdDev columns are 0 and the Ci95 columns are null
+ * (no interval estimable from one population) — the pre-existing behaviour.
+ */
 export interface EvaluationRow {
   scenario: string;
   students: number;
   tutors: number;
   loadFactorWeight: number;
   topK: number | null;
-  /** Number of repeated runs per test — aggregate rows report the total; per-run rows report the test's total. */
+  /** Repetitions of one population (timing sample size). */
   runs: number;
+  /** Number of independent populations sampled (quality sample size). */
+  seeds: number;
   /** 1-based run index; set only in --per-run rows (null in aggregate rows). */
   run: number | null;
   /** Winning strategy for this run; set only in --per-run rows (null in aggregate rows). */
   winner: string | null;
   averageScore: number;
+  /** Sample sd of averageScore ACROSS POPULATIONS; null when seeds < 2. */
+  averageScoreStdDev: number | null;
+  /** 95% CI half-width of averageScore; null when seeds < 2. */
+  averageScoreCi95: number | null;
   unassignedPercent: number;
+  unassignedStdDev: number | null;
+  unassignedCi95: number | null;
   jainFairnessIndex: number;
+  jainStdDev: number | null;
+  jainCi95: number | null;
+  /** Gini coefficient of tutor loads — inequality, complementing Jain's index. */
+  giniLoad: number | null;
+  /** Worst match score in the pooled assigned population (the floor). */
+  studentScoreMin: number | null;
+  /** 5th percentile of pooled match scores (worst-off fifth). */
+  studentScoreP05: number | null;
+  /** Mean 1-based rank of the assigned tutor among the student's eligible tutors
+   *  by static score — "did they get what they wanted?". Null when the
+   *  diagnostic was skipped (more than RANK_DIAGNOSTIC_MAX_STUDENTS students). */
+  meanRankOfChoice: number | null;
+  /** Share of placed students assigned their rank-1 eligible tutor. */
+  topChoiceShare: number | null;
   elapsedMinMs: number;
   elapsedMeanMs: number;
   elapsedMaxMs: number;
+  elapsedP50Ms: number;
+  elapsedP95Ms: number;
+  elapsedP99Ms: number;
   pairsScored: number;
+  /** Eligible (student, tutor) pairs pushed onto the heap. Previously collected by
+   *  the engine but never reported. */
+  eligiblePairs: number;
   peakHeapEntries: number;
 }
 
 /** Default number of repeated runs per test (override with `--runs <n>`). */
 export const DEFAULT_RUNS = 5;
+
+/**
+ * Default number of independent populations per test (override with
+ * `--seeds <n>`). 1 reproduces the historical single-population behaviour; the
+ * aggregate rows then carry null CI columns.
+ */
+export const DEFAULT_SEEDS = 1;
 
 /** Hard cap on per-run rows saved to one CSV in --save-runs / --per-run mode. */
 export const MAX_SAVED_RUNS = 1000;
@@ -50,6 +141,34 @@ export interface CountOverride {
 export function parseRuns(): number {
   const raw = getFlagValue('--runs');
   return raw === undefined ? DEFAULT_RUNS : parsePositiveInt('--runs', raw);
+}
+
+/**
+ * Reads `--seeds <n>` from argv; falls back to DEFAULT_SEEDS when absent. This is
+ * the flag that turns the harness from a single-sample report into a sample:
+ * each test is evaluated on n INDEPENDENT populations, so the aggregate rows
+ * gain a real standard deviation and a 95% confidence interval.
+ */
+export function parseSeeds(): number {
+  const raw = getFlagValue('--seeds');
+  return raw === undefined ? DEFAULT_SEEDS : parsePositiveInt('--seeds', raw);
+}
+
+/**
+ * Reads `--base-seed <s>` from argv (default 0, non-negative). Populations use
+ * offsets baseSeed..baseSeed+seeds-1, so two runs with the same base seed and
+ * count reproduce each other exactly.
+ */
+export function parseBaseSeed(): number {
+  const raw = getFlagValue('--base-seed');
+  if (raw === undefined) {
+    return 0;
+  }
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`--base-seed expects a non-negative integer, got "${raw}"`);
+  }
+  return value;
 }
 
 /**
@@ -83,23 +202,36 @@ export function evaluatePerRunRow(
   config: EvaluationConfig,
   run: number,
   runs: number,
+  /** Population offset for this row: 0 = the original fixtures, >0 = an
+   *  independent population. `emitPerRun` advances it per run so the saved rows
+   *  are a genuine sample rather than N copies of one population. */
+  seedOffset = 0,
 ): EvaluationRow {
-  const students = generateStudents(config.students, config.loadFactorWeight);
-  const outcomes = runAllStrategies(students, config.tutors, config.capacityStrategy);
-  const winner = outcomes.reduce((best, outcome) =>
-    outcome.averageScore > best.averageScore ? outcome : best,
-  );
+  const students = generateStudents(config.students, config.loadFactorWeight, seedOffset);
+  const outcomes = runAllStrategies(students, config.tutors, config.capacityStrategy, seedOffset);
+
+  // Winner by mean composite score. TIES RESOLVE TO THE STRATEGY ORDER in
+  // CAPTURE_STRATEGIES (fcfs-filter first), which is why the per-run `winner`
+  // column overstates a tie. The unbiased tally lives in capture mode
+  // (`winnerSummaryFromRows` counts strictWins vs tiedBest separately) and in
+  // baseline-statistics (a per-population sign test). Documented, not hidden.
+  const bestScore = Math.max(...outcomes.map((outcome) => outcome.averageScore));
+  const winner =
+    CAPTURE_STRATEGIES.map((strategy) =>
+      outcomes.find((outcome) => outcome.strategy === strategy),
+    ).find((outcome) => outcome !== undefined && outcome.averageScore === bestScore) ?? outcomes[0];
 
   // Greedy's timing is measured separately (the strategy runs inside
   // runAllStrategies do not collect stats or wall-clock time).
-  const greedyTutors = generateTutors(config.tutors, config.capacityStrategy);
+  const greedyTutors = generateTutors(config.tutors, config.capacityStrategy, seedOffset);
   const runStats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
-  const start = Date.now();
-  new GreedyAssignmentEngine().assignBatch(students, greedyTutors, {
+  const start = performance.now();
+  const result = new GreedyAssignmentEngine().assignBatch(students, greedyTutors, {
     stats: runStats,
     topK: config.topK,
   });
-  const elapsedMs = Date.now() - start;
+  const elapsedMs = Math.round(performance.now() - start);
+  const greedyScores = result.assignments.map((assignment) => assignment.matchScore?.total ?? 0);
 
   return {
     scenario: config.scenario,
@@ -108,15 +240,33 @@ export function evaluatePerRunRow(
     loadFactorWeight: config.loadFactorWeight,
     topK: config.topK ?? null,
     runs,
+    seeds: 1,
     run,
     winner: winner.strategy,
     averageScore: winner.averageScore,
+    averageScoreStdDev: null,
+    averageScoreCi95: null,
     unassignedPercent: winner.unassignedPercent,
+    unassignedStdDev: null,
+    unassignedCi95: null,
     jainFairnessIndex: winner.jainFairnessIndex,
+    jainStdDev: null,
+    jainCi95: null,
+    giniLoad: gini(greedyTutors.map((tutor) => tutor.assignedCount)),
+    studentScoreMin: greedyScores.length === 0 ? null : Math.min(...greedyScores),
+    studentScoreP05: greedyScores.length === 0 ? null : percentile(greedyScores, 0.05),
+    // Rank-of-choice is an aggregate-path diagnostic only (it needs a pre-run
+    // ranking pass per population, which a per-run timing row does not pay for).
+    meanRankOfChoice: null,
+    topChoiceShare: null,
     elapsedMinMs: elapsedMs,
     elapsedMeanMs: elapsedMs,
     elapsedMaxMs: elapsedMs,
+    elapsedP50Ms: elapsedMs,
+    elapsedP95Ms: elapsedMs,
+    elapsedP99Ms: elapsedMs,
     pairsScored: runStats.pairsScored,
+    eligiblePairs: runStats.eligiblePairs,
     peakHeapEntries: runStats.peakHeapEntries,
   };
 }
@@ -130,6 +280,7 @@ export function emitPerRun(
   configs: EvaluationConfig[],
   runs: number,
   maxRows: number = MAX_SAVED_RUNS,
+  baseSeed = 0,
 ): { header: string[]; rows: string[][]; dropped: number } {
   const rows: string[][] = [];
   let dropped = 0;
@@ -139,7 +290,9 @@ export function emitPerRun(
         dropped += 1;
         continue;
       }
-      rows.push(toRow(evaluatePerRunRow(config, run, runs)));
+      // Run 1 uses offset `baseSeed` (0 → the original fixtures); each later run
+      // draws an independent population, so the saved rows are a real sample.
+      rows.push(toRow(evaluatePerRunRow(config, run, runs, baseSeed + run - 1)));
     }
   }
   return { header: HEADER, rows, dropped };
@@ -193,6 +346,9 @@ export function evaluateCapturedRun(
   config: EvaluationConfig,
   _run: number,
   _runs: number,
+  /** Population offset: 0 = original fixtures, >0 = an independent population.
+   *  `emitCaptureRuns` advances it per run so captured rows are a real sample. */
+  seedOffset = 0,
 ): {
   startedAt: string;
   durationMs: number;
@@ -202,25 +358,30 @@ export function evaluateCapturedRun(
   pairsScored: number;
   peakHeapEntries: number;
 } {
-  const students = generateStudents(config.students, config.loadFactorWeight);
+  const students = generateStudents(config.students, config.loadFactorWeight, seedOffset);
   const startedAt = new Date().toISOString();
-  const runStart = Date.now();
-  const outcomes = runAllStrategies(students, config.tutors, config.capacityStrategy);
-  const durationMs = Date.now() - runStart;
+  const runStart = performance.now();
+  const outcomes = runAllStrategies(
+    students,
+    config.tutors,
+    config.capacityStrategy,
+    seedOffset,
+  );
+  const durationMs = Math.round(performance.now() - runStart);
   const winner = outcomes.reduce((best, outcome) =>
     outcome.averageScore > best.averageScore ? outcome : best,
   );
 
   // Greedy's timing is measured separately (the strategy runs inside
   // runAllStrategies do not collect stats or wall-clock time).
-  const greedyTutors = generateTutors(config.tutors, config.capacityStrategy);
+  const greedyTutors = generateTutors(config.tutors, config.capacityStrategy, seedOffset);
   const runStats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
-  const greedyStart = Date.now();
+  const greedyStart = performance.now();
   new GreedyAssignmentEngine().assignBatch(students, greedyTutors, {
     stats: runStats,
     topK: config.topK,
   });
-  const greedyMs = Date.now() - greedyStart;
+  const greedyMs = Math.round(performance.now() - greedyStart);
 
   return {
     startedAt,
@@ -278,11 +439,21 @@ export function toCapturedRunRow(
 export function emitCaptureRuns(
   configs: EvaluationConfig[],
   runs: number,
+  baseSeed = 0,
 ): { header: string[]; rows: string[][] } {
   const rows: string[][] = [];
   for (const config of configs) {
     for (let run = 1; run <= runs; run += 1) {
-      rows.push(toCapturedRunRow(config, run, runs, evaluateCapturedRun(config, run, runs)));
+      // Run 1 uses offset `baseSeed`; later runs draw independent populations so
+      // a captured sweep is n real samples, not n copies of one population.
+      rows.push(
+        toCapturedRunRow(
+          config,
+          run,
+          runs,
+          evaluateCapturedRun(config, run, runs, baseSeed + run - 1),
+        ),
+      );
     }
   }
   return { header: CAPTURE_HEADER, rows };
@@ -473,39 +644,105 @@ export function applyCountOverride(
   return configs.map((config) => ({ ...config, ...override }));
 }
 
-const mean = (values: number[]): number =>
-  values.length === 0 ? 0 : values.reduce((total, value) => total + value, 0) / values.length;
-
-export function evaluate(config: EvaluationConfig, runs: number = DEFAULT_RUNS): EvaluationRow {
-  // The engine mutates tutor.assignedCount, so each run needs fresh fixtures.
-  // Quality metrics are deterministic across runs; timing is min/mean/max of N.
+/**
+ * Aggregate row for one test: `seeds` independent populations × `runs`
+ * repetitions each.
+ *
+ * Quality/fairness are summarised ACROSS POPULATIONS (one value per population),
+ * so the StdDev/Ci95 columns measure how sensitive the result is to which
+ * students and tutors happened to be drawn — the thing a single deterministic
+ * population cannot show. Timing pools every repetition into percentiles, which
+ * is the honest summary for a distribution with GC/JIT outliers.
+ */
+export function evaluate(
+  config: EvaluationConfig,
+  runs: number = DEFAULT_RUNS,
+  seeds: number = DEFAULT_SEEDS,
+  baseSeed = 0,
+): EvaluationRow {
   const elapsedSamples: number[] = [];
-  let result = new GreedyAssignmentEngine().assignBatch([], []);
-  let assignedCounts: number[] = [];
+  const scoreSamples: number[] = [];
+  const unassignedSamples: number[] = [];
+  const jainSamples: number[] = [];
+  const giniSamples: number[] = [];
+  const pooledStudentScores: number[] = [];
+  const rankSamples: number[] = [];
+  const topChoiceSamples: number[] = [];
   const stats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
 
-  for (let run = 0; run < runs; run += 1) {
-    const students = generateStudents(config.students, config.loadFactorWeight);
-    const tutors = generateTutors(config.tutors, config.capacityStrategy);
-    const runStats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
-    const start = Date.now();
-    result = new GreedyAssignmentEngine().assignBatch(students, tutors, {
-      stats: runStats,
-      topK: config.topK,
-    });
-    elapsedSamples.push(Date.now() - start);
-    assignedCounts = tutors.map((tutor) => tutor.assignedCount);
-    stats.pairsScored = runStats.pairsScored;
-    stats.peakHeapEntries = runStats.peakHeapEntries;
-    stats.eligiblePairs = runStats.eligiblePairs;
-  }
+  for (let seed = 0; seed < seeds; seed += 1) {
+    const seedOffset = baseSeed + seed;
+    // One population per seed; re-drawn per run because the engine mutates
+    // tutor.assignedCount. Every run of a given seed is the SAME population.
+    const students = generateStudents(config.students, config.loadFactorWeight, seedOffset);
+    // Rank the choices BEFORE assigning, on a pristine tutor set, so the
+    // diagnostic measures the student's preference order rather than the
+    // post-assignment capacity state.
+    const rankings =
+      config.students <= RANK_DIAGNOSTIC_MAX_STUDENTS
+        ? rankEligibleTutors(
+            students,
+            generateTutors(config.tutors, config.capacityStrategy, seedOffset),
+          )
+        : null;
+    let assignedCounts: number[] = [];
+    let assignments: Assignment[] = [];
+    let unassignedCount = 0;
 
-  const totalScore = result.assignments.reduce(
-    (total, assignment) => total + (assignment.matchScore?.total ?? 0),
-    0,
-  );
-  const assignedSum = assignedCounts.reduce((total, count) => total + count, 0);
-  const assignedSquareSum = assignedCounts.reduce((total, count) => total + count * count, 0);
+    for (let run = 0; run < runs; run += 1) {
+      const tutors = generateTutors(config.tutors, config.capacityStrategy, seedOffset);
+      const runStats: AssignmentStats = { pairsScored: 0, peakHeapEntries: 0, eligiblePairs: 0 };
+      const start = performance.now();
+      const result = new GreedyAssignmentEngine().assignBatch(students, tutors, {
+        stats: runStats,
+        topK: config.topK,
+      });
+      elapsedSamples.push(performance.now() - start);
+
+      assignments = result.assignments;
+      unassignedCount = result.unassignable.length;
+      assignedCounts = tutors.map((tutor) => tutor.assignedCount);
+      stats.pairsScored = runStats.pairsScored;
+      stats.peakHeapEntries = runStats.peakHeapEntries;
+      stats.eligiblePairs = runStats.eligiblePairs;
+    }
+
+    const scores = assignments.map((assignment) => assignment.matchScore?.total ?? 0);
+    pooledStudentScores.push(...scores);
+    scoreSamples.push(mean(scores));
+
+    const loadSum = assignedCounts.reduce((total, count) => total + count, 0);
+    const loadSquareSum = assignedCounts.reduce((total, count) => total + count * count, 0);
+    jainSamples.push(
+      loadSquareSum === 0 ? 1 : (loadSum * loadSum) / (assignedCounts.length * loadSquareSum),
+    );
+    giniSamples.push(gini(assignedCounts));
+    unassignedSamples.push((unassignedCount / config.students) * 100);
+
+    if (rankings) {
+      let rankTotal = 0;
+      let ranked = 0;
+      let topChoiceHits = 0;
+      for (const assignment of assignments) {
+        if (!assignment.tutorId) {
+          continue;
+        }
+        const position = (rankings.get(assignment.studentId) ?? []).indexOf(assignment.tutorId) + 1;
+        if (position <= 0) {
+          continue;
+        }
+        rankTotal += position;
+        ranked += 1;
+        if (position === 1) {
+          topChoiceHits += 1;
+        }
+      }
+      if (ranked > 0) {
+        rankSamples.push(rankTotal / ranked);
+        topChoiceSamples.push(topChoiceHits / ranked);
+      }
+    }
+  }
 
   return {
     scenario: config.scenario,
@@ -514,18 +751,33 @@ export function evaluate(config: EvaluationConfig, runs: number = DEFAULT_RUNS):
     loadFactorWeight: config.loadFactorWeight,
     topK: config.topK ?? null,
     runs,
+    seeds,
     run: null,
     winner: null,
-    averageScore: result.assignments.length === 0 ? 0 : totalScore / result.assignments.length,
-    unassignedPercent: (result.unassignable.length / config.students) * 100,
-    jainFairnessIndex:
-      assignedSquareSum === 0
-        ? 1
-        : (assignedSum * assignedSum) / (assignedCounts.length * assignedSquareSum),
-    elapsedMinMs: Math.min(...elapsedSamples),
+    averageScore: mean(scoreSamples),
+    averageScoreStdDev: seeds < 2 ? null : stdDev(scoreSamples),
+    averageScoreCi95: ci95(scoreSamples),
+    unassignedPercent: mean(unassignedSamples),
+    unassignedStdDev: seeds < 2 ? null : stdDev(unassignedSamples),
+    unassignedCi95: ci95(unassignedSamples),
+    jainFairnessIndex: mean(jainSamples),
+    jainStdDev: seeds < 2 ? null : stdDev(jainSamples),
+    jainCi95: ci95(jainSamples),
+    giniLoad: mean(giniSamples),
+    studentScoreMin:
+      pooledStudentScores.length === 0 ? null : Math.min(...pooledStudentScores),
+    studentScoreP05:
+      pooledStudentScores.length === 0 ? null : percentile(pooledStudentScores, 0.05),
+    meanRankOfChoice: rankSamples.length === 0 ? null : mean(rankSamples),
+    topChoiceShare: topChoiceSamples.length === 0 ? null : mean(topChoiceSamples),
+    elapsedMinMs: Math.round(Math.min(...elapsedSamples)),
     elapsedMeanMs: mean(elapsedSamples),
-    elapsedMaxMs: Math.max(...elapsedSamples),
+    elapsedMaxMs: Math.round(Math.max(...elapsedSamples)),
+    elapsedP50Ms: Math.round(percentile(elapsedSamples, 0.5)),
+    elapsedP95Ms: Math.round(percentile(elapsedSamples, 0.95)),
+    elapsedP99Ms: Math.round(percentile(elapsedSamples, 0.99)),
     pairsScored: stats.pairsScored,
+    eligiblePairs: stats.eligiblePairs,
     peakHeapEntries: stats.peakHeapEntries,
   };
 }
@@ -611,12 +863,20 @@ export function buildModerateConfigs(): EvaluationConfig[] {
   );
 }
 
-export function runRealisticEvaluation(): EvaluationRow[] {
-  return buildRealisticConfigs().map(evaluate);
+export function runRealisticEvaluation(
+  runs: number = DEFAULT_RUNS,
+  seeds: number = DEFAULT_SEEDS,
+  baseSeed = 0,
+): EvaluationRow[] {
+  return buildRealisticConfigs().map((config) => evaluate(config, runs, seeds, baseSeed));
 }
 
-export function runModerateEvaluation(): EvaluationRow[] {
-  return buildModerateConfigs().map(evaluate);
+export function runModerateEvaluation(
+  runs: number = DEFAULT_RUNS,
+  seeds: number = DEFAULT_SEEDS,
+  baseSeed = 0,
+): EvaluationRow[] {
+  return buildModerateConfigs().map((config) => evaluate(config, runs, seeds, baseSeed));
 }
 export const HEADER = [
   'scenario',
@@ -625,17 +885,37 @@ export const HEADER = [
   'loadFactorWeight',
   'topK',
   'runs',
+  'seeds',
   'run',
   'winner',
   'averageScore',
+  'averageScoreStdDev',
+  'averageScoreCi95',
   'unassignedPercent',
+  'unassignedStdDev',
+  'unassignedCi95',
   'jainFairnessIndex',
+  'jainStdDev',
+  'jainCi95',
+  'giniLoad',
+  'studentScoreMin',
+  'studentScoreP05',
+  'meanRankOfChoice',
+  'topChoiceShare',
   'elapsedMinMs',
   'elapsedMeanMs',
   'elapsedMaxMs',
+  'elapsedP50Ms',
+  'elapsedP95Ms',
+  'elapsedP99Ms',
   'pairsScored',
+  'eligiblePairs',
   'peakHeapEntries',
 ];
+
+/** Renders an optional numeric cell: blank when the metric is not estimable. */
+const optional = (value: number | null, digits: number): string =>
+  value === null ? '' : value.toFixed(digits);
 
 export const toRow = (row: EvaluationRow): string[] => [
   row.scenario,
@@ -644,15 +924,31 @@ export const toRow = (row: EvaluationRow): string[] => [
   String(row.loadFactorWeight),
   row.topK === null ? 'inf' : String(row.topK),
   String(row.runs),
+  String(row.seeds),
   row.run === null ? '' : String(row.run),
   row.winner ?? '',
   row.averageScore.toFixed(6),
+  optional(row.averageScoreStdDev, 6),
+  optional(row.averageScoreCi95, 6),
   row.unassignedPercent.toFixed(2),
+  optional(row.unassignedStdDev, 2),
+  optional(row.unassignedCi95, 2),
   row.jainFairnessIndex.toFixed(6),
+  optional(row.jainStdDev, 6),
+  optional(row.jainCi95, 6),
+  optional(row.giniLoad, 6),
+  optional(row.studentScoreMin, 6),
+  optional(row.studentScoreP05, 6),
+  optional(row.meanRankOfChoice, 4),
+  optional(row.topChoiceShare, 6),
   String(row.elapsedMinMs),
   row.elapsedMeanMs.toFixed(1),
   String(row.elapsedMaxMs),
+  String(row.elapsedP50Ms),
+  String(row.elapsedP95Ms),
+  String(row.elapsedP99Ms),
   String(row.pairsScored),
+  String(row.eligiblePairs),
   String(row.peakHeapEntries),
 ];
 
@@ -678,19 +974,22 @@ if (typeof require !== 'undefined' && require.main === module) {
     const saveRuns = captureRuns === undefined ? parseSaveRuns() : undefined;
     const runs = captureRuns ?? saveRuns ?? parseRuns();
     const perRun = saveRuns !== undefined || process.argv.includes('--per-run');
+    const seeds = parseSeeds();
+    const baseSeed = parseBaseSeed();
 
     if (captureRuns !== undefined) {
-      const { header, rows } = emitCaptureRuns(configs, captureRuns);
+      const { header, rows } = emitCaptureRuns(configs, captureRuns, baseSeed);
       emitResults({
         defaultName: 'evaluation-capture-results.csv',
         header,
         rows,
       });
       console.error(
-        `\nCaptured ${rows.length} run(s) — ${configs.length} test(s) × ${captureRuns} run(s), every run with all four strategies + its own time, no cap.`,
+        `\nCaptured ${rows.length} run(s) — ${configs.length} test(s) × ${captureRuns} run(s), ` +
+          `each run an INDEPENDENT population (seeds ${baseSeed}…${baseSeed + captureRuns - 1}), no cap.`,
       );
     } else if (perRun) {
-      const { header, rows, dropped } = emitPerRun(configs, runs);
+      const { header, rows, dropped } = emitPerRun(configs, runs, MAX_SAVED_RUNS, baseSeed);
       emitResults({
         defaultName: 'evaluation-per-run-results.csv',
         header,
@@ -705,16 +1004,18 @@ if (typeof require !== 'undefined' && require.main === module) {
       emitResults({
         defaultName: 'evaluation-results.csv',
         header: HEADER,
-        rows: configs.map((config) => toRow(evaluate(config, runs))),
+        rows: configs.map((config) => toRow(evaluate(config, runs, seeds, baseSeed))),
       });
     }
     console.error(
       `\nEach test ran ${runs} time(s)${runs === DEFAULT_RUNS ? ' (default)' : ''}${
         captureRuns !== undefined
-          ? ' — every run captured (all strategies + per-run time)'
+          ? ` — every run captured (all strategies + per-run time, independent population per run)`
           : perRun
-            ? ' — every run saved to the CSV'
-            : ''
+            ? ' — every run saved to the CSV, each an independent population'
+            : seeds > 1
+              ? ` across ${seeds} independent populations (seeds ${baseSeed}…${baseSeed + seeds - 1}) → StdDev/Ci95 columns are estimable`
+              : ' — ONE population; StdDev is 0 and Ci95 is blank. Add --seeds <n> for variance.'
       }${
         captureRuns !== undefined
           ? ' — set with --capture-runs <n>'

@@ -237,6 +237,11 @@ export class MatchmakingService {
     const students = allStudents.filter((student) => this.hasAvailability(student));
     const incomplete = allStudents.filter((student) => !this.hasAvailability(student));
 
+    // No options: `assignBatch` runs the engine as deployed, which includes the
+    // bounded repair pass (see greedy-assignment.engine.ts). Repair is measured to
+    // seat strictly more students and to score at least as well, never worse,
+    // across every evaluated population, and it costs no more than the heap pass
+    // it follows (docs/benchmarks/STAGE2_REPAIR.md, STAGE3_FLOOR.md).
     const result = this.greedyAssignmentEngine.assignBatch(students, tutors);
     const activeAssignments = result.assignments
       .filter((assignment) => assignment.tutorId && assignment.matchScore)

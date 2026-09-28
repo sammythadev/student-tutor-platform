@@ -1,7 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { XIcon } from 'lucide-react'
+import { Dialog } from '@base-ui/react/dialog'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { BRAND, CTA, NAV } from './content'
@@ -42,8 +44,6 @@ function Wordmark() {
 export default function Nav() {
   const [open, setOpen] = useState(false)
   const [lifted, setLifted] = useState(false)
-  const panel = useRef<HTMLElement>(null)
-  const trigger = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const onScroll = () => setLifted(window.scrollY > 8)
@@ -60,35 +60,8 @@ export default function Nav() {
     return () => desktop.removeEventListener('change', closeOnDesktop)
   }, [])
 
-  /* Escape and outside presses dismiss the whole navbar disclosure. */
-  useEffect(() => {
-    if (!open) return
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpen(false)
-        trigger.current?.focus()
-        return
-      }
-    }
-
-    const onOutside = (event: PointerEvent) => {
-      if (event.target instanceof Node && !panel.current?.contains(event.target)) setOpen(false)
-    }
-    document.addEventListener('keydown', onKey)
-    document.addEventListener('pointerdown', onOutside)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.removeEventListener('pointerdown', onOutside)
-    }
-  }, [open])
-
   return (
     <header
-      ref={panel}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
-      }}
       className={cn(
         'fixed inset-x-0 top-0 z-50 h-16 lg:h-mk-header',
         'transition-colors duration-300 ease-mk-out',
@@ -129,68 +102,64 @@ export default function Nav() {
           </Link>
         </div>
 
-        <button
-          ref={trigger}
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls="mobile-navigation"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          className="-mr-2.5 grid size-11 place-items-center rounded-md text-mk-ink transition-colors duration-300 ease-mk-out hover:bg-mk-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink lg:hidden"
-        >
-          <span aria-hidden className="relative block h-[10px] w-[18px]">
-            <span
-              className={cn(
-                'absolute inset-x-0 top-0 block h-[1.5px] rounded-full bg-current transition-transform duration-300 ease-mk-out',
-                open && 'translate-y-[4.25px] rotate-45',
-              )}
-            />
-            <span
-              className={cn(
-                'absolute inset-x-0 bottom-0 block h-[1.5px] rounded-full bg-current transition-transform duration-300 ease-mk-out',
-                open && '-translate-y-[4.25px] -rotate-45',
-              )}
-            />
-          </span>
-        </button>
+        {/* Mobile menu: a content-sized Base UI dialog. The dialog owns open
+            state, Escape, outside-press dismissal, focus return and scroll
+            locking, so the close button cannot desync. */}
+        <Dialog.Root open={open} onOpenChange={setOpen} modal>
+          <Dialog.Trigger
+            aria-label="Open menu"
+            className="-mr-2.5 grid size-11 place-items-center rounded-md text-mk-ink transition-colors duration-300 ease-mk-out hover:bg-mk-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink lg:hidden"
+          >
+            <span aria-hidden className="relative block h-[10px] w-[18px]">
+              <span className="absolute inset-x-0 top-0 block h-[1.5px] rounded-full bg-current" />
+              <span className="absolute inset-x-0 bottom-0 block h-[1.5px] rounded-full bg-current" />
+            </span>
+          </Dialog.Trigger>
+          <Dialog.Portal>
+            <Dialog.Backdrop className="fixed inset-0 z-[60] bg-black/30 lg:hidden" />
+            <Dialog.Popup className="fixed inset-x-0 top-0 z-[61] border-b border-mk-hairline-soft bg-mk-panel-sunken shadow-mk-ring-subtle lg:hidden">
+              <Container className="flex h-16 items-center justify-between gap-6">
+                <Wordmark />
+                <Dialog.Close
+                  aria-label="Close menu"
+                  className="grid size-11 place-items-center rounded-md text-mk-ink transition-colors duration-300 ease-mk-out hover:bg-mk-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink"
+                >
+                  <XIcon className="size-5" strokeWidth={1.75} />
+                </Dialog.Close>
+              </Container>
+              <Dialog.Title className="sr-only">Menu</Dialog.Title>
+              <Container className="flex flex-col gap-0.5 pb-4">
+                {NAV.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="flex min-h-11 items-center rounded-md text-sm font-medium text-mk-ink-3 transition-colors duration-150 hover:text-mk-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                <div className="mt-2 grid grid-cols-2 gap-2 border-t border-mk-hairline-soft pt-3">
+                  <Link
+                    href={CTA.signIn.href}
+                    onClick={() => setOpen(false)}
+                    className="flex h-11 items-center justify-center rounded-lg text-mk-small font-medium text-mk-ink shadow-mk-ring-subtle transition-colors duration-150 hover:bg-mk-accent-soft"
+                  >
+                    {CTA.signIn.label}
+                  </Link>
+                  <Link
+                    href={CTA.primary.href}
+                    onClick={() => setOpen(false)}
+                    className="flex h-11 items-center justify-center rounded-lg bg-mk-inverse text-mk-small font-medium text-mk-inverse-fg transition-colors duration-150 hover:bg-mk-ink-2"
+                  >
+                    {CTA.primary.label}
+                  </Link>
+                </div>
+              </Container>
+            </Dialog.Popup>
+          </Dialog.Portal>
+        </Dialog.Root>
       </Container>
-
-      {/* Content-sized disclosure shares the opaque navbar surface. */}
-      <nav
-        id="mobile-navigation"
-        aria-label="Mobile navigation"
-        hidden={!open}
-        className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-mk-hairline-soft bg-mk-panel-sunken shadow-mk-ring-subtle lg:hidden"
-      >
-        <Container className="flex flex-col pb-3 pt-1">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className="flex min-h-11 items-center rounded-md text-sm font-medium text-mk-ink-3 transition-colors duration-150 hover:text-mk-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-ink"
-            >
-              {item.label}
-            </Link>
-          ))}
-          <div className="mt-2 grid grid-cols-2 gap-3 border-t border-mk-hairline-soft pt-3">
-            <Link
-              href={CTA.signIn.href}
-              onClick={() => setOpen(false)}
-              className="flex h-11 items-center justify-center rounded-lg shadow-mk-ring-subtle text-mk-small font-medium text-mk-ink"
-            >
-              {CTA.signIn.label}
-            </Link>
-            <Link
-              href={CTA.primary.href}
-              onClick={() => setOpen(false)}
-              className="flex h-11 items-center justify-center rounded-lg bg-mk-inverse text-mk-small font-medium text-mk-inverse-fg"
-            >
-              {CTA.primary.label}
-            </Link>
-          </div>
-        </Container>
-      </nav>
     </header>
   )
 }

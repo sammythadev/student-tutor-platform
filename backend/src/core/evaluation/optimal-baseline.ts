@@ -16,7 +16,7 @@ import { generateStudents, generateTutors } from './fixtures';
  * Max-flow maximizes assignments; min-cost among max-flows maximizes total score.
  */
 
-const COST_SCALE = 1_000_000;
+export const COST_SCALE = 1_000_000;
 
 interface Edge {
   to: number;
@@ -26,7 +26,15 @@ interface Edge {
   rev: number; // index of reverse edge in graph[to]
 }
 
-class MinCostMaxFlow {
+/**
+ * Successive-shortest-path min-cost max-flow (SPFA/Bellman-Ford, which is what
+ * lets the negative-cost reverse edges be handled without potentials).
+ *
+ * Exported because the stage-3 floor solver reuses it wholesale: it needs the
+ * same solve, but with a score floor baked into which edges exist, and with the
+ * resulting PAIRINGS read back out (see `flowedEdges`).
+ */
+export class MinCostMaxFlow {
   private readonly graph: Edge[][];
 
   constructor(private readonly nodeCount: number) {
@@ -44,12 +52,30 @@ class MinCostMaxFlow {
     });
   }
 
-  /** Returns { flow, cost } of the min-cost max-flow from source to sink. */
-  public solve(source: number, sink: number): { flow: number; cost: number } {
+  /**
+   * Returns { flow, cost } of the min-cost max-flow from source to sink.
+   *
+   * `maxAugmentations` bounds the WORK, not the answer: at very large sizes a
+   * full solve can run for minutes, so the scale benchmark asks for a bounded
+   * slice and reports how far it got (`capped: true`) instead of hanging. A
+   * capped result is a partial assignment and is never reported as optimal.
+   */
+  public solve(
+    source: number,
+    sink: number,
+    options: { maxAugmentations?: number } = {},
+  ): { flow: number; cost: number; capped: boolean } {
     let totalFlow = 0;
     let totalCost = 0;
+    let augmentations = 0;
 
     for (;;) {
+      if (
+        options.maxAugmentations !== undefined &&
+        augmentations >= options.maxAugmentations
+      ) {
+        return { flow: totalFlow, cost: totalCost, capped: true };
+      }
       const dist = new Array<number>(this.nodeCount).fill(Infinity);
       const inQueue = new Array<boolean>(this.nodeCount).fill(false);
       const prevEdge = new Array<{ node: number; edge: number } | null>(this.nodeCount).fill(null);
@@ -100,15 +126,37 @@ class MinCostMaxFlow {
 
       totalFlow += pushFlow;
       totalCost += pushFlow * dist[sink];
+      augmentations += 1;
     }
 
-    return { flow: totalFlow, cost: totalCost };
+    return { flow: totalFlow, cost: totalCost, capped: false };
+  }
+
+  /**
+   * The ORIGINAL (non-reverse) edges that ended up carrying flow, as
+   * `{ from, to, flow }`. Reverse edges are excluded by construction — they are
+   * added with capacity 0, so `cap > 0` selects the caller's own edges. Used to
+   * reconstruct an assignment from the optimum, which the totals alone cannot
+   * give (the stage-2 report flagged that as a gap).
+   */
+  public flowedEdges(): Array<{ from: number; to: number; flow: number }> {
+    const result: Array<{ from: number; to: number; flow: number }> = [];
+    for (let from = 0; from < this.graph.length; from += 1) {
+      for (const edge of this.graph[from]) {
+        if (edge.cap > 0 && edge.flow > 0) {
+          result.push({ from, to: edge.to, flow: edge.flow });
+        }
+      }
+    }
+    return result;
   }
 }
 
 export interface OptimalResult {
   assignedCount: number;
   totalScore: number;
+  /** True when the work cap stopped the solver early: a partial, NOT optimal result. */
+  capped: boolean;
 }
 
 /**
@@ -118,7 +166,11 @@ export interface OptimalResult {
  * model, so we compare on the static (academic+preference+schedule) score that
  * both methods can evaluate identically.
  */
-export function computeOptimal(students: Student[], tutors: Tutor[]): OptimalResult {
+export function computeOptimal(
+  students: Student[],
+  tutors: Tutor[],
+  options: { maxAugmentations?: number } = {},
+): OptimalResult {
   const scorer = new CompositeScorer();
   const filter = new EligibilityFilter();
 
@@ -151,11 +203,11 @@ export function computeOptimal(students: Student[], tutors: Tutor[]): OptimalRes
     }
   }
 
-  const { flow, cost } = mcmf.solve(source, sink);
+  const { flow, cost, capped } = mcmf.solve(source, sink, options);
   // total static score = flow*1 - cost/SCALE  (since cost = sum of (1 - score)*SCALE)
   const totalScore = flow - cost / COST_SCALE;
 
-  return { assignedCount: flow, totalScore };
+  return { assignedCount: flow, totalScore, capped };
 }
 
 export interface OptimalityGapRow {

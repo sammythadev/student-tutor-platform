@@ -3,6 +3,7 @@
 /node_modules
 node_modules/
 /build
+.venv/
 
 # Logs
 logs
@@ -76,7 +77,7 @@ graphify-out/
 __pycache__/
 
 # Binary Word deliverables and Word's own lock files (~$name.docx).
-*.docx
+
 ~$*
 
 # The root pnpm-lock.yaml is the only lockfile this workspace keeps; a lockfile
@@ -94,12 +95,23 @@ backend/test-results.txt
 backend/coverage-output.txt
 backend/regen.txt
 backend/docs/benchmarks/baseline.csv .csv
+# Per-run capture dumps from the pre-seed harness (`--runs 100`), superseded by
+# the 30-seed sweep and read by nothing. Kept on disk deliberately: they are the
+# evidence behind the "800 capture rows, 8 unique quality values" finding the
+# evaluation notes quote.
+backend/docs/benchmarks/qq.csv
+backend/docs/benchmarks/none..csv
 
-/*
- * Browser-capture debris from the clone-site skill landing the page was
- * measured against: viewport screenshots saved by hand sit beside the working
- * captures under the ignored scratch dirs, and re-running either capture
- * regenerates them. Session notes live in the chat, not the repo.
- */
+
+# Browser-capture debris from the clone-site skill landing the page was
+# measured against: viewport screenshots saved by hand sit beside the working
+# captures under the ignored scratch dirs, and re-running either capture
+# regenerates them. Session notes live in the chat, not the repo.
+#
+# This block used to be written as a C-style comment (`/*` … `*/`). Gitignore
+# has no such syntax: those lines were read as PATTERNS, and the opening `/*`
+# anchored at the repo root silently ignored every untracked path — so new
+# source files never showed up in `git status` and could not be added.
 frontend/public/screenshots/image*.png
 /SESSIONS.md
+/sessions.md

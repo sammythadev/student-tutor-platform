@@ -15,12 +15,24 @@ import {
  * another.
  *
  * Determinism: every field is drawn from a seeded PRNG whose seed is derived
- * ONLY from the role + count (never from `loadFactorWeight`), so
+ * from the role + count + an optional SEED OFFSET (never from
+ * `loadFactorWeight`), so
  *   • repeated runs with the same arguments yield identical fixtures;
  *   • the load-factor on/off comparison in the harness sees the SAME
  *     population and differs only in the fairness weight;
  *   • all strategies in baseline-comparison see identical fixtures, so any
  *     difference comes from the assignment strategy alone.
+ *
+ * `seedOffset` defaults to 0 and reproduces the original role+count fixtures
+ * byte-for-byte, so every result recorded before this parameter existed is
+ * still reproducible. Passing offset 1, 2, 3… draws an INDEPENDENT population of
+ * the same size — which is what turns a single point estimate into a mean with
+ * a confidence interval (see `--seeds` in evaluation-harness.ts and stats.ts).
+ *
+ * Tutor CAPACITY is deliberately tied to the tutor index, not to the seed: the
+ * supply structure (how many seats exist) is a property of the market, so
+ * holding it fixed across seeds isolates variation in student/tutor attributes
+ * from variation in seat count.
  * Students and tutors use SEPARATE streams, so student-i and tutor-i share no
  * hidden alignment (the old `index % N` pattern made every student's "twin"
  * tutor match on subject, schedule and budget simultaneously, which inflated
@@ -77,10 +89,11 @@ const mulberry32 = (seed: number): (() => number) => {
   };
 };
 
-/** FNV-1a string hash used as the PRNG seed — role+count only, see header note. */
-const seedFor = (role: string, count: number): number => {
+/** FNV-1a string hash used as the PRNG seed — role+count+offset, see header note. */
+const seedFor = (role: string, count: number, seedOffset = 0): number => {
+  const key = seedOffset === 0 ? `${role}:${count}` : `${role}:${count}:${seedOffset}`;
   let hash = 2166136261;
-  for (const char of `${role}:${count}`) {
+  for (const char of key) {
     hash ^= char.charCodeAt(0);
     hash = Math.imul(hash, 16777619);
   }
@@ -119,9 +132,17 @@ const maybeSpecialization = (
   return pick(random, SPECIALIZATIONS[subject]);
 };
 
-export function generateStudents(count: number, loadFactorWeight: number): Student[] {
+/**
+ * One population of `count` students. `seedOffset` 0 = the original fixtures;
+ * 1, 2, 3… = independent populations of the same size (used by `--seeds`).
+ */
+export function generateStudents(
+  count: number,
+  loadFactorWeight: number,
+  seedOffset = 0,
+): Student[] {
   // Student stream is independent of the tutor stream — no index alignment.
-  const random = mulberry32(seedFor('students', count));
+  const random = mulberry32(seedFor('students', count, seedOffset));
 
   return Array.from({ length: count }, (_, index) => {
     const subject = pick(random, SUBJECTS);
@@ -157,10 +178,11 @@ export function generateStudents(count: number, loadFactorWeight: number): Stude
 export function generateTutors(
   count: number,
   capacityStrategy: CapacityStrategy = 'synthetic',
+  seedOffset = 0,
 ): Tutor[] {
   // Separate stream from students; seed includes the strategy so 'seed' and
   // 'synthetic' populations differ but are each reproducible.
-  const random = mulberry32(seedFor(`tutors:${capacityStrategy}`, count));
+  const random = mulberry32(seedFor(`tutors:${capacityStrategy}`, count, seedOffset));
 
   return Array.from({ length: count }, (_, index) => {
     const subject = pick(random, SUBJECTS);

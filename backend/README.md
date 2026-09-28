@@ -163,6 +163,29 @@ pass. Two rules keep this package honest:
   facade for callers that want the whole pipeline in one call.
 - Subject eligibility is a **hard filter**, never a weighted term.
 
+`MatchmakingService.runBatch` calls `assignBatch` with no options, which is the
+engine as deployed: the priority-queue heap pass followed by the bounded repair
+pass. Repair is the engine's own behaviour (`src/core/algorithms/assignment/greedy-assignment.engine.ts`),
+not a separate algorithm or a second arm — `repair: false` exists only as the
+P1-only ablation the evaluation suite reports as `greedy-engine-norepair`. It is
+measured to add placements and never to remove one, to score at least as well on
+the load-independent total in 30/30 populations per scenario, and to cost no more
+than the heap pass it follows (`STAGE2_REPAIR.md`, `STAGE3_FLOOR.md`). The
+response shape is unchanged: repair only moves students from `unassignable` into
+placements. The exact floor-constrained solver is **not** wired into the request
+path — it is an offline/administrative re-solve, because `STAGE3_FLOOR.md` §2
+measures it leaving the interactive budget above the ~150-student tier.
+
+The engine also has a **bounded blocking-pair elimination pass**,
+`assignBatch(..., { stability: true })`, and it is **off by default**: the
+deployed path above does not run it. It resolves pairs that both a student and a
+tutor would prefer to the status quo, and it is measured as its own arm
+(`greedy-engine-stable`) because stability is a different objective from static
+total: on 30 populations it removes 3.3–14.3 blocking pairs per population and
+never a placement, but it flattens tutor loads (Jain −0.007…−0.035) and costs
+the worst placed student 0.005–0.010 (`STAGE4_STABILITY.md`). Whether a
+deployment wants that is a product decision, which is why it is opt-in.
+
 ## Evaluation harnesses
 
 All suites generate the same synthetic fixtures
@@ -176,7 +199,11 @@ all of them save CSV output to `docs/benchmarks/`.
 | `pnpm run eval:topk`      | Quality/speed/memory tradeoff for K ∈ {10, 20, 50, ∞}                            |
 | `pnpm run eval:gap`       | How far below the exact optimum does greedy land? (min-cost max-flow)            |
 | `pnpm run eval:baselines` | Does greedy beat the strategies real platforms use? (FCFS / deferred acceptance) |
-| `pnpm run eval:all`       | Everything above                                                                 |
+| `pnpm run eval:statistics`| Same comparison over 30 independent populations: means ± 95% CIs, paired sign tests vs the engine, the exact oracle on the same population, the unplaced-cause breakdown, the `greedy-engine-norepair` ablation plus the `floor-exact` and `greedy-engine-stable` arms, and the `worstStudentStaticScore` / `floorTheta` / `floorCeiling` / `blockingPairs` columns. `greedy-engine` is the deployed algorithm (heap pass + repair), so every delta reads against what ships. Pass `--seeds` / `--base-seed` / `--scenario`. |
+| `pnpm run eval:floor`     | The price-of-fairness frontier: exact θ-constrained min-cost max-flow (`floor-baseline.ts`) swept from the engine's own static floor to the exact max-min ceiling, plus the `floor-exact` vs deployed-engine paired sign test on stderr. Pass `--seeds` / `--steps` / `--scenario` / `--no-timing`. |
+| `pnpm run eval:scale`     | Production-scale cost of the whole chain (greedy → repair → exact floor solve → ceiling search → oracle) at `--sizes 1000x100,2000x200,5000x500`; `--no-ceiling` skips the ~10×-a-solve ceiling search, `--oracle-cap` bounds the oracle. **Not part of `eval:all`** — it is minutes, not seconds. |
+| `pnpm run eval:report`    | Renders the CSVs above into `docs/benchmarks/figures/` (SVG + PNG), `FIGURES.md` and `index.html`.  |
+| `pnpm run eval:all`       | Everything above except `eval:scale`                                             |
 
 Flags available across the eval commands: `--name <file>`, `--out <path>`,
 `--no-file`, `--table`, `--csv`, `--no-timing`, plus script-specific
@@ -184,7 +211,25 @@ Flags available across the eval commands: `--name <file>`, `--out <path>`,
 
 Findings from these runs are written up in
 [`docs/benchmarks/EVALUATION_FINDINGS.md`](docs/benchmarks/EVALUATION_FINDINGS.md)
-and [`docs/OPTIMIZATION_REPORT.md`](docs/OPTIMIZATION_REPORT.md).
+and [`docs/OPTIMIZATION_REPORT.md`](docs/OPTIMIZATION_REPORT.md) — but note that
+both are dated single-population runs with correction addenda; the current
+authoritative numbers are
+[`docs/benchmarks/STAGE1_REPORT.md`](docs/benchmarks/STAGE1_REPORT.md) (metrics,
+oracle gap, cause breakdown) and
+[`docs/benchmarks/STAGE2_REPAIR.md`](docs/benchmarks/STAGE2_REPAIR.md) (the
+bounded repair pass, which is what makes the engine the best of the four
+strategies on both coverage and load-independent score) and
+[`docs/benchmarks/STAGE3_FLOOR.md`](docs/benchmarks/STAGE3_FLOOR.md) (the exact
+fairness-floor ceiling, the price-of-fairness frontier, and the measured scale
+threshold for the exact solver) and
+[`docs/benchmarks/STAGE4_STABILITY.md`](docs/benchmarks/STAGE4_STABILITY.md)
+(blocking pairs per arm, the opt-in stability pass, and the measured
+stability-versus-fairness tradeoff) and
+[`docs/benchmarks/HELD_OUT_CONFIRMATION.md`](docs/benchmarks/HELD_OUT_CONFIRMATION.md)
+(the one-shot confirmation on the reserved seeds 1000–1029, pre-registered
+before the run: all six registered direction claims hold, and 23 of 24 effect
+sizes land within ±50% of their exploratory estimates). Figures:
+[`docs/benchmarks/FIGURES.md`](docs/benchmarks/FIGURES.md).
 
 ### Eval TUI
 
