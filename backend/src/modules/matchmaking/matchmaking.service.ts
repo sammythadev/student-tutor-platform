@@ -13,8 +13,15 @@ import {
   GreedyAssignmentEngine,
   TopKRanker,
 } from '@core/algorithms';
-import { DeliveryMode, FormatPreference, LearningPace, LearningStyle, TeachingStyle } from '@core/enums';
+import {
+  DeliveryMode,
+  FormatPreference,
+  LearningPace,
+  LearningStyle,
+  TeachingStyle,
+} from '@core/enums';
 import { AvailabilitySlot, type Student, type Tutor } from '@core/entities';
+import { MatchExplanationBuilder, MATCH_EXPLANATION_VERSION } from '@core/explanation';
 import type { AuthenticatedUser } from '@common/auth';
 import {
   AssignmentPageDto,
@@ -49,6 +56,12 @@ export class MatchmakingService {
 
   private readonly eligibilityFilter = new EligibilityFilter();
 
+  /**
+   * Deliberately off the scoring path: a failure here must never change who gets
+   * ranked or assigned, only whether the UI can explain it.
+   */
+  private readonly matchExplanationBuilder = new MatchExplanationBuilder();
+
   private readonly feedbackUpdater = new FeedbackUpdater();
 
   constructor(private readonly matchmakingRepository: MatchmakingRepository) {}
@@ -77,6 +90,18 @@ export class MatchmakingService {
 
     // Rank the full set: `total` must reflect every candidate, not just this page.
     const ranked = this.topKRanker.rank(student, tutors, tutors.length);
+
+    // Weights depend only on the student, so build them once for the whole page
+    // rather than letting every candidate recompute the same values.
+    const weights = this.compositeScorer.buildWeights(student);
+
+    // "The pool" means every tutor ranked for THIS student, ascending so the
+    // anchor can binary-search it. A sorted copy — `ranked` itself is rank order.
+    const poolTotalsAscending = ranked
+      .map((candidate) => candidate.score.total)
+      .sort((left, right) => left - right);
+    const distribution = MatchExplanationBuilder.buildDistribution(poolTotalsAscending);
+
     const data = ranked.slice((page - 1) * limit, page * limit).map((candidate) => {
       const row = tutorRows.find((tutorRow) => tutorRow.user.id === candidate.tutor.id);
 
@@ -102,6 +127,16 @@ export class MatchmakingService {
         hourlyRate: row.profile.hourlyRate,
         bio: row.profile.bio,
         isVerified: row.profile.isVerified === 1,
+        // Built from the very `MatchScore` that ranked them, so the panel can
+        // never contradict the badge beside it.
+        explanation: this.matchExplanationBuilder.build({
+          student,
+          tutor: candidate.tutor,
+          score: candidate.score,
+          eligibility: candidate.eligibility,
+          weights,
+          poolTotalsAscending,
+        }),
       };
     });
 
@@ -110,6 +145,8 @@ export class MatchmakingService {
       limit,
       total: ranked.length,
       data,
+      // Absent only when this student has nobody ranked at all.
+      ...(distribution ? { distribution } : {}),
     };
   }
 
@@ -204,14 +241,28 @@ export class MatchmakingService {
       throw new BadRequestException(eligibility.reason ?? 'Tutor is not eligible for this student');
     }
 
-    const score = this.compositeScorer.score(student, tutor);
+    const weights = this.compositeScorer.buildWeights(student);
+    const score = this.compositeScorer.score(student, tutor, weights);
+
+    // No pool is in hand on this path, so the stored explanation carries no
+    // selfAnchor — exactly the "rebuilt from persistence" case the type documents.
+    const explanation = this.matchExplanationBuilder.build({
+      student,
+      tutor,
+      score,
+      eligibility,
+      weights,
+    });
+
     const assignment = await this.matchmakingRepository.createActiveAssignment(
       student.id,
       tutor.id,
       score.total,
       {
+        version: MATCH_EXPLANATION_VERSION,
         breakdown: score.breakdown,
         subBreakdown: score.subBreakdown,
+        explanation,
       },
     );
 
@@ -250,6 +301,9 @@ export class MatchmakingService {
         tutorId: assignment.tutorId as string,
         matchScore: assignment.matchScore?.total ?? 0,
         scoreBreakdown: {
+          // Same shape version as a manual selection, minus the explanation: the
+          // batch engine scores internally and nothing on this path renders one.
+          version: MATCH_EXPLANATION_VERSION,
           breakdown: assignment.matchScore?.breakdown,
           subBreakdown: assignment.matchScore?.subBreakdown,
         },

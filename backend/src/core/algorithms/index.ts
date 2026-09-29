@@ -15,6 +15,7 @@ export type {
   StabilityReport,
 } from './assignment/greedy-assignment.engine';
 export { EligibilityFilter } from './filters/eligibility.filter';
+export type { EligibilityResult } from './filters/eligibility.filter';
 export { FeedbackUpdater } from './feedback/feedback-updater';
 export { TopKRanker } from './ranking/top-k-ranker';
 export type { RankedTutor } from './ranking/top-k-ranker';

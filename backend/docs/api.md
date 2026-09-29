@@ -129,6 +129,35 @@ Admin-only endpoint that runs database-backed batch matchmaking for active stude
 
 Student-only endpoint for the current authenticated student. Returns paginated, populated tutor candidates ranked by the core algorithm.
 
+Each candidate carries an `explanation` object that answers "why this match":
+
+| Field                            | Meaning                                                                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version`                        | Explanation schema version. Currently `2`. Readers must tolerate unknown versions.                                                                      |
+| `headline`                       | Short verdict, e.g. `Strong match — led by schedule overlap`, or `Not currently a fit` when the candidate fails the hard gate.                          |
+| `summary`                        | One or two sentences naming what helped and what held it back. For an ineligible candidate this is the gate reason.                                     |
+| `criteria`                       | The four α/β/γ/δ terms, always in canonical engine order (`academic`, `preference`, `schedule`, `fairness`) so bars stay comparable between candidates. |
+| `highlights`                     | Up to 3 strongest reasons, ranked by points contributed, descending.                                                                                    |
+| `cautions`                       | Up to 2 weakest reasons worth knowing about, ordered by what costs the most points.                                                                     |
+| `bestCriteria` / `worstCriteria` | Highest-contribution term, and lowest-scoring term. Both `null` when ineligible.                                                                        |
+| `weights`                        | The α/β/γ/δ actually in force for this student.                                                                                                         |
+| `selfAnchor`                     | This candidate's `percentile` (share of the pool they tie or beat), plus the pool's `medianPct` and `bestPct`. Omitted when the pool is unknown.        |
+
+Each `criteria[]` entry exposes its `score`, its `weight` (the maximum points the term can add), its `contribution` (points actually added) and its `share` of the total, plus a nested `subCriteria[]` for the `academic` and `preference` terms.
+
+The endpoint guarantees the following, and the frontend may rely on it:
+
+- `Σ criteria[].contribution` equals `score` up to floating-point association — the leaf weights are pre-multiplied by α/β, so compare with a tolerance, never `===`.
+- A leaf marked `applicable: false` scored a neutral fallback rather than a measurement (no budget set, empty style vectors, region irrelevant for online-only students, no grade levels listed on the tutor). These are published for completeness and are **never** promoted to `highlights`.
+- An **ineligible** candidate (`isEligible: false`) always has empty `highlights` and `cautions` and a `null` best/worst criterion. "92% match" beside a disabled button is exactly the contradiction this prevents.
+- With no budget set, the price dimension scores `0` and the copy says so actionably, rather than silently penalising the tutor.
+
+The page also carries `distribution`: a five-bucket histogram of the scores of the tutors ranked **for this student**, with `total`, `medianPct` and `bestPct`. It describes the caller's ranked pool, not the whole platform, so any copy built from it must say "of the tutors ranked for you". It is absent only when the student has nobody ranked.
+
+- Auth: student bearer access token.
+- Errors: `401` for a missing or invalid bearer token, `403` for non-student roles, `400` when the student has not set availability.
+- Size: an explanation is roughly 1 KB per candidate, so ask for `limit=50` only when the client can use the whole page.
+
 ### `GET /matchmaking/candidates/students?page=1&limit=5`
 
 Tutor-only endpoint for the current authenticated tutor. Returns paginated, populated student candidates ranked by the core algorithm.
@@ -142,6 +171,7 @@ Student-only endpoint for manually selecting a tutor candidate.
 
 - Body: `tutorId`.
 - Result: creates an `active` assignment/session immediately when the tutor has capacity.
+- Persistence: `assignments.score_breakdown` stores `{ version, breakdown, subBreakdown, explanation }`. The stored explanation has no `selfAnchor`, because a manual selection has no ranked pool in scope. The batch endpoint writes the same `version` marker without an explanation.
 
 ### `GET /matchmaking/assignments/me?page=1&limit=10`
 
