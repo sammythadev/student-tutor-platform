@@ -1,5 +1,8 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 
+import { toApiError } from '@/lib/api/errors'
+import { logger } from '@/lib/logger'
+
 // Reads from NEXT_PUBLIC_API_URL — never hardcoded
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -107,6 +110,22 @@ api.interceptors.response.use(
         isRefreshing = false
       }
     }
+
+    // Reached only when the request genuinely failed. A successful silent
+    // refresh returns early above, so routine token rotation stays quiet.
+    // `config.headers` is deliberately omitted — the Authorization header is
+    // redacted by the logger, and passing it through adds nothing.
+    const { kind, status } = toApiError(error)
+    const meta = {
+      method: originalRequest.method?.toUpperCase(),
+      url: originalRequest.url,
+      status,
+      kind,
+    }
+
+    if (status !== null && status >= 500) logger.child('api').error('Server error', meta)
+    else if (status === null) logger.child('api').warn('Network unreachable', meta)
+    else logger.child('api').warn('Request rejected', meta)
 
     return Promise.reject(error)
   },

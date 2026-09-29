@@ -1,84 +1,74 @@
 "use client";
 
-import { useState } from "react";
-import { Combobox } from "@base-ui/react/combobox";
-import { Check, ChevronDown } from "lucide-react";
+import { useMemo, useState } from "react";
+import { SearchIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FilterChip } from "@/components/catalog/filter-chip";
 
-/** Searchable subject selection below lg; a chip list when there is room. */
+/**
+ * Subject selection as chips at every width.
+ *
+ * This used to render a Combobox below `lg` and a chip list at `lg`+, so the
+ * same control had two mental models and reflowed on rotate. Chips are the one
+ * model: tappable, visible in a screenshot, and they wrap instead of collapsing.
+ * The search box is opt-in (`showSearch`) and only the bottom sheet asks for it,
+ * where the chip list is competing for vertical room with three other groups.
+ */
 export function SubjectFilter({
   subjects,
   value,
   onChange,
   allLabel = "All",
+  showSearch = false,
   className,
 }: {
   subjects: string[];
   value: string;
   onChange: (subject: string) => void;
   allLabel?: string;
+  showSearch?: boolean;
   className?: string;
 }) {
   const [query, setQuery] = useState("");
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return subjects;
+    return subjects.filter(subject => {
+      if (subject === "All") return allLabel.toLowerCase().includes(q);
+      return subject.toLowerCase().includes(q);
+    });
+  }, [subjects, query, allLabel]);
+
   if (subjects.length <= 1) return null;
 
   return (
     <div className={cn("min-w-0", className)}>
-      <div className="lg:hidden">
-        <Combobox.Root
-          items={subjects}
-          value={value}
-          inputValue={query}
-          onInputValueChange={setQuery}
-          onValueChange={(subject) => { if (subject !== null) onChange(subject); }}
-          onOpenChange={(open) => { if (!open) setQuery(""); }}
-          itemToStringLabel={(subject) => subject === "All" ? allLabel : subject}
-        >
-          <Combobox.Trigger
-            aria-label="Filter by subject"
-            className="flex h-11 w-full min-w-0 items-center gap-2 rounded-lg border border-input bg-background px-3 text-left text-sm text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <span className="min-w-0 flex-1 truncate">
-              <Combobox.Value>{value === "All" ? allLabel : value}</Combobox.Value>
-            </span>
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          </Combobox.Trigger>
-          <Combobox.Portal>
-            <Combobox.Positioner align="start" sideOffset={4} collisionPadding={16} className="z-50 outline-none">
-              <Combobox.Popup className="flex max-h-[min(18rem,50dvh,var(--available-height))] w-[var(--anchor-width)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-md">
-                <div className="shrink-0 border-b p-2">
-                  <Combobox.Input
-                    aria-label="Search subjects"
-                    placeholder="Search subjects"
-                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-base text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
-                  />
-                </div>
-                <Combobox.Empty className="p-4 text-sm text-muted-foreground">No subjects found</Combobox.Empty>
-                <Combobox.List className="min-h-0 overflow-y-auto overscroll-contain p-1 outline-none data-empty:p-0">
-                  {(subject: string) => (
-                    <Combobox.Item
-                      key={subject}
-                      value={subject}
-                      className="grid min-h-11 cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-md px-3 py-2 text-sm outline-none data-highlighted:bg-accent data-highlighted:text-accent-foreground"
-                    >
-                      <Combobox.ItemIndicator className="col-start-1"><Check className="size-4" aria-hidden="true" /></Combobox.ItemIndicator>
-                      <span className="col-start-2 min-w-0 whitespace-normal break-words">{subject === "All" ? allLabel : subject}</span>
-                    </Combobox.Item>
-                  )}
-                </Combobox.List>
-              </Combobox.Popup>
-            </Combobox.Positioner>
-          </Combobox.Portal>
-        </Combobox.Root>
-      </div>
-      <div className="hidden flex-wrap gap-1.5 lg:flex">
-        {subjects.map((subject) => (
+      {showSearch && (
+        <div className="relative mb-3">
+          <SearchIcon
+            className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            placeholder="Find a subject"
+            aria-label="Find a subject"
+            className="h-11 w-full min-w-0 rounded-md border border-input bg-surface-2 pl-10 pr-3 text-base text-foreground outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [&::-webkit-search-cancel-button]:appearance-none md:text-sm"
+          />
+        </div>
+      )}
+      <div className="flex flex-wrap gap-1.5 lg:max-h-[calc(100dvh-18rem)] lg:overflow-y-auto lg:pr-1 lg:overscroll-contain">
+        {visible.map((subject) => (
           <FilterChip key={subject} active={value === subject} onClick={() => onChange(subject)}>
             {subject === "All" ? allLabel : subject}
           </FilterChip>
         ))}
       </div>
+      {visible.length === 0 && (
+        <p className="text-sm text-muted-foreground">No subject matches “{query.trim()}”.</p>
+      )}
     </div>
   );
 }

@@ -5,7 +5,9 @@ import { X, BookOpen, MapPin, Award, CheckCircle2, Send, ThumbsUp, Clock } from 
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { StarRating } from '@/components/StarRating'
+import { WhyThisMatch } from '@/components/match/why-this-match'
 import { submitFeedback } from '@/lib/api/users'
+import { candidatePercent } from '@/lib/api/match-explanation'
 import { getCurrentAssignment } from '@/lib/api/assignments'
 import { apiErrorText } from '@/lib/api/errors'
 import type { Assignment, TutorCandidate } from '@/lib/api/users'
@@ -118,6 +120,13 @@ export function TutorProfileModal({ tutor, onClose, onBook, onMessage }: TutorPr
                 <StarRating rating={tutor.avgRating} count={tutor.ratingCount} size="sm" />
               </div>
             </div>
+          </div>
+
+          <div className="mb-6">
+            <WhyThisMatch
+              explanation={tutor.explanation}
+              matchPct={candidatePercent(tutor.rankPercentage, tutor.score)}
+            />
           </div>
 
           <div className="mb-6 space-y-4">

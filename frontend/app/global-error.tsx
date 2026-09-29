@@ -1,7 +1,11 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { House, RefreshCw, TriangleAlert } from 'lucide-react'
+// `@/lib/logger` imports nothing itself, so it satisfies the dependency-light
+// constraint below.
+import { logger, normalizeError } from '@/lib/logger'
 import './globals.css'
 
 /**
@@ -10,11 +14,16 @@ import './globals.css'
  * providers, no store, no data fetching — only framework + icon primitives.
  */
 export default function GlobalError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    logger.child('global-boundary').error('Root layout crashed', normalizeError(error))
+  }, [error])
+
   return (
     <html lang="en">
       <body className="font-sans antialiased bg-background text-foreground">

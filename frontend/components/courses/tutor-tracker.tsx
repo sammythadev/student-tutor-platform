@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { CalendarDaysIcon, MessagesSquareIcon } from 'lucide-react'
 import { BookSessionModal } from '@/components/BookSessionModal'
 import { MessageModal } from '@/components/MessageModal'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
@@ -47,6 +48,30 @@ function sessionLabel(status: SessionItem['status']): string {
   return 'Next session'
 }
 
+/** First letters of a display name, for the avatar fallback disc. */
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  const first = parts[0][0] ?? ''
+  const last = parts.length > 1 ? (parts[parts.length - 1][0] ?? '') : ''
+  return (first + last).toUpperCase()
+}
+
+/**
+ * Identity disc for a tutor. There is no avatar image on any payload this page
+ * reads, so the fallback *is* the avatar — tinted with the tracker's own accent
+ * so each card is identifiable at a glance.
+ */
+function TutorAvatar({ name }: { name: string }) {
+  return (
+    <Avatar className="size-11 shrink-0">
+      <AvatarFallback className="bg-accent-tracker/12 text-sm font-semibold text-accent-tracker">
+        {initialsOf(name)}
+      </AvatarFallback>
+    </Avatar>
+  )
+}
+
 /**
  * One tutor: what they set for this student, how far the student has followed
  * it, the next session on the books, and the two ways to reach them. Tutorly's
@@ -57,12 +82,16 @@ function TutorCard({
   group,
   sessions,
   isAssigned,
+  hideActions,
   onRequestSession,
   onMessage,
 }: {
   group: TutorCourseGroup
   sessions: SessionItem[]
   isAssigned: boolean
+  /** Set for the tutor already promoted into the "Happening next" panel, so the
+   *  two contact actions are not duplicated in both places. */
+  hideActions?: boolean
   onRequestSession: () => void
   onMessage: () => void
 }) {
@@ -76,28 +105,40 @@ function TutorCard({
   const returning = tutorId ? hasStudiedBefore(sessions, { tutorId }) : false
 
   return (
-    <article className="space-y-3 rounded-lg border bg-card p-4">
-      <header className="flex flex-wrap items-center gap-2">
-        <h2 className="text-base font-semibold wrap-anywhere">{tutorName}</h2>
-        {isAssigned && <Badge>Your assigned tutor</Badge>}
-        {provider === 'admin' && <Badge variant="secondary">Tutorly provided</Badge>}
-        <Badge variant="outline">{courses.length} {courses.length === 1 ? 'course' : 'courses'}</Badge>
+    <article className="flex h-full flex-col gap-3 rounded-lg border bg-card p-4">
+      <header className="flex min-w-0 items-start gap-3">
+        <TutorAvatar name={tutorName} />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <h3 className="text-base font-semibold wrap-anywhere">{tutorName}</h3>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {isAssigned && <Badge>Your assigned tutor</Badge>}
+            {provider === 'admin' && <Badge variant="secondary">Tutorly provided</Badge>}
+            <Badge variant="outline">{courses.length} {courses.length === 1 ? 'course' : 'courses'}</Badge>
+          </div>
+        </div>
       </header>
 
+      {/* Progress is the card's visual anchor, so it leads: the figure is set
+          larger than the surrounding copy and the bar runs full width beneath. */}
       {hasCourses ? (
-        <>
-          <p className="text-sm text-muted-foreground">
-            {progress.completedTopics} of {progress.totalTopics} topics complete · {progress.percentage}%
-          </p>
+        <div className="space-y-1.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              {progress.completedTopics} of {progress.totalTopics} topics
+            </p>
+            <p className="text-sm font-semibold tabular-nums text-accent-tracker">
+              {progress.percentage}%
+            </p>
+          </div>
           <Progress value={progress.percentage} aria-label={`Progress with ${tutorName}`} className="h-2" />
-        </>
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground">
           {isAssigned ? 'You are matched with this tutor, but they have not set a course yet.' : 'No courses set yet.'}
         </p>
       )}
 
-      {next && (
+      {next && !hideActions && (
         <p className="flex items-start gap-2 text-sm">
           <CalendarDaysIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <span className="min-w-0">
@@ -107,8 +148,8 @@ function TutorCard({
         </p>
       )}
 
-      {tutorId && (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      {tutorId && !hideActions && (
+        <div className="mt-auto flex flex-col gap-2 pt-1 sm:flex-row sm:items-center">
           <Button className="h-11 w-full sm:w-auto" onClick={onRequestSession}>
             <CalendarDaysIcon className="size-4" aria-hidden="true" />
             {requestLabel(returning)}
@@ -148,6 +189,71 @@ function TutorCard({
         </Accordion>
       )}
     </article>
+  )
+}
+
+/**
+ * The one thing worth acting on right now, promoted out of the tutor list.
+ *
+ * This used to be the first line of the first card, which meant the page opened
+ * with a grid of visually identical cards and buried its most useful content in
+ * one of them. It gets its own panel, its own accent, and the two contact
+ * actions that used to live on that card — so they are not repeated below.
+ */
+function NextSessionPanel({
+  group,
+  next,
+  scheduledCount,
+  onRequestSession,
+  onMessage,
+}: {
+  group: TutorCourseGroup
+  next: SessionItem
+  scheduledCount: number
+  onRequestSession: () => void
+  onMessage: () => void
+}) {
+  return (
+    <section
+      aria-labelledby="happening-next-heading"
+      className="rounded-lg border border-accent-tracker/30 bg-accent-tracker/[0.07] p-4 md:p-5"
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <span
+            aria-hidden="true"
+            className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-accent-tracker/15 text-accent-tracker"
+          >
+            <CalendarDaysIcon className="size-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 space-y-1">
+            <h2
+              id="happening-next-heading"
+              className="text-xs font-semibold uppercase tracking-wide text-accent-tracker"
+            >
+              Happening next
+            </h2>
+            <p className="text-lg font-semibold wrap-anywhere">
+              {formatSessionDate(next.startAt)}
+            </p>
+            <p className="text-sm text-muted-foreground wrap-anywhere">
+              {sessionLabel(next.status)} with {group.tutorName} · {next.subject}
+              {scheduledCount > 1 && ` · ${scheduledCount} scheduled in total`}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+          <Button className="h-11 w-full sm:w-auto" onClick={onRequestSession}>
+            <CalendarDaysIcon className="size-4" aria-hidden="true" />
+            Request session
+          </Button>
+          <Button variant="outline" className="h-11 w-full shadow-none sm:w-auto" onClick={onMessage}>
+            <MessagesSquareIcon className="size-4" aria-hidden="true" />
+            Message
+          </Button>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -248,12 +354,41 @@ export function TutorTracker() {
   const loading = !data && !failure
   const truncated = !!data && data.total > data.courses.length
   const waitlisted = data?.assignment?.status === 'waitlisted'
+
+  // The soonest session across every tutor, promoted into its own panel. Ties
+  // keep the order `buildGroups` already established (assigned tutor first).
+  const nextUp = useMemo(() => {
+    let best: { group: TutorCourseGroup; session: SessionItem } | null = null
+    for (const group of groups) {
+      const session = sessionsFor(group)[0]
+      if (!session) continue
+      if (!best || session.startAt < best.session.startAt) best = { group, session }
+    }
+    return best
+  // `sessionsFor` reads `data`, which is the real dependency here.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups, data])
+
   // Default the booking form to a subject already agreed with this tutor, falling
   // back to the subjects their courses cover — a first-time booking no longer has
   // to fall through to "General Tutoring".
   const knownSubject = sessionTarget
     ? sessionsFor(sessionTarget)[0]?.subject ?? sessionTarget.courses.flatMap(course => course.subjects)[0]
     : undefined
+
+  let nextUpPanel = null
+  if (nextUp && !loading && !failure) {
+    const { group, session } = nextUp
+    nextUpPanel = (
+      <NextSessionPanel
+        group={group}
+        next={session}
+        scheduledCount={sessionsFor(group).length}
+        onRequestSession={() => setSessionTarget(group)}
+        onMessage={() => setMessageTarget(group)}
+      />
+    )
+  }
 
   return (
     <div className="space-y-6 py-3">
@@ -285,13 +420,16 @@ export function TutorTracker() {
         </Alert>
       )}
 
+      {/* Zone 1: the single most useful thing on the page, before the list. */}
+      {nextUpPanel}
+
       <section aria-label="Your tutors" aria-busy={loading} className="space-y-4">
         {loading ? (
-          <div className="space-y-4" aria-hidden="true">
+          <div className="grid gap-4 sm:grid-cols-2" aria-hidden="true">
             {[0, 1].map(index => (
               <div key={index} className="space-y-4 rounded-lg border bg-card p-4">
+                <Skeleton className="h-11 w-11 rounded-full motion-reduce:animate-none" />
                 <Skeleton className="h-6 w-1/2 motion-reduce:animate-none" />
-                <Skeleton className="h-4 w-2/3 motion-reduce:animate-none" />
                 <Skeleton className="h-2 w-full motion-reduce:animate-none" />
                 <Skeleton className="h-11 w-full motion-reduce:animate-none md:w-40" />
               </div>
@@ -304,16 +442,24 @@ export function TutorTracker() {
                 Showing your {data?.courses.length} most recent courses. <Link href="/courses" className="underline underline-offset-4">Open Courses</Link> for the full list.
               </p>
             )}
-            {groups.map(group => (
-              <TutorCard
-                key={group.key}
-                group={group}
-                sessions={sessionsFor(group)}
-                isAssigned={!!group.tutorId && data?.assignment?.tutorId === group.tutorId}
-                onRequestSession={() => setSessionTarget(group)}
-                onMessage={() => setMessageTarget(group)}
-              />
-            ))}
+            {/* Zone 2: the rollup, in a grid so the cards read as peers rather
+                than as one long undifferentiated column. */}
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Your tutors
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {groups.map(group => (
+                <TutorCard
+                  key={group.key}
+                  group={group}
+                  sessions={sessionsFor(group)}
+                  isAssigned={!!group.tutorId && data?.assignment?.tutorId === group.tutorId}
+                  hideActions={nextUp?.group.key === group.key}
+                  onRequestSession={() => setSessionTarget(group)}
+                  onMessage={() => setMessageTarget(group)}
+                />
+              ))}
+            </div>
           </>
         ) : !failure ? (
           <Empty className="items-start border border-solid bg-card text-left md:p-6">

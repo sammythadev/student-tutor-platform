@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type * as React from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export type PageHeroStat = {
@@ -10,10 +11,35 @@ export type PageHeroStat = {
   value: string;
 };
 
+/** Which product surface this hero belongs to; picks the accent for icon wells. */
+export type PageHeroTone = "tutors" | "courses" | "tracker";
+
 export type PageHeroAction = {
   label: string;
   href: string;
   variant?: "primary" | "outline";
+  icon?: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
+};
+
+/**
+ * Icon-well fills per tone. A solid (monochrome) button cannot carry a tinted
+ * well — the accent hues sit around 4–6:1 on white and fall below 3:1 on the
+ * near-black primary fill — so it keeps a foreground-tinted well and the accent
+ * only ever appears on the outline treatment.
+ */
+const TONE_WELL: Record<PageHeroTone, { solid: string; subtle: string }> = {
+  tutors: {
+    solid: "bg-primary-foreground/15 text-primary-foreground",
+    subtle: "bg-accent-tutors/12 text-accent-tutors",
+  },
+  courses: {
+    solid: "bg-primary-foreground/15 text-primary-foreground",
+    subtle: "bg-accent-courses/12 text-accent-courses",
+  },
+  tracker: {
+    solid: "bg-primary-foreground/15 text-primary-foreground",
+    subtle: "bg-accent-tracker/12 text-accent-tracker",
+  },
 };
 
 /** Shared static page header with optional supporting content and actions. */
@@ -22,12 +48,14 @@ export function PageHero({
   description,
   stats,
   actions,
+  tone = "tutors",
   className,
 }: {
   title: React.ReactNode;
   description?: React.ReactNode;
   stats?: PageHeroStat[];
   actions?: PageHeroAction[];
+  tone?: PageHeroTone;
   className?: string;
 }) {
   return (
@@ -51,20 +79,32 @@ export function PageHero({
       </div>
       {actions && actions.length > 0 && (
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {actions.map((action) => (
-            <Link
-              key={action.href}
-              href={action.href}
-              className={cn(
-                "inline-flex h-11 items-center gap-2 rounded-md px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                action.variant === "primary" || !action.variant
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "border bg-background text-foreground hover:bg-accent"
-              )}
-            >
-              {action.label}
-            </Link>
-          ))}
+          {actions.map((action) => {
+            const isPrimary = action.variant === "primary" || !action.variant;
+            return (
+              <Button
+                key={action.href}
+                asChild
+                variant={isPrimary ? "default" : "outline"}
+                className="h-11"
+              >
+                <Link href={action.href}>
+                  {action.icon && (
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "flex size-6 items-center justify-center rounded-md",
+                        TONE_WELL[tone][isPrimary ? "solid" : "subtle"],
+                      )}
+                    >
+                      <action.icon className="size-3.5" aria-hidden="true" />
+                    </span>
+                  )}
+                  {action.label}
+                </Link>
+              </Button>
+            );
+          })}
         </div>
       )}
     </div>

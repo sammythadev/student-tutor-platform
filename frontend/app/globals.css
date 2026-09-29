@@ -73,6 +73,14 @@
   --color-ring:               var(--ring);
   --color-link:               var(--link);
 
+  /* Per-surface accents. `--color-*` is the namespace Tailwind v4 actually reads
+     for colour utilities (the `--colors-*` block below is legacy and inert), so
+     these resolve `bg-accent-tutors/10`, `text-accent-courses`, etc. */
+  --color-accent-tutors:      var(--accent-tutors);
+  --color-accent-courses:     var(--accent-courses);
+  --color-accent-tracker:     var(--accent-tracker);
+  --color-surface-2:          var(--surface-2);
+
   /* Legacy semantic mappings (kept until page migration completes) */
   --colors-canvas:            var(--canvas);
   --colors-surface:           var(--surface);
@@ -204,8 +212,9 @@
   --gray-200: #EBEBEB;
   --gray-300: #E4E4E4;
 
-  /* Borders — shadow-as-border alpha values */
-  --border:        rgba(0, 0, 0, 0.08);
+  /* Borders — shadow-as-border alpha values. 0.12 rather than 0.08: at 0.08 a
+     1px rule on a white card measured 1.1:1 and simply vanished. */
+  --border:        rgba(0, 0, 0, 0.12);
   --border-strong: rgba(0, 0, 0, 0.16);
   --input:         rgba(0, 0, 0, 0.12);
 
@@ -213,7 +222,8 @@
   --foreground:      #171717;
   --text-primary:    #171717;
   --text-secondary:  #4D4D4D;
-  --text-muted:      #8F8F8F;
+  /* 5.0:1 on white — the old #8F8F8F measured 3.2:1 and failed WCAG 1.4.3. */
+  --text-muted:      #6B6B6B;
 
   /* Rating stars */
   --star-gold: #F59E0B;
@@ -270,6 +280,17 @@
   --chip-amber-fg:  #9A5C00;
   --chip-red-bg:    rgba(229, 72, 77, 0.10);
   --chip-red-fg:    #C62F34;
+
+  /* Per-surface accents — identity, not decoration. Each one is bound to the
+     surface that owns it (tutors / courses / tracker) and is only ever used for
+     small marks: icon wells, active chips, thin rules, eyebrow labels. Never a
+     large fill, which is what kept the whole product reading as one flat grey.
+     Contrast on the light surfaces (#FFFFFF card, #FAFAFA canvas):
+     tutors 4.4:1, courses 6.0:1, tracker 5.3:1 — all clear the 3:1 bar for
+     non-text UI. */
+  --accent-tutors:  #0072F5;
+  --accent-courses: #6D3BEB;
+  --accent-tracker: #0F7A5A;
 
   /* Elevation — layered border + depth shadows */
   --shadow-border:  0 0 0 1px rgba(0, 0, 0, 0.08);
@@ -359,14 +380,15 @@
   --gray-200: #1A1A1A;
   --gray-300: #232323;
 
-  --border:        rgba(255, 255, 255, 0.10);
+  --border:        rgba(255, 255, 255, 0.14);
   --border-strong: rgba(255, 255, 255, 0.18);
   --input:         rgba(255, 255, 255, 0.14);
 
   --foreground:      #EDEDED;
   --text-primary:    #EDEDED;
   --text-secondary:  #A1A1A1;
-  --text-muted:      #707070;
+  /* 5.5:1 on the #0A0A0A canvas — the old #707070 measured 3.0:1. */
+  --text-muted:      #8E8E8E;
 
   /* Rating stars — brighter in dark mode for contrast on #0A0A0A */
   --star-gold: #FBBF24;
@@ -419,6 +441,14 @@
   --chip-amber-fg:  #FFB84D;
   --chip-red-bg:    rgba(229, 72, 77, 0.14);
   --chip-red-fg:    #FF8085;
+
+  /* Per-surface accents, dark — brighter steps of the same three hues, reusing
+     the status ramp so the accent and the chart palette cannot drift apart.
+     Contrast on the dark surfaces (#111111 card, #0A0A0A canvas):
+     tutors 7.0:1, courses 8.4:1, tracker 12.6:1. */
+  --accent-tutors:  #52AEFF;
+  --accent-courses: #BF89EC;
+  --accent-tracker: #6CDA75;
 
   --shadow-border:  0 0 0 1px rgba(255, 255, 255, 0.10);
   --shadow-xs:      0 0 0 1px rgba(255, 255, 255, 0.10);

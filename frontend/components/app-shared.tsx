@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import {
 	LayoutGridIcon,
 	CalendarDaysIcon,
-	UsersIcon,
+	UserSearchIcon,
 	UsersRoundIcon,
 	BookOpenIcon,
 	MessagesSquareIcon,
@@ -38,7 +38,7 @@ export const navGroups: SidebarNavGroup[] = [
 			{
 				title: "Find Tutors",
 				path: "/tutors",
-				icon: <UsersIcon />,
+				icon: <UserSearchIcon />,
 			},
 			{
 				title: "Courses",

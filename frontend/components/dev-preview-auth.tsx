@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { login } from '@/lib/api/auth'
+import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/lib/store/authStore'
 
 /* Dev-only auto sign-in.
@@ -29,12 +30,12 @@ export function DevPreviewAuth() {
     const email = process.env.NEXT_PUBLIC_PREVIEW_EMAIL
     const password = process.env.NEXT_PUBLIC_PREVIEW_PASSWORD
     if (!email || !password) {
-      console.warn('[preview-auth] NEXT_PUBLIC_PREVIEW_EMAIL / _PASSWORD are not set')
+      logger.child('preview-auth').warn('NEXT_PUBLIC_PREVIEW_EMAIL / _PASSWORD are not set')
       return
     }
 
     login({ email, password }).catch((error: unknown) => {
-      console.warn('[preview-auth] sign-in failed', error)
+      logger.child('preview-auth').warn('Preview sign-in failed', { error: String(error) })
     })
   }, [])
 

@@ -5,6 +5,8 @@ import { accentFor, IDENTITY_BG } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/StarRating";
+import { WhyThisMatchDialog } from "@/components/match/why-this-match";
+import { readExplanation, type MatchExplanation } from "@/lib/api/match-explanation";
 import { BadgeCheck, BookOpen, Heart, MessageSquare, ArrowUpRight } from "lucide-react";
 
 export type CatalogCardData = {
@@ -21,6 +23,8 @@ export type CatalogCardData = {
   verified?: boolean;
   disabled?: boolean;
   disabledReason?: string;
+  /** Per-candidate "why this match" payload from the matchmaking endpoint. */
+  explanation?: MatchExplanation;
 };
 
 export type CatalogCardAction =
@@ -43,6 +47,14 @@ export function CatalogCard({
   const parts = data.name.trim().split(/\s+/).filter(Boolean);
   const initials = `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase() || "?";
 
+  // A percentage next to a disabled Book button reads as a contradiction, so an
+  // unbookable tutor shows its blocking reason and nothing else.
+  const matchPct = data.disabled ? undefined : data.matchPct;
+  const explanation = readExplanation(data.explanation);
+  // The "Why?" trigger doubles as the card's match figure, so it only replaces
+  // that text when there is a score worth explaining.
+  const scoredExplanation = explanation?.eligibility.isEligible ? explanation : null;
+
   return (
     <article className="catalog-card flex h-full min-w-0 flex-col" data-catalog-card="">
       <div className="flex items-start gap-3 p-4 pb-3">
@@ -58,10 +70,15 @@ export function CatalogCard({
             {data.verified && <BadgeCheck className="mt-1 size-4 shrink-0 text-[var(--chip-green-fg)]" aria-label="Verified" />}
           </div>
           {data.tagline && <p className="break-words text-xs text-[var(--text-secondary)]">{data.tagline}</p>}
-          {(data.rating != null || data.matchPct != null) && (
+          {(data.rating != null || matchPct != null) && (
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {data.rating != null && <StarRating rating={data.rating} count={data.ratingCount} size="sm" showCount />}
-              {data.matchPct != null && <span className="text-xs text-[var(--text-secondary)]">{data.matchPct}% match</span>}
+              {matchPct != null && scoredExplanation && (
+                <WhyThisMatchDialog explanation={scoredExplanation} matchPct={matchPct} accent={accentFor(data.id)} />
+              )}
+              {matchPct != null && !scoredExplanation && (
+                <span className="text-xs text-[var(--text-secondary)]">{matchPct}% match</span>
+              )}
             </div>
           )}
         </div>
@@ -91,6 +108,8 @@ export function CatalogCard({
         </div>
       )}
       {data.bio && <p className="line-clamp-2 break-words px-4 pb-2 text-sm leading-relaxed text-[var(--text-secondary)]">{data.bio}</p>}
+      {/* The reason is the only thing a blocked tutor shows: a plain, one-line
+          statement of what stopped it, with no score and no statistics beside it. */}
       {data.disabled && data.disabledReason && (
         <p className="mx-4 mb-2 break-words rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">{data.disabledReason}</p>
       )}

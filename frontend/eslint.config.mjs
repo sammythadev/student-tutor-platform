@@ -10,6 +10,17 @@ import nextTs from 'eslint-config-next/typescript'
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    /* Log through `@/lib/logger` rather than `console`, so level gating and
+       redaction apply. The logger itself and `proxy.ts` are exempt — calling
+       `console` is literally their job. Warn, not error, so an in-flight
+       migration cannot block a build. */
+    rules: { 'no-console': 'warn' },
+  },
+  {
+    files: ['lib/logger.ts', 'proxy.ts'],
+    rules: { 'no-console': 'off' },
+  },
   globalIgnores([
     '.next/**',
     'out/**',
@@ -17,6 +28,8 @@ const eslintConfig = defineConfig([
     'next-env.d.ts',
     /* Reference captures and clone scratch, never source. */
     '.clone/**',
+    /* Logger file sink. */
+    'logs/**',
   ]),
 ])
 

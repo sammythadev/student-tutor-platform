@@ -1,6 +1,7 @@
 import api from '@/lib/axios'
 import { useAuthStore } from '@/lib/store/authStore'
 import type { DeliveryMode, FormatPreference, LearningPace, TeachingStyle } from '@/lib/api/auth'
+import type { MatchDistribution, MatchExplanation } from '@/lib/api/match-explanation'
 
 export async function getMe() {
   const user = useAuthStore.getState().user
@@ -36,6 +37,8 @@ export async function getTutorCandidates(params?: CandidateQuery): Promise<Tutor
     total: data.total,
     page: data.page,
     limit: data.limit,
+    // Describes the caller's ranked pool, which can be wider than this page.
+    distribution: data.distribution,
   }
 }
 
@@ -130,6 +133,7 @@ export interface TutorCandidate {
   subjectsTaught: string[]
   /** Composite match score in [0,1]. */
   score: number
+  /** The same score as a whole percentage — prefer this for display. */
   rankPercentage: number
   isEligible?: boolean
   /** Why the candidate is ineligible, when isEligible is false. */
@@ -141,6 +145,8 @@ export interface TutorCandidate {
   hourlyRate: number
   bio: string | null
   isVerified: boolean
+  /** Why this tutor ranked here. Absent when explanations are switched off. */
+  explanation?: MatchExplanation
 }
 
 /** Mirrors backend CandidateStudentDto. */
@@ -189,6 +195,7 @@ interface CandidatePageResponse<T> {
   limit: number
   total: number
   data: T[]
+  distribution?: MatchDistribution
 }
 
 export interface TutorCandidatePage {
@@ -196,6 +203,7 @@ export interface TutorCandidatePage {
   total: number
   page: number
   limit: number
+  distribution?: MatchDistribution
 }
 
 export interface StudentCandidatePage {

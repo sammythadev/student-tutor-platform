@@ -12,13 +12,17 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { PageHero } from '@/components/catalog/page-hero'
-import { CatalogFilters, type SortKey } from '@/components/catalog/catalog-filters'
+import { ActiveFilters, type ActiveFilter } from '@/components/catalog/active-filters'
+import { CatalogFilters, CatalogFilterToolbar, SORT_OPTIONS, type SortKey } from '@/components/catalog/catalog-filters'
 import { CatalogCard } from '@/components/catalog/catalog-card'
+import { SearchInput } from '@/components/ui/search-input'
 import { BookSessionModal } from '@/components/BookSessionModal'
 import { MessageModal } from '@/components/MessageModal'
 import { getTutorCandidates, type TutorCandidate } from '@/lib/api/users'
+import { candidatePercent, type MatchDistribution } from '@/lib/api/match-explanation'
+import { MatchDistributionDialog } from '@/components/match/match-distribution-dialog'
 import { apiErrorText } from '@/lib/api/errors'
-import { AlertCircle, Search, X } from 'lucide-react'
+import { AlertCircle, CalendarDaysIcon, Search } from 'lucide-react'
 import { useToast } from '@/lib/toast-context'
 import { Pagination } from '@/components/Pagination'
 import { TutorProfileModal } from '@/components/TutorProfileModal'
@@ -65,6 +69,7 @@ export function FindTutors() {
   const [profileTarget, setProfileTarget] = useState<TutorCandidate | null>(null)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [distribution, setDistribution] = useState<MatchDistribution | undefined>(undefined)
   const { addToast } = useToast()
 
   useEffect(() => {
@@ -73,7 +78,12 @@ export function FindTutors() {
       setLoading(true); setError(null)
       try {
         const result = await getTutorCandidates({ page: 1, limit: PAGE_SIZE })
-        if (alive) { setCandidates(result.candidates); setTotal(result.total) }
+        if (alive) {
+          setCandidates(result.candidates)
+          setTotal(result.total)
+          // Describes the whole ranked pool, so it stays valid while filters hide rows.
+          setDistribution(result.distribution)
+        }
       } catch (err) {
         if (alive) setError(apiErrorText(err))
       } finally {
@@ -116,6 +126,21 @@ export function FindTutors() {
 
   const hasFilters = search !== '' || minRating > 0 || maxRate > 0 || sortBy !== 'score' || subject !== 'All'
 
+  // One removable term per active filter, so a collapsed rail group is never the
+  // only place a value is visible.
+  const activeFilters = useMemo<ActiveFilter[]>(() => {
+    const terms: ActiveFilter[] = []
+    if (search) terms.push({ id: 'search', label: `“${search}”`, onRemove: () => { setSearch(''); setPage(1) } })
+    if (subject !== 'All') terms.push({ id: 'subject', label: subject, onRemove: () => { setSubject('All'); setPage(1) } })
+    if (minRating > 0) terms.push({ id: 'rating', label: `${minRating}★ and up`, onRemove: () => { setMinRating(0); setPage(1) } })
+    if (maxRate > 0) terms.push({ id: 'price', label: `Up to ₦${maxRate.toLocaleString()}/hr`, onRemove: () => { setMaxRate(0); setPage(1) } })
+    if (sortBy !== 'score') {
+      const label = SORT_OPTIONS.find(option => option.key === sortBy)?.label ?? sortBy
+      terms.push({ id: 'sort', label, onRemove: () => { setSortBy('score'); setPage(1) } })
+    }
+    return terms
+  }, [search, subject, minRating, maxRate, sortBy])
+
 
   const toggleLike = (id: string) => setLiked(prev => {
     const next = new Set(prev)
@@ -132,6 +157,15 @@ export function FindTutors() {
       <PageHero
         title="Find your tutor"
         description="Tutors ranked for your learning profile."
+        tone="tutors"
+        actions={[
+          {
+            label: "My schedule",
+            href: "/schedules",
+            variant: "outline",
+            icon: CalendarDaysIcon,
+          },
+        ]}
       />
 
       {error && (
@@ -143,27 +177,28 @@ export function FindTutors() {
       )}
 
       {/* Search row */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-        <input
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1) }}
-          placeholder="Search tutors or subjects…"
-          aria-label="Search tutors or subjects"
-          className="h-11 w-full rounded-lg border bg-background pl-11 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => { setSearch(''); setPage(1) }}
-            aria-label="Clear search"
-            className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
-          >
-            <X className="size-4" />
-          </button>
-        )}
-      </div>
+      <SearchInput
+        label="Search tutors or subjects"
+        placeholder="Search tutors or subjects"
+        value={search}
+        onChange={e => { setSearch(e.target.value); setPage(1) }}
+        onClear={() => { setSearch(''); setPage(1) }}
+      />
 
+      <CatalogFilterToolbar
+        subjects={subjects}
+        selectedSubject={subject}
+        onSubject={value => { setSubject(value); if (value !== subject) setPage(1) }}
+        minRating={minRating}
+        onMinRating={value => { setMinRating(value); if (value !== minRating) setPage(1) }}
+        maxRate={maxRate}
+        onMaxRate={value => { setMaxRate(value); if (value !== maxRate) setPage(1) }}
+        rateMax={RATE_MAX}
+        sortBy={sortBy}
+        onSortBy={value => { setSortBy(value); if (value !== sortBy) setPage(1) }}
+        hasFilters={hasFilters}
+        onReset={clearFilters}
+      />
 
       {/* Catalog layout: rail + grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
@@ -183,22 +218,22 @@ export function FindTutors() {
         />
 
         <div className="min-w-0 space-y-5">
-          {/* Result count + active filter chips */}
+          {/* Result count + active filter chips. Sits above the grid, not beside
+              the rail, so the number and the rows it describes stay together. */}
           {!loading && !error && (
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm text-muted-foreground">
-                {filtered.length} of {candidates.length} loaded tutors match your filters
-                {total > candidates.length && ` · ${total} eligible in total`}
-              </p>
-              {hasFilters && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="catalog-filter-chip"
-                >
-                  <X className="size-3" aria-hidden="true" /> Clear all
-                </button>
-              )}
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {/* aria-live so a filter change is announced: the grid silently
+                    swapping 40 rows for 2 is otherwise invisible to a screen
+                    reader user. */}
+                <p aria-live="polite" className="text-sm text-muted-foreground">
+                  {filtered.length} {filtered.length === 1 ? 'tutor' : 'tutors'}
+                  {total > candidates.length && ` of ${total} eligible`}
+                </p>
+                {/* Pool statistics stay off the results surface and open on demand. */}
+                <MatchDistributionDialog distribution={distribution} />
+              </div>
+              <ActiveFilters filters={activeFilters} onClearAll={clearFilters} />
             </div>
           )}
 
@@ -239,10 +274,11 @@ export function FindTutors() {
                     bio: person.bio ?? undefined,
                     price: person.hourlyRate != null ? `₦${Number(person.hourlyRate).toLocaleString()}` : undefined,
                     priceSuffix: '/hr',
-                    matchPct: Math.round((person.score ?? 0) * 100),
+                    matchPct: candidatePercent(person.rankPercentage, person.score),
                     verified: person.isVerified,
                     disabled: person.isEligible === false,
                     disabledReason: person.reason ?? undefined,
+                    explanation: person.explanation,
                   }}
                   actions={[
                     { kind: 'book', onClick: () => setBookTarget(person) },

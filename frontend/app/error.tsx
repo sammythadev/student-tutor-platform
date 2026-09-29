@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, RefreshCw, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { logger, normalizeError } from '@/lib/logger'
 
 /**
  * Route-level error boundary. Rendered in place of the crashed segment;
@@ -17,7 +18,11 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Route error boundary caught:', error)
+    logger.child('route-boundary').error('Route segment crashed', {
+      ...normalizeError(error),
+      // Next redacts the server stack in production and links it via digest.
+      digest: error.digest,
+    })
   }, [error])
 
   return (

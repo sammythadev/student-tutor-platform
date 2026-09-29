@@ -1,17 +1,18 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { BookOpenIcon } from 'lucide-react'
 import { Pagination } from '@/components/Pagination'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
+import { SearchInput } from '@/components/ui/search-input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getCourseLibrary, getCourses, type CourseLibraryEntry, type CoursePage, type CourseSummary } from '@/lib/api/courses'
 import { toApiError } from '@/lib/api/errors'
@@ -25,6 +26,39 @@ const LIBRARY_LIMIT = 50
 const EXPLORE_LIMIT = 8
 
 type CurriculumSegment = 'picked' | 'mine' | 'explore'
+
+type CourseSort = 'newest' | 'oldest' | 'progress' | 'title'
+
+const COURSE_SORT_OPTIONS: { key: CourseSort; label: string }[] = [
+  { key: 'newest', label: 'Newest first' },
+  { key: 'oldest', label: 'Oldest first' },
+  { key: 'progress', label: 'Furthest along' },
+  { key: 'title', label: 'Title A–Z' },
+]
+
+/**
+ * Sorts the rows already on screen.
+ *
+ * `GET /courses` takes no sort parameter, so this orders the current page rather
+ * than the whole result set. The control is labelled "Sort this page" for that
+ * reason — a silently page-scoped sort that claims to order the list is worse
+ * than no sort at all. Moving it server-side needs a backend change.
+ */
+function sortCourses<T extends CourseSummary>(courses: T[], sort: CourseSort): T[] {
+  const sorted = [...courses]
+  switch (sort) {
+    case 'oldest':
+      return sorted.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    case 'progress':
+      return sorted.sort(
+        (a, b) => (b.progress?.percentage ?? -1) - (a.progress?.percentage ?? -1),
+      )
+    case 'title':
+      return sorted.sort((a, b) => a.title.localeCompare(b.title))
+    default:
+      return sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+}
 
 function normalizeSubject(value: string): string {
   return value.trim().toLowerCase()
@@ -86,7 +120,15 @@ function CourseRow({
       className="animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none"
       style={{ animationDelay: `${Math.min(index, 5) * 40}ms`, animationFillMode: 'backwards' }}
     >
-      <AccordionTrigger className="px-4 hover:no-underline">
+      <AccordionTrigger className="items-center gap-3 px-4 hover:no-underline">
+        {/* Cover well. Without it every row is a bare line of text inside the same
+            bordered box, so a 40-row list reads as one undifferentiated block. */}
+        <span
+          aria-hidden="true"
+          className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent-courses/12 text-accent-courses"
+        >
+          <BookOpenIcon className="size-4" aria-hidden="true" />
+        </span>
         <span className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="text-base font-semibold wrap-anywhere">{course.title}</span>
           {providedByTutorly && <Badge variant="secondary">Tutorly provided</Badge>}
@@ -150,6 +192,8 @@ export function CoursesList({ initialQuery }: { initialQuery: ListQuery }) {
   const [error, setError] = useState<string | null>(null)
   const [retry, setRetry] = useState(0)
   const [library, setLibrary] = useState<CoursePage<CourseLibraryEntry> | null>(null)
+  /** Page-scoped ordering; see `sortCourses`. */
+  const [sort, setSort] = useState<CourseSort>('newest')
   const sequence = useRef(0)
   const librarySequence = useRef(0)
   const searchTimer = useRef<number | undefined>(undefined)
@@ -251,13 +295,26 @@ export function CoursesList({ initialQuery }: { initialQuery: ListQuery }) {
   const response = result?.response
   const stale = !!result && (result.query.q !== q || result.query.page !== page)
   const { segmentOf, explore } = segmentLibraryCourses(library?.data ?? [], response?.data ?? [], curriculumSubjects)
-  // Students see their courses grouped by the tutor who set them; authors keep a flat list.
-  const tutorGroups = isAuthor ? [] : groupCoursesByTutor(response?.data ?? [])
   // `segmentOf` already excludes courses the caller is enrolled in, so the old
   // `response ? []` guard only had the effect of hiding this section for good once
   // the course list resolved. Wait for that list to settle instead, so a course
   // cannot flash under "Picked for you" before moving to the enrolled list.
   const picked = (library?.data ?? []).filter(course => segmentOf(course) === 'picked')
+
+  // Applied to the page already on screen — see `sortCourses` for why this is
+  // page-scoped rather than a server query.
+  // Students see their courses grouped by the tutor who set them; authors keep a flat list.
+  const pageCourses = useMemo(
+    () => sortCourses(response?.data ?? [], sort),
+    [response?.data, sort],
+  )
+  const sortedGroups = useMemo(
+    () => (isAuthor ? [] : groupCoursesByTutor(pageCourses).map(group => ({ ...group, courses: sortCourses(group.courses, sort) }))),
+    [isAuthor, pageCourses, sort],
+  )
+  // Not memoised: `explore` is rebuilt on every render by `segmentLibraryCourses`,
+  // so a memo keyed on it would never hit and the compiler (rightly) rejects it.
+  const sortedExplore = sortCourses(explore, sort)
 
   return (
     <div className="space-y-6 py-3">
@@ -278,9 +335,35 @@ export function CoursesList({ initialQuery }: { initialQuery: ListQuery }) {
         )}
       </header>
 
-      <div className="space-y-2">
-        <Label htmlFor="course-search">Search courses</Label>
-        <Input id="course-search" type="search" value={search} onChange={event => changeSearch(event.target.value)} maxLength={100} className="h-11" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1">
+          {/* Real label, recessed surface, 44px — the previous field was a bare
+              h-9 input identified only by its placeholder. */}
+          <SearchInput
+            label="Search courses"
+            placeholder="Search courses"
+            value={search}
+            onChange={event => changeSearch(event.target.value)}
+            onClear={clearSearch}
+            maxLength={100}
+          />
+        </div>
+        <div className="shrink-0 sm:w-48">
+          {/* `aria-label` rather than a `<label for>`: the trigger is a button, and
+              a label element does not label a button. */}
+          <Select value={sort} onValueChange={value => setSort(value as CourseSort)}>
+            <SelectTrigger id="course-sort" aria-label="Sort this page of courses">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COURSE_SORT_OPTIONS.map(option => (
+                <SelectItem key={option.key} value={option.key}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {error && (
@@ -310,7 +393,10 @@ export function CoursesList({ initialQuery }: { initialQuery: ListQuery }) {
 
       <section aria-label="Course results" aria-busy={loading} className="space-y-4">
         <h2 className="text-lg font-semibold">{isAuthor ? 'Your courses' : 'From your tutors'}</h2>
-        <p role="status" className="text-sm text-muted-foreground">
+        {/* aria-live, not just `role="status"`: the row set changes wholesale on
+            search and paging, and a screen reader user needs that announced
+            without having to go hunting for the change. */}
+        <p aria-live="polite" aria-atomic="true" className="text-sm text-muted-foreground">
           {loading ? (result ? 'Updating courses…' : 'Loading courses…') : response ?
             `${response.total} ${response.total === 1 ? 'course' : 'courses'}${result?.query.q ? ' match your search' : ''}${stale ? ' in previous results' : ''}` : ''}
         </p>
@@ -327,13 +413,13 @@ export function CoursesList({ initialQuery }: { initialQuery: ListQuery }) {
         ) : response && response.data.length > 0 ? (
           isAuthor ? (
             <Accordion multiple className="rounded-lg border bg-card px-4">
-              {response.data.map(course => (
+              {pageCourses.map(course => (
                 <CourseRow key={course.id} course={course} isAuthor={isAuthor} />
               ))}
             </Accordion>
           ) : (
             <div className="space-y-5">
-              {tutorGroups.map(group => (
+              {sortedGroups.map(group => (
                 <section key={group.key} aria-label={`Courses from ${group.tutorName}`} className="space-y-2">
                   <div className="min-w-0 space-y-1">
                     <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold">
@@ -378,14 +464,23 @@ export function CoursesList({ initialQuery }: { initialQuery: ListQuery }) {
         )}
       </section>
 
-      {response && !loading && !stale && !error && explore.length > 0 && (
-        <section aria-label="Explore more courses" className="space-y-3">
+      {response && !loading && !stale && !error && sortedExplore.length > 0 && (
+        /* Reference material, not curriculum. It shipped as another bordered
+           accordion on the same card surface as everything else, so a shelf the
+           student is not enrolled in looked like part of their curriculum. A
+           tinted, inset surface plus an explicit eyebrow says which it is. */
+        <section aria-label="Explore more courses" className="rounded-lg border border-dashed bg-accent-courses/[0.06] p-4 md:p-5">
           <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent-courses">
+              Reference shelf — not enrolled
+            </p>
             <h2 className="text-lg font-semibold">Explore more</h2>
-            <p className="text-sm text-muted-foreground">Tutorly outlines outside your subjects — reference material, no enrollment needed.</p>
+            <p className="text-sm text-muted-foreground">
+              Tutorly outlines outside your subjects. Browse them for reference — they carry no progress and need no enrollment.
+            </p>
           </div>
-          <Accordion multiple className="rounded-lg border bg-card px-4">
-            {explore.map(course => (
+          <Accordion multiple className="mt-3 rounded-lg border bg-card px-4">
+            {sortedExplore.map(course => (
               <CourseRow key={course.id} course={course} isAuthor={isAuthor} />
             ))}
           </Accordion>

@@ -105,7 +105,11 @@ lib/
   api/                    typed API clients (auth, users, assignments, sessions, …)
   store/authStore.ts      Zustand auth state
   axios.ts                configured Axios instance
+  logger.ts               zero-dependency logger (client + server)
+  logger-file.ts          JSONL file sink, Node only
 hooks/                    use-mobile and friends
+proxy.ts                  request logging for /api/backend/* (Next 16 "middleware")
+instrumentation-client.ts client error hooks, runs before hydration
 public/                   icons and imagery; asset credits in public/CREDITS.md
 types/                    ambient declarations
 ```
@@ -126,6 +130,53 @@ types/                    ambient declarations
   only. See `DESIGN.md` for the full system.
 - **Accessibility is part of done.** Keyboard paths, visible focus rings,
   `aria-*` state on custom controls, and `prefers-reduced-motion` fallbacks.
+- **Log through `@/lib/logger`, not `console`.** `no-console` is on (warn) so
+  bare calls stay visible in review. Every call site redaction applies — see
+  below. `lib/logger.ts` itself is the only exempt module.
+
+## Logging
+
+`lib/logger.ts` is dependency-free and works in all three runtimes: Node (proxy,
+Server Components, route handlers) writes to console and optionally to a JSONL
+file, the browser writes to console only, and Edge writes to console. Level
+gating and redaction are identical everywhere.
+
+```ts
+import { logger, normalizeError } from '@/lib/logger'
+
+logger.child('checkout').info('started', { cartId })
+logger.error('Payment failed', normalizeError(error)) // carries name/message/stack/digest
+```
+
+Configure in `.env.local` (see `.env.example`):
+
+| Variable | Scope | Default |
+| --- | --- | --- |
+| `LOG_LEVEL` | server | `error`,`warn` in prod; all four in dev |
+| `NEXT_PUBLIC_LOG_LEVEL` | browser | same, inlined at build time |
+| `LOG_ENABLED` | both | `true`; `false` silences everything |
+| `LOG_FILE_PATH` | server only | unset — console only |
+
+Four rules matter more than the API:
+
+- **Redaction is automatic and non-optional.** `lib/axios.ts` reads a Bearer
+  token out of `localStorage`, so anything logged from that path can carry live
+  credentials. `Authorization`, `cookie`, `password`, `*Token` and friends are
+  stripped, and `Bearer <token>` substrings are scrubbed, before a line is ever
+  formatted. Never pass a raw `Error` that has request config attached.
+- **The file sink is registered, never imported.** `lib/logger.ts` is reachable
+  from `'use client'` components, so a dynamic `import('./logger-file')` still
+  lands `node:fs` in the browser chunk and fails the build. Server-only entry
+  points call `registerFileSink(createFileSink())` instead — `proxy.ts` does
+  this today.
+- **The browser cannot write files.** `LOG_FILE_PATH` is ignored there by
+  design. Client errors reach the terminal in dev via
+  `logging.browserToTerminal` in `next.config.mjs`.
+- **The proxy does not proxy.** `proxy.ts` returns `NextResponse.next()`, so the
+  `rewrites()` rule in `next.config.mjs` still resolves `/api/backend/*` to
+  NestJS unchanged. It logs the edge entry point and stamps `x-request-id`; the
+  upstream status and duration live in the backend's `HttpLoggingInterceptor`,
+  which has strictly more detail (including `userId`).
 
 ## Design system
 
