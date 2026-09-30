@@ -1,54 +1,51 @@
 'use client'
 
-import { Check } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { motion, useReducedMotion } from 'motion/react'
 
 interface StepperProps {
-  steps: { title: string }[]
+  total: number
   current: number
-  onStepChange: (step: number) => void
-  disabled?: boolean
 }
 
-/** Completed steps are editable; future steps cannot bypass validation. */
-export function Stepper({ steps, current, onStepChange, disabled }: StepperProps) {
+/**
+ * A hairline progress rail, not a row of numbered boxes.
+ *
+ * The old 1-5 row was the loudest element on the page while carrying the least
+ * information: it repeated the step name that the form header already shows, forced
+ * 10px labels to wrap on mobile ("Learning style" broke onto two lines), and rendered
+ * as five disconnected blocks with no sense of distance travelled. The step names now
+ * live in the left rail on desktop; here we only need "how far along am I".
+ *
+ * Below `lg` there is no rail, so the counter stays visible (Material's mobile text
+ * stepper pattern). At `lg`+ it is `sr-only` because the rail already names the step.
+ */
+export function Stepper({ total, current }: StepperProps) {
+  const reduce = useReducedMotion()
+  // current is a 0-based index, so step 1 of 5 must read as 20%, not 0%.
+  const progress = total > 0 ? ((current + 1) / total) * 100 : 0
+
   return (
-    <nav aria-label="Setup progress" className="min-w-0">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
-        <p className="font-medium text-foreground">Step {current + 1} of {steps.length}</p>
-        <p className="text-muted-foreground">
-          {current === steps.length - 1 ? 'Finish your profile' : `Next: ${steps[current + 1].title}`}
+    <div className="min-w-0">
+      <div className="mb-2.5 flex items-center gap-3">
+        <div
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={total}
+          aria-valuenow={current + 1}
+          aria-valuetext={`Step ${current + 1} of ${total}`}
+          className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--surface-2)]"
+        >
+          <motion.div
+            className="h-full rounded-full bg-[var(--primary)]"
+            initial={false}
+            animate={{ width: `${progress}%` }}
+            transition={reduce ? { duration: 0 } : { duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+          />
+        </div>
+        <p className="shrink-0 text-xs font-medium tabular-nums text-[var(--text-secondary)] lg:sr-only">
+          Step {current + 1} of {total}
         </p>
       </div>
-      <ol className="grid grid-cols-5 gap-2 sm:gap-3">
-        {steps.map((step, index) => {
-          const complete = index < current
-          const active = index === current
-          return (
-            <li key={step.title} aria-current={active ? 'step' : undefined} className="min-w-0">
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={disabled || !complete}
-                onClick={() => onStepChange(index)}
-                aria-label={`${step.title}, ${complete ? 'completed, go back to edit' : active ? 'current step' : 'upcoming step'}`}
-                className={cn(
-                  'h-auto min-h-11 w-full flex-col items-start gap-2 whitespace-normal rounded-lg p-2 text-left disabled:opacity-100',
-                  active ? 'bg-secondary text-foreground' : 'text-muted-foreground',
-                )}
-              >
-                <span className={cn('flex size-6 items-center justify-center rounded-full border text-xs font-semibold',
-                  complete ? 'border-primary bg-primary text-primary-foreground' : active ? 'border-primary text-foreground' : 'border-input')}
-                >
-                  {complete ? <Check className="size-3.5" aria-hidden="true" /> : index + 1}
-                </span>
-                <span className="text-[10px] leading-4 sm:text-xs">{step.title}</span>
-              </Button>
-            </li>
-          )
-        })}
-      </ol>
-    </nav>
+    </div>
   )
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { Button } from '@/components/Button'
 import { Input, Select, Textarea } from '@/components/Input'
 import { Button as UiButton } from '@/components/ui/button'
@@ -40,7 +40,8 @@ import { OptionCard } from '@/components/onboard/OptionCard'
 import { RangeSlider } from '@/components/onboard/RangeSlider'
 import { SteppedSlider } from '@/components/onboard/SteppedSlider'
 import { Stepper } from '@/components/onboard/Stepper'
-import { OnboardSummary, type SummaryItem } from '@/components/onboard/OnboardSummary'
+import { StepRail, type RailStep } from '@/components/onboard/StepRail'
+import { StageHeight } from '@/components/onboard/StageHeight'
 
 type Role = 'student' | 'tutor'
 
@@ -133,6 +134,22 @@ const FORMAT_OPTIONS: { value: string; label: string; blurb: string; icon: Lucid
 
 const naira = (v: number) => (v === 0 ? 'Any' : `₦${v.toLocaleString()}`)
 
+/** Steps with no blocking validation, so the footer can offer a skip. */
+const STUDENT_OPTIONAL = new Set([3, 4])
+const TUTOR_OPTIONAL = new Set([2, 3, 4])
+
+/** "Mathematics, Physics +2" — the rail shows what was picked, never just a count. */
+const list = (items: string[], max = 2) => {
+  if (items.length === 0) return null
+  if (items.length <= max) return items.join(', ')
+  return `${items.slice(0, max).join(', ')} +${items.length - max}`
+}
+
+const joinSet = (parts: (string | null | undefined)[]) => {
+  const kept = parts.filter((p): p is string => typeof p === 'string' && p.length > 0)
+  return kept.length > 0 ? kept.join(' · ') : null
+}
+
 export default function OnboardingPage() {
   const router = useRouter()
   const reduce = useReducedMotion()
@@ -148,13 +165,15 @@ export default function OnboardingPage() {
   const [showCustomSubject, setShowCustomSubject] = useState(false)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const errorRef = useRef<HTMLDivElement>(null)
+  /** Announced on validation failure: the offending inline message is not a live region. */
+  const [validationMessage, setValidationMessage] = useState('')
 
   useEffect(() => {
     if (screen === 'form') headingRef.current?.focus()
   }, [screen, stage])
 
   useEffect(() => {
-    if (Object.keys(errors).length > 0) errorRef.current?.focus()
+    if (errors.submit) errorRef.current?.focus()
   }, [errors])
 
   const [studentForm, setStudentForm] = useState({
@@ -190,12 +209,14 @@ export default function OnboardingPage() {
 
   const stages = role === 'tutor' ? TUTOR_STAGES : STUDENT_STAGES
   const isLastStage = stage === stages.length - 1
+  const isSkippable = (role === 'tutor' ? TUTOR_OPTIONAL : STUDENT_OPTIONAL).has(stage) && !isLastStage
 
   const handleSelectRole = (selectedRole: Role) => {
     setRole(selectedRole)
     setStage(0)
     setDirection(1)
     setErrors({})
+    setValidationMessage('')
     setShowAllSubjects(false)
     setShowCustomSubject(false)
     setScreen('form')
@@ -358,9 +379,11 @@ export default function OnboardingPage() {
     const stageErrors = validateStage(stage)
     if (Object.keys(stageErrors).length > 0) {
       setErrors(stageErrors)
+      setValidationMessage(Object.values(stageErrors).join('. '))
       return
     }
     setErrors({})
+    setValidationMessage('')
 
     if (!isLastStage) {
       setDirection(1)
@@ -375,6 +398,7 @@ export default function OnboardingPage() {
   const handleBack = () => {
     if (loading) return
     setErrors({})
+    setValidationMessage('')
     if (stage === 0) {
       setScreen('role')
       setRole(null)
@@ -382,6 +406,20 @@ export default function OnboardingPage() {
     }
     setDirection(-1)
     setStage(s => s - 1)
+  }
+
+  /** Optional steps have no blocking validation, so they can be bypassed outright. */
+  const handleSkip = () => {
+    if (loading) return
+    setErrors({})
+    setValidationMessage('')
+    if (isLastStage) {
+      if (role === 'student') submitStudent()
+      else submitTutor()
+      return
+    }
+    setDirection(1)
+    setStage(s => s + 1)
   }
 
   if (complete) {
@@ -478,63 +516,107 @@ export default function OnboardingPage() {
   /* ─────────────── Staged form ─────────────── */
   const active = stages[stage]
   const ActiveIcon = active.icon
-  const summaryItems: SummaryItem[] = role === 'student'
-    ? [
-        { label: 'Level', value: GRADES.find(g => g.value === studentForm.gradeLevel)?.label ?? null },
-        { label: 'Subjects', value: studentForm.subjects.length > 0 ? `${studentForm.subjects.length} picked` : null },
-        { label: 'Style', value: LEARNING_STYLES.find(s => s.value === studentForm.learningStylePreference)?.label ?? null },
-        { label: 'Pace', value: PACE_OPTIONS.find(p => p.value === studentForm.learningPace)?.label ?? null },
-        {
-          label: 'Budget',
-          value: studentForm.budget ? naira(Number(studentForm.budget)) : null,
-        },
-      ]
-    : [
-        {
-          label: 'Subjects',
-          value:
-            tutorForm.expertise.length + (tutorForm.customExpertise.trim() ? 1 : 0) > 0
-              ? `${tutorForm.expertise.length + (tutorForm.customExpertise.trim() ? 1 : 0)} picked`
-              : null,
-        },
-        {
-          label: 'Rate',
-          value: tutorForm.hourlyRate ? `${naira(Number(tutorForm.hourlyRate))}/hr` : null,
-        },
-        {
-          label: 'Experience',
-          value: tutorForm.yearsExperience ? `${tutorForm.yearsExperience} yrs` : null,
-        },
-        { label: 'Style', value: TEACHING_STYLES.find(s => s.value === tutorForm.teachingStyle)?.label ?? null },
-        { label: 'Capacity', value: tutorForm.capacity ? `${tutorForm.capacity} students` : null },
-      ]
+
+  /* One readout per stage, so the rail and the form describe the same fields.
+     Precedence in the old summary card ("Pace: Moderate" on step 1) is gone: pace and
+     capacity only appear once the user has actually chosen something other than the
+     default, and a partially-answered step shows the part that is set. */
+  const studentReadouts: (string | null)[] = [
+    joinSet([
+      GRADES.find(g => g.value === studentForm.gradeLevel)?.label ?? null,
+      studentForm.examTypes ? EXAMS.find(e => e.value === studentForm.examTypes)?.label : null,
+    ]),
+    list([
+      ...studentForm.subjects,
+      ...(studentForm.customSubject.trim() ? [studentForm.customSubject.trim()] : []),
+    ]),
+    joinSet([
+      LEARNING_STYLES.find(s => s.value === studentForm.learningStylePreference)?.label ?? null,
+      // 'moderate' is the pre-selected default, so only surface a pace the user moved off.
+      studentForm.learningPace !== 'moderate'
+        ? PACE_OPTIONS.find(p => p.value === studentForm.learningPace)?.label
+        : null,
+    ]),
+    joinSet([
+      DELIVERY_OPTIONS.find(o => o.value === studentForm.deliveryPreference)?.label ?? null,
+      FORMAT_OPTIONS.find(o => o.value === studentForm.formatPreference)?.label ?? null,
+      studentForm.languages.length > 0 ? list(studentForm.languages) : null,
+    ]),
+    joinSet([
+      studentForm.budget ? `${naira(Number(studentForm.budget))} / month` : null,
+      studentForm.region.trim() || null,
+    ]),
+  ]
+
+  const tutorReadouts: (string | null)[] = [
+    list([
+      ...tutorForm.expertise,
+      ...(tutorForm.customExpertise.trim() ? [tutorForm.customExpertise.trim()] : []),
+    ]),
+    joinSet([
+      tutorForm.yearsExperience ? `${tutorForm.yearsExperience} yrs` : null,
+      tutorForm.hourlyRate ? `${naira(Number(tutorForm.hourlyRate))}/hr` : null,
+      tutorForm.capacity !== '5' ? `${tutorForm.capacity} students` : null,
+    ]),
+    joinSet([
+      TEACHING_STYLES.find(s => s.value === tutorForm.teachingStyle)?.label ?? null,
+      tutorForm.teachingPace !== 'moderate'
+        ? PACE_OPTIONS.find(p => p.value === tutorForm.teachingPace)?.label
+        : null,
+    ]),
+    joinSet([
+      DELIVERY_OPTIONS.find(o => o.value === tutorForm.deliveryStyle)?.label ?? null,
+      FORMAT_OPTIONS.find(o => o.value === tutorForm.formatStyle)?.label ?? null,
+      tutorForm.languages.length > 0 ? list(tutorForm.languages) : null,
+    ]),
+    tutorForm.bio.trim() || null,
+  ]
+
+  const readouts = role === 'tutor' ? tutorReadouts : studentReadouts
+  const optionalSteps = role === 'tutor' ? TUTOR_OPTIONAL : STUDENT_OPTIONAL
+  const railSteps: RailStep[] = stages.map((s, i) => ({
+    title: s.title,
+    icon: s.icon,
+    value: readouts[i] ?? null,
+    optional: optionalSteps.has(i),
+  }))
 
   return (
     <div className="min-h-[100dvh] w-full max-w-full overflow-x-clip bg-canvas px-3 py-8 sm:px-4 sm:py-12">
 
       <div className="w-full min-w-0 max-w-5xl mx-auto space-y-6">
-        <div className="flex flex-col items-center gap-2 pt-2 text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold text-ink-900">
+        {/* Page title. Left-aligned, not centred: this project bans centred headers, and a
+            left edge shared with the rail below keeps one vertical line down the page. */}
+        <header className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+            {role === 'student' ? 'Learner profile' : 'Tutor profile'}
+          </p>
+          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
             {role === 'student' ? 'Set up your learner profile' : 'Set up your tutor profile'}
           </h1>
-          <p className="text-ink-600 text-sm sm:text-base max-w-md">
+          <p className="mt-1.5 max-w-md text-sm text-[var(--text-secondary)] sm:text-base">
             One question at a time. Change anything later in settings.
           </p>
-        </div>
+        </header>
 
-        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
-          <OnboardSummary
-            items={summaryItems}
-            heading={role === 'student' ? 'Your learner preview' : 'Your tutor preview'}
-          />
+        <div className="grid gap-6 lg:grid-cols-[264px_minmax(0,1fr)] lg:items-start lg:gap-10">
+          <div className="lg:sticky lg:top-8">
+            <StepRail
+              steps={railSteps}
+              current={stage}
+              disabled={loading}
+              onStepChange={(next) => {
+                if (next >= stage || loading) return
+                setErrors({})
+                setValidationMessage('')
+                setDirection(-1)
+                setStage(next)
+              }}
+            />
+          </div>
 
           <div className="min-w-0 space-y-6">
-            <Stepper steps={stages} current={stage} disabled={loading} onStepChange={(next) => {
-              if (next >= stage || loading) return
-              setErrors({})
-              setDirection(-1)
-              setStage(next)
-            }} />
+            <Stepper total={stages.length} current={stage} />
 
             <form onSubmit={handleAdvance} className="glass-card w-full min-w-0 max-w-full p-5 sm:p-8">
               <div className="flex min-w-0 items-start gap-3.5 mb-6">
@@ -550,33 +632,36 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {Object.keys(errors).length > 0 && (
+              {/* Field-level messages already render inline under the control they belong
+                  to, which is where a sighted user looks first. Restating them in a banner
+                  meant the same sentence appeared twice (and three times for subjects, which
+                  has both a chip-group message and a legend message). So the banner is now
+                  reserved for the one case with no inline home: a failed API submit. */}
+              {errors.submit && (
                 <div ref={errorRef} tabIndex={-1} className="mb-6 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Alert variant="destructive">
                     <AlertCircle className="size-4" />
-                    <AlertDescription>{Object.values(errors).join('. ')}</AlertDescription>
+                    <AlertDescription>{errors.submit}</AlertDescription>
                   </Alert>
                 </div>
               )}
-              <fieldset disabled={loading} className="min-w-0 space-y-6 border-0 m-0 p-0">
-                <AnimatePresence mode="wait" custom={direction}>
-                  <motion.div
-                    key={`${role}-${stage}`}
-                    custom={direction}
-                    initial={reduce ? false : { opacity: 0, transform: `translateX(${direction * 8}px)` }}
-                    animate={{ opacity: 1, transform: 'translateX(0px)' }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: reduce ? 0 : 0.18, ease: [0.23, 1, 0.32, 1] }}
-                    className="w-full min-w-0 space-y-6"
-                  >
+              <p role="alert" aria-live="assertive" className="sr-only">
+                {validationMessage}
+              </p>
+
+              <fieldset disabled={loading} className="min-w-0 border-0 m-0 p-0">
+                <StageHeight stepKey={`${role}-${stage}`} direction={direction}>
+                  <div className="w-full min-w-0 space-y-6">
                     {role === 'student' ? renderStudentStage() : renderTutorStage()}
-                  </motion.div>
-                </AnimatePresence>
+                  </div>
+                </StageHeight>
               </fieldset>
 
               <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 border-t border-border pt-6 mt-8">
                 <div className="min-w-0 flex-1">
-                  <Button type="button" variant="secondary" onClick={handleBack} disabled={loading} className="w-full">
+                  {/* min-h-11 on both: the shared button default is h-9 (36px), under the
+                      44px touch-target floor, and Back sat next to a full-height Continue. */}
+                  <Button type="button" variant="secondary" onClick={handleBack} disabled={loading} className="w-full min-h-11">
                     <ArrowLeft className="w-4 h-4" strokeWidth={2} />
                     Back
                   </Button>
@@ -588,10 +673,15 @@ export default function OnboardingPage() {
                   </Button>
                 </div>
               </div>
-              {!isLastStage && (
-                <p className="mt-3 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Your answers stay here while you move between steps.
-                </p>
+              {isSkippable && (
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  disabled={loading}
+                  className="mx-auto mt-3 inline-flex min-h-11 items-center text-xs font-medium text-ink-400 transition-colors hover:text-ink-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                >
+                  Skip this step
+                </button>
               )}
             </form>
           </div>
