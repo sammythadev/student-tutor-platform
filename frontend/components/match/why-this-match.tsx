@@ -60,7 +60,10 @@ export function WhyThisMatchDialog({
         <button
           type="button"
           className={cn(
-            'group inline-flex cursor-pointer items-center gap-1 rounded-sm py-1 text-xs transition-colors',
+            // min-h-11: measured at 98x24 across seven cards on one screen, this was
+            // the most-repeated sub-44px target on the page. The label stays on one
+            // line; only the hit area grows, so the card does not gain height.
+            'group inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-sm px-1 text-xs transition-colors',
             'text-[var(--text-secondary)] hover:text-foreground',
             'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
             className,

@@ -3,11 +3,10 @@
 import { cn } from "@/lib/utils";
 import { accentFor, IDENTITY_BG } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/StarRating";
 import { WhyThisMatchDialog } from "@/components/match/why-this-match";
 import { readExplanation, type MatchExplanation } from "@/lib/api/match-explanation";
-import { BadgeCheck, BookOpen, Heart, MessageSquare, ArrowUpRight } from "lucide-react";
+import { BadgeCheck, CalendarPlus, Heart, MessageSquare } from "lucide-react";
 
 export type CatalogCardData = {
   id: string;
@@ -29,10 +28,24 @@ export type CatalogCardData = {
 
 export type CatalogCardAction =
   | { kind: "book"; label?: string; onClick: () => void }
-  | { kind: "message"; onClick: () => void }
-  | { kind: "view"; onClick: () => void };
+  | { kind: "message"; label?: string; onClick: () => void }
+  | { kind: "view"; label?: string; onClick: () => void };
 
-/** A static result article; only its explicit actions are interactive. */
+/**
+ * One person, as a card in a grid.
+ *
+ * Cards laid out in a grid are harder to compare than a list, because each one
+ * can put its fields in a different place. The fix is to make the field order
+ * identical in every card and hold each block to a fixed height: name on one
+ * line, meta on one line, rating on a row that keeps its height when a tutor has
+ * no ratings yet, subjects and bio clamped, and the price and buttons pinned to
+ * the bottom edge. Same field, same place, same height, so the eye can run down a
+ * column of three and compare like with like.
+ *
+ * `view` is rendered as a target covering the whole card rather than a third
+ * button: a tertiary action does not fit a narrow tile, and clicking anywhere on
+ * a card to open it is what the pattern leads people to expect.
+ */
 export function CatalogCard({
   data,
   actions,
@@ -55,94 +68,159 @@ export function CatalogCard({
   // that text when there is a score worth explaining.
   const scoredExplanation = explanation?.eligibility.isEligible ? explanation : null;
 
+  const viewAction = actions.find((action) => action.kind === "view");
+  const inlineActions = actions.filter((action) => action.kind !== "view");
+  const hasFooter = Boolean(data.price) || inlineActions.length > 0;
+
   return (
-    <article className="catalog-card flex h-full min-w-0 flex-col" data-catalog-card="">
-      <div className="flex items-start gap-3 p-4 pb-3">
-        <div
-          className={cn("flex size-14 shrink-0 items-center justify-center rounded-lg text-lg font-semibold", IDENTITY_BG[accentFor(data.id)])}
-          aria-hidden="true"
-        >
-          {initials}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-1.5">
-            <h2 className="min-w-0 break-words text-base font-semibold text-foreground">{data.name}</h2>
-            {data.verified && <BadgeCheck className="mt-1 size-4 shrink-0 text-[var(--chip-green-fg)]" aria-label="Verified" />}
+    <article
+      className={cn(
+        "catalog-card relative flex h-full min-w-0 flex-col",
+        viewAction &&
+          "transition-[box-shadow,border-color] duration-150 hover:border-[var(--border-strong)] hover:shadow-md"
+      )}
+    >
+      {viewAction && (
+        <button
+          type="button"
+          onClick={viewAction.onClick}
+          aria-label={viewAction.label ?? `View ${data.name}'s profile`}
+          className="absolute inset-0 z-0 cursor-pointer rounded-[inherit] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+      )}
+
+      {/* Presentational wrapper, so a click anywhere lands on the card target
+          above it. The buttons below opt back in with `pointer-events-auto`. */}
+      <div className="pointer-events-none relative z-10 flex h-full min-w-0 flex-col">
+        <div className="flex items-start gap-3 p-4 pb-3">
+          <div
+            className={cn(
+              "flex size-12 shrink-0 items-center justify-center rounded-full text-base font-semibold",
+              IDENTITY_BG[accentFor(data.id)]
+            )}
+            aria-hidden="true"
+          >
+            {initials}
           </div>
-          {data.tagline && <p className="break-words text-xs text-[var(--text-secondary)]">{data.tagline}</p>}
-          {(data.rating != null || matchPct != null) && (
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              {data.rating != null && <StarRating rating={data.rating} count={data.ratingCount} size="sm" showCount />}
-              {matchPct != null && scoredExplanation && (
-                <WhyThisMatchDialog explanation={scoredExplanation} matchPct={matchPct} accent={accentFor(data.id)} />
-              )}
-              {matchPct != null && !scoredExplanation && (
-                <span className="text-xs text-[var(--text-secondary)]">{matchPct}% match</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start gap-1.5">
+              {/* h3, not h2: the results heading is the section's h2, and a tutor
+                  name inside a card should not outrank it in the outline. */}
+              <h3 className="line-clamp-1 min-w-0 text-base font-semibold text-foreground">
+                {data.name}
+              </h3>
+              {data.verified && (
+                <BadgeCheck
+                  className="mt-0.5 size-4 shrink-0 text-[var(--accent-tracker)]"
+                  aria-label="Verified"
+                />
               )}
             </div>
-          )}
-        </div>
-        {onToggleLike && (
-          <button
-            type="button"
-            onClick={onToggleLike}
-            aria-label={liked ? "Remove from saved" : "Save"}
-            aria-pressed={!!liked}
-            className={cn(
-              "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-              liked ? "bg-destructive/10 text-destructive" : "text-[var(--text-secondary)] hover:bg-accent hover:text-foreground"
+            <div className="mt-1 flex min-h-5 flex-wrap items-center gap-2">
+              {data.rating != null ? (
+                <StarRating rating={data.rating} count={data.ratingCount} size="sm" showCount />
+              ) : (
+                <span className="text-xs text-[var(--text-secondary)]">No ratings yet</span>
+              )}
+              {matchPct != null && scoredExplanation && (
+                /* Opts back out of the wrapper's `pointer-events-none` so the
+                   "why this match" trigger stays clickable above the card target. */
+                <span className="pointer-events-auto">
+                  <WhyThisMatchDialog
+                    explanation={scoredExplanation}
+                    matchPct={matchPct}
+                    accent={accentFor(data.id)}
+                  />
+                </span>
+              )}
+              {matchPct != null && !scoredExplanation && (
+                <span className="text-xs font-medium text-[var(--accent-tutors)]">
+                  {matchPct}% match
+                </span>
+              )}
+            </div>
+            {data.tagline && (
+              <p className="mt-1 line-clamp-1 text-xs text-[var(--text-secondary)]">{data.tagline}</p>
             )}
-          >
-            <Heart className="size-4" fill={liked ? "currentColor" : "none"} aria-hidden="true" />
-          </button>
-        )}
-      </div>
-      {data.subjects.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 px-4 pb-2">
-          {data.subjects.slice(0, 3).map((subject) => (
-            <Badge key={subject} variant="secondary" className="max-w-full whitespace-normal break-words text-xs">{subject}</Badge>
-          ))}
-          {data.subjects.length > 3 && (
-            <span className="self-center text-xs text-[var(--text-secondary)]" aria-label={`${data.subjects.length - 3} more subjects`}>+{data.subjects.length - 3}</span>
+          </div>
+          {onToggleLike && (
+            <button
+              type="button"
+              onClick={onToggleLike}
+              aria-label={liked ? "Remove from saved" : "Save"}
+              aria-pressed={!!liked}
+              className={cn(
+                "pointer-events-auto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                liked
+                  ? "bg-destructive/10 text-destructive"
+                  : "text-[var(--text-secondary)] hover:bg-accent hover:text-foreground"
+              )}
+            >
+              <Heart className="size-4" fill={liked ? "currentColor" : "none"} aria-hidden="true" />
+            </button>
           )}
         </div>
-      )}
-      {data.bio && <p className="line-clamp-2 break-words px-4 pb-2 text-sm leading-relaxed text-[var(--text-secondary)]">{data.bio}</p>}
-      {/* The reason is the only thing a blocked tutor shows: a plain, one-line
-          statement of what stopped it, with no score and no statistics beside it. */}
-      {data.disabled && data.disabledReason && (
-        <p className="mx-4 mb-2 break-words rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">{data.disabledReason}</p>
-      )}
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
-        {data.price && (
-          <div className="min-w-0">
-            <p className="break-words text-sm font-semibold tabular-nums text-foreground">{data.price}</p>
-            {data.priceSuffix && <p className="text-xs text-[var(--text-secondary)]">{data.priceSuffix}</p>}
+
+        {data.subjects.length > 0 && (
+          <p className="line-clamp-2 px-4 text-xs font-medium text-[var(--text-secondary)]">
+            {data.subjects.join(" · ")}
+          </p>
+        )}
+        {data.bio && (
+          <p className="mt-1.5 line-clamp-2 px-4 text-sm leading-relaxed text-[var(--text-secondary)]">
+            {data.bio}
+          </p>
+        )}
+        {/* The reason is the only thing a blocked tutor shows: a plain, one-line
+            statement of what stopped it, with no score and no statistics beside it. */}
+        {data.disabled && data.disabledReason && (
+          <p className="mx-4 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive-text">
+            {data.disabledReason}
+          </p>
+        )}
+
+        {hasFooter && (
+          <div className="mt-auto flex flex-col gap-3 border-t p-4">
+            {data.price && (
+              <p className="flex items-baseline gap-1">
+                <span className="text-lg font-semibold tabular-nums text-foreground">
+                  {data.price}
+                </span>
+                {data.priceSuffix && (
+                  <span className="text-xs text-[var(--text-secondary)]">{data.priceSuffix}</span>
+                )}
+              </p>
+            )}
+            <div className="flex flex-col gap-2">
+              {inlineActions.map((action) => {
+                if (action.kind === "book") {
+                  return (
+                    <Button
+                      key="book"
+                      className="pointer-events-auto h-11 w-full gap-2"
+                      disabled={data.disabled}
+                      onClick={action.onClick}
+                    >
+                      <CalendarPlus className="size-4" aria-hidden="true" />
+                      {action.label ?? "Book session"}
+                    </Button>
+                  );
+                }
+                return (
+                  <Button
+                    key="message"
+                    variant="outline"
+                    className="pointer-events-auto h-11 w-full gap-2 shadow-none"
+                    onClick={action.onClick}
+                  >
+                    <MessageSquare className="size-4" aria-hidden="true" />
+                    {action.label ?? "Message"}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         )}
-        <div className="ml-auto flex flex-wrap items-center gap-1.5">
-          {actions.map((action) => {
-            if (action.kind === "book") {
-              return (
-                <Button key="book" size="sm" className="h-11 min-w-11 gap-1.5" disabled={data.disabled} onClick={action.onClick}>
-                  <BookOpen className="size-4" aria-hidden="true" />{action.label ?? "Book"}
-                </Button>
-              );
-            }
-            if (action.kind === "message") {
-              return (
-                <Button key="message" size="icon" className="size-11" variant="ghost" aria-label="Message" onClick={action.onClick}>
-                  <MessageSquare className="size-4" aria-hidden="true" />
-                </Button>
-              );
-            }
-            return (
-              <Button key="view" size="icon" className="size-11" variant="ghost" aria-label="View profile" onClick={action.onClick}>
-                <ArrowUpRight className="size-4" aria-hidden="true" />
-              </Button>
-            );
-          })}
-        </div>
       </div>
     </article>
   );

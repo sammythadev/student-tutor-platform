@@ -41,7 +41,9 @@ export function MatchDistributionDialog({ distribution, className }: MatchDistri
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="xs" className={cn('text-[var(--text-secondary)]', className)}>
+        {/* min-h-11: measured at 119x24, under both the 24px WCAG floor's spirit
+            and the 44px touch target this needs on a phone. */}
+        <Button variant="ghost" size="xs" className={cn('min-h-11 text-[var(--text-secondary)]', className)}>
           <Info aria-hidden="true" />
           Compare scores
           {/* Visible text stays in the accessible name; this only adds intent. */}
