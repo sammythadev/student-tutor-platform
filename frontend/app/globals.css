@@ -68,6 +68,7 @@
   --color-accent-foreground:  var(--accent-foreground);
   --color-destructive:        var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-text:   var(--destructive-text);
   --color-border:             var(--border);
   --color-input:              var(--input);
   --color-ring:               var(--ring);
@@ -252,6 +253,9 @@
 
   --destructive:          #E5484D;
   --destructive-foreground: #FFFFFF;
+  /* Destructive *text*, not icons. #E5484D is only 3.14:1 on a surface-2 fill, so
+     it cannot carry a sentence; this reaches 5.27:1 on the same fill. */
+  --destructive-text:     #B42318;
 
   /* Status colors — dot scale only */
   --status-blue:   #0062D1;
@@ -415,6 +419,8 @@
 
   --destructive:          #E5484D;
   --destructive-foreground: #FFFFFF;
+  /* Dark mode inverts the fix: the red has to get lighter, not darker. */
+  --destructive-text:     #FF8A8E;
 
   --status-blue:   #52AEFF;
   --status-green:  #6CDA75;
@@ -834,9 +840,19 @@
   gap: 1rem;
 }
 
-@media (min-width: 768px) {
+/* One across on a phone, two on a tablet, three on a desktop. Fixed column
+   counts rather than `auto-fit`: with `auto-fit` the row silently reflows to a
+   different number of cards when the shell's sidebar collapses or the window is
+   nudged, so the same screen shows a different density run to run. */
+@media (min-width: 640px) {
   .catalog-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .catalog-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -867,27 +883,6 @@
 .catalog-filter-chip:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--ring);
-}
-
-.catalog-rail {
-  display: flex;
-  align-self: start;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.catalog-rail-section-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-}
-
-@media (min-width: 1024px) {
-  .catalog-rail {
-    position: sticky;
-    top: calc(var(--spacing-header, 3.5rem) + 1rem);
-  }
 }
 
 .pressable {

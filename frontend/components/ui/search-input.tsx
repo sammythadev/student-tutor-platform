@@ -12,7 +12,12 @@ type SearchInputProps = Omit<React.ComponentProps<"input">, "type"> & {
    * renders visually hidden rather than being dropped entirely.
    */
   label: string
-  /** Called on Enter, from the wrapping search form. */
+  /**
+   * Fired by the wrapping form's submit event, which Enter triggers implicitly
+   * when the field is the form's only input. Deliberately not also wired to
+   * `keydown` — that fires in addition to the implicit submission on the same
+   * keypress, so the handler would run twice per Enter.
+   */
   onSubmit?: () => void
   /** Render the trailing clear affordance while the field holds a value. */
   onClear?: () => void
@@ -37,6 +42,7 @@ function SearchInput({
   containerClassName,
   className,
   id,
+  onInput,
   onKeyDown,
   ...props
 }: SearchInputProps) {
@@ -44,11 +50,15 @@ function SearchInput({
   const generatedId = React.useId()
   const inputId = id ?? `search-input-${generatedId}`
 
-  // Derived from the DOM rather than `props.value` alone, so a future
-  // uncontrolled caller still gets a correct clear button.
-  const [filled, setFilled] = React.useState(
-    () => Boolean(props.defaultValue) || (typeof props.value === "string" && props.value !== ""),
+  // Controlled callers read from the value itself. Tracking this purely from
+  // input events gets it wrong the moment the value changes from outside — our
+  // own clear button, "Clear all", a reset — because those re-render the field
+  // without firing `input`, leaving the clear affordance on an empty field.
+  const isControlled = props.value !== undefined
+  const [uncontrolledFilled, setUncontrolledFilled] = React.useState(
+    () => Boolean(props.defaultValue),
   )
+  const filled = isControlled ? String(props.value ?? "") !== "" : uncontrolledFilled
 
   React.useEffect(() => {
     if (!enableShortcut) return
@@ -92,11 +102,11 @@ function SearchInput({
           filled && "pr-11",
           className
         )}
-        onInput={event => setFilled(event.currentTarget.value !== "")}
-        onKeyDown={event => {
-          onKeyDown?.(event)
-          if (event.key === "Enter") onSubmit?.()
+        onInput={event => {
+          onInput?.(event)
+          setUncontrolledFilled(event.currentTarget.value !== "")
         }}
+        onKeyDown={onKeyDown}
         {...props}
       />
       {filled && (
